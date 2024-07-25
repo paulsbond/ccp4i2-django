@@ -1,9 +1,11 @@
+import Button from "@mui/material/Button";
+
 export default function ProjectsPage() {
   return (
     <>
       <h1>Projects</h1>
-      <button>New</button>
-      <button>Import</button>
+      <Button variant="contained">New</Button>
+      <Button variant="outlined">Import</Button>
     </>
   );
 }
