@@ -5,7 +5,11 @@ export const metadata = {
   description: "Software for Macromolecular X-Ray Crystallography",
 };
 
-export default function RootLayout({ children }: PropsWithChildren) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>{children}</body>
