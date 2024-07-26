@@ -9,9 +9,7 @@ from os import environ
 from pathlib import Path
 from uuid import uuid4
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 USER_DIR = Path.home().resolve() / ".ccp4ui"
-STATIC_DIR = BASE_DIR / "static"
 
 DEBUG = environ.get("CCP4UI_DEV", "").lower() == "true"
 
@@ -55,13 +53,11 @@ ROOT_URLCONF = "ccp4ui.api.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [STATIC_DIR],
         "APP_DIRS": True,
     },
 ]
 
 STATIC_URL = "static/"
-STATIC_ROOT = STATIC_DIR
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = USER_DIR / "media"
