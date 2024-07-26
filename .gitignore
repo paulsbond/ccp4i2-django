@@ -1,8 +1,0 @@
-*.egg-info
-*.pyc
-/build
-/ccp4ui/client/.next
-/ccp4ui/client/dist
-/ccp4ui/client/next-env.d.ts
-/ccp4ui/client/node_modules
-/ccp4ui/static
