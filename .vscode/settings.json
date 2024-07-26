@@ -6,6 +6,15 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "files.insertFinalNewline": true,
   "flake8.args": ["--ignore=E203,E501,W503", "--max-complexity=10"],
+  "pylint.args": [
+    "--disable=invalid-str-returned",
+    "--disable=missing-class-docstring",
+    "--disable=missing-function-docstring",
+    "--disable=missing-module-docstring",
+    "--disable=no-member",
+    "--disable=too-few-public-methods",
+    "--disable=too-many-ancestors"
+  ],
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
   }
