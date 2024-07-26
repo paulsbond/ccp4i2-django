@@ -2,18 +2,7 @@
 
 ## Development
 
-First, make sure that the environment `CCP4UI_DEV` is set to `true`,
-e.g. by putting the following into ~/.bashrc
-
-```bash
-export CCP4UI_DEV=true
-```
-
-This turns Django DEBUG mode on
-and allows cross origin requests from `localhost:3000`
-(the default address for the Next.js development server).
-
-Next, clone the project from GitHub,
+Clone the project from GitHub,
 install the dependencies, make an inital database migration
 and start the Django development server for the REST API.
 Note that **Python 3.9+ is required**.

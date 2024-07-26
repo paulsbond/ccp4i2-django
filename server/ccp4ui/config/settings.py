@@ -5,23 +5,13 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from os import environ
 from pathlib import Path
-from uuid import uuid4
 
-USER_DIR = Path.home().resolve() / ".ccp4ui"
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = "django-insecure-xq@_ci4r3sl+1!3vt5xz5wurncfvfyq^$k5anjsi3+*wb)(5!v"
 
-DEBUG = environ.get("CCP4UI_DEV", "").lower() == "true"
-
-SECRET_KEY_PATH = USER_DIR / "secret-key.txt"
-if not SECRET_KEY_PATH.exists():
-    SECRET_KEY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(SECRET_KEY_PATH, "w", encoding="utf-8") as f:
-        f.write(f"{uuid4()}-{uuid4()}")
-with open(SECRET_KEY_PATH, encoding="utf-8") as f:
-    SECRET_KEY = f.read().strip()
-
-ALLOWED_HOSTS = ["localhost", ".localhost", "127.0.0.1", "[::1]"]
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
 
 INSTALLED_APPS = [
     "corsheaders",
@@ -58,8 +48,9 @@ TEMPLATES = [
 ]
 
 STATIC_URL = "static/"
-
 MEDIA_URL = "media/"
+
+USER_DIR = Path.home().resolve() / ".ccp4ui"
 MEDIA_ROOT = USER_DIR / "media"
 
 DATABASES = {
