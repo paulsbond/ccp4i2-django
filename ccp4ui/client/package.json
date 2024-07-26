@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "start": "next dev"
+    "dev": "next dev",
+    "build": "next build"
   },
   "dependencies": {
     "@emotion/cache": "^11.13.1",

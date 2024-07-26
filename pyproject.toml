@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ccp4ui"
+dynamic = ["version"]
+authors = [{ name = "Paul Bond", email = "paul.bond@york.ac.uk" }]
+maintainers = [{ name = "Paul Bond", email = "paul.bond@york.ac.uk" }]
+description = "Interface for CCP4 software"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["CCP4", "X-ray", "Crystallography", "MX", "Interface", "GUI"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Private :: Do Not Upload",
+]
+dependencies = [
+    "blacknoise",
+    "django-cors-headers",
+    "django-filter",
+    "django",
+    "djangorestframework",
+    "uvicorn",
+]
+requires-python = ">=3.9"
+
+[project.gui-scripts]
+ccp4ui = "ccp4ui.__main__:main"
+
+[project.urls]
+Source = "https://github.com/paulsbond/ccp4ui"
+Issues = "https://github.com/paulsbond/ccp4ui/issues"
+
+[tool.setuptools.dynamic]
+version = { attr = "ccp4ui.__version__" }
+
+[tool.setuptools.package-data]
+ccp4ui = ["electron/**/*", "static/**/*"]

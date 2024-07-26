@@ -1,6 +1,12 @@
 {
+  "diffEditor.ignoreTrimWhitespace": false,
+  "editor.detectIndentation": true,
   "editor.formatOnSave": true,
   "editor.insertSpaces": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "files.insertFinalNewline": true
+  "files.insertFinalNewline": true,
+  "flake8.args": ["--ignore=E203,E501,W503", "--max-complexity=10"],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  }
 }
