@@ -5,7 +5,6 @@
 Clone the project from GitHub,
 install the dependencies, make an inital database migration
 and start the Django development server for the REST API.
-Note that **Python 3.9+ is required**.
 
 ```console
 user:~$ git clone https://github.com/paulsbond/ccp4ui
@@ -32,7 +31,8 @@ will both automatically restart
 when any changes are made to files.
 
 If making any changes to the database models,
-run the following commands to update the database:
+run the following commands to update the database
+then restart the server:
 
 ```console
 user:~/ccp4ui$ python3.9 manage.py makemigrations
