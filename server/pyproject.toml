@@ -18,17 +18,12 @@ classifiers = [
     "Private :: Do Not Upload",
 ]
 dependencies = [
-    "blacknoise",
     "django-cors-headers",
     "django-filter",
     "django",
     "djangorestframework",
-    "uvicorn",
 ]
 requires-python = ">=3.9"
-
-[project.gui-scripts]
-ccp4ui = "ccp4ui.__main__:main"
 
 [project.urls]
 Source = "https://github.com/paulsbond/ccp4ui"

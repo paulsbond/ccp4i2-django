@@ -6,12 +6,22 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from os import environ
-from . import BASE_DIR, STATIC_DIR, USER_DIR, get_secret_key
+from pathlib import Path
+from uuid import uuid4
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+USER_DIR = Path.home().resolve() / ".ccp4ui"
+STATIC_DIR = BASE_DIR / "static"
 
 DEBUG = environ.get("CCP4UI_DEV", "").lower() == "true"
 
-SECRET_KEY = get_secret_key()
+SECRET_KEY_PATH = USER_DIR / "secret-key.txt"
+if not SECRET_KEY_PATH.exists():
+    SECRET_KEY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(SECRET_KEY_PATH, "w", encoding="utf-8") as f:
+        f.write(f"{uuid4()}-{uuid4()}")
+with open(SECRET_KEY_PATH, encoding="utf-8") as f:
+    SECRET_KEY = f.read().strip()
 
 ALLOWED_HOSTS = ["localhost", ".localhost", "127.0.0.1", "[::1]"]
 
@@ -52,10 +62,9 @@ TEMPLATES = [
 
 STATIC_URL = "static/"
 STATIC_ROOT = STATIC_DIR
-STATICFILES_DIRS = [BASE_DIR / "client/dist"]
 
-MEDIA_URL = "files/"
-MEDIA_ROOT = USER_DIR
+MEDIA_URL = "media/"
+MEDIA_ROOT = USER_DIR / "media"
 
 DATABASES = {
     "default": {
