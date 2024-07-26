@@ -4,9 +4,6 @@ import { Add, Upload } from "@mui/icons-material";
 export default function ProjectsPage() {
   return (
     <Stack spacing={2}>
-      <Typography variant="h4" component="h1">
-        Projects
-      </Typography>
       <Stack direction="row" spacing={2}>
         <Button variant="contained" startIcon={<Add />}>
           New
