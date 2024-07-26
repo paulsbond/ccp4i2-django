@@ -50,7 +50,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = ["http://localhost:3000"] if DEBUG else []
 
-ROOT_URLCONF = "ccp4ui.config.urls"
+ROOT_URLCONF = "ccp4ui.api.urls"
 
 TEMPLATES = [
     {
