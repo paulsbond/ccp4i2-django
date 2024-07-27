@@ -1,12 +1,18 @@
-import useSWR, { SWRResponse } from "swr";
+import useSWR from "swr";
 
-const fetcher = async (...args: any[]) => {
-    const res = await fetch(args[0], args[1]);
-    return res.json();
+async function fetcher(input: string | URL | globalThis.Request, init?: RequestInit) {
+    const response = await fetch(input, init);
+    return response.json();
 };
 
-export function get<T>(endpoint: string): T | undefined {
-    const url = `http://localhost:8000/${endpoint}`;
-    const { data } = useSWR<T>(url, fetcher);
-    return data;
-}
+function fullUrl(url: string | URL): string {
+    url = new URL(url, "http://127.0.0.1:8000");
+    if (url.pathname.charAt(url.pathname.length - 1) !== '/')
+        url.pathname += '/';
+    return url.href;
+};
+
+export function get<T>(url: string): T | undefined {
+    const response = useSWR<T>(fullUrl(url), fetcher);
+    return response.data;
+};
