@@ -1,7 +1,7 @@
 "use client";
 import { Button, Stack } from "@mui/material";
 import { Add, Upload } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { get } from "./api";
 
 class Project {
   constructor(
@@ -13,15 +13,9 @@ class Project {
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const projects = get<Project[]>("projects");
 
-  useEffect(() => {
-    fetch("http://localhost:8000/projects")
-      .then((response) => response.json())
-      .then((data: Project[]) => {
-        setProjects(data);
-      });
-  }, []);
+  if (!projects) return <p>Loading...</p>;
 
   function addProject() {
     console.log("Add project");
@@ -38,7 +32,7 @@ export default function ProjectsPage() {
         </Button>
       </Stack>
       <Stack>
-        {projects.map((project) => (
+        {projects.map((project: Project) => (
           <div key={project.id}>{project.name}</div>
         ))}
       </Stack>
