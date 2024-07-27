@@ -2,6 +2,7 @@
 import { Button, Stack } from "@mui/material";
 import { Add, Upload } from "@mui/icons-material";
 import { get } from "./api";
+import { shortDate } from "./pipes";
 
 class Project {
   constructor(
@@ -33,7 +34,9 @@ export default function ProjectsPage() {
       </Stack>
       <Stack>
         {projects.map((project: Project) => (
-          <div key={project.id}>{project.name}</div>
+          <div key={project.id}>
+            {shortDate(project.created)} {project.name}
+          </div>
         ))}
       </Stack>
     </Stack>
