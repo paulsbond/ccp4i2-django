@@ -1,7 +1,7 @@
-import { Button, Container, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import { Upload } from "@mui/icons-material";
 
-export default function ProjectPage() {
+export default function ProjectPage({ params }: { params: { id: string } }) {
   return (
     <Stack spacing={2}>
       <Typography variant="h4" component="h1">
