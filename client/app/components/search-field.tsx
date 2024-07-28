@@ -3,7 +3,7 @@ import { IconButton, InputAdornment, TextField } from "@mui/material";
 import { Close, Search } from "@mui/icons-material";
 
 export default function SearchField(props: {
-  onChangeDelay: (query: string) => void;
+  onDelay: (query: string) => void;
 }) {
   const [query, setQuery] = useState("");
 
@@ -12,7 +12,7 @@ export default function SearchField(props: {
   };
 
   useEffect(() => {
-    const timeout = setTimeout(() => props.onChangeDelay(query), 500);
+    const timeout = setTimeout(() => props.onDelay(query), 500);
     return () => clearTimeout(timeout);
   }, [query]);
 

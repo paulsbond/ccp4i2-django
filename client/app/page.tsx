@@ -37,7 +37,7 @@ export default function ProjectsPage() {
           Import
         </Button>
       </Stack>
-      <SearchField onChangeDelay={console.log} />
+      <SearchField onDelay={console.log} />
       <Table size="small">
         <TableHead>
           <TableRow>
