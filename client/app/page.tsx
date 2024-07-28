@@ -1,25 +1,30 @@
 "use client";
-import { Button, Stack } from "@mui/material";
-import { Add, Upload } from "@mui/icons-material";
-import { get } from "./api";
+import {
+  Button,
+  Checkbox,
+  IconButton,
+  LinearProgress,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from "@mui/material";
+import { Add, Delete, Download, Upload } from "@mui/icons-material";
+import { get, post } from "./api";
+import { Project } from "./models";
 import { shortDate } from "./pipes";
-
-class Project {
-  constructor(
-    public id: number,
-    public uuid: string,
-    public name: string,
-    public created: Date
-  ) {}
-}
+import SearchField from "./components/search-field";
 
 export default function ProjectsPage() {
   const projects = get<Project[]>("projects");
-
-  if (!projects) return <p>Loading...</p>;
+  if (!projects) return <LinearProgress />;
 
   function addProject() {
-    console.log("Add project");
+    post<Project>("projects").then((project) => {
+      console.log(project);
+    });
   }
 
   return (
@@ -32,13 +37,40 @@ export default function ProjectsPage() {
           Import
         </Button>
       </Stack>
-      <Stack>
-        {projects.map((project: Project) => (
-          <div key={project.id}>
-            {shortDate(project.created)} {project.name}
-          </div>
-        ))}
-      </Stack>
+      <SearchField onChangeDelay={console.log} />
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>
+              <Checkbox />
+            </TableCell>
+            <TableCell>Name</TableCell>
+            <TableCell>Created</TableCell>
+            <TableCell></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {projects.map((project: Project) => (
+            <TableRow key={project.id}>
+              <TableCell>
+                <Checkbox />
+              </TableCell>
+              <TableCell>{project.name}</TableCell>
+              <TableCell>{shortDate(project.created)}</TableCell>
+              <TableCell>
+                <Stack direction="row" spacing={1}>
+                  <IconButton>
+                    <Download />
+                  </IconButton>
+                  <IconButton>
+                    <Delete />
+                  </IconButton>
+                </Stack>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </Stack>
   );
 }
