@@ -2,7 +2,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import { Container, CssBaseline } from "@mui/material";
 import { PropsWithChildren } from "react";
-import Nav from "./ui/nav";
+import Nav from "./components/nav";
 import theme from "./theme";
 
 export const metadata = {
