@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Checkbox,
@@ -18,12 +19,13 @@ import { shortDate } from "./pipes";
 import SearchField from "./components/search-field";
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const projects = get<Project[]>("projects");
   if (!projects) return <LinearProgress />;
 
   function addProject() {
     post<Project>("projects").then((project) => {
-      console.log(project);
+      router.push(`/project/${project.id}`);
     });
   }
 
@@ -51,7 +53,12 @@ export default function ProjectsPage() {
         </TableHead>
         <TableBody>
           {projects.map((project: Project) => (
-            <TableRow key={project.id}>
+            <TableRow
+              key={project.id}
+              hover
+              onClick={(event) => router.push(`/project/${project.id}`)}
+              sx={{ cursor: "pointer" }}
+            >
               <TableCell>
                 <Checkbox />
               </TableCell>
