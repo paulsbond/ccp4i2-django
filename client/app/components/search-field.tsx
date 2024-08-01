@@ -37,6 +37,7 @@ export default function SearchField(props: {
             </InputAdornment>
           ) : undefined,
       }}
+      sx={{ flex: "auto" }}
     />
   );
 }
