@@ -16,6 +16,7 @@ import {
   Toolbar,
   Tooltip,
   Typography,
+  Theme,
 } from "@mui/material";
 import { Add, Clear, Delete, Download, Upload } from "@mui/icons-material";
 import { alpha } from "@mui/material/styles";
@@ -63,6 +64,11 @@ export default function ProjectsPage() {
     }
   }
 
+  const sxSelected = {
+    bgcolor: (theme: Theme) =>
+      alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+  };
+
   if (!projects) return <LinearProgress />;
   return (
     <Stack spacing={2}>
@@ -79,44 +85,32 @@ export default function ProjectsPage() {
         </Tooltip>
       </Toolbar>
       <Box>
-        <Toolbar
-          disableGutters={selected.size === 0}
-          sx={{
-            ...(selected.size > 0 && {
-              gap: 2,
-              bgcolor: (theme) =>
-                alpha(
-                  theme.palette.primary.main,
-                  theme.palette.action.activatedOpacity
-                ),
-            }),
-          }}
-        >
-          {selected.size === 0 ? (
+        {selected.size === 0 ? (
+          <Toolbar disableGutters>
             <SearchField onDelay={setQuery} />
-          ) : (
-            <>
-              <Tooltip title="Clear selection">
-                <IconButton onClick={selected.clear}>
-                  <Clear />
-                </IconButton>
-              </Tooltip>
-              <Typography color="inherit" variant="subtitle1" component="div">
-                {selected.size} selected
-              </Typography>
-              <Tooltip title="Export selected projects">
-                <IconButton onClick={exportSelected}>
-                  <Download />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Delete selected projects">
-                <IconButton onClick={deleteSelected}>
-                  <Delete />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </Toolbar>
+          </Toolbar>
+        ) : (
+          <Toolbar sx={{ gap: 2, ...sxSelected }}>
+            <Tooltip title="Clear selection">
+              <IconButton onClick={selected.clear}>
+                <Clear />
+              </IconButton>
+            </Tooltip>
+            <Typography color="inherit" variant="subtitle1" component="div">
+              {selected.size} selected
+            </Typography>
+            <Tooltip title="Export selected projects">
+              <IconButton onClick={exportSelected}>
+                <Download />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete selected projects">
+              <IconButton onClick={deleteSelected}>
+                <Delete />
+              </IconButton>
+            </Tooltip>
+          </Toolbar>
+        )}
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -159,13 +153,7 @@ export default function ProjectsPage() {
                   onClick={(event) => router.push(`/project/${project.id}`)}
                   sx={{
                     cursor: "pointer",
-                    ...(selected.has(project.id) && {
-                      bgcolor: (theme) =>
-                        alpha(
-                          theme.palette.primary.main,
-                          theme.palette.action.activatedOpacity
-                        ),
-                    }),
+                    ...(selected.has(project.id) && sxSelected),
                   }}
                 >
                   <TableCell>
