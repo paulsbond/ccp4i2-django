@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -28,6 +29,7 @@ export default function ProjectsPage() {
   const router = useRouter();
   const projects = get<Project[]>("projects");
   const selected = useSet<number>([]);
+  const [query, setQuery] = useState("");
 
   function newProject() {
     post<Project>("projects").then((project) => {
@@ -71,7 +73,7 @@ export default function ProjectsPage() {
           </Button>
         </Tooltip>
         <Tooltip title="Import existing projects">
-          <Button variant="outlined" startIcon={<Upload />} disabled>
+          <Button variant="outlined" startIcon={<Upload />}>
             Import
           </Button>
         </Tooltip>
@@ -90,7 +92,9 @@ export default function ProjectsPage() {
             }),
           }}
         >
-          {selected.size > 0 ? (
+          {selected.size === 0 ? (
+            <SearchField onDelay={setQuery} />
+          ) : (
             <>
               <Tooltip title="Clear selection">
                 <IconButton onClick={selected.clear}>
@@ -111,8 +115,6 @@ export default function ProjectsPage() {
                 </IconButton>
               </Tooltip>
             </>
-          ) : (
-            <SearchField onDelay={console.log} />
           )}
         </Toolbar>
         <Table size="small">
@@ -141,63 +143,72 @@ export default function ProjectsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {projects.map((project: Project) => (
-              <TableRow
-                key={project.id}
-                hover
-                onClick={(event) => router.push(`/project/${project.id}`)}
-                sx={{
-                  cursor: "pointer",
-                  ...(selected.has(project.id) && {
-                    bgcolor: (theme) =>
-                      alpha(
-                        theme.palette.primary.main,
-                        theme.palette.action.activatedOpacity
-                      ),
-                  }),
-                }}
-              >
-                <TableCell>
-                  <Tooltip title="Select project">
-                    <Checkbox
-                      checked={selected.has(project.id)}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        selected.has(project.id)
-                          ? selected.delete(project.id)
-                          : selected.add(project.id);
-                      }}
-                    />
-                  </Tooltip>
-                </TableCell>
-                <TableCell>{project.name}</TableCell>
-                <TableCell>{shortDate(project.created)}</TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={1}>
-                    <Tooltip title="Export project">
-                      <IconButton
+            {projects
+              .filter((project) =>
+                project.name.toLowerCase().includes(query.toLowerCase())
+              )
+              .sort((a, b) => {
+                return (
+                  new Date(b.created).getTime() - new Date(a.created).getTime()
+                );
+              })
+              .map((project: Project) => (
+                <TableRow
+                  key={project.id}
+                  hover
+                  onClick={(event) => router.push(`/project/${project.id}`)}
+                  sx={{
+                    cursor: "pointer",
+                    ...(selected.has(project.id) && {
+                      bgcolor: (theme) =>
+                        alpha(
+                          theme.palette.primary.main,
+                          theme.palette.action.activatedOpacity
+                        ),
+                    }),
+                  }}
+                >
+                  <TableCell>
+                    <Tooltip title="Select project">
+                      <Checkbox
+                        checked={selected.has(project.id)}
                         onClick={(event) => {
                           event.stopPropagation();
-                          exportProject(project);
+                          selected.has(project.id)
+                            ? selected.delete(project.id)
+                            : selected.add(project.id);
                         }}
-                      >
-                        <Download />
-                      </IconButton>
+                      />
                     </Tooltip>
-                    <Tooltip title="Delete project">
-                      <IconButton
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          deleteProject(project);
-                        }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell>{project.name}</TableCell>
+                  <TableCell>{shortDate(project.created)}</TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="Export project">
+                        <IconButton
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            exportProject(project);
+                          }}
+                        >
+                          <Download />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete project">
+                        <IconButton
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteProject(project);
+                          }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </Box>
