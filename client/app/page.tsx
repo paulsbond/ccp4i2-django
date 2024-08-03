@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -24,13 +24,31 @@ import { get, post } from "./api";
 import { Project } from "./models";
 import { shortDate } from "./pipes";
 import { useSet } from "./hooks";
+import DeleteProjectDialog from "./components/delete-project-dialog";
 import SearchField from "./components/search-field";
+
+const sxSelected = {
+  bgcolor: (theme: Theme) =>
+    alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+};
 
 export default function ProjectsPage() {
   const router = useRouter();
   const projects = get<Project[]>("projects");
   const selected = useSet<number>([]);
   const [query, setQuery] = useState("");
+  const [deleteProjects, setDeleteProjects] = useState<Project[]>([]);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const filteredProjects = useMemo(() => {
+    return projects
+      ?.filter((project) =>
+        project.name.toLowerCase().includes(query.toLowerCase())
+      )
+      .sort(
+        (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
+      );
+  }, [projects, query]);
 
   function newProject() {
     post<Project>("projects").then((project) => {
@@ -39,7 +57,8 @@ export default function ProjectsPage() {
   }
 
   function deleteProject(project: Project) {
-    // TODO
+    setDeleteProjects([project]);
+    setDeleteOpen(true);
   }
 
   function exportProject(project: Project) {
@@ -47,7 +66,19 @@ export default function ProjectsPage() {
   }
 
   function deleteSelected() {
-    // TODO
+    const selectedProjects = projects?.filter((project) =>
+      selected.has(project.id)
+    );
+    if (!selectedProjects) return;
+    setDeleteProjects(selectedProjects);
+    setDeleteOpen(true);
+  }
+
+  function handleDelete() {
+    deleteProjects.forEach((project) => {
+      // TODO
+    });
+    setDeleteOpen(false);
   }
 
   function exportSelected() {
@@ -64,89 +95,86 @@ export default function ProjectsPage() {
     }
   }
 
-  const sxSelected = {
-    bgcolor: (theme: Theme) =>
-      alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
-  };
-
   if (!projects) return <LinearProgress />;
   return (
-    <Stack spacing={2}>
-      <Toolbar sx={{ gap: 2 }}>
-        <Tooltip title="Start a new project">
-          <Button variant="contained" startIcon={<Add />} onClick={newProject}>
-            New
-          </Button>
-        </Tooltip>
-        <Tooltip title="Import existing projects">
-          <Button variant="outlined" startIcon={<Upload />}>
-            Import
-          </Button>
-        </Tooltip>
-      </Toolbar>
-      <Box>
-        {selected.size === 0 ? (
-          <Toolbar disableGutters>
-            <SearchField onDelay={setQuery} />
-          </Toolbar>
-        ) : (
-          <Toolbar sx={{ gap: 2, ...sxSelected }}>
-            <Tooltip title="Clear selection">
-              <IconButton onClick={selected.clear}>
-                <Clear />
-              </IconButton>
-            </Tooltip>
-            <Typography color="inherit" variant="subtitle1" component="div">
-              {selected.size} selected
-            </Typography>
-            <Tooltip title="Export selected projects">
-              <IconButton onClick={exportSelected}>
-                <Download />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete selected projects">
-              <IconButton onClick={deleteSelected}>
-                <Delete />
-              </IconButton>
-            </Tooltip>
-          </Toolbar>
-        )}
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <Tooltip
-                  title={
-                    selected.size == projects.length
-                      ? "Deselect all projects"
-                      : "Select all projects"
-                  }
-                >
-                  <Checkbox
-                    checked={selected.size == projects.length}
-                    indeterminate={
-                      selected.size > 0 && selected.size < projects.length
+    <>
+      <DeleteProjectDialog
+        open={deleteOpen}
+        projects={deleteProjects}
+        onCancel={() => setDeleteOpen(false)}
+        onDelete={handleDelete}
+      />
+      <Stack spacing={2}>
+        <Toolbar sx={{ gap: 2 }}>
+          <Tooltip title="Start a new project">
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={newProject}
+            >
+              New
+            </Button>
+          </Tooltip>
+          <Tooltip title="Import existing projects">
+            <Button variant="outlined" startIcon={<Upload />}>
+              Import
+            </Button>
+          </Tooltip>
+        </Toolbar>
+        <Box>
+          {selected.size === 0 ? (
+            <Toolbar disableGutters>
+              <SearchField onDelay={setQuery} />
+            </Toolbar>
+          ) : (
+            <Toolbar sx={{ gap: 2, ...sxSelected }}>
+              <Tooltip title="Clear selection">
+                <IconButton onClick={selected.clear}>
+                  <Clear />
+                </IconButton>
+              </Tooltip>
+              <Typography color="inherit" variant="subtitle1" component="div">
+                {selected.size} selected
+              </Typography>
+              <Tooltip title="Export selected projects">
+                <IconButton onClick={exportSelected}>
+                  <Download />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete selected projects">
+                <IconButton onClick={deleteSelected}>
+                  <Delete />
+                </IconButton>
+              </Tooltip>
+            </Toolbar>
+          )}
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <Tooltip
+                    title={
+                      selected.size == projects.length
+                        ? "Deselect all projects"
+                        : "Select all projects"
                     }
-                    onClick={toggleAll}
-                  />
-                </Tooltip>
-              </TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {projects
-              .filter((project) =>
-                project.name.toLowerCase().includes(query.toLowerCase())
-              )
-              .sort((a, b) => {
-                return (
-                  new Date(b.created).getTime() - new Date(a.created).getTime()
-                );
-              })
-              .map((project: Project) => (
+                  >
+                    <Checkbox
+                      checked={selected.size == projects.length}
+                      indeterminate={
+                        selected.size > 0 && selected.size < projects.length
+                      }
+                      onClick={toggleAll}
+                    />
+                  </Tooltip>
+                </TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Created</TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredProjects?.map((project: Project) => (
                 <TableRow
                   key={project.id}
                   hover
@@ -197,9 +225,10 @@ export default function ProjectsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-          </TableBody>
-        </Table>
-      </Box>
-    </Stack>
+            </TableBody>
+          </Table>
+        </Box>
+      </Stack>
+    </>
   );
 }
