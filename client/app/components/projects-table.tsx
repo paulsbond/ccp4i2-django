@@ -100,7 +100,7 @@ export default function ProjectsTable() {
       <Box>
         {selected.size === 0 ? (
           <Toolbar disableGutters>
-            <SearchField onDelay={setQuery} />
+            <SearchField what="projects" onDelay={setQuery} />
           </Toolbar>
         ) : (
           <Toolbar sx={{ gap: 2, ...sxSelected }}>

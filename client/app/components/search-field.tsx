@@ -1,8 +1,9 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
-import { Close, Search } from "@mui/icons-material";
+import { Close } from "@mui/icons-material";
 
 export default function SearchField(props: {
+  what: string;
   onDelay: (query: string) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -19,15 +20,9 @@ export default function SearchField(props: {
   return (
     <TextField
       value={query}
-      label="Search"
-      variant="filled"
+      label={`Search ${props.what}`}
       onChange={onChange}
       InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <Search />
-          </InputAdornment>
-        ),
         endAdornment:
           query.length > 0 ? (
             <InputAdornment position="end">
