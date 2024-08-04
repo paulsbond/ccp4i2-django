@@ -2,7 +2,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Button,
   Checkbox,
   IconButton,
   LinearProgress,
@@ -18,7 +17,7 @@ import {
   Typography,
   Theme,
 } from "@mui/material";
-import { Add, Clear, Delete, Download, Upload } from "@mui/icons-material";
+import { Clear, Delete, Download } from "@mui/icons-material";
 import { alpha } from "@mui/material/styles";
 import { get, post } from "./api";
 import { Project } from "./models";
@@ -26,6 +25,7 @@ import { shortDate } from "./pipes";
 import { useSet } from "./hooks";
 import DeleteProjectDialog from "./components/delete-project-dialog";
 import SearchField from "./components/search-field";
+import ProjectsToolbar from "./components/projects-toolbar";
 
 const sxSelected = {
   bgcolor: (theme: Theme) =>
@@ -49,12 +49,6 @@ export default function ProjectsPage() {
         (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
       );
   }, [projects, query]);
-
-  function newProject() {
-    post<Project>("projects").then((project) => {
-      router.push(`/project/${project.id}`);
-    });
-  }
 
   function deleteProject(project: Project) {
     setDeleteProjects([project]);
@@ -105,22 +99,7 @@ export default function ProjectsPage() {
         onDelete={handleDelete}
       />
       <Stack spacing={2}>
-        <Toolbar sx={{ gap: 2 }}>
-          <Tooltip title="Start a new project">
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={newProject}
-            >
-              New
-            </Button>
-          </Tooltip>
-          <Tooltip title="Import existing projects">
-            <Button variant="outlined" startIcon={<Upload />}>
-              Import
-            </Button>
-          </Tooltip>
-        </Toolbar>
+        <ProjectsToolbar />
         <Box>
           {selected.size === 0 ? (
             <Toolbar disableGutters>
