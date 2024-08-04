@@ -1,3 +1,4 @@
+"use client";
 import { useRouter } from "next/navigation";
 import { Button, Toolbar, Tooltip } from "@mui/material";
 import { Add, Upload } from "@mui/icons-material";
