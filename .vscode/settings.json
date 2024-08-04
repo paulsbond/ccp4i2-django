@@ -1,9 +1,10 @@
 {
   "diffEditor.ignoreTrimWhitespace": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.detectIndentation": true,
   "editor.formatOnSave": true,
   "editor.insertSpaces": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
   "files.insertFinalNewline": true,
   "flake8.args": ["--ignore=E203,E501,W503", "--max-complexity=10"],
   "pylint.args": [
@@ -16,6 +17,7 @@
     "--disable=too-many-ancestors"
   ],
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.tabSize": 4
   }
 }
