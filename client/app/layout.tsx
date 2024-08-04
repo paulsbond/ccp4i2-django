@@ -1,8 +1,7 @@
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
-import { Container, CssBaseline } from "@mui/material";
+import { CssBaseline } from "@mui/material";
 import { PropsWithChildren } from "react";
-import Nav from "./components/nav";
 import theme from "./theme";
 
 export const metadata = {
@@ -17,8 +16,7 @@ export default function RootLayout(props: PropsWithChildren) {
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Nav />
-            <Container sx={{ my: 3 }}>{props.children}</Container>
+            {props.children}
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

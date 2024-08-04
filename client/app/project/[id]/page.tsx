@@ -1,17 +1,19 @@
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Container, Stack, Toolbar, Typography } from "@mui/material";
 import { Upload } from "@mui/icons-material";
 
-export default function ProjectPage({ params }: { params: { id: string } }) {
+export default function DashboardPage() {
   return (
     <Stack spacing={2}>
-      <Typography variant="h4" component="h1">
-        Untitled Project
-      </Typography>
-      <Stack direction="row">
-        <Button variant="contained" startIcon={<Upload />}>
-          Import Data
-        </Button>
-      </Stack>
+      <Container>
+        <Typography variant="h4" component="h1">
+          Untitled Project
+        </Typography>
+        <Toolbar disableGutters>
+          <Button variant="contained" startIcon={<Upload />}>
+            Import Data
+          </Button>
+        </Toolbar>
+      </Container>
     </Stack>
   );
 }

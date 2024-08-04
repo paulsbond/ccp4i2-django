@@ -1,14 +1,8 @@
 "use client";
-import {
-  AppBar,
-  Button,
-  Container,
-  Divider,
-  Stack,
-  Toolbar,
-} from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AppBar, Button, Container, Divider, Toolbar } from "@mui/material";
+import { Project } from "../models";
 
 function NavLink({ href, text }: { href: string; text: string }) {
   const pathname = usePathname();
@@ -20,18 +14,23 @@ function NavLink({ href, text }: { href: string; text: string }) {
   );
 }
 
-export default function Nav() {
+export default function Nav({ project }: { project?: Project }) {
   return (
     <AppBar position="static">
       <Container>
-        <Toolbar disableGutters>
-          <Stack direction="row" spacing={2}>
-            <NavLink href="/" text="Projects" />
-            <Divider orientation="vertical" variant="middle" flexItem />
-            <NavLink href="/project" text="Dashboard" />
-            <NavLink href="/project/programs" text="Programs" />
-            <NavLink href="/project/jobs" text="Jobs" />
-          </Stack>
+        <Toolbar disableGutters sx={{ gap: 2 }}>
+          <NavLink href="/" text="Projects" />
+          {project ? (
+            <>
+              <Divider orientation="vertical" variant="middle" flexItem />
+              <NavLink href={`/project/${project.id}`} text="Dashboard" />
+              <NavLink
+                href={`/project/${project.id}/programs`}
+                text="Programs"
+              />
+              <NavLink href={`/project/${project.id}/jobs`} text="Jobs" />
+            </>
+          ) : null}
         </Toolbar>
       </Container>
     </AppBar>
