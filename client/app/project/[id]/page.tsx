@@ -1,12 +1,25 @@
-import { Button, Container, Stack, Toolbar, Typography } from "@mui/material";
+"use client";
+import {
+  Button,
+  Container,
+  LinearProgress,
+  Stack,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import { Upload } from "@mui/icons-material";
+import { get } from "../../api";
+import { Project } from "../../models";
 
-export default function DashboardPage() {
+export default function DashboardPage({ params }: { params: { id: string } }) {
+  const project = get<Project>(`projects/${params.id}`);
+
+  if (!project) return <LinearProgress />;
   return (
     <Stack spacing={2}>
       <Container>
         <Typography variant="h4" component="h1">
-          Untitled Project
+          {project.name}
         </Typography>
         <Toolbar disableGutters>
           <Button variant="contained" startIcon={<Upload />}>
