@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { Clear, Delete, Download } from "@mui/icons-material";
 import { alpha } from "@mui/material/styles";
-import { get } from "../api";
+import { api } from "../api";
 import { Project } from "../models";
 import { shortDate } from "../pipes";
 import { useSet } from "../hooks";
@@ -33,7 +33,7 @@ const sxSelected = {
 
 export default function ProjectsTable() {
   const router = useRouter();
-  const projects = get<Project[]>("projects");
+  const projects = api.get<Project[]>("projects");
   const selected = useSet<number>([]);
   const [query, setQuery] = useState("");
   const [deleteProjects, setDeleteProjects] = useState<Project[]>([]);

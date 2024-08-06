@@ -3,13 +3,13 @@ import { useRouter } from "next/navigation";
 import { Button, Toolbar, Tooltip } from "@mui/material";
 import { Add, Upload } from "@mui/icons-material";
 import { Project } from "../models";
-import { post } from "../api";
+import { api } from "../api";
 
 export default function ProjectsToolbar() {
   const router = useRouter();
 
   function newProject() {
-    post<Project>("projects").then((project) => {
+    api.post<Project>("projects").then((project) => {
       router.push(`/project/${project.id}`);
     });
   }
