@@ -1,19 +1,28 @@
 "use client";
 import {
-  Button,
   Container,
   LinearProgress,
   Stack,
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Upload } from "@mui/icons-material";
 import { useApi } from "../../api";
 import { Project } from "../../models";
+import FileUpload from "../../components/file-upload";
+import { ChangeEvent } from "react";
 
 export default function DashboardPage({ params }: { params: { id: string } }) {
   const api = useApi();
   const project = api.get<Project>(`projects/${params.id}`);
+
+  function importFiles(event: ChangeEvent<HTMLInputElement>) {
+    const fileList = event.target.files;
+    if (fileList) {
+      for (let i = 0; i < fileList.length; i++) {
+        // TODO
+      }
+    }
+  }
 
   if (!project) return <LinearProgress />;
   return (
@@ -23,9 +32,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
           {project.name}
         </Typography>
         <Toolbar disableGutters>
-          <Button variant="contained" startIcon={<Upload />}>
-            Import Data
-          </Button>
+          <FileUpload text="Import Files" onChange={importFiles} />
         </Toolbar>
       </Container>
     </Stack>
