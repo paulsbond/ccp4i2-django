@@ -8,10 +8,11 @@ import {
   Typography,
 } from "@mui/material";
 import { Upload } from "@mui/icons-material";
-import { api } from "../../api";
+import { useApi } from "../../api";
 import { Project } from "../../models";
 
 export default function DashboardPage({ params }: { params: { id: string } }) {
+  const api = useApi();
   const project = api.get<Project>(`projects/${params.id}`);
 
   if (!project) return <LinearProgress />;

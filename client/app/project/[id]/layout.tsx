@@ -1,7 +1,7 @@
 "use client";
 import { ReactNode } from "react";
 import { Box } from "@mui/material";
-import { api } from "../../api";
+import { useApi } from "../../api";
 import { Project } from "../../models";
 import Nav from "../../components/nav";
 
@@ -12,6 +12,7 @@ export default function ProjectLayout({
   children?: ReactNode;
   params: { id: string };
 }) {
+  const api = useApi();
   const project = api.get<Project>(`projects/${params.id}`);
 
   return (

@@ -3,9 +3,10 @@ import { useRouter } from "next/navigation";
 import { Button, Toolbar, Tooltip } from "@mui/material";
 import { Add, Upload } from "@mui/icons-material";
 import { Project } from "../models";
-import { api } from "../api";
+import { useApi } from "../api";
 
 export default function ProjectsToolbar() {
+  const api = useApi();
   const router = useRouter();
 
   function newProject() {
