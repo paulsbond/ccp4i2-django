@@ -90,7 +90,8 @@ export default function ProjectsTable() {
     }
   }
 
-  if (!projects) return <LinearProgress />;
+  if (projects === undefined) return <LinearProgress />;
+  if (projects.length === 0) return <></>;
   return (
     <>
       <DeleteProjectDialog
