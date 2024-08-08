@@ -12,17 +12,17 @@ from django.utils import timezone
 
 
 class Project(Model):
-    uuid = UUIDField(default=uuid4)
+    uuid = UUIDField(default=uuid4, unique=True)
     name = TextField(default="Untitled Project")
-    created = DateTimeField(default=timezone.now, editable=False)
+    created = DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return self.name
+        return f"{self.id} {self.name}"
 
 
-class ImportedFile(Model):
-    project = ForeignKey(Project, on_delete=CASCADE, related_name="imported_files")
+class File(Model):
+    project = ForeignKey(Project, on_delete=CASCADE, related_name="files")
     file = FileField()
 
     def __str__(self):
-        return self.file.name
+        return f"{self.id} {self.file.name}"

@@ -9,7 +9,7 @@ class ProjectViewSet(ModelViewSet):
     serializer_class = serializers.ProjectSerializer
 
 
-class ImportedFileViewSet(ModelViewSet):
-    queryset = models.ImportedFile.objects.all()
-    serializer_class = serializers.ImportedFileSerializer
+class FileViewSet(ModelViewSet):
+    queryset = models.File.objects.all()
+    serializer_class = serializers.FileSerializer
     parser_classes = [FormParser, MultiPartParser]

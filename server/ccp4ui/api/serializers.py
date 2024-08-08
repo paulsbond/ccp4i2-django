@@ -3,14 +3,14 @@ from ..db import models
 
 
 class ProjectSerializer(ModelSerializer):
-    imported_files = PrimaryKeyRelatedField(many=True, read_only=True)
+    files = PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = models.Project
         fields = "__all__"
 
 
-class ImportedFileSerializer(ModelSerializer):
+class FileSerializer(ModelSerializer):
     class Meta:
-        model = models.ImportedFile
+        model = models.File
         fields = "__all__"
