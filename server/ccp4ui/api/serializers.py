@@ -1,10 +1,8 @@
-from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
+from rest_framework.serializers import ModelSerializer
 from ..db import models
 
 
 class ProjectSerializer(ModelSerializer):
-    files = PrimaryKeyRelatedField(many=True, read_only=True)
-
     class Meta:
         model = models.Project
         fields = "__all__"
