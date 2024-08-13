@@ -1,6 +1,7 @@
 from uuid import uuid4
 from django.db.models import (
     CASCADE,
+    BigIntegerField,
     DateTimeField,
     FileField,
     ForeignKey,
@@ -22,7 +23,9 @@ class Project(Model):
 
 class File(Model):
     project = ForeignKey(Project, on_delete=CASCADE, related_name="files")
-    file = FileField()
+    file = FileField(upload_to="imports")
+    name = TextField()
+    size = BigIntegerField()
 
     def __str__(self):
         return f"{self.id} {self.file.name}"

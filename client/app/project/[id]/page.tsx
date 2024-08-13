@@ -23,6 +23,8 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         const formData = new FormData();
         formData.append("project", project.id.toString());
         formData.append("file", fileList[i]);
+        formData.append("name", fileList[i].name);
+        formData.append("size", fileList[i].size.toString());
         api.post(`files`, formData);
       }
     }

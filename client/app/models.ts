@@ -8,5 +8,11 @@ export class Project {
 }
 
 export class File {
-  constructor(public id: number, public file: string, public project: number) {}
+  constructor(
+    public id: number,
+    public file: string,
+    public name: string,
+    public size: number,
+    public project: number
+  ) {}
 }
