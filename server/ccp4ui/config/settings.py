@@ -48,11 +48,11 @@ TEMPLATES = [
 ]
 
 STATIC_URL = "static/"
-MEDIA_URL = "media/"
+MEDIA_URL = "files/"
 
 USER_DIR = Path.home().resolve() / ".ccp4ui"
 USER_DIR.mkdir(exist_ok=True)
-MEDIA_ROOT = USER_DIR / "media"
+MEDIA_ROOT = USER_DIR / "files"
 
 DATABASES = {
     "default": {
