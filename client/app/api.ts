@@ -27,19 +27,15 @@ export function useApi() {
     },
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {
-      let content_type = "multipart/form-data";
+      const headers: HeadersInit = { Accept: "application/json" };
       if (!(body instanceof FormData)) {
-        console.log("not form data");
-        content_type = "application/json";
+        headers["Content-Type"] = "application/json";
         body = JSON.stringify(body);
       }
       const url = fullUrl(endpoint);
       const response = await fetch(url.href, {
         method: "POST",
-        headers: {
-          "Content-Type": content_type,
-          Accept: "application/json",
-        },
+        headers: headers,
         body: body,
       });
       handleMutate(url);
