@@ -1,15 +1,18 @@
 "use client";
 import {
+  IconButton,
   LinearProgress,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from "@mui/material";
 import { useApi } from "../api";
 import { File, Project } from "../models";
 import { fileSize } from "../pipes";
+import { Delete, Download } from "@mui/icons-material";
 
 export default function FilesTable({ project }: { project: Project }) {
   const api = useApi();
@@ -35,7 +38,18 @@ export default function FilesTable({ project }: { project: Project }) {
             <TableCell>
               <a href={file.file}>{file.file}</a>
             </TableCell>
-            <TableCell></TableCell>
+            <TableCell>
+              <Tooltip title="Export file">
+                <IconButton href={file.file} download>
+                  <Download />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete file">
+                <IconButton>
+                  <Delete />
+                </IconButton>
+              </Tooltip>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
