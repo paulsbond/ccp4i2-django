@@ -1,14 +1,9 @@
 "use client";
 import { ChangeEvent } from "react";
-import {
-  Container,
-  LinearProgress,
-  Stack,
-  Toolbar,
-  Typography,
-} from "@mui/material";
+import { Container, LinearProgress, Stack, Toolbar } from "@mui/material";
 import { useApi } from "../../api";
 import { Project } from "../../models";
+import EditableTypography from "../../components/editable-typography";
 import FileTable from "../../components/files-table";
 import FileUpload from "../../components/file-upload";
 
@@ -34,9 +29,11 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
   return (
     <Stack spacing={2}>
       <Container>
-        <Typography variant="h4" component="h1">
-          {project.name}
-        </Typography>
+        <EditableTypography
+          variant="h4"
+          text={project.name}
+          onDelay={console.log}
+        />
         <Toolbar disableGutters>
           <FileUpload text="Import Files" onChange={importFiles} />
         </Toolbar>
