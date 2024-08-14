@@ -26,7 +26,6 @@ export default function FilesTable({ project }: { project: Project }) {
         <TableRow>
           <TableCell>Name</TableCell>
           <TableCell>Size</TableCell>
-          <TableCell>URL</TableCell>
           <TableCell></TableCell>
         </TableRow>
       </TableHead>
@@ -35,9 +34,6 @@ export default function FilesTable({ project }: { project: Project }) {
           <TableRow key={file.id}>
             <TableCell>{file.name}</TableCell>
             <TableCell>{fileSize(file.size)}</TableCell>
-            <TableCell>
-              <a href={file.file}>{file.file}</a>
-            </TableCell>
             <TableCell>
               <Tooltip title="Export file">
                 <IconButton href={file.file} download>
