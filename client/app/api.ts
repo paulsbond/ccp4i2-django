@@ -42,10 +42,24 @@ export function useApi() {
       return response.json() as T;
     },
 
-    delete: async function delete_(endpoint: string): Promise<void> {
+    delete: async function (endpoint: string): Promise<void> {
       const url = fullUrl(endpoint);
       await fetch(url.href, { method: "DELETE" });
       handleMutate(url);
+    },
+
+    patch: async function <T>(endpoint: string, body: any = {}): Promise<T> {
+      const url = fullUrl(endpoint);
+      const response = await fetch(url.href, {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      handleMutate(url);
+      return response.json as T;
     },
   };
 }

@@ -32,7 +32,9 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         <EditableTypography
           variant="h4"
           text={project.name}
-          onDelay={console.log}
+          onDelay={(name) =>
+            api.patch(`projects/${project.id}`, { name: name })
+          }
         />
         <Toolbar disableGutters>
           <FileUpload text="Import Files" onChange={importFiles} />
