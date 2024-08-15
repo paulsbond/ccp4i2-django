@@ -2,14 +2,17 @@
 import { ChangeEvent } from "react";
 import { Container, LinearProgress, Stack, Toolbar } from "@mui/material";
 import { useApi } from "../../api";
-import { Project } from "../../models";
+import { File, Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
 import FileTable from "../../components/files-table";
 import FileUpload from "../../components/file-upload";
 
 export default function DashboardPage({ params }: { params: { id: string } }) {
   const api = useApi();
-  const project = api.get<Project>(`projects/${params.id}`);
+  const { data: project } = api.get<Project>(`projects/${params.id}`);
+  const { data: files, mutate: mutateFiles } = api.get<File[]>(
+    `files?project=${params.id}`
+  );
 
   function importFiles(event: ChangeEvent<HTMLInputElement>) {
     const fileList = event.target.files;
@@ -20,7 +23,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         formData.append("file", fileList[i]);
         formData.append("name", fileList[i].name);
         formData.append("size", fileList[i].size.toString());
-        api.post(`files`, formData);
+        api.post("files", formData).then(() => mutateFiles());
       }
     }
   }
@@ -39,7 +42,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         <Toolbar disableGutters>
           <FileUpload text="Import Files" onChange={importFiles} />
         </Toolbar>
-        <FileTable project={project} />
+        <FileTable files={files} />
       </Container>
     </Stack>
   );

@@ -34,7 +34,7 @@ const sxSelected = {
 export default function ProjectsTable() {
   const api = useApi();
   const router = useRouter();
-  const projects = api.get<Project[]>("projects");
+  const { data: projects, mutate } = api.get<Project[]>("projects");
   const selected = useSet<number>([]);
   const [query, setQuery] = useState("");
   const [deleteProjects, setDeleteProjects] = useState<Project[]>([]);
@@ -72,6 +72,7 @@ export default function ProjectsTable() {
     deleteProjects.forEach((project) => {
       api.delete(`projects/${project.id}`);
       selected.delete(project.id);
+      mutate();
     });
     setDeleteOpen(false);
   }

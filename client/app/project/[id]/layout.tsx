@@ -13,7 +13,7 @@ export default function ProjectLayout({
   params: { id: string };
 }) {
   const api = useApi();
-  const project = api.get<Project>(`projects/${params.id}`);
+  const { data: project } = api.get<Project>(`projects/${params.id}`);
 
   return (
     <>

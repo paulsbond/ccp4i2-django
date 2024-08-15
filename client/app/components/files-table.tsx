@@ -1,4 +1,3 @@
-"use client";
 import {
   IconButton,
   LinearProgress,
@@ -9,15 +8,11 @@ import {
   TableRow,
   Tooltip,
 } from "@mui/material";
-import { useApi } from "../api";
-import { File, Project } from "../models";
+import { File } from "../models";
 import { fileSize } from "../pipes";
 import { Delete, Download } from "@mui/icons-material";
 
-export default function FilesTable({ project }: { project: Project }) {
-  const api = useApi();
-  const files = api.get<File[]>(`files?project=${project.id}`);
-
+export default function FilesTable({ files }: { files: File[] | undefined }) {
   if (files === undefined) return <LinearProgress />;
   if (files.length === 0) return <></>;
   return (
@@ -30,7 +25,7 @@ export default function FilesTable({ project }: { project: Project }) {
         </TableRow>
       </TableHead>
       <TableBody>
-        {files?.map((file: File) => (
+        {files.map((file: File) => (
           <TableRow key={file.id}>
             <TableCell>{file.name}</TableCell>
             <TableCell>{fileSize(file.size)}</TableCell>
