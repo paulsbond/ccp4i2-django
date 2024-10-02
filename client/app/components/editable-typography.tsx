@@ -1,25 +1,26 @@
 import { Typography } from "@mui/material";
 import { Variant } from "@mui/material/styles/createTypography";
-import { useEffect, useState } from "react";
+import { KeyboardEvent, useRef } from "react";
 
 export default function EditableTypography(props: {
   variant: Variant;
   text: string;
   onDelay: (text: string) => void;
 }) {
-  const [text, setText] = useState(props.text);
+  const timeout = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => props.onDelay(text), 1000);
-    return () => clearTimeout(timeout);
-  }, [text]);
+  function handleKeyUp(e: KeyboardEvent<HTMLSpanElement>) {
+    const text = e.currentTarget.innerText.trim();
+    clearTimeout(timeout.current);
+    timeout.current = setTimeout(() => props.onDelay(text), 1000);
+  }
 
   return (
     <Typography
       variant={props.variant}
       contentEditable
       suppressContentEditableWarning
-      onKeyUp={(e) => setText(e.currentTarget.innerText.trim())}
+      onKeyUp={handleKeyUp}
     >
       {props.text}
     </Typography>
