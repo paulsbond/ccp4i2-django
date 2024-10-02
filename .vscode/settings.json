@@ -5,8 +5,18 @@
   "editor.formatOnSave": true,
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.git": true,
+    "**/.pytest_cache": true,
+    "**/*.egg-info": true
+  },
   "files.insertFinalNewline": true,
-  "flake8.args": ["--ignore=E203,E501,W503", "--max-complexity=10"],
+  "flake8.args": [
+    "--ignore=E203,E501,W503",
+    "--max-complexity=10",
+    "--max-line-length=88"
+  ],
   "pylint.args": [
     "--disable=invalid-str-returned",
     "--disable=missing-class-docstring",
