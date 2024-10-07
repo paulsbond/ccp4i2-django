@@ -2,6 +2,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import { CssBaseline } from "@mui/material";
 import { PropsWithChildren } from "react";
+import { DeleteDialogProvider } from "./components/delete-dialog";
 import theme from "./theme";
 
 export const metadata = {
@@ -15,8 +16,10 @@ export default function RootLayout(props: PropsWithChildren) {
       <body>
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
-            <CssBaseline />
-            {props.children}
+            <DeleteDialogProvider>
+              <CssBaseline />
+              {props.children}
+            </DeleteDialogProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>

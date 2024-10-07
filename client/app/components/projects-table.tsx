@@ -2,28 +2,28 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Box,
   Checkbox,
   IconButton,
   LinearProgress,
-  Box,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Theme,
   Toolbar,
   Tooltip,
   Typography,
-  Theme,
 } from "@mui/material";
 import { Clear, Delete, Download } from "@mui/icons-material";
 import { alpha } from "@mui/material/styles";
 import { useApi } from "../api";
 import { Project } from "../models";
 import { shortDate } from "../pipes";
+import { useDeleteDialog } from "./delete-dialog";
 import { useSet } from "../hooks";
-import DeleteProjectDialog from "../components/delete-project-dialog";
 import SearchField from "../components/search-field";
 
 const sxSelected = {
@@ -35,10 +35,9 @@ export default function ProjectsTable() {
   const api = useApi();
   const router = useRouter();
   const { data: projects, mutate } = api.get<Project[]>("projects");
-  const selected = useSet<number>([]);
+  const selectedIds = useSet<number>([]);
   const [query, setQuery] = useState("");
-  const [deleteProjects, setDeleteProjects] = useState<Project[]>([]);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteDialog = useDeleteDialog();
 
   const filteredProjects = useMemo(() => {
     return projects
@@ -50,31 +49,33 @@ export default function ProjectsTable() {
       );
   }, [projects, query]);
 
-  function deleteProject(project: Project) {
-    setDeleteProjects([project]);
-    setDeleteOpen(true);
+  function deleteSelected() {
+    const selectedProjects = projects?.filter((project) =>
+      selectedIds.has(project.id)
+    );
+    if (selectedProjects) deleteProjects(selectedProjects);
+  }
+
+  function deleteProjects(projects: Project[]) {
+    if (deleteDialog)
+      deleteDialog({
+        type: "show",
+        what:
+          projects.length === 1
+            ? projects[0].name
+            : `${projects.length} projects`,
+        onDelete: () => {
+          projects.forEach((project) => {
+            api.delete(`projects/${project.id}`);
+            selectedIds.delete(project.id);
+          });
+          mutate();
+        },
+      });
   }
 
   function exportProject(project: Project) {
     // TODO
-  }
-
-  function deleteSelected() {
-    const selectedProjects = projects?.filter((project) =>
-      selected.has(project.id)
-    );
-    if (!selectedProjects) return;
-    setDeleteProjects(selectedProjects);
-    setDeleteOpen(true);
-  }
-
-  function handleDelete() {
-    deleteProjects.forEach((project) => {
-      api.delete(`projects/${project.id}`);
-      selected.delete(project.id);
-      mutate();
-    });
-    setDeleteOpen(false);
   }
 
   function exportSelected() {
@@ -83,10 +84,10 @@ export default function ProjectsTable() {
 
   function toggleAll() {
     if (projects) {
-      if (selected.size === projects.length) {
-        selected.clear();
+      if (selectedIds.size === projects.length) {
+        selectedIds.clear();
       } else {
-        projects.forEach((project) => selected.add(project.id));
+        projects.forEach((project) => selectedIds.add(project.id));
       }
     }
   }
@@ -94,120 +95,112 @@ export default function ProjectsTable() {
   if (projects === undefined) return <LinearProgress />;
   if (projects.length === 0) return <></>;
   return (
-    <>
-      <DeleteProjectDialog
-        open={deleteOpen}
-        projects={deleteProjects}
-        onCancel={() => setDeleteOpen(false)}
-        onDelete={handleDelete}
-      />
-      <Box>
-        {selected.size === 0 ? (
-          <Toolbar disableGutters>
-            <SearchField what="projects" onDelay={setQuery} />
-          </Toolbar>
-        ) : (
-          <Toolbar sx={{ gap: 2, ...sxSelected }}>
-            <Tooltip title="Clear selection">
-              <IconButton onClick={selected.clear}>
-                <Clear />
-              </IconButton>
-            </Tooltip>
-            <Typography color="inherit" variant="subtitle1" component="div">
-              {selected.size} selected
-            </Typography>
-            <Tooltip title="Export selected projects">
-              <IconButton onClick={exportSelected}>
-                <Download />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete selected projects">
-              <IconButton onClick={deleteSelected}>
-                <Delete />
-              </IconButton>
-            </Tooltip>
-          </Toolbar>
-        )}
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <Tooltip
-                  title={
-                    selected.size == projects.length
-                      ? "Deselect all projects"
-                      : "Select all projects"
+    <Box>
+      {selectedIds.size === 0 ? (
+        <Toolbar disableGutters>
+          <SearchField what="projects" onDelay={setQuery} />
+        </Toolbar>
+      ) : (
+        <Toolbar sx={{ gap: 2, ...sxSelected }}>
+          <Tooltip title="Clear selection">
+            <IconButton onClick={selectedIds.clear}>
+              <Clear />
+            </IconButton>
+          </Tooltip>
+          <Typography color="inherit" variant="subtitle1" component="div">
+            {selectedIds.size} selected
+          </Typography>
+          <Tooltip title="Export selected projects">
+            <IconButton onClick={exportSelected}>
+              <Download />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete selected projects">
+            <IconButton onClick={deleteSelected}>
+              <Delete />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      )}
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>
+              <Tooltip
+                title={
+                  selectedIds.size == projects.length
+                    ? "Deselect all projects"
+                    : "Select all projects"
+                }
+              >
+                <Checkbox
+                  checked={selectedIds.size == projects.length}
+                  indeterminate={
+                    selectedIds.size > 0 && selectedIds.size < projects.length
                   }
-                >
+                  onClick={toggleAll}
+                />
+              </Tooltip>
+            </TableCell>
+            <TableCell>Name</TableCell>
+            <TableCell>Created</TableCell>
+            <TableCell></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredProjects?.map((project: Project) => (
+            <TableRow
+              key={project.id}
+              hover
+              onClick={(event) => router.push(`/project/${project.id}`)}
+              sx={{
+                cursor: "pointer",
+                ...(selectedIds.has(project.id) && sxSelected),
+              }}
+            >
+              <TableCell>
+                <Tooltip title="Select project">
                   <Checkbox
-                    checked={selected.size == projects.length}
-                    indeterminate={
-                      selected.size > 0 && selected.size < projects.length
-                    }
-                    onClick={toggleAll}
+                    checked={selectedIds.has(project.id)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      selectedIds.has(project.id)
+                        ? selectedIds.delete(project.id)
+                        : selectedIds.add(project.id);
+                    }}
                   />
                 </Tooltip>
               </TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredProjects?.map((project: Project) => (
-              <TableRow
-                key={project.id}
-                hover
-                onClick={(event) => router.push(`/project/${project.id}`)}
-                sx={{
-                  cursor: "pointer",
-                  ...(selected.has(project.id) && sxSelected),
-                }}
-              >
-                <TableCell>
-                  <Tooltip title="Select project">
-                    <Checkbox
-                      checked={selected.has(project.id)}
+              <TableCell>{project.name}</TableCell>
+              <TableCell>{shortDate(project.created)}</TableCell>
+              <TableCell>
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="Export project">
+                    <IconButton
                       onClick={(event) => {
                         event.stopPropagation();
-                        selected.has(project.id)
-                          ? selected.delete(project.id)
-                          : selected.add(project.id);
+                        exportProject(project);
                       }}
-                    />
+                    >
+                      <Download />
+                    </IconButton>
                   </Tooltip>
-                </TableCell>
-                <TableCell>{project.name}</TableCell>
-                <TableCell>{shortDate(project.created)}</TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={1}>
-                    <Tooltip title="Export project">
-                      <IconButton
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          exportProject(project);
-                        }}
-                      >
-                        <Download />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete project">
-                      <IconButton
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          deleteProject(project);
-                        }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
-    </>
+                  <Tooltip title="Delete project">
+                    <IconButton
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        deleteProjects([project]);
+                      }}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Box>
   );
 }
