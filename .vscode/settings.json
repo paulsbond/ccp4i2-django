@@ -8,8 +8,11 @@
   "files.exclude": {
     "**/__pycache__": true,
     "**/.git": true,
+    "**/.next": true,
     "**/.pytest_cache": true,
-    "**/*.egg-info": true
+    "**/*.egg-info": true,
+    "**/next-env.d.ts": true,
+    "**/node_modules": true
   },
   "files.insertFinalNewline": true,
   "flake8.args": [
