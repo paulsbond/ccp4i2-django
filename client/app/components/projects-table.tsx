@@ -65,11 +65,11 @@ export default function ProjectsTable() {
             ? projects[0].name
             : `${projects.length} projects`,
         onDelete: () => {
-          projects.forEach((project) => {
-            api.delete(`projects/${project.id}`);
+          const promises = projects.map((project) => {
             selectedIds.delete(project.id);
+            return api.delete(`projects/${project.id}`);
           });
-          mutate();
+          Promise.all(promises).then(() => mutate());
         },
       });
   }
