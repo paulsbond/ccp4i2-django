@@ -8,13 +8,37 @@ import {
   TableRow,
   Tooltip,
 } from "@mui/material";
+import { Delete, Download } from "@mui/icons-material";
 import { File } from "../models";
 import { fileSize } from "../pipes";
-import { Delete, Download } from "@mui/icons-material";
+import { useApi } from "../api";
+import { useDeleteDialog } from "./delete-dialog";
+import { KeyedMutator } from "swr";
 
-export default function FilesTable({ files }: { files: File[] | undefined }) {
+export default function FilesTable({
+  files,
+  mutate,
+}: {
+  files: File[] | undefined;
+  mutate: KeyedMutator<File[]>;
+}) {
+  const deleteDialog = useDeleteDialog();
+  const api = useApi();
+
   if (files === undefined) return <LinearProgress />;
   if (files.length === 0) return <></>;
+
+  function handleDelete(file: File) {
+    if (deleteDialog)
+      deleteDialog({
+        type: "show",
+        what: file.name,
+        onDelete: () => {
+          api.delete(`files/${file.id}`).then(() => mutate());
+        },
+      });
+  }
+
   return (
     <Table size="small">
       <TableHead>
@@ -36,7 +60,7 @@ export default function FilesTable({ files }: { files: File[] | undefined }) {
                 </IconButton>
               </Tooltip>
               <Tooltip title="Delete file">
-                <IconButton>
+                <IconButton onClick={() => handleDelete(file)}>
                   <Delete />
                 </IconButton>
               </Tooltip>

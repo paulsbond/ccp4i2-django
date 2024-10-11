@@ -4,7 +4,7 @@ import { Container, LinearProgress, Stack, Toolbar } from "@mui/material";
 import { useApi } from "../../api";
 import { File, Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
-import FileTable from "../../components/files-table";
+import FilesTable from "../../components/files-table";
 import FileUpload from "../../components/file-upload";
 
 export default function DashboardPage({ params }: { params: { id: string } }) {
@@ -42,7 +42,7 @@ export default function DashboardPage({ params }: { params: { id: string } }) {
         <Toolbar disableGutters>
           <FileUpload text="Import Files" onChange={importFiles} />
         </Toolbar>
-        <FileTable files={files} />
+        <FilesTable files={files} mutate={mutateFiles} />
       </Container>
     </Stack>
   );
