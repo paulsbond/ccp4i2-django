@@ -1,14 +1,16 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import HyperlinkedModelSerializer
 from ..db import models
 
 
-class ProjectSerializer(ModelSerializer):
+class ProjectSerializer(HyperlinkedModelSerializer):
     class Meta:
         model = models.Project
         fields = "__all__"
+        read_only_fields = ["created", "uuid"]
 
 
-class FileSerializer(ModelSerializer):
+class FileSerializer(HyperlinkedModelSerializer):
     class Meta:
         model = models.File
         fields = "__all__"
+        read_only_fields = ["name", "size", "uuid"]

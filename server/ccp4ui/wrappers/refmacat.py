@@ -3,7 +3,7 @@ from shutil import rmtree, which
 from subprocess import Popen, PIPE
 from textwrap import dedent
 from xml.etree import ElementTree as ET
-from ..utils import puid
+from ..lib.utils import puid
 
 
 class RefmacatResult:

@@ -1,8 +1,8 @@
 from uuid import uuid4
 from django.conf import settings
 from django.db.models import (
-    CASCADE,
     BigIntegerField,
+    CASCADE,
     DateTimeField,
     FileField,
     ForeignKey,
@@ -11,7 +11,7 @@ from django.db.models import (
     UUIDField,
 )
 from django.utils import timezone
-from ..utils import puid
+from ..lib.utils import puid
 
 
 class Project(Model):
@@ -32,9 +32,15 @@ def import_path(instance, filename):
 
 class File(Model):
     project = ForeignKey(Project, on_delete=CASCADE, related_name="files")
+    uuid = UUIDField(default=uuid4, unique=True)
     file = FileField(upload_to=import_path)
     name = TextField()
     size = BigIntegerField()
+
+    def save(self, *args, **kwargs):
+        self.name = self.file.name
+        self.size = self.file.size
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.id} {self.file.name}"
