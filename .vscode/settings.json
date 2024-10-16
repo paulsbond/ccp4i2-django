@@ -12,6 +12,7 @@
     "**/.next": true,
     "**/.pytest_cache": true,
     "**/*.egg-info": true,
+    "**/build": true,
     "**/next-env.d.ts": true,
     "**/node_modules": true
   },
