@@ -4,6 +4,7 @@
   "editor.detectIndentation": true,
   "editor.formatOnSave": true,
   "editor.insertSpaces": true,
+  "editor.renderWhitespace": "boundary",
   "editor.tabSize": 2,
   "files.exclude": {
     "**/__pycache__": true,
