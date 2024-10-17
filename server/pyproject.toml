@@ -27,7 +27,7 @@ dependencies = [
     "requests-cache",
     "requests",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [project.urls]
 Source = "https://github.com/paulsbond/ccp4ui"
@@ -35,6 +35,3 @@ Issues = "https://github.com/paulsbond/ccp4ui/issues"
 
 [tool.setuptools.dynamic]
 version = { attr = "ccp4ui.__version__" }
-
-[tool.setuptools.package-data]
-ccp4ui = ["electron/**/*", "static/**/*"]
