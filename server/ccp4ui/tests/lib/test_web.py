@@ -12,7 +12,7 @@ from ...lib.web import (
 
 
 @mark.parametrize(
-    "function",
+    "url",
     [
         pdbe_fasta,
         pdbe_mmcif,
@@ -23,8 +23,8 @@ from ...lib.web import (
         redo_pdb,
     ],
 )
-def test_download(function):
-    with download(function("1o6a")) as path:
+def test_download(url):
+    with download(url("1o6a")) as path:
         assert path.exists()
         assert path.stat().st_size > 0
     assert not path.exists()
