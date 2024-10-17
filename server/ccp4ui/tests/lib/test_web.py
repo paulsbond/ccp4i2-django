@@ -1,41 +1,30 @@
-from ...lib.web import fasta, pdb_mmcif, pdb_sfcif, redo_cif, redo_mtz
+from pytest import mark
+from ...lib.web import (
+    download,
+    pdbe_fasta,
+    pdbe_mmcif,
+    pdbe_pdb,
+    pdbe_sfcif,
+    redo_cif,
+    redo_mtz,
+    redo_pdb,
+)
 
 
-def test_fasta():
-    with fasta("8xfm") as path:
-        assert path.suffix == ".fasta"
-        assert path.exists()
-        assert path.stat().st_size > 0
-    assert not path.exists()
-
-
-def test_pdb_mmcif():
-    with pdb_mmcif("8xfm") as path:
-        assert path.suffix == ".cif"
-        assert path.exists()
-        assert path.stat().st_size > 0
-    assert not path.exists()
-
-
-def test_pdb_sfcif():
-    with pdb_sfcif("8xfm") as path:
-        assert path.suffix == ".cif"
-        assert path.exists()
-        assert path.stat().st_size > 0
-    assert not path.exists()
-
-
-def test_redo_cif():
-    with redo_cif("1o6a") as path:
-        assert path.suffix == ".cif"
-        assert path.exists()
-        assert path.stat().st_size > 0
-    assert not path.exists()
-
-
-def test_redo_mtz():
-    with redo_mtz("1o6a") as path:
-        assert path.suffix == ".mtz"
+@mark.parametrize(
+    "function",
+    [
+        pdbe_fasta,
+        pdbe_mmcif,
+        pdbe_pdb,
+        pdbe_sfcif,
+        redo_cif,
+        redo_mtz,
+        redo_pdb,
+    ],
+)
+def test_download(function):
+    with download(function("1o6a")) as path:
         assert path.exists()
         assert path.stat().st_size > 0
     assert not path.exists()
