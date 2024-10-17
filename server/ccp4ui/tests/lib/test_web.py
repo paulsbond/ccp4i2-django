@@ -6,6 +6,7 @@ def test_fasta():
         assert path.suffix == ".fasta"
         assert path.exists()
         assert path.stat().st_size > 0
+    assert not path.exists()
 
 
 def test_pdb_mmcif():
@@ -13,6 +14,7 @@ def test_pdb_mmcif():
         assert path.suffix == ".cif"
         assert path.exists()
         assert path.stat().st_size > 0
+    assert not path.exists()
 
 
 def test_pdb_sfcif():
@@ -20,6 +22,7 @@ def test_pdb_sfcif():
         assert path.suffix == ".cif"
         assert path.exists()
         assert path.stat().st_size > 0
+    assert not path.exists()
 
 
 def test_redo_cif():
@@ -27,6 +30,7 @@ def test_redo_cif():
         assert path.suffix == ".cif"
         assert path.exists()
         assert path.stat().st_size > 0
+    assert not path.exists()
 
 
 def test_redo_mtz():
@@ -34,3 +38,4 @@ def test_redo_mtz():
         assert path.suffix == ".mtz"
         assert path.exists()
         assert path.stat().st_size > 0
+    assert not path.exists()
