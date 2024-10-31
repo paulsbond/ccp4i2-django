@@ -1,4 +1,5 @@
 from functools import cache
+import re
 
 
 class SequenceType:
@@ -7,14 +8,27 @@ class SequenceType:
         self.codes = codes
 
     def parse(self, sequence: str) -> list[str]:
-        "Parse a string of one-letter codes to a list of residue names"
+        """
+        Parse a sequence string to a list of residue names.
+        Leading and trailing whitespace, asterisks and hyphens are ignored,
+        as are spaces and hyphens between residues.
+        Residues may either be specified as single-letter codes
+        to be expanded to the full residue name,
+        or as full residue names in parentheses.
+        """
         names = []
-        for code in sequence.strip().strip("-*"):
-            if code in {" ", "-"}:
-                continue
-            if code not in self.codes:
-                raise ValueError(f"'{code}' is not a valid {self.name} code")
-            names.append(self.codes[code])
+        pattern = re.compile(r"\((.+)\)|.")
+        sequence = sequence.strip(" \n\t*-")
+        for match in pattern.finditer(sequence):
+            if match.group(1):
+                names.append(match.group(1))
+            else:
+                code = match.group(0)
+                if code in {" ", "-"}:
+                    continue
+                if code not in self.codes:
+                    raise ValueError(f"'{code}' is not a valid {self.name} code")
+                names.append(self.codes[code])
         return names
 
 
