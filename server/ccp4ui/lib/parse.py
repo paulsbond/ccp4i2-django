@@ -1,44 +1,25 @@
 from os import PathLike
+from pathlib import Path
+import re
 import gemmi
 
 
 def parse(path: str | PathLike):
     path = str(path)
-    errors = {}
-    try:
+    name = Path(path).name
+    suffix = Path(path).suffix
+    if suffix == ".mtz":
         return gemmi.read_mtz_file(path)
-    except RuntimeError as error:
-        errors["MTZ"] = error
-    try:
-        return gemmi.read_structure(path, format=gemmi.CoorFormat.Mmjson)
-    except RuntimeError as error:
-        errors["mmJSON"] = error
-    try:
-        structure = gemmi.read_structure(path, format=gemmi.CoorFormat.Mmcif)
-        if valid_structure(structure):
-            return structure
-        errors["mmCIF"] = "No atoms in the file"
-    except ValueError as error:
-        errors["mmCIF"] = error
-    try:
-        structure = gemmi.read_structure(path, format=gemmi.CoorFormat.Pdb)
-        if valid_structure(structure):
-            return structure
-        errors["PDB"] = "No atoms in the file"
-    except RuntimeError as error:
-        errors["PDB"] = error
-    try:
-        doc = gemmi.cif.read(path)
-        return gemmi.as_refln_blocks(doc)
-    except ValueError as error:
-        errors["sfCIF"] = error
-    try:
-        with open(path, encoding="ascii") as f:
-            fasta_str = f.read()
-        return gemmi.read_pir_or_fasta(fasta_str)
-    except RuntimeError as error:
-        errors["FASTA"] = error
-    return errors
+    if suffix in {".fasta", ".pir"}:
+        with open(path, encoding="utf-8") as text:
+            return gemmi.read_pir_or_fasta(text.read())
+    if suffix == ".pdb" or re.search(r"pdb[A-z0-9]{4}\.ent", name):
+        return gemmi.read_structure(path, format=gemmi.CoorFormat.Pdb)
+    if suffix == ".cif":
+        return gemmi.read_structure(path, format=gemmi.CoorFormat.Mmcif)
+    if re.search(r"r[A-z0-9]{4}sf\.ent", name):
+        return gemmi.as_refln_blocks(gemmi.cif.read(path))
+    raise ValueError(f"Unknown file format: {name}")
 
 
 def valid_structure(structure: gemmi.Structure):
