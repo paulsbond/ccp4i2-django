@@ -25,37 +25,9 @@ def download(url: str):
         yield Path(tmp_file.name)
 
 
-def filename(response: Response):
+def filename(response: Response) -> str:
     url_name = unquote(basename(urlparse(response.url).path))
     message = EmailMessage()
     for header, value in response.headers.items():
         message[header] = value
     return get_valid_filename(message.get_filename() or url_name)
-
-
-def pdbe_fasta(code: str):
-    return f"https://www.ebi.ac.uk/pdbe/entry/pdb/{code}/fasta"
-
-
-def pdbe_mmcif(code: str):
-    return f"https://www.ebi.ac.uk/pdbe/entry-files/download/{code}.cif"
-
-
-def pdbe_pdb(code: str):
-    return f"https://www.ebi.ac.uk/pdbe/entry-files/download/pdb{code}.ent"
-
-
-def pdbe_sfcif(code: str):
-    return f"https://www.ebi.ac.uk/pdbe/entry-files/download/r{code}sf.ent"
-
-
-def redo_cif(code: str):
-    return f"https://pdb-redo.eu/db/{code}/{code}_final.cif"
-
-
-def redo_mtz(code: str):
-    return f"https://pdb-redo.eu/db/{code}/{code}_final.mtz"
-
-
-def redo_pdb(code: str):
-    return f"https://pdb-redo.eu/db/{code}/{code}_final.pdb"
