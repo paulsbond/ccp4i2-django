@@ -24,7 +24,7 @@ from ...lib.sequence import code1, SequenceType, L_PEPTIDE, D_PEPTIDE, DNA, RNA
         ("XXX", None),
     ],
 )
-def test_code1(resname, expected):
+def test_code1(resname: str, expected: str | None):
     assert code1(resname) == expected
 
 
