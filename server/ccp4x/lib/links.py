@@ -23,6 +23,10 @@ def pdbe_pdb(code: str):
     return f"{_PDBE}/entry-files/download/pdb{code}.ent"
 
 
+def pdbe_pdb_gz(code: str):
+    base = "https://ftp.ebi.ac.uk/pub/databases/rcsb/pdb-remediated/data"
+    return f"{base}/structures/divided/pdb/{code[1:3]}/pdb{code}.ent.gz"
+
 def pdbe_sfcif(code: str):
     return f"{_PDBE}/entry-files/download/r{code}sf.ent"
 
@@ -41,6 +45,10 @@ def rcsb_mmcif_gz(code: str):
 
 def rcsb_pdb(code: str):
     return f"{_RCSB}/{code}.pdb"
+
+
+def rcsb_pdb_gz(code: str):
+    return f"{_RCSB}/{code}.pdb.gz"
 
 
 def rcsb_sfcif(code: str):

@@ -8,17 +8,19 @@ from ...lib.web import download
 
 
 @mark.parametrize(
-    ("url", "cls"),
+    ("link", "cls"),
     [
         (links.pdbe_eds_map, gemmi.Ccp4Map),
         (links.pdbe_fasta, list),
         (links.pdbe_mmcif_updated, gemmi.Structure),
         (links.pdbe_mmcif, gemmi.Structure),
         (links.pdbe_pdb, gemmi.Structure),
+        (links.pdbe_pdb_gz, gemmi.Structure),
         (links.pdbe_sfcif, gemmi.ReflnBlocks),
         (links.rcsb_fasta, list),
         (links.rcsb_mmcif_gz, gemmi.Structure),
         (links.rcsb_mmcif, gemmi.Structure),
+        (links.rcsb_pdb_gz, gemmi.Structure),
         (links.rcsb_pdb, gemmi.Structure),
         (links.rcsb_sfcif_gz, gemmi.ReflnBlocks),
         (links.rcsb_sfcif, gemmi.ReflnBlocks),
@@ -27,8 +29,8 @@ from ...lib.web import download
         (links.redo_pdb, gemmi.Structure),
     ],
 )
-def test_parse(url, cls):
-    with download(url("1o6a")) as path:
+def test_parse(link, cls):
+    with download(link("1o6a")) as path:
         parsed = parse(path)
     message = f"{path} was not parsed as {cls}."
     if isinstance(parsed, dict):
