@@ -7,7 +7,7 @@ from django.core.management import execute_from_command_line
 
 def main():
     """Run administrative tasks."""
-    environ.setdefault("DJANGO_SETTINGS_MODULE", "ccp4ui.config.settings")
+    environ.setdefault("DJANGO_SETTINGS_MODULE", "ccp4x.config.settings")
     execute_from_command_line(argv)
 
 

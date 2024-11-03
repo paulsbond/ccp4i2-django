@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class ApiConfig(AppConfig):
-    name = "ccp4ui.api"
+    name = "ccp4x.api"

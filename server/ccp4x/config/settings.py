@@ -19,8 +19,8 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
-    "ccp4ui.api.config.ApiConfig",
-    "ccp4ui.db.config.DbConfig",
+    "ccp4x.api.config.ApiConfig",
+    "ccp4x.db.config.DbConfig",
     "rest_framework",
 ]
 
@@ -38,7 +38,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = ["http://localhost:3000"] if DEBUG else []
 
-ROOT_URLCONF = "ccp4ui.api.urls"
+ROOT_URLCONF = "ccp4x.api.urls"
 
 TEMPLATES = [
     {
@@ -50,7 +50,7 @@ TEMPLATES = [
 STATIC_URL = "static/"
 MEDIA_URL = "files/"
 
-USER_DIR = Path.home().resolve() / ".ccp4ui"
+USER_DIR = Path.home().resolve() / ".ccp4x"
 USER_DIR.mkdir(exist_ok=True)
 MEDIA_ROOT = USER_DIR / "files"
 

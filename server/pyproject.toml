@@ -3,14 +3,14 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ccp4ui"
+name = "ccp4x"
 dynamic = ["version"]
 authors = [{ name = "Paul Bond", email = "paul.bond@york.ac.uk" }]
 maintainers = [{ name = "Paul Bond", email = "paul.bond@york.ac.uk" }]
 description = "Interface for CCP4 software"
 readme = "README.md"
 license = { file = "LICENSE" }
-keywords = ["CCP4", "X-ray", "Crystallography", "MX", "Interface", "GUI"]
+keywords = ["CCP4", "X-ray", "Crystallography", "MX", "Interface"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Operating System :: OS Independent",
@@ -30,8 +30,8 @@ dependencies = [
 requires-python = ">=3.10"
 
 [project.urls]
-Source = "https://github.com/paulsbond/ccp4ui"
-Issues = "https://github.com/paulsbond/ccp4ui/issues"
+Source = "https://github.com/paulsbond/ccp4x"
+Issues = "https://github.com/paulsbond/ccp4x/issues"
 
 [tool.setuptools.dynamic]
-version = { attr = "ccp4ui.__version__" }
+version = { attr = "ccp4x.__version__" }
