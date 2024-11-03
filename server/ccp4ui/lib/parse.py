@@ -1,29 +1,43 @@
 from os import PathLike
-from pathlib import Path
-import re
 import gemmi
 
 
 def parse(path: str | PathLike):
     path = str(path)
-    name = Path(path).name
-    suffix = Path(path).suffix
-    if suffix == ".mtz":
-        return gemmi.read_mtz_file(path)
-    if suffix in {".fasta", ".pir"}:
-        with open(path, encoding="utf-8") as text:
-            return gemmi.read_pir_or_fasta(text.read())
-    if suffix == ".pdb" or re.search(r"pdb[A-z0-9]{4}\.ent", name):
-        return gemmi.read_structure(path, format=gemmi.CoorFormat.Pdb)
-    if suffix == ".cif":
-        return gemmi.read_structure(path, format=gemmi.CoorFormat.Mmcif)
-    if re.search(r"r[A-z0-9]{4}sf\.ent", name):
-        return gemmi.as_refln_blocks(gemmi.cif.read(path))
-    raise ValueError(f"Unknown file format: {name}")
+    for parse_function in (
+        gemmi.read_mtz_file,
+        gemmi.read_ccp4_map,
+        parse_sfcif,
+        parse_structure,
+        parse_chemical_component,
+        parse_pir_or_fasta,
+    ):
+        try:
+            return parse_function(path)
+        except (RuntimeError, ValueError):
+            continue
+    raise ValueError(f"Unknown file format: {path}")
 
 
-def valid_structure(structure: gemmi.Structure):
-    for model in structure:
-        if any(model.all()):
-            return True
-    return False
+def parse_structure(path: str) -> gemmi.Structure:
+    structure = gemmi.read_structure(path, format=gemmi.CoorFormat.Detect)
+    if len(structure) == 0 or not any(structure[0].all()):
+        raise ValueError("No models in structure.")
+    return structure
+
+
+def parse_sfcif(path: str) -> gemmi.ReflnBlocks:
+    rblocks = gemmi.as_refln_blocks(gemmi.cif.read(path))
+    if not rblocks[0]:
+        raise ValueError("No reflections in structure.")
+    return rblocks
+
+
+def parse_pir_or_fasta(path: str) -> list[gemmi.FastaSeq]:
+    with open(path, encoding="utf-8") as text:
+        return gemmi.read_pir_or_fasta(text.read())
+
+
+def parse_chemical_component(path: str) -> gemmi.ChemComp:
+    block = gemmi.cif.read(path)[-1]
+    return gemmi.make_chemcomp_from_block(block)
