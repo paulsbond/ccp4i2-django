@@ -10,7 +10,7 @@ It is recommended to use a Python virtual environment.
 ```console
 user:~$ git clone https://github.com/paulsbond/ccp4x
 user:~$ cd ccp4x/server
-user:~/ccp4x/server$ pip install --user --editable .
+user:~/ccp4x/server$ pip install --editable .
 user:~/ccp4x/server$ python manage.py migrate
 user:~/ccp4x/server$ python manage.py runserver
 ```
