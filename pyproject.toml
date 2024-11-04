@@ -36,5 +36,8 @@ ccp4x = "ccp4x.__main__:main"
 Source = "https://github.com/paulsbond/ccp4x"
 Issues = "https://github.com/paulsbond/ccp4x/issues"
 
+[tool.setuptools]
+packages = ["ccp4x"]
+
 [tool.setuptools.dynamic]
 version = { attr = "ccp4x.__version__" }
