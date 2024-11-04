@@ -29,6 +29,9 @@ dependencies = [
 ]
 requires-python = ">=3.10"
 
+[project.gui-scripts]
+ccp4x = "ccp4x.__main__:main"
+
 [project.urls]
 Source = "https://github.com/paulsbond/ccp4x"
 Issues = "https://github.com/paulsbond/ccp4x/issues"
