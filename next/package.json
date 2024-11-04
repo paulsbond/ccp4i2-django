@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "dev": "next dev"
+    "build": "next build",
+    "dev": "next dev",
+    "update": "npx npm-check-updates -u"
   },
   "dependencies": {
     "@emotion/cache": "^11.13.1",
