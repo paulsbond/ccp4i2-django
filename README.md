@@ -21,9 +21,9 @@ For easy viewing of the REST API and Next.js logs separately,
 start the Next.js development server in a new terminal.
 
 ```console
-user:~/ccp4x$ cd client
-user:~/ccp4x/client$ npm ci
-user:~/ccp4x/client$ npm run dev
+user:~/ccp4x$ cd next
+user:~/ccp4x/next$ npm ci
+user:~/ccp4x/next$ npm run dev
 ```
 
 Open a browser at http://localhost:3000 to view the app.

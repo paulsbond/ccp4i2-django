@@ -24,7 +24,7 @@ import { Project } from "../models";
 import { shortDate } from "../pipes";
 import { useDeleteDialog } from "./delete-dialog";
 import { useSet } from "../hooks";
-import SearchField from "../components/search-field";
+import SearchField from "./search-field";
 
 const sxSelected = {
   bgcolor: (theme: Theme) =>
