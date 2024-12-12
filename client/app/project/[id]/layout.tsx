@@ -1,5 +1,5 @@
 "use client";
-import { ReactNode } from "react";
+import { ReactNode, use } from "react";
 import { Box } from "@mui/material";
 import { useApi } from "../../api";
 import { Project } from "../../models";
@@ -10,10 +10,11 @@ export default function ProjectLayout({
   params,
 }: {
   children?: ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const api = useApi();
-  const { data: project } = api.get<Project>(`projects/${params.id}`);
+  const { id } = use(params);
+  const { data: project } = api.get<Project>(`projects/${id}`);
 
   return (
     <>

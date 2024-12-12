@@ -1,5 +1,5 @@
 "use client";
-import { ChangeEvent } from "react";
+import { ChangeEvent, use } from "react";
 import { Container, LinearProgress, Stack, Toolbar } from "@mui/material";
 import { useApi } from "../../api";
 import { File, Project } from "../../models";
@@ -7,11 +7,16 @@ import EditableTypography from "../../components/editable-typography";
 import FilesTable from "../../components/files-table";
 import FileUpload from "../../components/file-upload";
 
-export default function DashboardPage({ params }: { params: { id: string } }) {
+export default function DashboardPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const api = useApi();
-  const { data: project } = api.get<Project>(`projects/${params.id}`);
+  const { id } = use(params);
+  const { data: project } = api.get<Project>(`projects/${id}`);
   const { data: files, mutate: mutateFiles } = api.get<File[]>(
-    `files?project=${params.id}`
+    `files?project=${id}`
   );
 
   function importFiles(event: ChangeEvent<HTMLInputElement>) {
