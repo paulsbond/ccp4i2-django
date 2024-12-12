@@ -1,6 +1,5 @@
 {
   "scripts": {
-    "build": "next build",
     "dev": "next dev",
     "update": "npx npm-check-updates -u"
   },
