@@ -22,12 +22,13 @@ from django.utils import timezone
 
 class Project(Model):
     uuid = UUIDField(default=uuid4, unique=True)
-    name = TextField()
+    name = CharField(max_length=100, unique=True)
     description = TextField(blank=True)
+    directory = TextField(unique=True)
     creation_time = DateTimeField(default=timezone.now)
     creation_user = TextField(default=getuser)
     creation_host = TextField(default=gethostname)
-    last_modified = DateTimeField(default=timezone.now)
+    last_access = DateTimeField(default=timezone.now)
     last_job_number = IntegerField(default=0)
     follow_from_job = ForeignKey(
         "Job", SET_NULL, blank=True, null=True, related_name="+"
