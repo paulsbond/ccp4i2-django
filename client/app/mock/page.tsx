@@ -31,6 +31,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "@mui/icons-material";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 function FileMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -296,7 +297,15 @@ export default function MockPage() {
     <Stack spacing={2}>
       <MenuBar />
       <ToolBar />
-      <Stack direction="row" spacing={2}></Stack>
+      <PanelGroup direction="horizontal">
+        <Panel defaultSize={30} minSize={20}>
+          <h1>Hello</h1>
+        </Panel>
+        <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />
+        <Panel defaultSize={70} minSize={20}>
+          <h1>World</h1>
+        </Panel>
+      </PanelGroup>
     </Stack>
   );
 }
