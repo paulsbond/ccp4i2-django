@@ -104,9 +104,3 @@ class ProjectTagSerializer(ModelSerializer):
     class Meta:
         model = models.ProjectTag
         exclude = []
-
-
-class TagSerializer(ModelSerializer):
-    class Meta:
-        model = models.Tag
-        exclude = []
