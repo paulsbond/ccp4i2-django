@@ -124,7 +124,8 @@ class ServerJob(Model):
         return str(self.job)
 
 
-class JobValueKeys(Model):
+# MN changed this from "keys" to key (consistency)
+class JobValueKey(Model):
     name = CharField(max_length=50, primary_key=True)
     description = TextField()
 
@@ -134,7 +135,7 @@ class JobValueKeys(Model):
 
 class JobFloatValue(Model):
     job = ForeignKey(Job, CASCADE, related_name="float_values")
-    key = ForeignKey(JobValueKeys, CASCADE, related_name="+")
+    key = ForeignKey(JobValueKey, CASCADE, related_name="+")
     value = FloatField()
 
     class Meta:
@@ -146,7 +147,7 @@ class JobFloatValue(Model):
 
 class JobCharValue(Model):
     job = ForeignKey(Job, RESTRICT, related_name="char_values")
-    key = ForeignKey(JobValueKeys, RESTRICT, related_name="+")
+    key = ForeignKey(JobValueKey, RESTRICT, related_name="+")
     value = CharField(max_length=255)
 
     class Meta:
@@ -193,6 +194,7 @@ class FileExport(Model):
 
 
 class FileImport(Model):
+    # MN: Note this has dropped fields annotation lastmodifiedtime importnumber
     file = OneToOneField(File, on_delete=CASCADE, primary_key=True)
     time = DateTimeField(default=timezone.now)
     name = TextField()
