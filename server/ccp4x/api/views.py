@@ -42,7 +42,6 @@ class FileViewSet(ModelViewSet):
     queryset = models.File.objects.all()
     serializer_class = serializers.FileSerializer
     parser_classes = [FormParser, MultiPartParser]
-    filterset_fields = ["project"]
 
 
 class JobViewSet(ModelViewSet):
