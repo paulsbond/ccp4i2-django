@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from ccp4x.lib.importZip import import_project
+from ccp4x.db.import_i2xml import import_i2xml
 
 
 class Command(BaseCommand):
@@ -13,4 +13,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write(f"{options}")
-        import_project(*args, **options)
+        import_i2xml(options["project_xml"])
