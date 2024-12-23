@@ -45,7 +45,9 @@ export default function ProjectsTable() {
         project.name.toLowerCase().includes(query.toLowerCase())
       )
       .sort(
-        (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
+        (a, b) =>
+          new Date(b.creation_time).getTime() -
+          new Date(a.creation_time).getTime()
       );
   }, [projects, query]);
 
@@ -172,7 +174,7 @@ export default function ProjectsTable() {
                 </Tooltip>
               </TableCell>
               <TableCell>{project.name}</TableCell>
-              <TableCell>{shortDate(project.created)}</TableCell>
+              <TableCell>{shortDate(project.creation_time)}</TableCell>
               <TableCell>
                 <Stack direction="row" spacing={1}>
                   <Tooltip title="Export project">
