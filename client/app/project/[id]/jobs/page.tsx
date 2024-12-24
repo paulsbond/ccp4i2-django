@@ -17,7 +17,7 @@ export default function JobsPage({
   if (!project) return <LinearProgress />;
   return (
     <Container>
-      <JobsGrid projectId={parseInt(id)} />
+      <JobsGrid projectId={parseInt(id)} size={12} />
     </Container>
   );
 }

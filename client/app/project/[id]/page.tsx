@@ -3,6 +3,7 @@ import { ChangeEvent, use } from "react";
 import {
   CircularProgress,
   Container,
+  Grid2,
   LinearProgress,
   Stack,
   Toolbar,
@@ -25,11 +26,13 @@ export default function DashboardPage({
   return project ? (
     <Stack spacing={2}>
       <EditableTypography
-        variant="h4"
+        variant="h6"
         text={project.name}
         onDelay={(name) => api.patch(`projects/${project.id}`, { name: name })}
       />
-      <JobsGrid projectId={parseInt(id)} />
+      <Grid2>
+        <JobsGrid projectId={parseInt(id)} size={4} />
+      </Grid2>
     </Stack>
   ) : (
     <CircularProgress variant="indeterminate" />
