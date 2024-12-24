@@ -3,7 +3,7 @@ export class Project {
     public id: number,
     public uuid: string,
     public name: string,
-    public created: string
+    public creation_time: string
   ) {}
 }
 
@@ -13,6 +13,35 @@ export class File {
     public file: string,
     public name: string,
     public size: number,
-    public project: number
+    public job: number
+  ) {}
+}
+
+export class Job {
+  constructor(
+    public id: number,
+    public parent: number,
+    public uuid: string,
+    public title: string,
+    public number: string,
+    public task_name: string
+  ) {}
+}
+
+export class JobFloatValue {
+  constructor(
+    public id: number,
+    public job: number,
+    public key: string,
+    public value: number
+  ) {}
+}
+
+export class JobCharValue {
+  constructor(
+    public id: number,
+    public job: number,
+    public key: string,
+    public value: string
   ) {}
 }

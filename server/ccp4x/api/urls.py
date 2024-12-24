@@ -7,6 +7,7 @@ from . import views
 router = routers.DefaultRouter()
 router.register("projects", views.ProjectViewSet)
 router.register("files", views.FileViewSet)
+router.register("jobs", views.JobViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),

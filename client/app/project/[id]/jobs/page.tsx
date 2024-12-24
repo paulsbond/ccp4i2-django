@@ -1,17 +1,23 @@
-import { Container } from "@mui/material";
+"use client";
+import { use } from "react";
+import { Container, LinearProgress } from "@mui/material";
+import { JobsGrid } from "../../../components/jobs-grid";
+import { Project } from "../../../models";
+import { useApi } from "../../../api";
+import EditableTypography from "../../../components/editable-typography";
 
-export default function JobsPage() {
+export default function JobsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const api = useApi();
+  const { data: project } = api.get<Project>(`projects/${id}`);
+  if (!project) return <LinearProgress />;
   return (
     <Container>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th></th>
-          </tr>
-        </thead>
-      </table>
+      <JobsGrid projectId={parseInt(id)} />
     </Container>
   );
 }

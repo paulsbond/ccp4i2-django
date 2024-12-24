@@ -1,11 +1,18 @@
 "use client";
 import { ChangeEvent, use } from "react";
-import { Container, LinearProgress, Stack, Toolbar } from "@mui/material";
+import {
+  CircularProgress,
+  Container,
+  LinearProgress,
+  Stack,
+  Toolbar,
+} from "@mui/material";
 import { useApi } from "../../api";
 import { File, Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
 import FilesTable from "../../components/files-table";
 import FileUpload from "../../components/file-upload";
+import { JobsGrid } from "../../components/jobs-grid";
 
 export default function DashboardPage({
   params,
@@ -15,40 +22,16 @@ export default function DashboardPage({
   const api = useApi();
   const { id } = use(params);
   const { data: project } = api.get<Project>(`projects/${id}`);
-  const { data: files, mutate: mutateFiles } = api.get<File[]>(
-    `files?project=${id}`
-  );
-
-  function importFiles(event: ChangeEvent<HTMLInputElement>) {
-    const fileList = event.target.files;
-    if (fileList && project) {
-      for (let i = 0; i < fileList.length; i++) {
-        const formData = new FormData();
-        formData.append("project", project.id.toString());
-        formData.append("file", fileList[i]);
-        formData.append("name", fileList[i].name);
-        formData.append("size", fileList[i].size.toString());
-        api.post("files", formData).then(() => mutateFiles());
-      }
-    }
-  }
-
-  if (!project) return <LinearProgress />;
-  return (
+  return project ? (
     <Stack spacing={2}>
-      <Container>
-        <EditableTypography
-          variant="h4"
-          text={project.name}
-          onDelay={(name) =>
-            api.patch(`projects/${project.id}`, { name: name })
-          }
-        />
-        <Toolbar disableGutters>
-          <FileUpload text="Import Files" onChange={importFiles} />
-        </Toolbar>
-        <FilesTable files={files} mutate={mutateFiles} />
-      </Container>
+      <EditableTypography
+        variant="h4"
+        text={project.name}
+        onDelay={(name) => api.patch(`projects/${project.id}`, { name: name })}
+      />
+      <JobsGrid projectId={parseInt(id)} />
     </Stack>
+  ) : (
+    <CircularProgress variant="indeterminate" />
   );
 }

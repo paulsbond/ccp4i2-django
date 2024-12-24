@@ -34,15 +34,19 @@ export function useApi() {
     },
 
     patch: async function <T>(endpoint: string, body: any = {}): Promise<T> {
+      const headers: HeadersInit = { Accept: "application/json" };
+      if (!(body instanceof FormData)) {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify(body);
+      }
       const response = await fetch(fullUrl(endpoint), {
         method: "PATCH",
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: body,
       });
-      return response.json as T;
+      return response.json() as Promise<T>;
     },
   };
 }
