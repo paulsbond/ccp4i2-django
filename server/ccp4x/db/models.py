@@ -1,6 +1,7 @@
 from getpass import getuser
 from socket import gethostname
 from uuid import uuid4
+from django.core.validators import RegexValidator
 from django.db.models import (
     CASCADE,
     CharField,
@@ -15,14 +16,22 @@ from django.db.models import (
     RESTRICT,
     SET_NULL,
     TextField,
+    UniqueConstraint,
     UUIDField,
 )
+from django.db.models.functions import Lower
 from django.utils import timezone
+
+
+PathCharValidator = RegexValidator(
+    regex=r"^[A-z0-9_\-]+$",
+    message="Only alphanumeric characters, underscores, and hyphens are allowed.",
+)
 
 
 class Project(Model):
     uuid = UUIDField(default=uuid4, unique=True)
-    name = CharField(max_length=100, unique=True)
+    name = CharField(max_length=100, validators=[PathCharValidator])
     description = TextField(blank=True)
     directory = TextField(unique=True)
     creation_time = DateTimeField(default=timezone.now)
@@ -38,6 +47,9 @@ class Project(Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        constaints = [UniqueConstraint(Lower("name"), name="name_unique")]
 
 
 class ProjectTag(Model):
