@@ -9,6 +9,8 @@ import {
   Menu,
   MenuItem,
   Stack,
+  Tab,
+  Tabs,
   Toolbar,
   Typography,
 } from "@mui/material";
@@ -292,18 +294,37 @@ function ToolBar() {
   );
 }
 
+function LeftPanel() {
+  const [value, setValue] = useState(0);
+
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    setValue(newValue);
+  };
+
+  return (
+    <Tabs value={value} onChange={handleChange} variant="fullWidth">
+      <Tab label="Job list" />
+      <Tab label="Project directory" />
+    </Tabs>
+  );
+}
+
+function RightPanel() {
+  return <h1>World</h1>;
+}
+
 export default function MockPage() {
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} sx={{ height: "100vh" }}>
       <MenuBar />
       <ToolBar />
       <PanelGroup direction="horizontal">
         <Panel defaultSize={30} minSize={20}>
-          <h1>Hello</h1>
+          <LeftPanel />
         </Panel>
         <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />
         <Panel defaultSize={70} minSize={20}>
-          <h1>World</h1>
+          <RightPanel />
         </Panel>
       </PanelGroup>
     </Stack>
