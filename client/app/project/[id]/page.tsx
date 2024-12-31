@@ -1,17 +1,9 @@
 "use client";
-import { ChangeEvent, use } from "react";
-import {
-  CircularProgress,
-  Container,
-  LinearProgress,
-  Stack,
-  Toolbar,
-} from "@mui/material";
+import { use } from "react";
+import { CircularProgress, Stack } from "@mui/material";
 import { useApi } from "../../api";
-import { File, Project } from "../../models";
+import { Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
-import FilesTable from "../../components/files-table";
-import FileUpload from "../../components/file-upload";
 import { JobsGrid } from "../../components/jobs-grid";
 
 export default function DashboardPage({
