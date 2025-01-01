@@ -2,7 +2,9 @@
 import { PropsWithChildren, useState } from "react";
 import { Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import JobList from "../../components/job-list";
 import MenuBar from "../../components/menu-bar";
+import ProjectDirectory from "../../components/project-directory";
 import ToolBar from "../../components/tool-bar";
 
 export default function ProjectLayout(props: PropsWithChildren) {
@@ -19,9 +21,11 @@ export default function ProjectLayout(props: PropsWithChildren) {
       <PanelGroup direction="horizontal">
         <Panel defaultSize={30} minSize={20}>
           <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
-            <Tab label="Job list" />
-            <Tab label="Project directory" />
+            <Tab value={0} label="Job list" />
+            <Tab value={1} label="Project directory" />
           </Tabs>
+          {tabValue == 0 && <JobList />}
+          {tabValue == 1 && <ProjectDirectory />}
         </Panel>
         <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />
         <Panel defaultSize={70} minSize={20}>
