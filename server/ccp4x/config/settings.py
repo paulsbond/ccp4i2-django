@@ -63,4 +63,4 @@ DATABASES = {
 
 TIME_ZONE = "UTC"
 USE_TZ = True
-CCP4I2_PROJECTS_DIR = Path.home().resolve() / "CCP4I2_PROJECTS"
+CCP4I2_PROJECTS_DIR = Path.home().resolve() / "CCP4X_PROJECTS"
