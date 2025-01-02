@@ -9,6 +9,9 @@ export default function NewProjectPage() {
   const api = useApi();
   const router = useRouter();
   const [name, setName] = useState("");
+  const [directory, setDirectory] = useState("");
+  const [customDirectory, setCustomDirectory] = useState(false);
+  const { data: projects } = api.get<Project[]>("projects");
 
   function createProject() {
     const body = { name: name };
@@ -17,25 +20,43 @@ export default function NewProjectPage() {
     });
   }
 
+  function handleNameChange(event: ChangeEvent<HTMLInputElement>) {
+    setName(event.target.value);
+    if (!customDirectory) {
+      setDirectory(`/home/user/CCP4X_PROJECTS/${event.target.value}`);
+    }
+  }
+
+  function handleDirectoryChange() {}
+
   let nameError = "";
   if (name.length === 0) nameError = "Name is required";
   else if (!name.match("^[A-z0-9_-]+$"))
     nameError =
       "Name can only contain letters, numbers, underscores, and hyphens";
+  else if (projects?.find((p) => p.name === name))
+    nameError = "Name is already taken";
 
   return (
-    <Container sx={{ my: 3 }}>
+    <Container maxWidth="sm" sx={{ my: 3 }}>
       <Stack spacing={2}>
         <Typography variant="h4">New Project</Typography>
         <TextField
           label="Name"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={handleNameChange}
           required
           error={nameError.length > 0}
           helperText={nameError}
         />
-        <Stack direction="row" sx={{ gap: 2 }}>
+        <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+          <Button variant="outlined" onClick={handleDirectoryChange}>
+            Change Directory
+          </Button>
+          <Typography variant="body1">{directory}</Typography>
+        </Stack>
+        {/* <Typography variant="h6">Tags</Typography> */}
+        <Stack direction="row" spacing={2}>
           <Button variant="outlined" onClick={() => router.push("/")}>
             Cancel
           </Button>
