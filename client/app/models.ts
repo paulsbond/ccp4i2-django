@@ -11,6 +11,7 @@ export class File {
   constructor(
     public id: number,
     public file: string,
+    public type: string,
     public name: string,
     public size: number,
     public job: number

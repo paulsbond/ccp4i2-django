@@ -17,6 +17,7 @@ import { useMemo, useState } from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { MyExpandMore } from "./expand-more";
 import { JobsGrid } from "./jobs-grid";
+import FilesTable from "./files-table";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -38,7 +39,9 @@ export const JobCard: React.FC<JobCardProps> = ({
   const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
     `/projects/${projectId}/jobs/`
   );
-  const { data: files } = api.get<File[]>(`/projects/${projectId}/files/`);
+  const { data: files, mutate: mutateFiles } = api.get<File[]>(
+    `/projects/${projectId}/files/`
+  );
   const { data: jobFloatValues } = api.get<JobFloatValue[]>(
     `/projects/${projectId}/job_float_values/`
   );
@@ -136,15 +139,32 @@ export const JobCard: React.FC<JobCardProps> = ({
             </>
           )}
         </CardActions>
-        <Collapse in={jobsExpanded} timeout="auto" unmountOnExit>
+        <Collapse
+          key="ChildJobs"
+          in={jobsExpanded}
+          timeout="auto"
+          unmountOnExit
+        >
           <CardContent sx={{ p: 0.5 }}>
-            {jobs && (
+            {subJobs?.length && subJobs.length > 0 && (
               <JobsGrid
                 projectId={projectId}
                 size={12}
                 parent={job.id}
                 withSubtitles={false}
               />
+            )}
+          </CardContent>
+        </Collapse>
+        <Collapse
+          key="JobFiles"
+          in={filesExpanded}
+          timeout="auto"
+          unmountOnExit
+        >
+          <CardContent sx={{ p: 0.5 }}>
+            {jobFiles && jobFiles.length > 0 && (
+              <FilesTable files={jobFiles} mutate={mutateFiles} />
             )}
           </CardContent>
         </Collapse>

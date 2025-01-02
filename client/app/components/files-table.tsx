@@ -1,4 +1,5 @@
 import {
+  Avatar,
   IconButton,
   LinearProgress,
   Table,
@@ -14,6 +15,19 @@ import { fileSize } from "../pipes";
 import { useApi } from "../api";
 import { useDeleteDialog } from "./delete-dialog";
 import { KeyedMutator } from "swr";
+import { useMemo } from "react";
+
+export const fileTypeMapping: any = {
+  "application/CCP4-mtz-observed": "ObsDataFile",
+  "application/CCP4-mtz-freerflag": "FreeRDataFile",
+  "application/CCP4-mtz-map": "MapCoeffsDataFile",
+  "application/CCP4-mtz-phases": "PhsDataFile",
+  "application/refmac-dictionary": "DictDataFile",
+  "application/coot-script": "CootHistoryDataFile",
+  "application/CCP4-unmerged-experimental": "UnmergedDataFile",
+  "chemical/x-pdb": "PdbDataFile",
+  "application/CCP4-asu-content": "AsuDataFile",
+};
 
 export default function FilesTable({
   files,
@@ -24,6 +38,11 @@ export default function FilesTable({
 }) {
   const deleteDialog = useDeleteDialog();
   const api = useApi();
+  const fileTypeIcon = (type: string) => {
+    return Object.keys(fileTypeMapping).includes(type)
+      ? fileTypeMapping[type]
+      : "ccp4";
+  };
 
   if (files === undefined) return <LinearProgress />;
   if (files.length === 0) return <></>;
@@ -43,6 +62,7 @@ export default function FilesTable({
     <Table size="small">
       <TableHead>
         <TableRow>
+          <TableCell>Type</TableCell>
           <TableCell>Name</TableCell>
           <TableCell>Size</TableCell>
           <TableCell></TableCell>
@@ -51,6 +71,9 @@ export default function FilesTable({
       <TableBody>
         {files.map((file: File) => (
           <TableRow key={file.id}>
+            <TableCell title={file.type}>
+              <Avatar src={`/qticons/${fileTypeIcon(file.type)}.png`} />
+            </TableCell>
             <TableCell>{file.name}</TableCell>
             <TableCell>{fileSize(file.size)}</TableCell>
             <TableCell>
