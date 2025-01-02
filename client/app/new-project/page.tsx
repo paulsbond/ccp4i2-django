@@ -10,10 +10,6 @@ export default function NewProjectPage() {
   const router = useRouter();
   const [name, setName] = useState("");
 
-  function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    setName(event.target.value);
-  }
-
   function createProject() {
     const body = { name: name };
     api.post<Project>("projects", body).then((project) => {
@@ -21,16 +17,33 @@ export default function NewProjectPage() {
     });
   }
 
+  let nameError = "";
+  if (name.length === 0) nameError = "Name is required";
+  else if (!name.match("^[A-z0-9_-]+$"))
+    nameError =
+      "Name can only contain letters, numbers, underscores, and hyphens";
+
   return (
     <Container sx={{ my: 3 }}>
       <Stack spacing={2}>
         <Typography variant="h4">New Project</Typography>
-        <TextField value={name} label="Name" onChange={handleChange} />
+        <TextField
+          label="Name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          required
+          error={nameError.length > 0}
+          helperText={nameError}
+        />
         <Stack direction="row" sx={{ gap: 2 }}>
           <Button variant="outlined" onClick={() => router.push("/")}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={createProject}>
+          <Button
+            variant="contained"
+            onClick={createProject}
+            disabled={nameError.length > 0}
+          >
             Create
           </Button>
         </Stack>
