@@ -1,14 +1,19 @@
 "use client";
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, use, useState } from "react";
 import { Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import JobList from "../../components/job-list";
 import MenuBar from "../../components/menu-bar";
 import ProjectDirectory from "../../components/project-directory";
 import ToolBar from "../../components/tool-bar";
+import { JobsGrid } from "../../components/jobs-grid";
 
-export default function ProjectLayout(props: PropsWithChildren) {
+export interface ProjectLayoutProps extends PropsWithChildren {
+  params: Promise<{ id: number }>;
+}
+export default function ProjectLayout(props: ProjectLayoutProps) {
   const [tabValue, setTabValue] = useState(0);
+  const { id } = use(props.params);
 
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
@@ -24,7 +29,7 @@ export default function ProjectLayout(props: PropsWithChildren) {
             <Tab value={0} label="Job list" />
             <Tab value={1} label="Project directory" />
           </Tabs>
-          {tabValue == 0 && <JobList />}
+          {tabValue == 0 && <JobsGrid projectId={id} size={12} />}
           {tabValue == 1 && <ProjectDirectory />}
         </Panel>
         <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />

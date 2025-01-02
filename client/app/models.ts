@@ -20,6 +20,7 @@ export class File {
 export class Job {
   constructor(
     public id: number,
+    public project: number,
     public parent: number,
     public uuid: string,
     public title: string,

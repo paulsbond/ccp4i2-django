@@ -4,7 +4,6 @@ import { CircularProgress, Stack } from "@mui/material";
 import { useApi } from "../../api";
 import { Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
-import { JobsGrid } from "../../components/jobs-grid";
 
 export default function DashboardPage({
   params,
@@ -17,13 +16,10 @@ export default function DashboardPage({
   return project ? (
     <Stack spacing={2}>
       <EditableTypography
-        variant="h6"
+        variant="h4"
         text={project.name}
         onDelay={(name) => api.patch(`projects/${project.id}`, { name: name })}
       />
-      <Grid2>
-        <JobsGrid projectId={parseInt(id)} size={4} />
-      </Grid2>
     </Stack>
   ) : (
     <CircularProgress variant="indeterminate" />
