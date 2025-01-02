@@ -1,12 +1,11 @@
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useApi } from "../api";
 import {
-  Button,
   Card,
-  CardActionArea,
   CardContent,
   CardHeader,
   Chip,
+<<<<<<< HEAD
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,12 +14,13 @@ import {
   Input,
   Paper,
   styled,
+=======
+>>>>>>> 11fca17258cc8a4ff11a8375e8f19d77c7d07e88
   Toolbar,
   Typography,
 } from "@mui/material";
 import { File, Job, JobCharValue, JobFloatValue } from "../models";
 import { KeyedMutator } from "swr";
-import { Edit } from "@mui/icons-material";
 import EditableTypography from "./editable-typography";
 
 interface JobsGridProps {

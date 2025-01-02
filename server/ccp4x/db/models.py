@@ -124,7 +124,6 @@ class ServerJob(Model):
         return str(self.job)
 
 
-# MN changed this from "keys" to key (consistency)
 class JobValueKey(Model):
     name = CharField(max_length=50, primary_key=True)
     description = TextField()

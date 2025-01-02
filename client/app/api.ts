@@ -26,7 +26,7 @@ export function useApi() {
         headers: headers,
         body: body,
       });
-      return response.json() as T;
+      return response.json() as Promise<T>;
     },
 
     delete: async function (endpoint: string): Promise<void> {
@@ -41,9 +41,7 @@ export function useApi() {
       }
       const response = await fetch(fullUrl(endpoint), {
         method: "PATCH",
-        headers: {
-          Accept: "application/json",
-        },
+        headers: headers,
         body: body,
       });
       return response.json() as Promise<T>;
