@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Divider,
@@ -11,6 +12,7 @@ import {
 import { Add, Download, Menu as MenuIcon, Upload } from "@mui/icons-material";
 
 export default function FileMenu() {
+  const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -26,13 +28,23 @@ export default function FileMenu() {
         File/Projects
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-        <MenuItem onClick={handleClose}>
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push("/");
+          }}
+        >
           <ListItemIcon>
             <MenuIcon fontSize="small" />
           </ListItemIcon>
           <ListItemText>Manage/open projects</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push("/new-project");
+          }}
+        >
           <ListItemIcon>
             <Add fontSize="small" />
           </ListItemIcon>
