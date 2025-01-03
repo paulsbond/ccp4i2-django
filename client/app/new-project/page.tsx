@@ -60,6 +60,10 @@ export default function NewProjectPage() {
   else if (projects?.find((p) => p.name === name))
     nameError = "Name is already taken";
 
+  let directoryError = "";
+  if (customDirectory && directory.length === 0)
+    directoryError = "Directory is required";
+
   return (
     <Container maxWidth="sm" sx={{ my: 3 }}>
       <Stack spacing={2}>
@@ -89,6 +93,8 @@ export default function NewProjectPage() {
               label="Directory"
               value={directory}
               onChange={(event) => setDirectory(event.target.value)}
+              error={directoryError.length > 0}
+              helperText={directoryError}
               sx={{ flexGrow: 1 }}
               required
             />
