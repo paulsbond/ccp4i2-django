@@ -2,8 +2,6 @@
 import { PropsWithChildren, use, useState } from "react";
 import { Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import JobList from "../../components/job-list";
-import MenuBar from "../../components/menu-bar";
 import ProjectDirectory from "../../components/project-directory";
 import ToolBar from "../../components/tool-bar";
 import { JobsGrid } from "../../components/jobs-grid";
@@ -21,7 +19,6 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
 
   return (
     <Stack spacing={2} sx={{ height: "100vh" }}>
-      <MenuBar />
       <ToolBar />
       <PanelGroup direction="horizontal">
         <Panel defaultSize={30} minSize={20}>
