@@ -77,6 +77,11 @@ class ProjectViewSet(ModelViewSet):
         return Response(project_tag_serializer.data)
 
 
+class ProjectTagViewSet(ModelViewSet):
+    queryset = models.ProjectTag.objects.all()
+    serializer_class = serializers.ProjectTagSerializer
+
+
 class FileViewSet(ModelViewSet):
     queryset = models.File.objects.all()
     serializer_class = serializers.FileSerializer
