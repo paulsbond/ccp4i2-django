@@ -13,6 +13,7 @@ import {
 import { Folder } from "@mui/icons-material";
 import { useApi } from "../api";
 import { Project } from "../models";
+import EditTags from "../components/edit-tags";
 
 export default function NewProjectPage() {
   const api = useApi();
@@ -20,6 +21,7 @@ export default function NewProjectPage() {
   const [name, setName] = useState("");
   const [customDirectory, setCustomDirectory] = useState(false);
   const [directory, setDirectory] = useState(defaultDirectory(""));
+  const [tags, setTags] = useState<number[]>([]);
   const { data: projects } = api.get<Project[]>("projects");
 
   function createProject() {
@@ -76,17 +78,15 @@ export default function NewProjectPage() {
           error={nameError.length > 0}
           helperText={nameError}
         />
-        <Typography variant="h6">Directory</Typography>
         <ToggleButtonGroup
           exclusive
           value={customDirectory}
           onChange={handleCustomDirectoryChange}
           fullWidth
         >
-          <ToggleButton value={false}>Default</ToggleButton>
-          <ToggleButton value={true}>Custom</ToggleButton>
+          <ToggleButton value={false}>Default Directory</ToggleButton>
+          <ToggleButton value={true}>Custom Directory</ToggleButton>
         </ToggleButtonGroup>
-        {!customDirectory && <Typography>{directory}</Typography>}
         {customDirectory && (
           <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
             <TextField
@@ -107,7 +107,7 @@ export default function NewProjectPage() {
             </Button>
           </Stack>
         )}
-        <Typography variant="h6">Tags</Typography>
+        <EditTags tags={tags} onChange={setTags} />
         <Stack direction="row" spacing={2}>
           <Button variant="outlined" onClick={() => router.push("/")}>
             Cancel
@@ -115,7 +115,7 @@ export default function NewProjectPage() {
           <Button
             variant="contained"
             onClick={createProject}
-            disabled={nameError.length > 0}
+            disabled={nameError.length > 0 || directoryError.length > 0}
           >
             Create
           </Button>
