@@ -108,7 +108,7 @@ export default function NewProjectPage() {
           </Stack>
         )}
         <EditTags tags={tags} onChange={setTags} />
-        <Stack direction="row" spacing={2}>
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button variant="outlined" onClick={() => router.push("/")}>
             Cancel
           </Button>

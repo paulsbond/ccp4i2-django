@@ -7,6 +7,15 @@ export class Project {
   ) {}
 }
 
+export class ProjectTag {
+  constructor(
+    public id: number,
+    public text: string,
+    public parent?: number,
+    public projects: number[] = []
+  ) {}
+}
+
 export class File {
   constructor(
     public id: number,
