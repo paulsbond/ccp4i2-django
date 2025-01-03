@@ -55,7 +55,31 @@ export const JobCard: React.FC<JobCardProps> = ({
   const jobFiles: any[] | undefined = useMemo(() => {
     return files?.filter((aFile) => aFile.job === job.id);
   }, [files, job]);
-
+  const kpiContent = useMemo(() => {
+    return (
+      <>
+        {jobCharValues
+          ?.filter((item: JobCharValue) => item.job === job.id)
+          .map((item: JobCharValue) => (
+            <Chip
+              key={item.key}
+              avatar={<div style={{ width: "5rem" }}>{item.key}</div>}
+              label={item.value}
+            />
+          ))}
+        {jobFloatValues
+          ?.filter((item: JobFloatValue) => item.job === job.id)
+          .map((item) => (
+            <Chip
+              key={item.key}
+              sx={{ backgroundColor: "#DFD" }}
+              avatar={<div style={{ width: "5rem" }}>{item.key}</div>}
+              label={item.value}
+            />
+          ))}
+      </>
+    );
+  }, [jobCharValues, jobFloatValues]);
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [filesExpanded, setFilesExpanded] = useState(false);
 
@@ -71,10 +95,13 @@ export const JobCard: React.FC<JobCardProps> = ({
     <>
       <MyCard key={job.number} variant="elevation">
         <CardHeader
-          sx={{ backgroundColor: "#EEE", my: 0, mx: 0, px: 0, py: 0 }}
+          sx={{ my: 0, mx: 0, px: 0, py: 0 }}
           title={
             <Toolbar>
-              <Avatar src={`/svgicons/${job.task_name}.svg`} />
+              <Avatar
+                sx={{ width: "1.5rem", height: "1.5rem" }}
+                src={`/svgicons/${job.task_name}.svg`}
+              />
               <Typography variant="subtitle1" sx={{ mr: 2 }}>
                 {job.number}
               </Typography>
@@ -90,28 +117,8 @@ export const JobCard: React.FC<JobCardProps> = ({
               />
             </Toolbar>
           }
-          subheader={withSubtitle ? job.task_name : null}
+          subheader={kpiContent}
         />
-        <CardContent>
-          {jobCharValues
-            ?.filter((item: JobCharValue) => item.job === job.id)
-            .map((item: JobCharValue) => (
-              <Chip
-                key={item.key}
-                avatar={<div style={{ width: "5rem" }}>{item.key}</div>}
-                label={item.value}
-              />
-            ))}
-          {jobFloatValues
-            ?.filter((item: JobFloatValue) => item.job === job.id)
-            .map((item) => (
-              <Chip
-                key={item.key}
-                avatar={<div style={{ width: "5rem" }}>{item.key}</div>}
-                label={item.value}
-              />
-            ))}
-        </CardContent>
         <CardActions sx={{ p: 0.5 }}>
           {subJobs && subJobs.length > 0 && (
             <>
