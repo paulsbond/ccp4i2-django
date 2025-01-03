@@ -43,7 +43,7 @@ class Project(Model):
 class ProjectTag(Model):
     parent = ForeignKey("self", CASCADE, blank=True, null=True, related_name="children")
     text = CharField(max_length=50)
-    projects = ManyToManyField(Project, related_name="tags")
+    projects = ManyToManyField(Project, blank=True, related_name="tags")
 
     class Meta:
         unique_together = ["parent", "text"]
