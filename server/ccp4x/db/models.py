@@ -1,6 +1,8 @@
 from getpass import getuser
 from socket import gethostname
 from uuid import uuid4
+from pathlib import Path
+
 from django.db.models import (
     CASCADE,
     CharField,
@@ -107,6 +109,12 @@ class Job(Model):
     def __str__(self):
         return f"{self.number} {self.title}"
 
+    @property
+    def directory(self):
+        path_elements = [f"job_{element}" for element in self.number.split(".")]
+        jobs_dir = Path(self.project.directory) / "CCP4_JOBS"
+        return jobs_dir.join(*path_elements)
+
 
 class ServerJob(Model):
     job = OneToOneField(Job, CASCADE, primary_key=True)
@@ -181,6 +189,13 @@ class File(Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def path(self):
+        if self.directory == File.JOB_DIR:
+            return self.job.directory / self.name
+        elif self.directory == File.IMPORT_DIR:
+            return Path(self.job.project.directory) / "CCP4_IMPORTED_FILES"
 
 
 class FileExport(Model):

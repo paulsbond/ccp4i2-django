@@ -3,7 +3,7 @@ from shutil import rmtree
 from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
-from ..db.import_i2xml import import_i2xml
+from ..db.import_i2xml import import_i2xml_from_file
 from ..db import models
 
 
@@ -13,7 +13,7 @@ from ..db import models
 class ApiTestCase(TestCase):
     def setUp(self):
         Path(settings.CCP4I2_PROJECTS_DIR).mkdir()
-        import_i2xml(
+        import_i2xml_from_file(
             Path(__file__).parent.parent / "db" / "DATABASE.db.xml",
             relocate_path=settings.CCP4I2_PROJECTS_DIR,
         )

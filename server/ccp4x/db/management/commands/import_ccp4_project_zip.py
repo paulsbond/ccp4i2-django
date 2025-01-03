@@ -1,6 +1,7 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ccp4x.db.import_i2xml import import_i2xml_from_file
+from ccp4x.db.import_i2xml import import_ccp4_project_zip
 
 
 class Command(BaseCommand):
@@ -9,8 +10,10 @@ class Command(BaseCommand):
     requires_system_checks = []
 
     def add_arguments(self, parser):
-        parser.add_argument("project_xml")
+        parser.add_argument("zip_file")
 
     def handle(self, *args, **options):
         self.stdout.write(f"{options}")
-        import_i2xml_from_file(options["program_xml"])
+        import_ccp4_project_zip(
+            options["zip_file"], relocate_path=settings.CCP4I2_PROJECTS_DIR
+        )
