@@ -2,18 +2,9 @@
 import { useRouter } from "next/navigation";
 import { Button, Toolbar, Tooltip } from "@mui/material";
 import { Add, Upload } from "@mui/icons-material";
-import { Project } from "../models";
-import { useApi } from "../api";
 
 export default function ProjectsToolbar() {
-  const api = useApi();
   const router = useRouter();
-
-  function newProject() {
-    api.post<Project>("projects").then((project) => {
-      router.push(`/project/${project.id}`);
-    });
-  }
 
   function importProjects() {
     // TODO
@@ -22,7 +13,11 @@ export default function ProjectsToolbar() {
   return (
     <Toolbar sx={{ gap: 2 }}>
       <Tooltip title="Start a new project">
-        <Button variant="contained" startIcon={<Add />} onClick={newProject}>
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => router.push("/new-project")}
+        >
           New
         </Button>
       </Tooltip>

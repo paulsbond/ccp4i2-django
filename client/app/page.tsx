@@ -5,14 +5,11 @@ import ProjectsTable from "./components/projects-table";
 
 export default function ProjectsPage() {
   return (
-    <>
-      <MenuBar />
-      <Container sx={{ my: 3 }}>
-        <Stack spacing={2}>
-          <ProjectsToolbar />
-          <ProjectsTable />
-        </Stack>
-      </Container>
-    </>
+    <Container sx={{ my: 3 }}>
+      <Stack spacing={2}>
+        <ProjectsToolbar />
+        <ProjectsTable />
+      </Stack>
+    </Container>
   );
 }
