@@ -71,6 +71,7 @@ export const JobCard: React.FC<JobCardProps> = ({
     <>
       <MyCard key={job.number} variant="elevation">
         <CardHeader
+          sx={{ backgroundColor: "#EEE", my: 0, mx: 0, px: 0, py: 0 }}
           title={
             <Toolbar>
               <Avatar src={`/svgicons/${job.task_name}.svg`} />
