@@ -23,54 +23,96 @@ logger = logging.getLogger("root")
 tag_map = {}
 
 
+def job_number_hash(dotted_number: str):
+    job_elements = dotted_number.split(".")
+    # left_pad each element.  NB: this limits the job number count at every level!
+    job_elements = [job_element.ljust(8, "0") for job_element in job_elements]
+    # left_pad agregate element.  NB: this limits the number of job levels!
+    return "".join(job_elements).ljust(32 * 8, "0")
+
+
 def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
-    zip_archive = zipfile.ZipFile(zip_path, "r")
-    root_node = ET.parse(zip_archive.open("DATABASE.db.xml", "r"))
-    import_i2xml(root_node, relocate_path=relocate_path)
-    all_archive_files = zip_archive.namelist()
-    this_project_node = root_node.findall("ccp4i2_header/projectId")
-    print(this_project_node)
-    this_project = Project.objects.get(uuid=this_project_node[0].text.strip())
-    for subdir in [
-        "CCP4_COOT",
-        "CCP4_DOWNLOADED_FILES",
-        "CCP4_PROJECT_FILES",
-        "CCP4_IMPORTED_FILES",
-        "CCP4_TMP",
-        "CCP4_JOBS",
-    ]:
-        subdir_files = [
-            filename
-            for filename in all_archive_files
-            if filename.startswith(f"{subdir}/")
-        ]
-        zip_archive.extractall(str(Path(this_project.directory)), subdir_files, None)
+    with zipfile.ZipFile(zip_path, "r") as zip_archive:
+        with zip_archive.open("DATABASE.db.xml", "r") as database_file:
+            root_node = ET.parse(database_file)
+            import_i2xml_result = import_i2xml(root_node, relocate_path=relocate_path)
+            all_archive_files = zip_archive.namelist()
+            this_project_node = root_node.findall("ccp4i2_header/projectId")
+            this_project = Project.objects.get(uuid=this_project_node[0].text.strip())
+            for subdir in [
+                "CCP4_COOT",
+                "CCP4_DOWNLOADED_FILES",
+                "CCP4_PROJECT_FILES",
+                "CCP4_IMPORTED_FILES",
+                "CCP4_TMP",
+            ]:
+                subdir_files = [
+                    filename
+                    for filename in all_archive_files
+                    if filename.startswith(f"{subdir}/")
+                ]
+                zip_archive.extractall(
+                    str(Path(this_project.directory)), subdir_files, None
+                )
+
+            # Special handling for JOBS, since there may have been job remapping on import
+            # Same could apply to imported files...
+            top_level_job_numbers = [
+                job_number
+                for job_number in import_i2xml_result["job_map"]
+                if "." not in job_number
+            ]
+            (Path(this_project.directory) / "CCP4_JOBS").mkdir(exist_ok=True)
+            for top_level_job_number in top_level_job_numbers:
+                job_files = [
+                    zip_entry
+                    for zip_entry in all_archive_files
+                    if zip_entry.startswith(f"CCP4_JOBS/job_{top_level_job_number}")
+                ]
+                for src in job_files:
+                    destination = Path(this_project.directory) / src
+                    if src.endswith("/"):
+                        destination.mkdir()
+                    else:
+                        with zip_archive.open(src, "r") as src_file:
+                            with open(destination, "wb") as destination_file:
+                                destination_file.write(src_file.read())
 
 
-def banana(root_node: ET.Element):
+def renumber_job(job_node: ET.Element, root_node: ET.Element):
     # Look out for case that jobs with matching job numbers are proposed for import
     all_import_job_nodes = root_node.findall("ccp4i2_body/jobTable/job")
     top_level_job_nodes = [
-        node for node in all_import_job_nodes if "parentjobid" not in node.attrib
+        node
+        for node in all_import_job_nodes
+        if (("parentjobid" not in node.attrib) or node.attrib["parentjobid"] is None)
     ]
-    for top_level_job_node in top_level_job_nodes:
-        try:
-            matching_project = Project.objects.get(
-                uuid=top_level_job_node.attrib["projectid"]
+    top_level_job_numbers = [node.attrib["jobnumber"] for node in top_level_job_nodes]
+    matching_project = Project.objects.get(uuid=job_node.attrib["projectid"])
+    all_db_job_numbers = [
+        job.number
+        for job in Job.objects.filter(parent__isnull=True, project=matching_project)
+    ]
+    all_existing_job_numbers = list(set(top_level_job_numbers + all_db_job_numbers))
+
+    original_job_number = job_node.attrib["jobnumber"]
+    if original_job_number in all_db_job_numbers:
+        next_free_job_number = (
+            max([int(job_number) for job_number in all_existing_job_numbers]) + 1
+        )
+        job_node.attrib["jobnumber"] = str(next_free_job_number)
+        descendent_import_job_nodes = [
+            node
+            for node in all_import_job_nodes
+            if node.attrib["jobnumber"].startswith(f"{original_job_number}.")
+        ]
+        for descendent_import_job_node in descendent_import_job_nodes:
+            job_number_elements = descendent_import_job_node.attrib["jobnumber"].split(
+                "."
             )
-            _ = Job.objects.get(
-                project=matching_project, number=top_level_job_node.attrib["jobnumber"]
-            )
-        except Project.DoesNotExist as err:
-            logging.error(
-                f"Project for this job does not exist {err}, {top_level_job_node}"
-            )
-            raise err
-        except Job.DoesNotExist as err:
-            logging.info(
-                f"No job found matching project {top_level_job_node.attrib['projectid']}, job number {top_level_job_node.attrib['jobnumber']} {err}"
-            )
-            pass
+            new_job_number = ".".join([original_job_number] + job_number_elements[1:])
+            descendent_import_job_node.attrib["jobnumber"] = new_job_number
+    return job_node.attrib["jobnumber"]
 
 
 def import_i2xml_from_file(xml_path: Path, relocate_path: Path = None):
@@ -80,13 +122,21 @@ def import_i2xml_from_file(xml_path: Path, relocate_path: Path = None):
 
 
 def import_i2xml(root_node: ET.Element, relocate_path: Path):
-
+    job_map = {}
     for node in root_node.findall("ccp4i2_body/projectTable/project"):
         import_project(node, relocate_path)
-    for node in root_node.findall("ccp4i2_body/jobTable/job"):
+    job_nodes = root_node.findall("ccp4i2_body/jobTable/job")
+    job_nodes = sorted(
+        job_nodes,
+        key=lambda val: job_number_hash(val.attrib["jobnumber"]),
+        reverse=False,
+    )
+    print([node.attrib["jobnumber"] for node in job_nodes])
+    for node in job_nodes:
+        job_map[node.attrib["jobnumber"]] = renumber_job(node, root_node)
         import_job(node)
     for node in root_node.findall("ccp4i2_body/fileTable/file"):
-        import_file(node, relocate_path=relocate_path)
+        import_file(node)
     for node in root_node.findall("ccp4i2_body/fileuseTable/fileuse"):
         import_file_use(node)
     for node in root_node.findall("ccp4i2_body/importfileTable/importfile"):
@@ -99,6 +149,7 @@ def import_i2xml(root_node: ET.Element, relocate_path: Path):
         import_tag(node)
     for node in root_node.findall("ccp4i2_body/projecttagTable/projecttag"):
         import_project_tag(node)
+    return {"job_map": job_map}
 
 
 def import_project(node: ET.Element, relocate_path: Path = None):
@@ -149,7 +200,7 @@ def import_job(node: ET.Element):
     else:
         create_dict["title"] = node.attrib["taskname"]
     create_dict["project"] = Project.objects.get(uuid=node.attrib["projectid"]).pk
-    if "parentjobid" in node.attrib:
+    if "parentjobid" in node.attrib and node.attrib["parentjobid"] is not None:
         create_dict["parent"] = Job.objects.get(uuid=node.attrib["parentjobid"]).pk
     item_form = JobSerializer(data=create_dict)
     if item_form.is_valid():
@@ -162,7 +213,7 @@ def import_job(node: ET.Element):
         return None
 
 
-def import_file(node: ET.Element, relocate_path: Path = None):
+def import_file(node: ET.Element):
     create_dict = {}
     create_dict["uuid"] = node.attrib["fileid"]
     create_dict["name"] = node.attrib["filename"]
