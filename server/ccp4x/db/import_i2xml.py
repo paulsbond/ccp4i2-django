@@ -14,7 +14,18 @@ from ..api.serializers import (
     JobFloatValueSerializer,
     ProjectTagSerializer,
 )
-from .models import Project, Job, FileType, File, JobValueKey, ProjectTag
+from .models import (
+    Project,
+    Job,
+    FileType,
+    File,
+    JobValueKey,
+    ProjectTag,
+    FileUse,
+    FileImport,
+    JobFloatValue,
+    JobCharValue,
+)
 from .ccp4i2_static_data import FILETYPELIST, KEYTYPELIST
 
 logging.basicConfig(level=logging.ERROR)
@@ -72,7 +83,7 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
                 for src in job_files:
                     destination = Path(this_project.directory) / src
                     if src.endswith("/"):
-                        destination.mkdir()
+                        destination.mkdir(exist_ok=True)
                     else:
                         with zip_archive.open(src, "r") as src_file:
                             with open(destination, "wb") as destination_file:
@@ -153,6 +164,7 @@ def import_i2xml(root_node: ET.Element, relocate_path: Path):
 
 
 def import_project(node: ET.Element, relocate_path: Path = None):
+
     create_dict = {}
     create_dict["uuid"] = node.attrib["projectid"]
     create_dict["name"] = node.attrib["projectname"]
@@ -169,7 +181,14 @@ def import_project(node: ET.Element, relocate_path: Path = None):
     create_dict["creation_time"] = datetime.datetime.fromtimestamp(
         float(node.attrib["projectcreated"])
     )
-    item_form = ProjectSerializer(data=create_dict)
+
+    try:
+        instance = Project.objects.get(uuid=create_dict["uuid"])
+        item_form = ProjectSerializer(data=create_dict, instance=instance)
+    except Project.DoesNotExist as err:
+        logging.info(f"Attempting to create new project {err}")
+        item_form = ProjectSerializer(data=create_dict)
+
     if item_form.is_valid():
         new_item = item_form.save()
         new_project = new_item.save()
@@ -177,7 +196,7 @@ def import_project(node: ET.Element, relocate_path: Path = None):
         return new_project
     else:
         logging.error(f"Issues creating new project {item_form.errors}")
-        return None
+        return item_form.errors
 
 
 def import_job(node: ET.Element):
@@ -202,7 +221,14 @@ def import_job(node: ET.Element):
     create_dict["project"] = Project.objects.get(uuid=node.attrib["projectid"]).pk
     if "parentjobid" in node.attrib and node.attrib["parentjobid"] is not None:
         create_dict["parent"] = Job.objects.get(uuid=node.attrib["parentjobid"]).pk
-    item_form = JobSerializer(data=create_dict)
+
+    try:
+        instance = Job.objects.get(uuid=create_dict["uuid"])
+        item_form = JobSerializer(data=create_dict, instance=instance)
+    except Job.DoesNotExist as err:
+        logging.info(f"Attempting to create new job {err}")
+        item_form = JobSerializer(data=create_dict)
+
     if item_form.is_valid():
         new_item = item_form.save()
         new_job = new_item.save()
@@ -210,7 +236,7 @@ def import_job(node: ET.Element):
         return new_job
     else:
         logging.error(f"Issues creating new job {item_form.errors}")
-        return None
+        return item_form.errors
 
 
 def import_file(node: ET.Element):
@@ -232,7 +258,13 @@ def import_file(node: ET.Element):
     if "filecontent" in node.attrib:
         create_dict["content"] = node.attrib["filecontent"]
 
-    item_form = FileSerializer(data=create_dict)
+    try:
+        instance = File.objects.get(uuid=create_dict["uuid"])
+        item_form = FileSerializer(data=create_dict, instance=instance)
+    except File.DoesNotExist as err:
+        logging.info(f"Attempting to create new project {err}")
+        item_form = FileSerializer(data=create_dict)
+
     if item_form.is_valid():
         new_item = item_form.save()
         new_file = new_item.save()
@@ -240,7 +272,7 @@ def import_file(node: ET.Element):
         return new_file
     else:
         logging.error(f"Issues creating new File {item_form.errors}")
-        return None
+        return item_form.errors
 
 
 def import_file_use(node: ET.Element):
@@ -250,7 +282,18 @@ def import_file_use(node: ET.Element):
     create_dict["role"] = node.attrib["roleid"]
     create_dict["job_param_name"] = node.attrib["jobparamname"]
 
-    item_form = FileUseSerializer(data=create_dict)
+    try:
+        instance = FileUse.objects.get(
+            file=create_dict["file"],
+            job=create_dict["job"],
+            role=create_dict["role"],
+            job_param_name=create_dict["job_param_name"],
+        )
+        item_form = FileUseSerializer(data=create_dict, instance=instance)
+    except FileUse.DoesNotExist as err:
+        logging.info(f"Attempting to create new project {err}")
+        item_form = FileUseSerializer(data=create_dict)
+
     if item_form.is_valid():
         new_item = item_form.save()
         new_file_use = new_item.save()
@@ -258,7 +301,7 @@ def import_file_use(node: ET.Element):
         return new_file_use
     else:
         logging.error(f"Issues creating new FileUse {item_form.errors}")
-        return None
+        return item_form.errors
 
 
 def import_file_import(node: ET.Element):
@@ -270,7 +313,13 @@ def import_file_import(node: ET.Element):
     create_dict["name"] = node.attrib["sourcefilename"]
     create_dict["checksum"] = node.attrib["checksum"]
 
-    item_form = FileImportSerializer(data=create_dict)
+    try:
+        instance = FileImport.objects.get(file=create_dict["file"])
+        item_form = FileImportSerializer(data=create_dict, instance=instance)
+    except FileImport.DoesNotExist as err:
+        logging.info(f"Attempting to create new project {err}")
+        item_form = FileImportSerializer(data=create_dict)
+
     if item_form.is_valid():
         new_item = item_form.save()
         new_file_import = new_item.save()
@@ -278,7 +327,7 @@ def import_file_import(node: ET.Element):
         return new_file_import
     else:
         logging.error("Issues creating new FileImport {item_form.errors}")
-        return None
+        return item_form.errors
 
 
 def import_job_key_value(node: ET.Element):
@@ -290,15 +339,23 @@ def import_job_key_value(node: ET.Element):
     create_dict["key"] = JobValueKey.objects.get(name=key_type[1]).pk
     create_dict["value"] = float(node.attrib["value"])
 
-    item_form = JobFloatValueSerializer(data=create_dict)
+    try:
+        instance = JobFloatValue.objects.get(
+            job=create_dict["job"], key=create_dict["key"]
+        )
+        item_form = JobFloatValueSerializer(data=create_dict, instance=instance)
+    except JobFloatValue.DoesNotExist as err:
+        logging.info(f"Attempting to create new project {err}")
+        item_form = JobFloatValueSerializer(data=create_dict)
+
     if item_form.is_valid():
         new_item = item_form.save()
         new_job_float_value = new_item.save()
-        logging.info(f"Created new JobValue {new_job_float_value}")
+        logging.info(f"Created new JobFloatValue {new_job_float_value}")
         return new_job_float_value
     else:
-        logging.error(f"Issues creating new JobValue {item_form.errors}")
-        return None
+        logging.error(f"Issues creating new JobFloatValue {item_form.errors}")
+        return item_form.errors
 
 
 def import_job_key_char_value(node: ET.Element):
@@ -310,7 +367,15 @@ def import_job_key_char_value(node: ET.Element):
     create_dict["key"] = JobValueKey.objects.get(name=key_type[1]).pk
     create_dict["value"] = str(node.attrib["value"])
 
-    item_form = JobCharValueSerializer(data=create_dict)
+    try:
+        instance = JobCharValue.objects.get(
+            job=create_dict["job"], key=create_dict["key"]
+        )
+        item_form = JobCharValueSerializer(data=create_dict, instance=instance)
+    except JobCharValue.DoesNotExist as err:
+        logging.info(f"Attempting to create new JobCharValue {err}")
+        item_form = JobCharValueSerializer(data=create_dict)
+
     if item_form.is_valid():
         new_item = item_form.save()
         new_job_char_value = new_item.save()
@@ -318,7 +383,7 @@ def import_job_key_char_value(node: ET.Element):
         return new_job_char_value
     else:
         logging.error(f"Issues creating new JobCharValue {item_form.errors}")
-        return None
+        return item_form.errors
 
 
 def import_tag(node: ET.Element):
@@ -353,4 +418,4 @@ def import_project_tag(node: ET.Element):
             return new_project_tag
         else:
             logging.error(f"Issues creating new JobCharValue {item_form.errors}")
-            return None
+            return item_form.errors

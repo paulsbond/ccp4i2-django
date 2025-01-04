@@ -37,18 +37,19 @@ class ProjectSerializer(ModelSerializer):
         project_names = [
             project.name.upper() for project in models.Project.objects.all()
         ]
-        if data.upper() in project_names:
+        if "uuid" not in self.initial_data and data.upper() in project_names:
             raise ValidationError("A project with this name already exists!")
-        assert Path(settings.CCP4I2_PROJECTS_DIR).is_dir()
-        try:
-            testWritePath = Path(settings.CCP4I2_PROJECTS_DIR) / "testWrite.txt"
-            with open(testWritePath, "w") as testWrite:
-                testWrite.write("test")
-            testWritePath.unlink()
-        except Exception as err:
-            raise ValidationError(
-                f"Failure trying to write to  [{testWritePath}], {err}"
-            ) from err
+        if "directory" not in self.initial_data:
+            assert Path(settings.CCP4I2_PROJECTS_DIR).is_dir()
+            try:
+                testWritePath = Path(settings.CCP4I2_PROJECTS_DIR) / "testWrite.txt"
+                with open(testWritePath, "w") as testWrite:
+                    testWrite.write("test")
+                testWritePath.unlink()
+            except Exception as err:
+                raise ValidationError(
+                    f"Failure trying to write to  [{testWritePath}], {err}"
+                ) from err
         return data
 
 

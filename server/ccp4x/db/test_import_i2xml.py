@@ -44,3 +44,62 @@ class ImportI2xmlCase(TestCase):
                 )
             )
         )
+
+    def test_import_second_project_zip(self):
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "refmac_gamma_test_0.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "refmac_gamma_test_0_a.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        print(
+            glob(
+                str(
+                    settings.CCP4I2_PROJECTS_DIR
+                    / "refmac_gamma_test_0"
+                    / "CCP4_IMPORTED_FILES"
+                    / "*"
+                )
+            )
+        )
+
+    def test_import_second_and_third_project_zip(self):
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "refmac_gamma_test_0.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "refmac_gamma_test_0_a.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "refmac_gamma_test_0_b.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        print(
+            glob(
+                str(
+                    settings.CCP4I2_PROJECTS_DIR
+                    / "refmac_gamma_test_0"
+                    / "CCP4_JOBS"
+                    / "*"
+                )
+            )
+        )
