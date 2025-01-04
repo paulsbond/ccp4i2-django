@@ -1,12 +1,16 @@
 import { useApi } from "../api";
 import {
   Avatar,
+  Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
   Chip,
   Collapse,
+  Grid2,
+  Menu,
+  MenuItem,
   styled,
   Toolbar,
   Typography,
@@ -18,6 +22,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { MyExpandMore } from "./expand-more";
 import { JobsGrid } from "./jobs-grid";
 import FilesTable from "./files-table";
+import { CopyAll, Menu as MenuIcon } from "@mui/icons-material";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -82,6 +87,36 @@ export const JobCard: React.FC<JobCardProps> = ({
   }, [jobCharValues, jobFloatValues]);
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [filesExpanded, setFilesExpanded] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const isMenuOpen = Boolean(anchorEl);
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+    alert("Hello");
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  const renderMenu = (
+    <Menu
+      anchorEl={anchorEl}
+      anchorOrigin={{
+        vertical: "top",
+        horizontal: "right",
+      }}
+      id={`context-menu-${job.id}`}
+      keepMounted
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "right",
+      }}
+      open={isMenuOpen}
+      onClose={handleMenuClose}
+    >
+      <MenuItem onClick={() => {}}>
+        <CopyAll /> Clone
+      </MenuItem>
+    </Menu>
+  );
 
   const handleExpandJobsClick = (ev: any) => {
     ev.stopPropagation();
@@ -95,6 +130,11 @@ export const JobCard: React.FC<JobCardProps> = ({
     <>
       <MyCard key={job.number} variant="elevation">
         <CardHeader
+          action={
+            <Button onClick={handleMenuOpen}>
+              <MenuIcon />
+            </Button>
+          }
           sx={{ my: 0, mx: 0, px: 0, py: 0 }}
           title={
             <Toolbar>
@@ -120,32 +160,34 @@ export const JobCard: React.FC<JobCardProps> = ({
           subheader={kpiContent}
         />
         <CardActions sx={{ p: 0.5 }}>
-          {subJobs && subJobs.length > 0 && (
-            <>
-              Child jobs
-              <MyExpandMore
-                expand={jobsExpanded}
-                onClick={handleExpandJobsClick}
-                aria-expanded={jobsExpanded}
-                aria-label="Show child jobs"
-              >
-                <ExpandMoreIcon />
-              </MyExpandMore>
-            </>
-          )}
-          {jobFiles && jobFiles.length > 0 && (
-            <>
-              Files
-              <MyExpandMore
-                expand={filesExpanded}
-                onClick={handleExpandFilesClick}
-                aria-expanded={filesExpanded}
-                aria-label="Show files"
-              >
-                <ExpandMoreIcon />
-              </MyExpandMore>
-            </>
-          )}
+          <Grid2 container>
+            {subJobs && subJobs.length > 0 && (
+              <Grid2 sx={{ xs: 6 }}>
+                Child jobs
+                <MyExpandMore
+                  expand={jobsExpanded}
+                  onClick={handleExpandJobsClick}
+                  aria-expanded={jobsExpanded}
+                  aria-label="Show child jobs"
+                >
+                  <ExpandMoreIcon />
+                </MyExpandMore>
+              </Grid2>
+            )}
+            {jobFiles && jobFiles.length > 0 && (
+              <Grid2 sx={{ xs: 6 }}>
+                Files
+                <MyExpandMore
+                  expand={filesExpanded}
+                  onClick={handleExpandFilesClick}
+                  aria-expanded={filesExpanded}
+                  aria-label="Show files"
+                >
+                  <ExpandMoreIcon />
+                </MyExpandMore>
+              </Grid2>
+            )}
+          </Grid2>
         </CardActions>
         <Collapse
           key="ChildJobs"
@@ -177,6 +219,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           </CardContent>
         </Collapse>
       </MyCard>
+      {renderMenu}
     </>
   );
 };
