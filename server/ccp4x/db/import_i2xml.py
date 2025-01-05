@@ -47,6 +47,7 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
         with zip_archive.open("DATABASE.db.xml", "r") as database_file:
             root_node = ET.parse(database_file)
             import_i2xml_result = import_i2xml(root_node, relocate_path=relocate_path)
+            print(import_i2xml_result)
             all_archive_files = zip_archive.namelist()
             this_project_node = root_node.findall("ccp4i2_header/projectId")
             this_project = Project.objects.get(uuid=this_project_node[0].text.strip())
@@ -78,10 +79,19 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
                 job_files = [
                     zip_entry
                     for zip_entry in all_archive_files
-                    if zip_entry.startswith(f"CCP4_JOBS/job_{top_level_job_number}")
+                    if zip_entry.startswith(f"CCP4_JOBS/job_{top_level_job_number}/")
                 ]
                 for src in job_files:
-                    destination = Path(this_project.directory) / src
+                    new_job_number = import_i2xml_result["job_map"][
+                        top_level_job_number
+                    ]
+                    destination = Path(this_project.directory) / src.replace(
+                        f"CCP4_JOBS/job_{top_level_job_number}/",
+                        f"CCP4_JOBS/job_{new_job_number}/",
+                        1,
+                    )
+                    print("src", src)
+                    print("dest", destination)
                     if src.endswith("/"):
                         destination.mkdir(exist_ok=True)
                     else:
@@ -133,6 +143,7 @@ def renumber_top_job(job_node: ET.Element, root_node: ET.Element):
                 [job_node.attrib["jobnumber"]] + job_number_elements[1:]
             )
             descendent_import_job_node.attrib["jobnumber"] = new_job_number
+    print(original_job_number, job_node.attrib["jobnumber"])
     return job_node.attrib["jobnumber"]
 
 
@@ -153,7 +164,8 @@ def import_i2xml(root_node: ET.Element, relocate_path: Path):
         reverse=False,
     )
     for node in job_nodes:
-        job_map[node.attrib["jobnumber"]] = renumber_top_job(node, root_node)
+        original_job_number = node.attrib["jobnumber"]
+        job_map[original_job_number] = renumber_top_job(node, root_node)
         import_job(node)
     for node in root_node.findall("ccp4i2_body/fileTable/file"):
         import_file(node)
