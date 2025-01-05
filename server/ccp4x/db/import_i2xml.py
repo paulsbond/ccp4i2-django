@@ -219,9 +219,10 @@ def import_job(node: ET.Element):
     create_dict["creation_time"] = datetime.datetime.fromtimestamp(
         float(node.attrib["creationtime"])
     )
-    create_dict["finish_time"] = datetime.datetime.fromtimestamp(
-        float(node.attrib["finishtime"])
-    )
+    if "finishtime" in node.attrib and node.attrib["finishtime"] is not None:
+        create_dict["finish_time"] = datetime.datetime.fromtimestamp(
+            float(node.attrib["finishtime"])
+        )
     create_dict["number"] = node.attrib["jobnumber"]
     if "title" in node.attrib:
         create_dict["title"] = node.attrib["title"]
