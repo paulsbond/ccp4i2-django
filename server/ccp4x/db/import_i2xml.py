@@ -90,8 +90,12 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
                                 destination_file.write(src_file.read())
 
 
-def renumber_job(job_node: ET.Element, root_node: ET.Element):
+def renumber_top_job(job_node: ET.Element, root_node: ET.Element):
+    # null operation if not top evel job
+    if "." in job_node.attrib["jobnumber"]:
+        return job_node.attrib["jobnumber"]
     # Look out for case that jobs with matching job numbers are proposed for import
+    original_job_number = job_node.attrib["jobnumber"]
     all_import_job_nodes = root_node.findall("ccp4i2_body/jobTable/job")
     top_level_job_nodes = [
         node
@@ -105,11 +109,15 @@ def renumber_job(job_node: ET.Element, root_node: ET.Element):
         for job in Job.objects.filter(parent__isnull=True, project=matching_project)
     ]
     all_existing_job_numbers = list(set(top_level_job_numbers + all_db_job_numbers))
-
-    original_job_number = job_node.attrib["jobnumber"]
     if original_job_number in all_db_job_numbers:
+        old_job = Job.objects.get(
+            number=job_node.attrib["jobnumber"],
+            project=matching_project.pk,
+        )
+        if str(old_job.uuid) == job_node.attrib["jobid"]:
+            return job_node.attrib["jobnumber"]
         next_free_job_number = (
-            max([int(job_number) for job_number in all_existing_job_numbers]) + 1
+            max(int(job_number) for job_number in all_existing_job_numbers) + 1
         )
         job_node.attrib["jobnumber"] = str(next_free_job_number)
         descendent_import_job_nodes = [
@@ -121,7 +129,9 @@ def renumber_job(job_node: ET.Element, root_node: ET.Element):
             job_number_elements = descendent_import_job_node.attrib["jobnumber"].split(
                 "."
             )
-            new_job_number = ".".join([original_job_number] + job_number_elements[1:])
+            new_job_number = ".".join(
+                [job_node.attrib["jobnumber"]] + job_number_elements[1:]
+            )
             descendent_import_job_node.attrib["jobnumber"] = new_job_number
     return job_node.attrib["jobnumber"]
 
@@ -142,9 +152,8 @@ def import_i2xml(root_node: ET.Element, relocate_path: Path):
         key=lambda val: job_number_hash(val.attrib["jobnumber"]),
         reverse=False,
     )
-    print([node.attrib["jobnumber"] for node in job_nodes])
     for node in job_nodes:
-        job_map[node.attrib["jobnumber"]] = renumber_job(node, root_node)
+        job_map[node.attrib["jobnumber"]] = renumber_top_job(node, root_node)
         import_job(node)
     for node in root_node.findall("ccp4i2_body/fileTable/file"):
         import_file(node)
@@ -235,7 +244,7 @@ def import_job(node: ET.Element):
         logging.info(f"Created new job {new_job}")
         return new_job
     else:
-        logging.error(f"Issues creating new job {item_form.errors}")
+        logging.error(f"Issues creating new job {create_dict} {item_form.errors}")
         return item_form.errors
 
 

@@ -83,14 +83,14 @@ class ImportI2xmlCase(TestCase):
             Path(__file__).parent.parent.parent.parent.parent
             / "test101"
             / "ProjectZips"
-            / "refmac_gamma_test_0_a.ccp4_project.zip",
+            / "refmac_gamma_test_0_b.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
         import_ccp4_project_zip(
             Path(__file__).parent.parent.parent.parent.parent
             / "test101"
             / "ProjectZips"
-            / "refmac_gamma_test_0_b.ccp4_project.zip",
+            / "refmac_gamma_test_0_a.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
         print(
