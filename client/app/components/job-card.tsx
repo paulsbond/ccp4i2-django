@@ -23,6 +23,8 @@ import { MyExpandMore } from "./expand-more";
 import { JobsGrid } from "./jobs-grid";
 import FilesTable from "./files-table";
 import { CopyAll, Menu as MenuIcon } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
+import { JobHeader } from "./job-header";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -38,6 +40,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   withSubtitle = false,
 }) => {
   const api = useApi();
+  const router = useRouter();
   const projectId = useMemo(() => {
     return job.project;
   }, [job]);
@@ -128,7 +131,13 @@ export const JobCard: React.FC<JobCardProps> = ({
   };
   return (
     <>
-      <MyCard key={job.number} variant="elevation">
+      <MyCard
+        key={job.number}
+        variant="elevation"
+        onClick={() => {
+          router.push(`/project/${job.project}/job/${job.id}`);
+        }}
+      >
         <CardHeader
           action={
             <Button onClick={handleMenuOpen}>
@@ -136,27 +145,7 @@ export const JobCard: React.FC<JobCardProps> = ({
             </Button>
           }
           sx={{ my: 0, mx: 0, px: 0, py: 0 }}
-          title={
-            <Toolbar>
-              <Avatar
-                sx={{ width: "1.5rem", height: "1.5rem" }}
-                src={`/svgicons/${job.task_name}.svg`}
-              />
-              <Typography variant="subtitle1" sx={{ mr: 2 }}>
-                {job.number}
-              </Typography>
-              <EditableTypography
-                variant="subtitle1"
-                text={job.title}
-                onDelay={async (name) => {
-                  const formData = new FormData();
-                  formData.set("title", name);
-                  await api.patch(`jobs/${job.id}`, formData);
-                  mutateJobs();
-                }}
-              />
-            </Toolbar>
-          }
+          title={<JobHeader job={job} mutateJobs={mutateJobs} />}
           subheader={kpiContent}
         />
         <CardActions sx={{ p: 0.5 }}>

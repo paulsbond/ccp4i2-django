@@ -24,11 +24,7 @@ export const JobsGrid: React.FC<JobsGridProps> = ({
           .filter((item) => item.parent === parent)
           .map((job: Job) => (
             <Grid2 key={job.number} size={{ xs: size }}>
-              <JobCard
-                key={job.number}
-                job={job}
-                withSubtitle={withSubtitles}
-              />
+              <JobCard key={job.id} job={job} withSubtitle={withSubtitles} />
             </Grid2>
           ))}
     </Grid2>
