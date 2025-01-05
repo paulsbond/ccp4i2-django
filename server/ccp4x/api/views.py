@@ -93,3 +93,20 @@ class JobViewSet(ModelViewSet):
     serializer_class = serializers.JobSerializer
     parser_classes = [FormParser, MultiPartParser]
     filterset_fields = ["project"]
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def params_xml(self, request, pk=None):
+        the_job = models.Job.objects.get(id=pk)
+        try:
+            with open(
+                the_job.directory / "params.xml", "r", encoding="UTF-8"
+            ) as params_xml_file:
+                params_xml = params_xml_file.read()
+            return Response({"status": "Success", "params_xml": params_xml})
+        except FileExistsError as err:
+            return Response({"status": "Failed", "reason": str(err)})
