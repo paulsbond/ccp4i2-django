@@ -45,7 +45,7 @@ class Project(Model):
 class ProjectTag(Model):
     parent = ForeignKey("self", CASCADE, blank=True, null=True, related_name="children")
     text = CharField(max_length=50)
-    projects = ManyToManyField(Project, blank=True, related_name="tags")
+    projects = ManyToManyField(Project, related_name="tags")
 
     class Meta:
         unique_together = ["parent", "text"]
@@ -113,7 +113,7 @@ class Job(Model):
     def directory(self):
         path_elements = [f"job_{element}" for element in self.number.split(".")]
         jobs_dir = Path(self.project.directory) / "CCP4_JOBS"
-        return jobs_dir.join(*path_elements)
+        return jobs_dir.joinpath(*path_elements)
 
 
 class ServerJob(Model):
