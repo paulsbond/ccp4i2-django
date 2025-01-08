@@ -35,7 +35,8 @@ export class Job {
     public uuid: string,
     public title: string,
     public number: string,
-    public task_name: string
+    public task_name: string,
+    public status: number
   ) {}
 }
 

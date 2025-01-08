@@ -1,19 +1,11 @@
 "use client";
-import { SyntheticEvent, use, useMemo, useState } from "react";
-import {
-  Container,
-  LinearProgress,
-  Tab,
-  Tabs,
-  Typography,
-} from "@mui/material";
-import { JobsGrid } from "../../../../components/jobs-grid";
+import { use, useMemo, useState } from "react";
+import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
 import { Job, Project } from "../../../../models";
 import { useApi } from "../../../../api";
-import { Panel, PanelGroup } from "react-resizable-panels";
-import FilesTable from "../../../../components/files-table";
 import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../components/job-header";
+import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportXMLView";
 
 export default function JobsPage({
   params,
@@ -30,6 +22,7 @@ export default function JobsPage({
   }, [jobid, jobs]);
   const { data: project } = api.get<Project>(`projects/${id}`);
   const { data: params_xml } = api.get<any>(`jobs/${jobid}/params_xml`);
+  const { data: report_xml } = api.get<any>(`jobs/${jobid}/report_xml`);
   const [tabValue, setTabValue] = useState<Number>(0);
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
@@ -40,7 +33,8 @@ export default function JobsPage({
       <JobHeader job={job} mutateJobs={mutateJobs} />
       <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
         <Tab value={0} label="Interface as xml" />
-        <Tab value={1} label="Report" />
+        <Tab value={1} label="Report as xml" />
+        <Tab value={2} label="Report" />
       </Tabs>
       {tabValue == 0 && (
         <Editor
@@ -49,7 +43,16 @@ export default function JobsPage({
           language="xml"
         />
       )}
-      {tabValue == 1 && <Typography>Files</Typography>}
+      {tabValue == 1 && report_xml && (
+        <Editor
+          height="calc(100vh - 15rem)"
+          value={report_xml.report_xml}
+          language="xml"
+        />
+      )}
+      {tabValue == 2 && report_xml && (
+        <CCP4i2ReportXMLView report_xml={report_xml} job={job} />
+      )}
     </Container>
   );
 }
