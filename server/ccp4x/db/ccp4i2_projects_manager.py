@@ -1,14 +1,15 @@
 import sys
 import os
 from pathlib import Path
-from django.utils.text import slugify
-from django.db import IntegrityError
 import json
 import uuid
 import time
 import traceback
 import pathlib
 import logging
+from typing import List
+from django.utils.text import slugify
+from django.db import IntegrityError
 
 from ccp4i2.pimple import MGQTmatplotlib
 
@@ -30,6 +31,24 @@ from ..lib.utils import uuid_from_no_hyphens
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("root")
+
+project_field_old_to_new = {
+    "followfromjobid": "follow_from_job",
+    "i1projectdirectory": "i1_project_directory",
+    "i1projectname": "i1_project_name",
+    "lastaccess": "last_access",
+    "lastjobnumber": "last_job_number",
+    # "parentprojectid": "parentprojectid",
+    "projectcreated": "creation_time",
+    "projectdirectory": "directory",
+    "projectid": "uuid",
+    "projectname": "name",
+    # "userid": "userid",
+}
+project_field_new_to_old = {
+    item[1]: item[0] for item in project_field_old_to_new.items()
+}
+project_field_new_to_old["follow_from_job_id"] = "followfromjobid"
 
 
 class FakeDb(object):
@@ -145,12 +164,6 @@ class FakeDb(object):
 
         return []
 
-    """
-    def getattr(self, attrName):
-        logging.info(f'Asked FakeProjectsManager for attr {atttrName}')
-        return super().getattr(attrName)
-    """
-
     def getTaskNameLookup(self, projectId=None, jobId=None, extras=False):
         # Fixme....this should produce a lookup of subtasks sfor use in CCP4i2 purgeJob
         try:
@@ -179,38 +192,18 @@ class FakeDb(object):
                 arg = []
             else:
                 arg = [mode.lower()]
-            for i in range(len(arg)):
-                if arg[i] == "projectdirectory":
-                    arg[i] = "directory"
-                if arg[i] == "projectname":
-                    arg[i] = "name"
-                if arg[i] == "projectid":
-                    arg[i] = "uuid"
+                arg = [project_field_old_to_new[an_arg] for an_arg in arg]
             unPatchedValues = theQS.values(*arg)
             values = []
             for unPatchedValue in unPatchedValues:
-                value = {}
-                for key in unPatchedValue:
-                    if key.endswith("_id"):
-                        value[key[:-3]] = unPatchedValue[key]
-                    elif key == "directory":
-                        value["projectdirectory"] = unPatchedValue[key]
-                    elif key == "name":
-                        value["projectname"] = unPatchedValue[key]
-                    elif key == "uuid":
-                        value["projectid"] = unPatchedValue[key]
-                    else:
-                        value[key] = unPatchedValue[key]
+                value = {
+                    project_field_new_to_old[key]: unPatchedValue[key]
+                    for key in unPatchedValue
+                }
                 values.append(value)
             result = list(values)[0]
             if len(arg) == 1:
-                if arg[0] == "directory":
-                    arg[0] = "projectdirectory"
-                if arg[0] == "name":
-                    arg[0] = "projectname"
-                if arg[0] == "uuid":
-                    arg[0] = "projectid"
-                return result[arg[0]]
+                return result[project_field_new_to_old[arg[0]]]
             return result
         except Exception as err:
             logger.exception(f"Err in getProjectInfo {err}")
