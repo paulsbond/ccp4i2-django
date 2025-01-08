@@ -90,8 +90,6 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
                         f"CCP4_JOBS/job_{new_job_number}/",
                         1,
                     )
-                    print("src", src)
-                    print("dest", destination)
                     if src.endswith("/"):
                         destination.mkdir(exist_ok=True)
                     else:

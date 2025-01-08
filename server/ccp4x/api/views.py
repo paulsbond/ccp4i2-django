@@ -1,9 +1,11 @@
+from xml.etree import ElementTree as ET
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from . import serializers
 from ..db import models
-from rest_framework.response import Response
+from ..lib.ccp4i2_report import make_old_report
 
 
 class ProjectViewSet(ModelViewSet):
@@ -108,5 +110,21 @@ class JobViewSet(ModelViewSet):
             ) as params_xml_file:
                 params_xml = params_xml_file.read()
             return Response({"status": "Success", "params_xml": params_xml})
+        except FileExistsError as err:
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def report_xml(self, request, pk=None):
+        the_job = models.Job.objects.get(id=pk)
+        try:
+            report_xml = make_old_report(the_job)
+            ET.indent(report_xml, space="\t", level=0)
+            report_xml = ET.tostring(make_old_report(the_job))
+            return Response({"status": "Success", "report_xml": report_xml})
         except FileExistsError as err:
             return Response({"status": "Failed", "reason": str(err)})

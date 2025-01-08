@@ -3,7 +3,7 @@ from shutil import rmtree
 from glob import glob
 from django.test import TestCase, override_settings
 from django.conf import settings
-from .models import Project
+from .models import Project, Job
 from .import_i2xml import import_i2xml_from_file, import_ccp4_project_zip
 
 
