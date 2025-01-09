@@ -155,9 +155,9 @@ class CCP4GraphPlot {
     this.graphs = [];
     const self = this;
 
-    $menuSelect.change(function () {
+    $menuSelect.on("change", function (e) {
       $(`#${self.menuSelectName} option:selected`).each(function () {
-        const graphName = $(this)[0].value.replace("_selectitem", "");
+        const graphName = $(this)[0].value;
         const thisPlotDiv = document.getElementById(graphName);
         $(`#${self.graphDivName}`).children().hide();
         thisPlotDiv.setAttribute(
@@ -167,7 +167,7 @@ class CCP4GraphPlot {
         $(`#${graphName}`).empty();
         self.currentGraph = self.getDataWithName(graphName);
         if (self.dataInfoDiv !== null) {
-          self.dataInfoDiv.setAttribute("class", "datainfo_hidden");
+          self.dataInfoDiv.addClass("datainfo_hidden");
         }
         self.plot();
         const selectedIndex = $(`#${self.menuSelectName}`).prop(
@@ -379,279 +379,291 @@ CCP4GraphPlot.prototype.plotShapes = function (thePlot, yaxisOverride) {
     ctx.setLineDash = function (dash) {
       if (!ctx.webkitLineDash) {
         if (!ctx.mozDash) {
-          //console.log("No dashed lines.")
           haveDashedLines = false;
         } else {
-          //console.log("Using mozDash")
-          ctx.mozDash = dash; // This may have no effect.
+          ctx.mozDash = dash;
         }
       } else {
-        //console.log("Using webkitLineDash")
-        ctx.webkitLineDash = dash; // This may have no effect.
+        ctx.webkitLineDash = dash;
       }
     };
   }
 
   for (let ishape = 0; ishape < shapes.length; ishape++) {
-    const plotOffset = thePlot.getPlotOffset();
-    const canvasCoordDum1 = thePlot.p2c({ x: 0, y: 0 });
-    const canvasCoordDum2 = thePlot.p2c({ x: 100, y: 100 });
-    //for(iax=0;iax<thePlot.getYAxes().length;iax++){
-    //console.log(iax+" "+thePlot.getYAxes()[iax].p2c(100))
-    //}
-    if (yaxisOverride != 1) {
-      const canvasCoordy = this.p2cNY(thePlot, { y: 0 }, yaxisOverride);
-      canvasCoordDum1["top"] = canvasCoordy["top"];
-      const canvasCoordy2 = this.p2cNY(thePlot, { y: 100 }, yaxisOverride);
-      canvasCoordDum2["top"] = canvasCoordy2["top"];
-    }
-    const xscale =
-      (parseFloat(canvasCoordDum2["left"]) -
-        parseFloat(canvasCoordDum1["left"])) *
-      0.01;
-    const yscale =
-      -(
-        parseFloat(canvasCoordDum2["top"]) - parseFloat(canvasCoordDum1["top"])
-      ) * 0.01;
-
     const shape = shapes[ishape];
-
     if ("text" in shape) {
-      const text = shape["text"];
-      const font = text["font"];
-      const fillColour = text["fillcolour"];
-      if (canvas.getContext) {
-        ctx.save();
-        const canvasCoord = thePlot.p2c({ x: text["x"], y: text["y"] });
-        const posLeft = canvasCoord["left"] + plotOffset["left"];
-        const posTop = canvasCoord["top"] + plotOffset["top"];
-        if (font !== "") {
-          ctx.font = font;
-        }
-        ctx.fillStyle = fillColour;
-        ctx.fillText(text["text"], posLeft, posTop);
-        ctx.restore();
-      }
+      this.drawText(ctx, thePlot, shape["text"], offset, yaxisOverride);
+    } else if ("linestrip" in shape) {
+      this.drawLineStrip(
+        ctx,
+        thePlot,
+        shape["linestrip"],
+        offset,
+        yaxisOverride,
+        haveDashedLines
+      );
+    } else if ("polygon" in shape) {
+      this.drawPolygon(
+        ctx,
+        thePlot,
+        shape["polygon"],
+        offset,
+        yaxisOverride,
+        haveDashedLines
+      );
+    } else if ("circle" in shape) {
+      this.drawCircle(ctx, thePlot, shape["circle"], offset, yaxisOverride);
     }
+  }
+};
 
-    if ("linestrip" in shape) {
-      const linestrip = shape["linestrip"];
-      const lineColour = linestrip["linecolour"];
-      const lineSize = linestrip["linesize"];
-      const lineStyle = linestrip["linestyle"];
-      if (canvas.getContext) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.strokeStyle = lineColour;
-        ctx.lineWidth = lineSize;
-        if (lineStyle) ctx.setLineDash(lineStyle);
-        let canvasCoord = thePlot.p2c({
-          x: linestrip["data"][0][0],
-          y: linestrip["data"][0][1],
-        });
-        if (yaxisOverride != 1) {
-          const canvasCoordy = this.p2cNY(
-            thePlot,
-            { y: linestrip["data"][0][1] },
-            yaxisOverride
-          );
-          canvasCoord["top"] = canvasCoordy["top"];
-        }
-        let posLeft = canvasCoord["left"] + plotOffset["left"];
-        let posTop = canvasCoord["top"] + plotOffset["top"];
-        ctx.moveTo(posLeft, posTop);
-        for (let ip = 1; ip < linestrip["data"].length; ip++) {
-          canvasCoord = thePlot.p2c({
-            x: linestrip["data"][ip][0],
-            y: linestrip["data"][ip][1],
-          });
-          if (yaxisOverride != 1) {
-            const canvasCoordy = this.p2cNY(
-              thePlot,
-              { y: linestrip["data"][ip][1] },
-              yaxisOverride
-            );
-            canvasCoord["top"] = canvasCoordy["top"];
-          }
-          const posLeft2 = canvasCoord["left"] + plotOffset["left"];
-          const posTop2 = canvasCoord["top"] + plotOffset["top"];
-          //console.log(posLeft,posTop,posLeft2,posTop2)
-          if (!lineStyle || (lineStyle && haveDashedLines)) {
-            ctx.lineTo(posLeft2, posTop2);
-          } else if (lineStyle && !haveDashedLines) {
-            this.drawDashedLine(
-              ctx,
-              posLeft,
-              posTop,
-              posLeft2,
-              posTop2,
-              lineStyle
-            );
-            posLeft = posLeft2;
-            posTop = posTop2;
-          }
-        }
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
-      }
+CCP4GraphPlot.prototype.drawText = function (
+  ctx,
+  thePlot,
+  text,
+  offset,
+  yaxisOverride
+) {
+  const font = text["font"];
+  const fillColour = text["fillcolour"];
+  if (ctx) {
+    ctx.save();
+    const canvasCoord = thePlot.p2c({ x: text["x"], y: text["y"] });
+    const posLeft = canvasCoord["left"] + offset["left"];
+    const posTop = canvasCoord["top"] + offset["top"];
+    if (font !== "") {
+      ctx.font = font;
     }
+    ctx.fillStyle = fillColour;
+    ctx.fillText(text["text"], posLeft, posTop);
+    ctx.restore();
+  }
+};
 
-    if ("polygon" in shape) {
-      const polygon = shape["polygon"];
-      const fillColour = polygon["fillcolour"];
-      const lineColour = polygon["linecolour"];
-      const lineSize = polygon["linesize"];
-      const lineStyle = polygon["linestyle"];
-      if (canvas.getContext) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.strokeStyle = lineColour;
-        ctx.fillStyle = fillColour;
-        ctx.lineWidth = lineSize;
-        if (lineStyle) ctx.setLineDash(lineStyle);
-        let canvasCoord = thePlot.p2c({
-          x: polygon["data"][0][0],
-          y: polygon["data"][0][1],
-        });
-        if (yaxisOverride != 1) {
-          const canvasCoordy = this.p2cNY(
-            thePlot,
-            { y: polygon["data"][0][1] },
-            yaxisOverride
-          );
-          canvasCoord["top"] = canvasCoordy["top"];
-        }
-        let posLeft = canvasCoord["left"] + plotOffset["left"];
-        let posTop = canvasCoord["top"] + plotOffset["top"];
-        const posLeft_orig = canvasCoord["left"] + plotOffset["left"];
-        const posTop_orig = canvasCoord["top"] + plotOffset["top"];
-        let posLeft2;
-        let posTop2;
-        ctx.moveTo(posLeft, posTop);
-        for (let ip = 1; ip < polygon["data"].length; ip++) {
-          canvasCoord = thePlot.p2c({
-            x: polygon["data"][ip][0],
-            y: polygon["data"][ip][1],
-          });
-          if (yaxisOverride != 1) {
-            const canvasCoordy = this.p2cNY(
-              thePlot,
-              { y: polygon["data"][ip][1] },
-              yaxisOverride
-            );
-            canvasCoord["top"] = canvasCoordy["top"];
-          }
-          posLeft2 = canvasCoord["left"] + plotOffset["left"];
-          posTop2 = canvasCoord["top"] + plotOffset["top"];
-          if (!lineStyle || (lineStyle && haveDashedLines)) {
-            ctx.lineTo(posLeft2, posTop2);
-          } else if (lineStyle && !haveDashedLines) {
-            this.drawDashedLine(
-              ctx,
-              posLeft,
-              posTop,
-              posLeft2,
-              posTop2,
-              lineStyle
-            );
-            posLeft = posLeft2;
-            posTop = posTop2;
-          }
-        }
-        if (!lineStyle || (lineStyle && haveDashedLines)) {
-          ctx.lineTo(posLeft, posTop);
-        } else if (lineStyle && !haveDashedLines) {
-          this.drawDashedLine(
-            ctx,
-            posLeft2,
-            posTop2,
-            posLeft_orig,
-            posTop_orig,
-            lineStyle
-          );
-          posLeft = posLeft2;
-          posTop = posTop2;
-        }
-        ctx.stroke();
-        ctx.closePath();
-        ctx.beginPath();
-        canvasCoord = thePlot.p2c({
-          x: polygon["data"][0][0],
-          y: polygon["data"][0][1],
-        });
-        if (yaxisOverride != 1) {
-          const canvasCoordy = this.p2cNY(
-            thePlot,
-            { y: polygon["data"][0][1] },
-            yaxisOverride
-          );
-          canvasCoord["top"] = canvasCoordy["top"];
-        }
-        posLeft = canvasCoord["left"] + plotOffset["left"];
-        posTop = canvasCoord["top"] + plotOffset["top"];
-        ctx.moveTo(posLeft, posTop);
-        for (let ip = 1; ip < polygon["data"].length; ip++) {
-          canvasCoord = thePlot.p2c({
-            x: polygon["data"][ip][0],
-            y: polygon["data"][ip][1],
-          });
-          if (yaxisOverride != 1) {
-            const canvasCoordy = this.p2cNY(
-              thePlot,
-              { y: polygon["data"][ip][1] },
-              yaxisOverride
-            );
-            canvasCoord["top"] = canvasCoordy["top"];
-          }
-          const posLeft2 = canvasCoord["left"] + plotOffset["left"];
-          const posTop2 = canvasCoord["top"] + plotOffset["top"];
-          ctx.lineTo(posLeft2, posTop2);
-        }
-        ctx.lineTo(posLeft, posTop);
-        ctx.fill();
-        ctx.restore();
-      }
+CCP4GraphPlot.prototype.drawLineStrip = function (
+  ctx,
+  thePlot,
+  linestrip,
+  offset,
+  yaxisOverride,
+  haveDashedLines
+) {
+  const lineColour = linestrip["linecolour"];
+  const lineSize = linestrip["linesize"];
+  const lineStyle = linestrip["linestyle"];
+  if (ctx) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = lineColour;
+    ctx.lineWidth = lineSize;
+    if (lineStyle) ctx.setLineDash(lineStyle);
+    let canvasCoord = thePlot.p2c({
+      x: linestrip["data"][0][0],
+      y: linestrip["data"][0][1],
+    });
+    if (yaxisOverride != 1) {
+      const canvasCoordy = this.p2cNY(
+        thePlot,
+        { y: linestrip["data"][0][1] },
+        yaxisOverride
+      );
+      canvasCoord["top"] = canvasCoordy["top"];
     }
-
-    if ("circle" in shape) {
-      const circle = shape["circle"];
-
-      let canvasCoord = thePlot.p2c({ x: circle["x"], y: circle["y"] });
+    let posLeft = canvasCoord["left"] + offset["left"];
+    let posTop = canvasCoord["top"] + offset["top"];
+    ctx.moveTo(posLeft, posTop);
+    for (let ip = 1; ip < linestrip["data"].length; ip++) {
+      canvasCoord = thePlot.p2c({
+        x: linestrip["data"][ip][0],
+        y: linestrip["data"][ip][1],
+      });
       if (yaxisOverride != 1) {
         const canvasCoordy = this.p2cNY(
           thePlot,
-          { y: circle["y"] },
+          { y: linestrip["data"][ip][1] },
           yaxisOverride
         );
         canvasCoord["top"] = canvasCoordy["top"];
       }
-      //console.log(canvasCoord)
-      const radius = parseInt(Math.floor(xscale * circle["radius"]));
-      const fillColour = circle["fillcolour"];
-      const lineColour = circle["linecolour"];
-      const lineSize = circle["linesize"];
-      const lineStyle = circle["linestyle"];
-
-      const posLeft = canvasCoord["left"] + plotOffset["left"];
-      const posTop = canvasCoord["top"] + plotOffset["top"];
-      if (canvas.getContext) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.strokeStyle = lineColour;
-        ctx.lineWidth = lineSize;
-        if (lineStyle) ctx.setLineDash(lineStyle);
-        ctx.arc(posLeft, posTop, radius, 0, Math.PI * 2);
-        ctx.fillStyle = fillColour;
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(posLeft, posTop, radius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.closePath();
-        ctx.restore();
+      const posLeft2 = canvasCoord["left"] + offset["left"];
+      const posTop2 = canvasCoord["top"] + offset["top"];
+      if (!lineStyle || (lineStyle && haveDashedLines)) {
+        ctx.lineTo(posLeft2, posTop2);
+      } else if (lineStyle && !haveDashedLines) {
+        this.drawDashedLine(ctx, posLeft, posTop, posLeft2, posTop2, lineStyle);
+        posLeft = posLeft2;
+        posTop = posTop2;
       }
     }
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
   }
+};
+
+CCP4GraphPlot.prototype.drawPolygon = function (
+  ctx,
+  thePlot,
+  polygon,
+  offset,
+  yaxisOverride,
+  haveDashedLines
+) {
+  const fillColour = polygon["fillcolour"];
+  const lineColour = polygon["linecolour"];
+  const lineSize = polygon["linesize"];
+  const lineStyle = polygon["linestyle"];
+  if (ctx) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = lineColour;
+    ctx.fillStyle = fillColour;
+    ctx.lineWidth = lineSize;
+    if (lineStyle) ctx.setLineDash(lineStyle);
+    let canvasCoord = thePlot.p2c({
+      x: polygon["data"][0][0],
+      y: polygon["data"][0][1],
+    });
+    if (yaxisOverride != 1) {
+      const canvasCoordy = this.p2cNY(
+        thePlot,
+        { y: polygon["data"][0][1] },
+        yaxisOverride
+      );
+      canvasCoord["top"] = canvasCoordy["top"];
+    }
+    let posLeft = canvasCoord["left"] + offset["left"];
+    let posTop = canvasCoord["top"] + offset["top"];
+    const posLeft_orig = canvasCoord["left"] + offset["left"];
+    const posTop_orig = canvasCoord["top"] + offset["top"];
+    let posLeft2;
+    let posTop2;
+    ctx.moveTo(posLeft, posTop);
+    for (let ip = 1; ip < polygon["data"].length; ip++) {
+      canvasCoord = thePlot.p2c({
+        x: polygon["data"][ip][0],
+        y: polygon["data"][ip][1],
+      });
+      if (yaxisOverride != 1) {
+        const canvasCoordy = this.p2cNY(
+          thePlot,
+          { y: polygon["data"][ip][1] },
+          yaxisOverride
+        );
+        canvasCoord["top"] = canvasCoordy["top"];
+      }
+      posLeft2 = canvasCoord["left"] + offset["left"];
+      posTop2 = canvasCoord["top"] + offset["top"];
+      if (!lineStyle || (lineStyle && haveDashedLines)) {
+        ctx.lineTo(posLeft2, posTop2);
+      } else if (lineStyle && !haveDashedLines) {
+        this.drawDashedLine(ctx, posLeft, posTop, posLeft2, posTop2, lineStyle);
+        posLeft = posLeft2;
+        posTop = posTop2;
+      }
+    }
+    if (!lineStyle || (lineStyle && haveDashedLines)) {
+      ctx.lineTo(posLeft, posTop);
+    } else if (lineStyle && !haveDashedLines) {
+      this.drawDashedLine(
+        ctx,
+        posLeft2,
+        posTop2,
+        posLeft_orig,
+        posTop_orig,
+        lineStyle
+      );
+      posLeft = posLeft2;
+      posTop = posTop2;
+    }
+    ctx.stroke();
+    ctx.closePath();
+    ctx.beginPath();
+    canvasCoord = thePlot.p2c({
+      x: polygon["data"][0][0],
+      y: polygon["data"][0][1],
+    });
+    if (yaxisOverride != 1) {
+      const canvasCoordy = this.p2cNY(
+        thePlot,
+        { y: polygon["data"][0][1] },
+        yaxisOverride
+      );
+      canvasCoord["top"] = canvasCoordy["top"];
+    }
+    posLeft = canvasCoord["left"] + offset["left"];
+    posTop = canvasCoord["top"] + offset["top"];
+    ctx.moveTo(posLeft, posTop);
+    for (let ip = 1; ip < polygon["data"].length; ip++) {
+      canvasCoord = thePlot.p2c({
+        x: polygon["data"][ip][0],
+        y: polygon["data"][ip][1],
+      });
+      if (yaxisOverride != 1) {
+        const canvasCoordy = this.p2cNY(
+          thePlot,
+          { y: polygon["data"][ip][1] },
+          yaxisOverride
+        );
+        canvasCoord["top"] = canvasCoordy["top"];
+      }
+      const posLeft2 = canvasCoord["left"] + offset["left"];
+      const posTop2 = canvasCoord["top"] + offset["top"];
+      ctx.lineTo(posLeft2, posTop2);
+    }
+    ctx.lineTo(posLeft, posTop);
+    ctx.fill();
+    ctx.restore();
+  }
+};
+
+CCP4GraphPlot.prototype.drawCircle = function (
+  ctx,
+  thePlot,
+  circle,
+  offset,
+  yaxisOverride
+) {
+  let canvasCoord = thePlot.p2c({ x: circle["x"], y: circle["y"] });
+  if (yaxisOverride != 1) {
+    const canvasCoordy = this.p2cNY(thePlot, { y: circle["y"] }, yaxisOverride);
+    canvasCoord["top"] = canvasCoordy["top"];
+  }
+  const radius = parseInt(
+    Math.floor(this.getXScale(thePlot) * circle["radius"])
+  );
+  const fillColour = circle["fillcolour"];
+  const lineColour = circle["linecolour"];
+  const lineSize = circle["linesize"];
+  const lineStyle = circle["linestyle"];
+
+  const posLeft = canvasCoord["left"] + offset["left"];
+  const posTop = canvasCoord["top"] + offset["top"];
+  if (ctx) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = lineColour;
+    ctx.lineWidth = lineSize;
+    if (lineStyle) ctx.setLineDash(lineStyle);
+    ctx.arc(posLeft, posTop, radius, 0, Math.PI * 2);
+    ctx.fillStyle = fillColour;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(posLeft, posTop, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+  }
+};
+
+CCP4GraphPlot.prototype.getXScale = function (thePlot) {
+  const canvasCoordDum1 = thePlot.p2c({ x: 0, y: 0 });
+  const canvasCoordDum2 = thePlot.p2c({ x: 100, y: 100 });
+  return (
+    (parseFloat(canvasCoordDum2["left"]) -
+      parseFloat(canvasCoordDum1["left"])) *
+    0.01
+  );
 };
 
 CCP4GraphPlot.prototype.plotlyPlot = function (
@@ -896,7 +908,7 @@ CCP4GraphPlot.prototype.getCurrentData = function () {
 CCP4GraphPlot.prototype.setCurrentData = function (iplot) {
   //console.log(iplot, Object.keys(this.graphs))
   const graphName = this.graphs[iplot].graphID;
-  $(`#${this.menuSelectName}`).val(`${graphName}_selectitem`).change();
+  $(`#${this.menuSelectName}`).val(`${graphName}`).change();
 };
 
 CCP4GraphPlot.prototype.getDataWithName = function (graphName) {
@@ -1882,7 +1894,6 @@ CCP4GraphPlot.prototype.loadXML = function (graphObject, root, tables) {
   myNodeSelect.empty();
 
   this.dataID = this.getDataID(tables);
-
   for (let itab = 0; itab < tables.length; itab++) {
     const table = tables[itab];
     const usePlotly = this.getUsePlotly(table);
@@ -1899,14 +1910,12 @@ CCP4GraphPlot.prototype.loadXML = function (graphObject, root, tables) {
 
     const plots = table.getElementsByTagName("plot");
     const selectGroup = this.createSelectGroup(title, myNodeSelect);
-    const d = [];
 
     for (let iplot = 0; iplot < plots.length; iplot++) {
       const plot = plots[iplot];
       const plot_title = this.getPlotTitle(plot);
       const plot_description = this.getPlotDescription(plot);
       const d = this.getPlotData(plot, headers, data, dataColRow);
-
       const options = this.getPlotOptions(plot);
       const shapes = this.getPlotShapes(plot, graphObject);
       const titles = this.getPlotTitles(
@@ -1922,7 +1931,7 @@ CCP4GraphPlot.prototype.loadXML = function (graphObject, root, tables) {
       const customXTicks = this.getCustomXTicks(plot, d);
       const customYTicks = this.getCustomYTicks(plot, d);
 
-      const graphName = `${graphObject.graphDivName}${itab}`;
+      const graphName = `${graphObject.graphDivName}${itab}${iplot}`;
       const thisPlotDiv = this.createPlotDiv(
         graphName,
         graphObject.graphDivName,
@@ -3093,7 +3102,7 @@ CCP4GraphPlot.prototype.createSelectItem = function (
 ) {
   const selectItem = $("<option>")
     .html(plot_title.replace("<", "&lt;").replace(">", "&gt;"))
-    .attr("value", `${graphName}_selectitem`)
+    .attr("value", `${graphName}`)
     .attr("id", `${graphName}_selectitem`);
   if (iplot == plotsLength - 1 && itab == tablesLength - 1) {
     selectItem.attr("selected", "true");
@@ -3110,13 +3119,15 @@ CCP4GraphPlot.prototype.addPlotEventListeners = function (
 ) {
   thisPlotDiv.on("plotHover", function (e) {
     const pimpleMain = $(`#${this.graphDivName_in}`);
-    pimpleMain[0].hoverevt = $.Event("graphHover", {
-      x: e.detail.x,
-      y: e.detail.y,
-      plot: this.iplot,
-      table: this.itab,
-    });
-    pimpleMain.trigger(pimpleMain[0].hoverevt);
+    if (pimpleMain.toArray().length > 0) {
+      pimpleMain[0].hoverevt = $.Event("graphHover", {
+        x: e.detail.x,
+        y: e.detail.y,
+        plot: this.iplot,
+        table: this.itab,
+      });
+      pimpleMain.trigger(pimpleMain[0].hoverevt);
+    }
   });
 
   thisPlotDiv.on("plotClick", function (e) {
@@ -3153,10 +3164,10 @@ CCP4GraphPlot.prototype.finalizeGraph = function (graphObject, thisPlotDiv) {
   const h = $(`#${graphObject.graphDivName}`).css("height");
 
   if (graphObject.graphs.length > 0) {
-    $(`#${graphObject.menuSelectName} option:eq(0)`).prop("selected", true);
-    const graphName = $(`#${graphObject.menuSelectName}`)
-      .val()
-      .replace("_selectitem", "");
+    const initialVal = $(`#${graphObject.menuSelectName} option:eq(0)`).val();
+    $(`#${graphObject.menuSelectName}`).val(initialVal).change();
+    //initial.prop("selected", true);
+    const graphName = $(`#${graphObject.menuSelectName}`).val();
     const graph = graphObject.graphs[0];
     thisPlotDiv = $(`#${graphName}`);
 
