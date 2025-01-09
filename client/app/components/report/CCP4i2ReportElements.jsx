@@ -79,7 +79,7 @@ export const CCP4i2ReportFlotGraphGroupWidget = (props) => {
     <div style={{ height: "450px" }}>
       <h1>Selected graph from group:</h1>
       <Select
-        defaultValue={0}
+        defaultValue=""
         onChange={(ev) => {
           setShown(parseInt(ev.target.value));
         }}

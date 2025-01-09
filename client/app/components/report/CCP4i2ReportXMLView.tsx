@@ -45,7 +45,6 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
       sx={{
         width: "100%",
         height: "calc(100vh - 15rem)",
-        border: "1px solid green",
         overflowY: "auto",
       }}
     >
