@@ -10,6 +10,8 @@ import {
   Typography,
   MenuItem,
   Paper,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
 import { GeneralTable } from "../General/GeneralTable";
 import { MyExpandMore } from "../expand-more";
@@ -75,8 +77,33 @@ export const CCP4i2ReportFlotGraphGroupWidget = (props) => {
     );
   }, [props.job, props.item]);
 
+  const options = useMemo(() => {
+    const graphs = $(props.item).children().toArray();
+    graphs.forEach((graph) => console.log($(graph).find("ccp4\\:ccp4_data")));
+    const optionsarray = graphs.filter(
+      (child) => $(child).find("ccp4\\:ccp4_data").toArray().length > 0
+    );
+    if (optionsarray.length == 0) return null;
+    return optionsarray.map((child, iChild) => {
+      return {
+        label: $(child).find("ccp4\\:ccp4_data")[0].attr["title"],
+        id: iChild,
+      };
+    });
+    //console.log({ optionsarray });
+    //return optionsarray;
+  }, [props.item]);
+
   return (
     <div style={{ height: "450px" }}>
+      {options && (
+        <Autocomplete
+          defaultValue={options[0].id}
+          options={options}
+          renderInput={(params) => <TextField {...params} label="Graph" />}
+        />
+      )}
+      {/*
       <h1>Selected graph from group:</h1>
       <Select
         defaultValue=""
@@ -98,6 +125,7 @@ export const CCP4i2ReportFlotGraphGroupWidget = (props) => {
             return null;
           })}
       </Select>
+*/}
       {graphs.map((iChild, child) => (iChild === shown ? child : null))}
     </div>
   );

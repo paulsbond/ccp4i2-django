@@ -1461,8 +1461,8 @@ CCP4GraphPlot.prototype.plotWithoutBreaks = async function (
 };
 
 CCP4GraphPlot.prototype.getYAxesWithBreaks = function (options, xbreak) {
-  let yaxes;
-  let yaxes2;
+  let yaxes = [];
+  let yaxes2 = [];
   let yr;
   let yr2;
 
