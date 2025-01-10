@@ -1400,10 +1400,11 @@ CCP4GraphPlot.prototype.plotWithBreaks = async function (
 ) {
   const yaxes = this.getYAxesWithBreaks(options, xbreak);
   const xaxes = this.getXAxesWithBreaks(options, xbreak);
+  console.log({ xaxes, yaxes });
   const bs = this.createBreakDivs(theRealOuterDiv, xaxes.length);
 
   const divTop = this.createTopDiv(theRealOuterDiv, options, xaxes.length);
-
+  divTop.append(bs);
   for (let ib = 0; ib < bs.length; ib++) {
     const dRight = this.adjustDataForBreaks(d, ib, bs.length);
     const layout = this.getLayoutForBreaks(
@@ -1467,12 +1468,12 @@ CCP4GraphPlot.prototype.getYAxesWithBreaks = function (options, xbreak) {
   let yr2;
 
   if ("yrange" in options) {
-    yr = jQuery.extend(true, {}, options["yrange"]);
-    yr2 = jQuery.extend(true, {}, options["yrange"]);
+    yr = { ...options["yrange"] };
+    yr2 = { ...options["yrange"] };
     yaxes = [yr];
     yaxes2 = [yr2];
     for (let ibr = 0; ibr <= xbreak.length / 2; ibr++) {
-      yaxes.push([yr]);
+      yaxes.push({ ...yr });
     }
   } else {
     yaxes = [{}];
@@ -1481,14 +1482,14 @@ CCP4GraphPlot.prototype.getYAxesWithBreaks = function (options, xbreak) {
   }
 
   if ("ryrange" in options) {
-    yr = jQuery.extend(true, {}, options["ryrange"]);
-    yr2 = jQuery.extend(true, {}, options["ryrange"]);
+    yr = { ...options["ryrange"] };
+    yr2 = { ...options["ryrange"] };
     yr["position"] = "right";
     yaxes.push(yr);
     yr2["position"] = "right";
     yaxes2.push(yr2);
     for (let ibr = 0; ibr <= xbreak.length / 2; ibr++) {
-      yaxes[ibr].push([yr]);
+      yaxes.push({ ...yr });
     }
   } else {
     yr = {};
@@ -1504,20 +1505,20 @@ CCP4GraphPlot.prototype.getYAxesWithBreaks = function (options, xbreak) {
 CCP4GraphPlot.prototype.getXAxesWithBreaks = function (options, xbreak) {
   let xaxes;
   const xax = [];
-
+  console.log({ options, xbreak, hasXrange: "xrange" in options });
   if ("xrange" in options) {
-    let xr = jQuery.extend(true, {}, options["xrange"]);
-    let xr2 = jQuery.extend(true, {}, options["xrange"]);
+    let xr = { ...options["xrange"] };
+    let xr2 = { ...options["xrange"] };
     xr["max"] = xbreak[0];
     xr2["min"] = xbreak[1];
-    xax.push(xr);
+    xax.push({ ...xr });
     for (let ibr = 0; ibr < xbreak.length / 2 - 1; ibr++) {
       xax.push({ min: xbreak[2 * ibr + 1], max: xbreak[2 * ibr + 2] });
     }
-    const xr2p = jQuery.extend(true, {}, xr2);
+    const xr2p = { ...xr2 };
     xr2p["min"] = xbreak[xbreak.length - 1];
     xax.push(xr2p);
-    xaxes = [xr];
+    xaxes = xax;
   } else {
     xaxes = [xbreak[0]];
   }
@@ -1531,9 +1532,9 @@ CCP4GraphPlot.prototype.createBreakDivs = function (theRealOuterDiv, length) {
   let pcwidth;
   const lastchar = theRealOuterDiv.css("width").slice(-1);
   if (lastchar === "%") {
-    pcwidth = parseInt(theRealOuterDiv.css("width")) / length + "%";
+    pcwidth = parseInt(theRealOuterDiv.css("width")) / length - 2 + "%";
   } else {
-    pcwidth = parseInt(theRealOuterDiv.css("width")) / length + "px";
+    pcwidth = parseInt(theRealOuterDiv.css("width")) / length - 2 + "px";
   }
 
   for (let ibr = 0; ibr < length; ibr++) {
@@ -1543,12 +1544,12 @@ CCP4GraphPlot.prototype.createBreakDivs = function (theRealOuterDiv, length) {
     const b = $("<div>")
       .attr(
         "style",
-        `width:${pcwidth};height:${theRealOuterDiv.css("height")};float:left`
+        `width:${pcwidth};height:${theRealOuterDiv.css("height")};float:left;`
       )
       .attr("id", bDName);
     bs.push(b);
   }
-
+  console.log(bs);
   return bs;
 };
 
@@ -1567,14 +1568,20 @@ CCP4GraphPlot.prototype.createTopDiv = function (
     const h = parseInt(divBot.height());
     if (!isNaN(h)) {
       hTop = parseInt(theRealOuterDiv.css("height")) - h;
-      divTop.attr("style", `width:100%;height:${hTop - 1}px;float:top;`);
+      divTop.attr(
+        "style",
+        `width:100%;height:${hTop - 1}px;float:top;border:1px solid red;`
+      );
     }
     divBot.html(options.titles.xlabel.trim().replace(/\s+/, "&nbsp;"));
   } else {
     divTop = theRealOuterDiv;
-    divTop.attr("style", `width:100%;height:${hTop - 1}px;float:top;`);
+    divTop.attr(
+      "style",
+      `width:100%;height:${hTop - 1}px;float:top;border:1px solid red;`
+    );
   }
-
+  console.log({ divTop });
   return divTop;
 };
 
@@ -2412,6 +2419,7 @@ CCP4GraphPlot.prototype.getPlotOptions = function (plot) {
   }
   const ybreak = [];
   const options = { xrange, yrange, ryrange, xbreak, ybreak };
+  console.log(options);
   return options;
 };
 
