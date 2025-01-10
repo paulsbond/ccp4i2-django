@@ -1400,7 +1400,6 @@ CCP4GraphPlot.prototype.plotWithBreaks = async function (
 ) {
   const yaxes = this.getYAxesWithBreaks(options, xbreak);
   const xaxes = this.getXAxesWithBreaks(options, xbreak);
-  console.log({ xaxes, yaxes });
   const bs = this.createBreakDivs(theRealOuterDiv, xaxes.length);
 
   const divTop = this.createTopDiv(theRealOuterDiv, options, xaxes.length);
@@ -1505,7 +1504,6 @@ CCP4GraphPlot.prototype.getYAxesWithBreaks = function (options, xbreak) {
 CCP4GraphPlot.prototype.getXAxesWithBreaks = function (options, xbreak) {
   let xaxes;
   const xax = [];
-  console.log({ options, xbreak, hasXrange: "xrange" in options });
   if ("xrange" in options) {
     let xr = { ...options["xrange"] };
     let xr2 = { ...options["xrange"] };
@@ -1549,7 +1547,6 @@ CCP4GraphPlot.prototype.createBreakDivs = function (theRealOuterDiv, length) {
       .attr("id", bDName);
     bs.push(b);
   }
-  console.log(bs);
   return bs;
 };
 
@@ -1581,7 +1578,6 @@ CCP4GraphPlot.prototype.createTopDiv = function (
       `width:100%;height:${hTop - 1}px;float:top;border:1px solid red;`
     );
   }
-  console.log({ divTop });
   return divTop;
 };
 
@@ -2419,7 +2415,6 @@ CCP4GraphPlot.prototype.getPlotOptions = function (plot) {
   }
   const ybreak = [];
   const options = { xrange, yrange, ryrange, xbreak, ybreak };
-  console.log(options);
   return options;
 };
 
