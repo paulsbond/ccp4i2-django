@@ -6,6 +6,8 @@ import { useApi } from "../../../../api";
 import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../components/job-header";
 import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportXMLView";
+import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidget";
+import $ from "jquery";
 
 export default function JobsPage({
   params,
@@ -28,6 +30,7 @@ export default function JobsPage({
     setTabValue(value);
   };
   if (!project || !params_xml || !jobs || !job) return <LinearProgress />;
+
   return (
     <Container>
       <JobHeader job={job} mutateJobs={mutateJobs} />
@@ -39,14 +42,14 @@ export default function JobsPage({
       {tabValue == 0 && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={params_xml.params_xml}
+          value={prettifyXml($.parseXML(params_xml.params_xml))}
           language="xml"
         />
       )}
       {tabValue == 1 && report_xml && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={report_xml.report_xml}
+          value={prettifyXml($.parseXML(report_xml.report_xml))}
           language="xml"
         />
       )}

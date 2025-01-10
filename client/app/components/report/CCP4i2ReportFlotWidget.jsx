@@ -77,7 +77,7 @@ export const CCP4i2ReportFlotWidget = (props) => {
   );
 };
 
-const prettifyXml = (sourceXml) => {
+export const prettifyXml = (sourceXml) => {
   var theNode = sourceXml;
   if (theNode.nodeName == null) {
     theNode = sourceXml.get(0);
