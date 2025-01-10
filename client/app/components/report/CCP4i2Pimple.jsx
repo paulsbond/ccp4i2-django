@@ -1,6 +1,6 @@
 import $ from "jquery";
-import Plotly from "plotly.js-dist-min";
-const jQuery = $;
+//import Plotly from "plotly.js-dist-min";
+const jQuery = (window.jQuery = window.$ = $);
 
 export function reescape(s) {
   const h = [

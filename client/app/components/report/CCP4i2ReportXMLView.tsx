@@ -15,9 +15,41 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
   job,
 }) => {
   const bodyNode = useMemo<JQuery<XMLDocument> | null>(() => {
-    if (report_xml.report_xml) return $($.parseXML(report_xml.report_xml));
+    if (report_xml.report_xml) {
+      const reportXMLDocument = $.parseXML(report_xml.report_xml);
+      const $reportXMLDocument = $(reportXMLDocument);
+      const iterator = reportXMLDocument.evaluate(
+        "//CCP4i2ReportGeneric/br",
+        reportXMLDocument,
+        null,
+        XPathResult.ORDERED_NODE_ITERATOR_TYPE
+      );
+      try {
+        const matchingNodes = [];
+        let thisNode = iterator.iterateNext();
+
+        while (thisNode) {
+          matchingNodes.push(thisNode);
+          thisNode = iterator.iterateNext();
+        }
+        console.log({ matchingNodes });
+        matchingNodes.forEach((thisNode) => {
+          const lastNode = thisNode;
+          thisNode.parentNode?.removeChild(thisNode);
+        });
+      } catch (e) {
+        console.error(`Error: Document tree modified during iteration ${e}`);
+      }
+      const modifiedXmlString = new XMLSerializer().serializeToString(
+        reportXMLDocument
+      );
+      const reportXMLDocument1 = $.parseXML(report_xml.report_xml);
+      const $reportXMLDocument1 = $(reportXMLDocument1);
+      return $reportXMLDocument1;
+    }
     return null;
   }, []);
+
   const callbackHandleItem = useCallback(
     (iItem: Number, item: any) => {
       if (job) {

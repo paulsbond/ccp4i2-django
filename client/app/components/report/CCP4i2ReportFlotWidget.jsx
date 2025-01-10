@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import $ from "jquery";
 import CCP4GraphPlot from "./CCP4i2Pimple";
-window.jQuery = window.$ = $;
+//window.jQuery = window.$ = $;
 
 export const useOnScreen = (ref) => {
   const [isIntersecting, setIntersecting] = useState(false);
@@ -73,7 +73,11 @@ export const CCP4i2ReportFlotWidget = (props) => {
   }, [isVisible, props.item, props.uniqueId]);
 
   return (
-    <div id={props.uniqueId} ref={divRef} style={{ width: 300, height: 300 }} />
+    <div
+      id={props.uniqueId}
+      ref={divRef}
+      style={{ width: 300, height: 300, float: "left" }}
+    />
   );
 };
 

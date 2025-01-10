@@ -12,10 +12,12 @@ import {
   Paper,
   Autocomplete,
   TextField,
+  Grid2,
 } from "@mui/material";
 import { GeneralTable } from "../General/GeneralTable";
 import { MyExpandMore } from "../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+window.jQuery = window.$ = $;
 
 export function handleItem(iItem, item, job) {
   if (["CCP4i2ReportFold"].includes($(item).get(0).tagName)) {
@@ -47,9 +49,12 @@ export function handleItem(iItem, item, job) {
       />
     );
   } else if (
-    ["CCP4i2ReportDiv", "div", "CCP4i2ReportResults"].includes(
-      $(item).get(0).tagName
-    )
+    [
+      "CCP4i2ReportDiv",
+      "div",
+      "CCP4i2ReportResults",
+      "CCP4i2ReportReferenceGroup",
+    ].includes($(item).get(0).tagName)
   ) {
     return <CCP4i2ReportDiv key={iItem} item={item} job={job} />;
   } else if (["CCP4i2ReportGeneric"].includes($(item).get(0).tagName)) {
@@ -60,74 +65,87 @@ export function handleItem(iItem, item, job) {
     return <CCP4i2ReportText key={iItem} item={item} job={job} />;
   } else if (["CCP4i2ReportTable"].includes($(item).get(0).tagName)) {
     return <CCP4i2ReportTable key={iItem} item={item} job={job} />;
+  } else if (["CCP4i2ReportReference"].includes($(item).get(0).tagName)) {
+    return <CCP4i2ReportReference key={iItem} item={item} job={job} />;
   }
   //console.log('not handling', item, $(item).data('element'))
   return null;
 }
 
 export const CCP4i2ReportFlotGraphGroupWidget = (props) => {
-  const [graphs, setGraphs] = useState([]);
   const [shown, setShown] = useState(0);
 
-  useEffect(() => {
-    setGraphs(
-      $(props.item)
-        .children()
-        .map((iChild, child) => handleItem(iChild, child, props.job))
-    );
-  }, [props.job, props.item]);
+  const xmlGraphs = useMemo(() => {
+    if (props.item && props.job) {
+      const childGraphs = $(props.item).children().toArray();
+      return childGraphs;
+    }
+    return [];
+  }, [props.item, props.job]);
 
-  const options = useMemo(() => {
-    const graphs = $(props.item).children().toArray();
-    graphs.forEach((graph) => console.log($(graph).find("ccp4\\:ccp4_data")));
-    const optionsarray = graphs.filter(
-      (child) => $(child).find("ccp4\\:ccp4_data").toArray().length > 0
-    );
-    if (optionsarray.length == 0) return null;
-    return optionsarray.map((child, iChild) => {
-      return {
-        label: $(child).find("ccp4\\:ccp4_data")[0].attr["title"],
-        id: iChild,
-      };
+  const graphTitles = useMemo(() => {
+    const graphTitles = [];
+    xmlGraphs.forEach((childGraph, iGraph) => {
+      const ccp4DataTitleNode = $(childGraph).find("ns0\\:ccp4_data")[0];
+      let ccp4DataTitle = `Graph ${iGraph}`;
+      try {
+        ccp4DataTitle = $(ccp4DataTitleNode).attr("title");
+      } catch (e) {
+        console.log(e);
+      }
+      graphTitles.push(ccp4DataTitle);
     });
-    //console.log({ optionsarray });
-    //return optionsarray;
-  }, [props.item]);
+    return graphTitles;
+  }, [xmlGraphs]);
+
+  const graphs = useMemo(() => {
+    if (xmlGraphs && props.job) {
+      const result = xmlGraphs.map((child, iChild) =>
+        handleItem(iChild, child, props.job)
+      );
+      return result;
+    }
+    return [];
+  }, [xmlGraphs, props.job]);
 
   return (
-    <div style={{ height: "450px" }}>
-      {options && (
-        <Autocomplete
-          defaultValue={options[0].id}
-          options={options}
-          renderInput={(params) => <TextField {...params} label="Graph" />}
-        />
-      )}
-      {/*
-      <h1>Selected graph from group:</h1>
-      <Select
-        defaultValue=""
-        onChange={(ev) => {
-          setShown(parseInt(ev.target.value));
-        }}
-      >
-        {$(props.item)
-          .children()
-          .map((iChild, child) => {
-            let dataNodes = $(child).find("ccp4\\:ccp4_data").toArray();
-            if (dataNodes.length > 0) {
-              return (
-                <MenuItem key={iChild} value={iChild}>
-                  {$(dataNodes[0]).attr("title")}
-                </MenuItem>
-              );
+    graphs.length > 0 &&
+    xmlGraphs.length > 0 &&
+    graphTitles.length > 0 && (
+      <div style={{ height: "450px" }}>
+        {$(props.item).attr("title")}
+        {graphs && graphs.length > 1 && (
+          <Autocomplete
+            defaultValue={
+              graphTitles && graphTitles.length > 0 ? graphTitles[0] : "0"
             }
-            return null;
-          })}
-      </Select>
-*/}
-      {graphs.map((iChild, child) => (iChild === shown ? child : null))}
-    </div>
+            options={graphs.map((item, iItem) => {
+              return {
+                label: graphTitles[iItem],
+                id: iItem,
+              };
+            })}
+            onChange={(ev, newValue) => {
+              console.log(ev, newValue);
+              setShown(newValue.id);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={
+                  $(props.item).attr("title") !== 0
+                    ? $(props.item).attr("title")
+                    : `Group of ${graphs ? graphs.length : "0"} graphs`
+                }
+              />
+            )}
+          />
+        )}
+        {graphs &&
+          graphs.length > 0 &&
+          graphs.map((child, iChild) => (iChild == shown ? child : null))}
+      </div>
+    )
   );
 };
 
@@ -183,25 +201,29 @@ export const CCP4i2ReportDiv = (props) => {
   const [isRow, setIsRow] = useState(false);
 
   useEffect(() => {
-    var cssDict = cssToDict($(props.item).attr("style"));
-    for (var child of $(props.item).children()) {
-      var childCssDict = cssToDict($(child).attr("style"));
-      if (Object.keys(childCssDict).includes("float")) {
-        setIsRow(true);
+    if (props.item) {
+      let isRow = false;
+      for (var child of $(props.item).children()) {
+        try {
+          var childCssDict = cssToDict($(child).attr("style"));
+          if (Object.keys(childCssDict).includes("float")) {
+            isRow = true;
+            break;
+          }
+        } catch (err) {}
       }
+      setIsRow(isRow);
     }
-  }, [props.job]);
+  }, [props.item]);
 
   return isRow ? (
-    <Grid container>
+    <Grid2 container>
       {$(props.item)
         .children()
         .map((iChild, child) => (
-          <Grid item key={iChild}>
-            {handleItem(iChild, child, props.job)}
-          </Grid>
+          <Grid2 key={iChild}>{handleItem(iChild, child, props.job)}</Grid2>
         ))}
-    </Grid>
+    </Grid2>
   ) : (
     <Fragment>
       {$(props.item)
@@ -263,23 +285,23 @@ export const CCP4i2RVAPITable = (props) => {
   );
 };
 
-export class CCP4i2RVAPITable1 extends React.Component {
-  static defaultProps = {
-    item: $("<div></div>"),
-  };
-  constructor(props) {
-    super(props);
-  }
-  render() {
-    return (
-      <div>
-        {this.props.item.find("tr").map((iRow, row) => {
-          return <CCP4i2RVAPIRow key={iRow} item={row} />;
-        })}
-      </div>
-    );
-  }
-}
+export const CCP4i2RVAPITable1 = (props) => {
+  const rows = useMemo(() => {
+    return props.item.find("tr");
+  }, [props.item]);
+
+  return (
+    <div>
+      {rows.map((iRow, row) => (
+        <CCP4i2RVAPIRow key={iRow} item={row} job={props.job} />
+      ))}
+    </div>
+  );
+};
+
+CCP4i2RVAPITable1.defaultProps = {
+  item: $("<div></div>"),
+};
 
 export const CCP4i2ReportGeneric = (props) => {
   const [isRVAPITable, setIsRVAPITable] = useState(false);
@@ -440,6 +462,48 @@ export const CCP4i2ReportText = (props) => {
   }, [props.item, props.job]);
 
   return <span style={style} dangerouslySetInnerHTML={{ __html: innerHTML }} />;
+};
+
+export const CCP4i2ReportReference = (props) => {
+  const title = useMemo(() => {
+    if (!props.item) return "";
+    try {
+      return $(props.item).attr("articleTitle");
+    } catch (err) {
+      return "";
+    }
+  }, [props.item]);
+
+  const source = useMemo(() => {
+    if (!props.item) return "";
+    try {
+      return $(props.item).attr("source");
+    } catch (err) {
+      return "";
+    }
+  }, [props.item]);
+
+  const authors = useMemo(() => {
+    if (!props.item) return "";
+    try {
+      const authorList = $(props.item).attr("authorList");
+      return authorList;
+    } catch (err) {
+      return "";
+    }
+  }, [props.item]);
+
+  return (
+    <div>
+      <Typography> {title}</Typography>
+      <Typography sx={{ pl: 5, fontStyle: "italic", fontWeight: "medium" }}>
+        {source}
+      </Typography>
+      <Typography sx={{ pl: 5, fontStyle: "italic", fontWeight: "medium" }}>
+        {authors}
+      </Typography>
+    </div>
+  );
 };
 
 function cssToDict(cssText) {
