@@ -1565,18 +1565,12 @@ CCP4GraphPlot.prototype.createTopDiv = function (
     const h = parseInt(divBot.height());
     if (!isNaN(h)) {
       hTop = parseInt(theRealOuterDiv.css("height")) - h;
-      divTop.attr(
-        "style",
-        `width:100%;height:${hTop - 1}px;float:top;border:1px solid red;`
-      );
+      divTop.attr("style", `width:100%;height:${hTop - 1}px;float:top;`);
     }
     divBot.html(options.titles.xlabel.trim().replace(/\s+/, "&nbsp;"));
   } else {
     divTop = theRealOuterDiv;
-    divTop.attr(
-      "style",
-      `width:100%;height:${hTop - 1}px;float:top;border:1px solid red;`
-    );
+    divTop.attr("style", `width:100%;height:${hTop - 1}px;float:top;`);
   }
   return divTop;
 };

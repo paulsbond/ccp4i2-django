@@ -13,11 +13,17 @@ import {
   Autocomplete,
   TextField,
   Grid2,
+  styled,
 } from "@mui/material";
 import { GeneralTable } from "../General/GeneralTable";
 import { MyExpandMore } from "../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 window.jQuery = window.$ = $;
+
+const MyToolbar = styled(({ theme }) => ({
+  backgroundColor: theme.components.MuiToolBar.backgroundColor,
+  color: theme.color,
+}));
 
 export function handleItem(iItem, item, job) {
   if (["CCP4i2ReportFold"].includes($(item).get(0).tagName)) {
@@ -169,15 +175,13 @@ export const CCP4i2ReportFold = (props) => {
   return (
     <>
       <Toolbar
+        variant="dense"
         key={$(props.item).attr("key")}
         onClick={(ev) => {
           ev.stopPropagation();
           setExpanded(!expanded);
         }}
       >
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {$(props.item).attr("label")}
-        </Typography>
         <MyExpandMore
           expand={expanded}
           onClick={(ev) => {
@@ -189,6 +193,12 @@ export const CCP4i2ReportFold = (props) => {
         >
           <ExpandMoreIcon />
         </MyExpandMore>
+        {$(props.item).attr("label")}
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ flexGrow: 1 }}
+        ></Typography>
       </Toolbar>
       <Collapse in={expanded} timeout="auto" unmountOnExit>
         {foldContent}
@@ -423,7 +433,7 @@ export const CCP4i2ReportTable = (props) => {
       tableRowProps={{ p: 0.5 }}
       size="small"
       pagination={false}
-      sx={{ mx: 6 }}
+      sx={{ mx: 6, my: 0, py: 0 }}
     />
   );
 };

@@ -639,7 +639,7 @@ class FakeProjectsManager(object):
             ).jobDirectory
 
     def makeFileName(self, jobId=None, mode="PROGRAMXML"):
-        theJob = models.Jobs.objects.get(jobid=jobId)
+        theJob = models.Job.objects.get(uuid=jobId)
         defNames = {
             "ROOT": "",
             "PARAMS": "params.xml",
@@ -661,7 +661,7 @@ class FakeProjectsManager(object):
             "PIC": "report.png",
             "RVAPIXML": "i2.xml",
         }
-        jobPath = Path(theJob.jobDirectory) / defNames[mode]
+        jobPath = Path(theJob.directory) / defNames[mode]
         return str(jobPath)
 
 
