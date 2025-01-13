@@ -3,18 +3,18 @@ from shutil import rmtree
 from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
-from ..db.import_i2xml import import_i2xml_from_file
-from ..db import models
+from ...db.import_i2xml import import_i2xml_from_file
+from ...db import models
 
 
 @override_settings(
-    CCP4I2_PROJECTS_DIR=Path(__file__).parent / "CCP4I2_TEST_PROJECT_DIRECTORY"
+    CCP4I2_PROJECTS_DIR=Path(__file__).parent.parent / "CCP4I2_TEST_PROJECT_DIRECTORY"
 )
 class ApiTestCase(TestCase):
     def setUp(self):
         Path(settings.CCP4I2_PROJECTS_DIR).mkdir()
         import_i2xml_from_file(
-            Path(__file__).parent.parent / "db" / "DATABASE.db.xml",
+            Path(__file__).parent.parent.parent / "db" / "DATABASE.db.xml",
             relocate_path=settings.CCP4I2_PROJECTS_DIR,
         )
         self.client = Client()
