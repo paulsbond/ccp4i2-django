@@ -1,4 +1,5 @@
 import $ from "jquery";
+import { decode } from "punycode";
 //import Plotly from "plotly.js-dist-min";
 const jQuery = (window.jQuery = window.$ = $);
 
@@ -106,11 +107,12 @@ function CCP4Graph(
 
 class CCP4GraphPlot {
   constructor(graphDivName_in, showInput) {
-    const $graphDivOuter = $(`#${graphDivName_in}`);
+    this.sluggifiedGraphDivName = graphDivName_in;
+    const $graphDivOuter = $(`#${this.sluggifiedGraphDivName}`);
     const graphDivOuter = $graphDivOuter.get(0);
 
     if (!graphDivOuter) {
-      //console.log("Element "+graphDivName_in+" does not exist");
+      //console.log("Element "+sluggifiedGraphDivName+" does not exist");
       this.graphDivName = null;
       return;
     }
@@ -124,7 +126,6 @@ class CCP4GraphPlot {
     this.launchJobIdParam = null;
     this.dataID = "";
 
-    this.graphDivName_in = graphDivName_in;
     const N = 20;
     this.graphDivName = generateUUID();
     this.menuSelectName = `${generateUUID()}_menuSelect`;
@@ -887,8 +888,8 @@ CCP4GraphPlot.prototype.loadFiles = function (files) {
 // The "public methods".
 
 CCP4GraphPlot.prototype.destroy = function () {
-  //console.log('In destroy', this.graphDivName_in)
-  $(`#${this.graphDivName_in}`)
+  console.log("In destroy", this.sluggifiedGraphDivName);
+  $(`#${this.sluggifiedGraphDivName}`)
     .find("div")
     .each((iDiv, theDiv) => {
       const flot = $(theDiv).data("plot");
@@ -898,7 +899,7 @@ CCP4GraphPlot.prototype.destroy = function () {
         flot.destroy();
       }
     });
-  $(`#${this.graphDivName_in}`).empty();
+  $(`#${this.sluggifiedGraphDivName}`).empty();
 };
 
 CCP4GraphPlot.prototype.getCurrentData = function () {
@@ -3115,7 +3116,7 @@ CCP4GraphPlot.prototype.addPlotEventListeners = function (
   plot_title
 ) {
   thisPlotDiv.on("plotHover", function (e) {
-    const pimpleMain = $(`#${this.graphDivName_in}`);
+    const pimpleMain = $(`#${this.sluggifiedGraphDivName}`);
     if (pimpleMain.toArray().length > 0) {
       pimpleMain[0].hoverevt = $.Event("graphHover", {
         x: e.detail.x,
@@ -3128,7 +3129,7 @@ CCP4GraphPlot.prototype.addPlotEventListeners = function (
   });
 
   thisPlotDiv.on("plotClick", function (e) {
-    const pimpleMain = $(`#${this.graphDivName_in}`);
+    const pimpleMain = $(`#${this.sluggifiedGraphDivName}`);
     pimpleMain[0].clickevt = $.Event("graphClick", {
       x: e.detail.x,
       y: e.detail.y,
@@ -3143,11 +3144,11 @@ CCP4GraphPlot.prototype.addPlotEventListeners = function (
   thisPlotDiv.hover(function () {
     if (self.dataInfoDiv === null) {
       self.dataInfoDiv = $("<div>").addClass("datainfo_hidden");
-      $(`#${this.graphDivName_in}`).append(self.dataInfoDiv);
+      $(`#${this.sluggifiedGraphDivName}`).append(self.dataInfoDiv);
     }
     if (self.toolTipDiv === null) {
       self.toolTipDiv = $("<div>").addClass("tooltip_hidden");
-      $(`#${this.graphDivName_in}`).append(self.toolTipDiv);
+      $(`#${this.sluggifiedGraphDivName}`).append(self.toolTipDiv);
     }
     if (self.currentGraph.titles["description"].length > 0) {
       self.toolTipDiv.removeClass("tooltip_hidden").addClass("tooltip");

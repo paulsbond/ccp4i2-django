@@ -37,6 +37,12 @@ export const CCP4i2ReportFlotWidget = (props) => {
     };
   }, []);
 
+  const sluggifiedName = useMemo(() => {
+    if (props.uniqueId)
+      return CSS.escape(props.uniqueId).replace(/[^a-zA-Z0-9]/g, "_");
+    return "UNNAMED_GRAPHPLOT";
+  }, [props.uniqueId]);
+
   useEffect(() => {
     if (isVisible) {
       //console.log('In mount', graphPlot.current)
@@ -44,7 +50,7 @@ export const CCP4i2ReportFlotWidget = (props) => {
         graphPlot.current.destroy();
         graphPlot.current = null;
       }
-      graphPlot.current = new CCP4GraphPlot(props.uniqueId, false);
+      graphPlot.current = new CCP4GraphPlot(sluggifiedName, false);
       var tables = $(props.item).find("ccp4_data").toArray();
       if (tables.length == 0) {
         tables = $(props.item).find("ccp4\\:ccp4_data").toArray();
@@ -74,7 +80,7 @@ export const CCP4i2ReportFlotWidget = (props) => {
 
   return (
     <div
-      id={props.uniqueId}
+      id={sluggifiedName}
       ref={divRef}
       style={{ width: 300, height: 300, float: "left" }}
     />

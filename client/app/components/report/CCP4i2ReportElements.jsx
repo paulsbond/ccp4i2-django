@@ -157,9 +157,29 @@ export const CCP4i2ReportFlotGraphGroupWidget = (props) => {
 
 export const CCP4i2ReportFold = (props) => {
   const [foldContent, setFoldContent] = useState([]);
+  const [nFloatingChildren, setNFloatingChildren] = useState(1);
   const [expanded, setExpanded] = useState(
     $(props.item).attr("initiallyOpen") === "True"
   );
+
+  useEffect(() => {
+    if (props.item) {
+      let nFloatingChildren = 0;
+      for (var child of $(props.item).children()) {
+        try {
+          var childCssDict = cssToDict($(child).attr("style"));
+          if (Object.keys(childCssDict).includes("float")) {
+            const oldStyle = $(child).attr("style");
+            const fixedStyle = oldStyle.replace("float:left;", "");
+            console.log({ oldStyle, fixedStyle });
+            $(child).attr("style", fixedStyle);
+            nFloatingChildren += 1;
+          }
+        } catch (err) {}
+      }
+      setNFloatingChildren(nFloatingChildren);
+    }
+  }, [props.item]);
 
   useEffect(() => {
     try {
@@ -201,37 +221,52 @@ export const CCP4i2ReportFold = (props) => {
         ></Typography>
       </Toolbar>
       <Collapse in={expanded} timeout="auto" unmountOnExit>
-        {foldContent}
+        {nFloatingChildren > 0 ? (
+          <Grid2 container>
+            {foldContent.map((iItem, item) => (
+              <Grid2 size={{ xs: 12 / nFloatingChildren }}>{item}</Grid2>
+            ))}
+          </Grid2>
+        ) : (
+          foldContent
+        )}
       </Collapse>
     </>
   );
 };
 
 export const CCP4i2ReportDiv = (props) => {
-  const [isRow, setIsRow] = useState(false);
+  const [nFloatingChildren, setNFloatingChildren] = useState(1);
 
   useEffect(() => {
     if (props.item) {
-      let isRow = false;
+      let nFloatingChildren = 0;
       for (var child of $(props.item).children()) {
         try {
           var childCssDict = cssToDict($(child).attr("style"));
           if (Object.keys(childCssDict).includes("float")) {
-            isRow = true;
-            break;
+            const oldStyle = $(child).attr("style");
+            const fixedStyle = oldStyle
+              .replace("float:left;", "")
+              .replace("float:right;", "");
+            console.log({ oldStyle, fixedStyle });
+            $(child).attr("style", fixedStyle);
+            nFloatingChildren += 1;
           }
         } catch (err) {}
       }
-      setIsRow(isRow);
+      setNFloatingChildren(nFloatingChildren);
     }
   }, [props.item]);
 
-  return isRow ? (
+  return nFloatingChildren > 0 ? (
     <Grid2 container>
       {$(props.item)
         .children()
         .map((iChild, child) => (
-          <Grid2 key={iChild}>{handleItem(iChild, child, props.job)}</Grid2>
+          <Grid2 key={iChild} size={{ xs: 12 / nFloatingChildren }}>
+            {handleItem(iChild, child, props.job)}
+          </Grid2>
         ))}
     </Grid2>
   ) : (

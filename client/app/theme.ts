@@ -30,6 +30,20 @@ const theme = createTheme({
         },
       },
     },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          variants: [
+            {
+              props: { variant: "head" },
+              style: {
+                backgroundColor: "rgb(179,208,216)",
+              },
+            },
+          ],
+        },
+      },
+    },
   },
 });
 

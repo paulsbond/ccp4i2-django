@@ -519,6 +519,7 @@ export const GeneralTable = (props: GeneralTableProps) => {
           <TableRow {...props.tableRowProps}>
             {selectedColumns?.map((column, iColumn) => (
               <TableCell
+                variant="head"
                 padding="none"
                 {...props.tableCellProps}
                 size={props.size}
@@ -579,7 +580,12 @@ export const GeneralTable = (props: GeneralTableProps) => {
                 >
                   {selectedColumns?.map((column, iColumn) => (
                     <TableCell
-                      padding="none"
+                      sx={{
+                        margin: 0,
+                        marginBlockStart: "0px",
+                        marginBlockEnd: "0px",
+                        padding: "0.5rem",
+                      }}
                       {...props.tableCellProps}
                       key={iColumn}
                     >
