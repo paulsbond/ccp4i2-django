@@ -2,6 +2,7 @@ import logging
 import contextlib
 from ..db import models
 from ccp4i2.core import CCP4Modules
+from PySide2 import QtCore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("root")
@@ -38,12 +39,12 @@ def runJob(jobId):
                         raise err
 
                     try:
-                        CCP4Modules.PROJECTSMANAGER().setOutputFileNames(
-                            container=thePlugin.container,
-                            projectId=newJob.projectid.projectid,
-                            jobNumber=newJob.jobnumber,
-                            force=True,
-                        )
+                        # CCP4Modules.PROJECTSMANAGER().setOutputFileNames(
+                        #    projectId=newJob.projectid.projectid,
+                        #    container=thePlugin.container,
+                        #    force=True,
+                        #    jobNumber=newJob.jobnumber,
+                        # )
                         PluginUtils.save_params_for_job(thePlugin, newJob)
                     except Exception as err:
                         logger.exception(f"Exception setting filenames", exc_info=err)

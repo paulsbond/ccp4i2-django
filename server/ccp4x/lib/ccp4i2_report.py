@@ -1,13 +1,6 @@
 import logging
 import pathlib
-import sys
 from xml.etree import ElementTree as ET
-
-from ccp4i2.pimple import MGQTmatplotlib
-
-sys.path.append(str(pathlib.Path(MGQTmatplotlib.__file__).parent.parent))
-
-from ccp4i2.report import CCP4RvapiParser
 from ccp4i2.core import CCP4Modules
 from ccp4i2.core.CCP4TaskManager import CTaskManager
 from ccp4i2.report.CCP4ReportParser import ReportClass

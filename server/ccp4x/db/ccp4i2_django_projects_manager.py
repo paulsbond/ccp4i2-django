@@ -4,20 +4,20 @@ import uuid
 import traceback
 import logging
 from django.utils.text import slugify
-from ..lib.job_utils import remove_container_default_values
 from ccp4i2.core import CCP4Utils
 from ccp4i2.core import CCP4File
 from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core import CCP4ErrorHandling
-from ccp4i2.core import CCP4ProjectsManager
+from core import CCP4ProjectsManager
 from ccp4i2.core import CCP4ModelData
 from xml.etree import ElementTree as ET
 from . import models
 from ..lib.utils import uuid_from_no_hyphens
+from ..lib.job_utils import remove_container_default_values
 from .ccp4i2_django_dbapi import ccp4i2_django_dbapi
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("root")
 
 # Decoorator to install and use FakeProjectManager
@@ -25,7 +25,7 @@ logger = logging.getLogger("root")
 
 def using_django_pm(func):
     def wrapper(*args, **kwargs):
-        logger.info("Something is happening before the function is called.")
+        logger.debug("Something is happening before the function is called.")
         oldPM = CCP4ProjectsManager.CProjectsManager.insts
         # result = None
         try:
@@ -34,11 +34,12 @@ def using_django_pm(func):
             )
             result = func(*args, **kwargs)
         except Exception as err:
-            logging.error("Encountered issue while in FakePM decorator %s", err)
+            logging.error("Encountered issue while in FakePM decorator %s" % err)
             traceback.print_exc()
         finally:
-            CCP4ProjectsManager.CProjectsManager.insts = oldPM
-            logger.info("Something is happening after the function is called.")
+            if oldPM is not None:
+                CCP4ProjectsManager.CProjectsManager.insts = oldPM
+            logger.warning("Something is happening after the function is called.")
         return result
 
     return wrapper
@@ -47,16 +48,17 @@ def using_django_pm(func):
 class ccp4i2_django_projects_manager(object):
 
     def __init__(self):
-        logger.info("FakePM Init in")
+        logger.debug("FakePM Init in")
         self._db = ccp4i2_django_dbapi()
-        logger.info("FakePM Init out")
+        logger.debug("FakePM Init out")
         super().__init__()
 
     def db(self):
+        logger.debug("FakePM db")
         return self._db
 
     def __getattribute__(self, __name):
-        logger.info("ccp4i2_django_projects_manager being interrogated for %s", __name)
+        logger.debug("ccp4i2_django_projects_manager being interrogated for %s", __name)
         return super().__getattribute__(__name)
 
     def setOutputFileNames(
@@ -85,7 +87,7 @@ class ccp4i2_django_projects_manager(object):
                         dobj.baseName.set(f"{oldBaseName}.cif")
 
             except Exception as err:
-                logger.info(
+                logger.error(
                     "Exception in setOutputFileNames for %s %s",
                     dobj.objectPath(),
                     str(err),
@@ -112,7 +114,7 @@ class ccp4i2_django_projects_manager(object):
             return [None, None, None]
 
     def getProjectDirectory(self, projectName=None, testAlias=True, projectId=None):
-        logger.info(
+        logger.debug(
             "*****In FakeGetProjectDirectory %s, %s, %s",
             projectName,
             testAlias,
@@ -127,7 +129,7 @@ class ccp4i2_django_projects_manager(object):
                     projectId = uuid_from_no_hyphens(projectId)
                 theProject = models.Project.objects.get(uuid=projectId)
             except models.Project.DoesNotExist as err:
-                logger.info(
+                logger.error(
                     "Error %s - In getProjectDirectory for non existent projectId %s",
                     err,
                     projectId,
@@ -137,7 +139,7 @@ class ccp4i2_django_projects_manager(object):
             try:
                 theProject = models.Project.objects.get(name=projectName)
             except models.Project.DoesNotExist as err:
-                logger.info(
+                logger.error(
                     "Error %s - In getProjectDirectory for non existent projectName %s",
                     err,
                     projectName,
@@ -149,11 +151,13 @@ class ccp4i2_django_projects_manager(object):
         assert jobId is not None or (projectName is not None and jobNumber is not None)
         # logger.info('in FPM %s, %s, %s', jobId, projectName, jobNumber)
         if jobId is not None:
-            return models.Jobs.objects.get(jobid=jobId).jobDirectory
+            return str(models.Job.objects.get(uuid=jobId).directory)
         else:
-            return models.Jobs.objects.get(
-                projectid__projectname=projectName, jobnumber=jobNumber
-            ).jobDirectory
+            return str(
+                models.Job.objects.get(
+                    project__name=projectName, number=jobNumber
+                ).directory
+            )
 
     def makeFileName(self, jobId=None, mode="PROGRAMXML"):
         the_job = models.Job.objects.get(uuid=jobId)
