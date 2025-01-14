@@ -88,17 +88,27 @@ export const JobCard: React.FC<JobCardProps> = ({
       </>
     );
   }, [jobCharValues, jobFloatValues]);
+
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [filesExpanded, setFilesExpanded] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(anchorEl);
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-    alert("Hello");
   };
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+  const handleClone = async () => {
+    const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
+    console.log(cloneResult);
+    if (cloneResult.id) {
+      mutateJobs();
+      setAnchorEl(null);
+      router.push(`/project/${projectId}/job/${cloneResult.id}`);
+    }
+  };
+
   const renderMenu = (
     <Menu
       anchorEl={anchorEl}
@@ -115,7 +125,7 @@ export const JobCard: React.FC<JobCardProps> = ({
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={() => {}}>
+      <MenuItem onClick={handleClone}>
         <CopyAll /> Clone
       </MenuItem>
     </Menu>

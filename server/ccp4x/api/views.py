@@ -1,3 +1,4 @@
+import logging
 from xml.etree import ElementTree as ET
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.viewsets import ModelViewSet
@@ -7,6 +8,9 @@ from . import serializers
 from ..db import models
 from ..lib.ccp4i2_report import make_old_report
 from ..lib.job_utils import CloneJob
+
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger("root")
 
 
 class ProjectViewSet(ModelViewSet):
@@ -111,8 +115,16 @@ class JobViewSet(ModelViewSet):
             ) as params_xml_file:
                 params_xml = params_xml_file.read()
             return Response({"status": "Success", "params_xml": params_xml})
-        except FileExistsError as err:
-            return Response({"status": "Failed", "reason": str(err)})
+        except FileNotFoundError as err:
+            logger.error(err)
+            try:
+                with open(
+                    the_job.directory / "input_params.xml", "r", encoding="UTF-8"
+                ) as params_xml_file:
+                    params_xml = params_xml_file.read()
+                    return Response({"status": "Success", "params_xml": params_xml})
+            except FileNotFoundError as err:
+                return Response({"status": "Failed", "reason": str(err)})
 
     @action(
         detail=True,
@@ -127,7 +139,9 @@ class JobViewSet(ModelViewSet):
             ET.indent(report_xml, space="\t", level=0)
             report_xml = ET.tostring(make_old_report(the_job))
             return Response({"status": "Success", "report_xml": report_xml})
-        except FileExistsError as err:
+        except FileNotFoundError as err:
+            return Response({"status": "Failed", "reason": str(err)})
+        except Exception as err:
             return Response({"status": "Failed", "reason": str(err)})
 
     @action(

@@ -1,12 +1,18 @@
 import pathlib
 import uuid
 import datetime
+import getpass
+import logging
 from pytz import timezone
 from ..db import models
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core import CCP4File
 from ccp4i2.core import CCP4Utils
 from ccp4i2.core import CCP4PluginScript
+from ccp4i2.core import CCP4Container
+
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger("root")
 
 
 def CloneJob(jobId=None):
@@ -56,7 +62,7 @@ def CloneJob(jobId=None):
         task_name=taskName,
         parent=None,
     )
-    # removeDefaults(the_job_plugin.container)
+    removeDefaults(the_job_plugin.container)
     saveParamsForJob(the_job_plugin, newJob)
     newJob.save()
     theProject.last_access = datetime.datetime.now(tz=timezone("UTC"))
@@ -64,6 +70,29 @@ def CloneJob(jobId=None):
     theProject.save()
 
     return newJob.uuid
+
+
+def removeDefaults(container):
+    for child in container.children():
+        if hasattr(child, "objectName") and child.objectName() not in [
+            "inputData",
+            "outputData",
+        ]:
+            if isinstance(child, CCP4Container.CContainer):
+                if child.objectName() != "outputData":
+                    removeDefaults(child)
+            else:
+                if not child.isSet(allowDefault=False, allSet=False):
+                    if container.objectName() != "temporary":
+                        try:
+                            container.deleteObject(child.objectName())
+                        except Exception as err:
+                            logger.info(
+                                "Issue deleting %s from %s. %s",
+                                child.objectName(),
+                                container.objectName(),
+                                err,
+                            )
 
 
 def saveParamsForJob(
@@ -85,7 +114,14 @@ def saveParamsForJob(
     f = CCP4File.CI2XmlDataFile(fullPath=fileName)
     f.header = the_job_plugin.container.header
     f.header.function.set("PARAMS")
+    f.header.projectName.set(theJob.project.name)
+    f.header.projectId.set(theJob.project.uuid)
+    f.header.jobNumber.set(theJob.number)
+    f.header.jobId.set(theJob.uuid)
+    f.header.jobId.set(theJob.uuid)
     f.header.setCurrent()
+    f.header.pluginName.set(theJob.task_name)
+    f.header.userId.set(getpass.getuser())
     bodyEtree = the_job_plugin.container.getEtree(excludeUnset=excludeUnset)
     f.saveFile(bodyEtree=bodyEtree)
 

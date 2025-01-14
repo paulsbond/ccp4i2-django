@@ -53,8 +53,10 @@ export default function JobsPage({
           language="xml"
         />
       )}
-      {tabValue == 2 && report_xml && (
+      {tabValue == 2 && report_xml ? (
         <CCP4i2ReportXMLView report_xml={report_xml} job={job} />
+      ) : (
+        <LinearProgress />
       )}
     </Container>
   );

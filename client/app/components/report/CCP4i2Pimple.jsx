@@ -888,7 +888,6 @@ CCP4GraphPlot.prototype.loadFiles = function (files) {
 // The "public methods".
 
 CCP4GraphPlot.prototype.destroy = function () {
-  console.log("In destroy", this.sluggifiedGraphDivName);
   $(`#${this.sluggifiedGraphDivName}`)
     .find("div")
     .each((iDiv, theDiv) => {
