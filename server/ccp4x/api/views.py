@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from . import serializers
 from ..db import models
 from ..lib.ccp4i2_report import make_old_report
+from ..lib.job_utils import CloneJob
 
 
 class ProjectViewSet(ModelViewSet):
@@ -128,3 +129,17 @@ class JobViewSet(ModelViewSet):
             return Response({"status": "Success", "report_xml": report_xml})
         except FileExistsError as err:
             return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def clone(self, request, pk=None):
+        old_job_id = models.Job.objects.get(id=pk).uuid
+        new_id = CloneJob(old_job_id)
+        serializer = serializers.JobSerializer(
+            models.Job.objects.get(uuid=new_id), many=False
+        )
+        return Response(serializer.data)

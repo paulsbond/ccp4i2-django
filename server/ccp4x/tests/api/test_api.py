@@ -4,6 +4,7 @@ from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
 from ...db.import_i2xml import import_i2xml_from_file
+from ...db.import_i2xml import import_ccp4_project_zip
 from ...db import models
 
 
@@ -13,8 +14,15 @@ from ...db import models
 class ApiTestCase(TestCase):
     def setUp(self):
         Path(settings.CCP4I2_PROJECTS_DIR).mkdir()
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "refmac_gamma_test_0.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
         import_i2xml_from_file(
-            Path(__file__).parent.parent.parent / "db" / "DATABASE.db.xml",
+            Path(__file__).parent.parent / "db" / "DATABASE.db.xml",
             relocate_path=settings.CCP4I2_PROJECTS_DIR,
         )
         self.client = Client()
@@ -25,23 +33,29 @@ class ApiTestCase(TestCase):
         return super().tearDown()
 
     def test_import_test_dbxml(self):
-        self.assertEqual(len(list(models.Project.objects.all())), 1)
+        self.assertEqual(len(list(models.Project.objects.all())), 2)
 
     def test_projects(self):
         response = self.client.get(
             "/projects/", {"username": "john", "password": "smith"}
         )
         project_list = response.json()
-        self.assertEqual(project_list[0]["name"], "MDM2CCP4X")
+        self.assertEqual(project_list[1]["name"], "MDM2CCP4X")
 
     def test_project_files(self):
         response = self.client.get(
-            "/projects/1/files/",
+            "/projects/2/files/",
         )
         self.assertEqual(len(response.json()), 24)
 
     def test_project_tags(self):
         response = self.client.get(
-            "/projects/1/tags/",
+            "/projects/2/tags/",
         )
         self.assertEqual(len(response.json()), 1)
+
+    def test_clone(self):
+        response = self.client.post(
+            "/jobs/1/clone/",
+        )
+        print(response.json())
