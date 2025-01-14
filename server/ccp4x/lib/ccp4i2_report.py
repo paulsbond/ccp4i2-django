@@ -13,9 +13,9 @@ from ccp4i2.core.CCP4TaskManager import CTaskManager
 from ccp4i2.report.CCP4ReportParser import ReportClass
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4Data import CList
-from ..db.ccp4i2_static_data import FILETYPES_CLASS, FILETYPES_TEXT
+from ccp4i2.dbapi.CCP4DbApi import FILETYPES_CLASS, FILETYPES_TEXT
 from ..db.models import Job, FileUse, File
-from ..db.ccp4i2_projects_manager import UsingFakePM
+from ..db.ccp4i2_django_projects_manager import using_django_pm
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("root")
@@ -47,7 +47,17 @@ def get_job_container(the_job: Job):
 
 def get_report_job_info(jobId=None):
     the_job = Job.objects.get(uuid=jobId)
-    result = {
+    result = _get_basic_job_info(the_job)
+    result["inputfiles"] = _get_input_files(the_job)
+    result["outputfiles"] = _get_output_files(the_job)
+    result["filenames"] = _get_filenames(
+        the_job,
+    )
+    return result
+
+
+def _get_basic_job_info(the_job: Job):
+    return {
         "finishtime": the_job.finish_time.timestamp(),
         "status": Job.Status(the_job.status).label,
         "taskname": the_job.task_name,
@@ -62,6 +72,8 @@ def get_report_job_info(jobId=None):
         "jobid": str(the_job.uuid),
     }
 
+
+def _get_input_files(the_job: Job):
     inputFiles = []
     for fileUse in FileUse.objects.filter(job=the_job):
         inputFile = {
@@ -90,8 +102,10 @@ def get_report_job_info(jobId=None):
         else:
             raise Exception(f"pathflag {inputFile}")
         inputFiles.append(inputFile)
-    result["inputfiles"] = inputFiles
+    return inputFiles
 
+
+def _get_output_files(the_job: Job):
     outputFiles = []
     for the_file in File.objects.filter(job=the_job):
         outputFile = {
@@ -117,56 +131,49 @@ def get_report_job_info(jobId=None):
             outputFile["relpath"] = "CCP4_IMPORTED_FILES"
             outputFile["relPath"] = "CCP4_IMPORTED_FILES"
         outputFiles.append(outputFile)
+    return outputFiles
 
-    result["outputfiles"] = outputFiles
 
-    result["filenames"] = {}
+def _get_filenames(the_job: Job):
+    container: CContainer = get_job_container(the_job)
+    result_filenames = _get_input_filenames(container)
+    result_filenames.update(_get_output_filenames(container))
+    return result_filenames
 
-    container: CContainer = get_job_container(Job.objects.get(uuid=jobId))
-    # Get the data keyed by task parameter name- not necessarilly all files but should all have __str__ methods
+
+def _get_input_filenames(container: CContainer):
+    result_filenames = {}
     for key in container.inputData.dataOrder():
-        if isinstance(container.inputData.find(key), CList):
-            result["filenames"][key] = []
-            for item in container.inputData.find(key):
-                if pathlib.Path(item.__str__()).exists():
-                    result["filenames"][key].append(item.__str__())
-                else:
-                    result["filenames"][key].append("")
-        else:
-            try:
-                item = container.inputData.find(key).__str__()
-                if pathlib.Path(item).exists():
-                    result["filenames"][key] = item
-                else:
-                    result["filenames"][key] = ""
-            except KeyError as err:
-                logging.warning(f"Issue finding inputData item for {key} {err}")
-                result["filenames"][key] = ""
+        result_filenames[key] = _get_filename(container.inputData.find(key))
+    return result_filenames
 
+
+def _get_output_filenames(container: CContainer):
+    result_filenames = {}
     if "outputData" in container.dataOrder():
         for key in container.outputData.dataOrder():
-            if isinstance(container.outputData.find(key), CList):
-                result["filenames"][key] = []
-                for item in container.outputData.find(key):
-                    if pathlib.Path(item.__str__()).exists():
-                        result["filenames"][key].append(item.__str__())
-                    else:
-                        result["filenames"][key].append("")
-            else:
-                try:
-                    assert isinstance(container.outputData, CContainer)
-                    item = container.outputData.find(key).__str__()
-                    if pathlib.Path(item).exists():
-                        result["filenames"][key] = item
-                    else:
-                        result["filenames"][key] = ""
-                except:
-                    result["filenames"][key] = ""
-
-    return result
+            result_filenames[key] = _get_filename(container.outputData.find(key))
+    return result_filenames
 
 
-@UsingFakePM
+def _get_filename(data):
+    if isinstance(data, CList):
+        filenames = []
+        for item in data:
+            filenames.append(_get_existing_path(item.__str__()))
+        return filenames
+    else:
+        return _get_existing_path(data.__str__())
+
+
+def _get_existing_path(path_str):
+    if pathlib.Path(path_str).exists():
+        return path_str
+    else:
+        return ""
+
+
+@using_django_pm
 def make_old_report(the_job: Job):
     # print(self, 'reportForTask_XML_Status', taskname, outputXml, status, jobId)
     taskManager: CTaskManager = CCP4Modules.TASKMANAGER()
@@ -180,13 +187,11 @@ def make_old_report(the_job: Job):
     reportJobInfo = get_report_job_info(the_job.uuid)
     logger.debug(str(reportJobInfo))
 
-    parser = ET.XMLParser()
     xmlPath = pathlib.Path(the_job.directory) / "program.xml"
     if not xmlPath.exists():
         xmlPath = pathlib.Path(the_job.directory) / "XMLOUT.xml"
         if not xmlPath.exists():
             xmlPath = pathlib.Path(the_job.directory) / "i2.xml"
-            parser = CCP4RvapiParser.PARSER()
             if not xmlPath.exists():
                 if watchFile is None:
                     return simple_failed_report(

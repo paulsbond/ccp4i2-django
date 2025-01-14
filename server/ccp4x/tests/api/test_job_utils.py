@@ -4,9 +4,9 @@ from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
 from ...db.import_i2xml import import_ccp4_project_zip
-from ...db.ccp4i2_projects_manager import FakeProjectsManager
+from ...db.ccp4i2_django_projects_manager import ccp4i2_django_projects_manager
 from ...db import models
-from ...lib.job_utils import CloneJob
+from ...lib.job_utils import clone_job
 
 
 @override_settings(
@@ -22,7 +22,7 @@ class ApiTestCase(TestCase):
             / "refmac_gamma_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
-        self.pm = FakeProjectsManager()
+        self.pm = ccp4i2_django_projects_manager()
         self.client = Client()
         return super().setUp()
 
@@ -32,5 +32,5 @@ class ApiTestCase(TestCase):
 
     def test_clone_job(self):
         old_job = models.Job.objects.all()[0]
-        new_id = CloneJob(old_job.uuid)
+        new_id = clone_job(old_job.uuid)
         print(new_id)

@@ -2,9 +2,11 @@ from pathlib import Path
 from shutil import rmtree
 from django.test import TestCase, override_settings
 from django.conf import settings
-from ...db.models import Project, Job
-from ...db.import_i2xml import import_i2xml_from_file, import_ccp4_project_zip
-from ...db.ccp4i2_projects_manager import UsingFakePM, FakeProjectsManager
+from ...db.models import Project
+from ...db.import_i2xml import import_ccp4_project_zip
+from ...db.ccp4i2_django_projects_manager import (
+    ccp4i2_django_projects_manager,
+)
 
 
 @override_settings(
@@ -20,7 +22,7 @@ class Tests(TestCase):
             / "refmac_gamma_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
-        self.pm = FakeProjectsManager()
+        self.pm = ccp4i2_django_projects_manager()
         return super().setUp()
 
     def tearDown(self):
