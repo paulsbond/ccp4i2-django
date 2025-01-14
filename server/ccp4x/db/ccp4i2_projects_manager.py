@@ -8,11 +8,11 @@ import traceback
 import pathlib
 import logging
 from datetime import datetime
-from typing import List
 from django.utils.text import slugify
 from django.db import IntegrityError
 
 from ccp4i2.pimple import MGQTmatplotlib
+from ..lib.job_utils import removeDefaults
 
 sys.path.append(str(pathlib.Path(MGQTmatplotlib.__file__).parent.parent))
 
@@ -920,29 +920,6 @@ def getproject_jobFile(
         with open(fname, "rb") as f:
             d = f.read()
     return d
-
-
-@UsingFakePM
-def removeDefaults(container):
-    for child in container.children():
-        if hasattr(child, "objectName") and child.objectName() not in [
-            "inputData",
-            "outputData",
-        ]:
-            if isinstance(child, CCP4Container.CContainer):
-                if child.objectName() != "outputData":
-                    removeDefaults(child)
-            else:
-                if not child.isSet(allowDefault=False, allSet=False):
-                    if container.objectName() != "temporary":
-                        try:
-                            container.deleteObject(child.objectName())
-                        except Exception as err:
-                            logger.info(
-                                "Issue deleting %s from %s",
-                                child.objectName(),
-                                container.objectName(),
-                            )
 
 
 @UsingFakePM
