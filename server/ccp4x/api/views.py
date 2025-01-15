@@ -94,6 +94,17 @@ class FileViewSet(ModelViewSet):
     serializer_class = serializers.FileSerializer
     parser_classes = [FormParser, MultiPartParser]
 
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def by_uuid(self, request, pk=None):
+        the_file = models.File.objects.get(uuid=pk)
+        serializer = serializers.FileSerializer(the_file, many=False)
+        return Response(serializer.data)
+
 
 class JobViewSet(ModelViewSet):
     queryset = models.Job.objects.all()
