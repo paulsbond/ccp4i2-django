@@ -101,20 +101,26 @@ def _get_input_files(the_job: Job):
 def _get_output_files(the_job: Job):
     outputFiles = []
     for the_file in File.objects.filter(job=the_job):
-        outputFile = {
-            "filetypeid": FILETYPES_TEXT.index(the_file.type.name),
-            "filename": the_file.name,
-            "annotation": the_file.annotation,
-            "jobparamname": the_file.job_param_name,
-            "jobid": str(the_file.job.uuid),
-            "pathflag": the_file.directory,
-            "filetype": the_file.type.name,
-            "projectid": str(the_file.job.project.uuid),
-            "jobnumber": the_file.job.number,
-            "projectname": the_file.job.project.name,
-            "filetypeclass": FILETYPES_CLASS[FILETYPES_TEXT.index(the_file.type.name)],
-            "fileId": str(the_file.uuid),
-        }
+        try:
+            outputFile = {
+                "filetypeid": FILETYPES_TEXT.index(the_file.type.name),
+                "filename": the_file.name,
+                "annotation": the_file.annotation,
+                "jobparamname": the_file.job_param_name,
+                "jobid": str(the_file.job.uuid),
+                "pathflag": the_file.directory,
+                "filetype": the_file.type.name,
+                "projectid": str(the_file.job.project.uuid),
+                "jobnumber": the_file.job.number,
+                "projectname": the_file.job.project.name,
+                "filetypeclass": FILETYPES_CLASS[
+                    FILETYPES_TEXT.index(the_file.type.name)
+                ],
+                "fileId": str(the_file.uuid),
+            }
+        except ValueError as err:
+            logger.error(f"Error in _get_output_files: {err}")
+            continue
         outputFile["baseName"] = outputFile["filename"]
         outputFile["relPath"] = outputFile["relpath"] = str(
             pathlib.Path("CCP4_JOBS")
