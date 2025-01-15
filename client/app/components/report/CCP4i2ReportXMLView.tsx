@@ -4,6 +4,7 @@ import { Paper, Skeleton, Typography } from "@mui/material";
 //@ts-ignore
 import { handleItem } from "./CCP4i2ReportElements";
 import { Job } from "../../models";
+import { CCP4i2ReportElement } from "./CCP4i2ReportElements";
 
 interface CCP4i2ReportXMLViewProps {
   report_xml: { report_xml: string };
@@ -65,7 +66,7 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
       .children()
       .children()
       .map((iItem: Number, item: any) => {
-        return callbackHandleItem(iItem, item) as ReactNode;
+        return <CCP4i2ReportElement iItem={iItem} item={item} job={job} />; //callbackHandleItem(iItem, item) as ReactNode;
       })
       .toArray();
   }, [bodyNode]);
@@ -76,7 +77,7 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
     <Paper
       sx={{
         width: "100%",
-        height: "calc(100vh - 15rem)",
+        height: "calc(100vh - 14rem)",
         overflowY: "auto",
       }}
     >
