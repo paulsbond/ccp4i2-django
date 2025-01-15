@@ -334,7 +334,7 @@ class ccp4i2_django_dbapi(object):
                 return job_field_old_to_new.get(label, label)
 
             arg = list(map(patch, arg))
-            print(arg)
+            # print(arg)
 
             unpatched_values = the_job_qs.values(*arg)
             unpatched_values = the_job_qs.values(*arg)

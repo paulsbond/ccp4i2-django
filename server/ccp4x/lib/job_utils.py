@@ -58,7 +58,7 @@ def clone_job(jobId=None):
     new_job = models.Job(
         uuid=new_jobId,
         number=str(next_job_number),
-        finish_time=datetime.datetime.fromtimestamp(0),
+        finish_time=datetime.datetime.fromtimestamp(0, tz=timezone("UTC")),
         status=1,
         evaluation=0,
         title=task_manager.getTitle(taskName),

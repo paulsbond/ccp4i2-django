@@ -29,9 +29,7 @@ def using_django_pm(func):
         oldPM = CCP4ProjectsManager.CProjectsManager.insts
         # result = None
         try:
-            CCP4ProjectsManager.CProjectsManager.insts = (
-                ccp4i2_django_projects_manager()
-            )
+            CCP4ProjectsManager.CProjectsManager.insts = CCP4i2DjangoProjectsManager()
             result = func(*args, **kwargs)
         except Exception as err:
             logging.error("Encountered issue while in FakePM decorator %s" % err)
@@ -45,7 +43,7 @@ def using_django_pm(func):
     return wrapper
 
 
-class ccp4i2_django_projects_manager(object):
+class CCP4i2DjangoProjectsManager(object):
 
     def __init__(self):
         logger.debug("FakePM Init in")
@@ -58,7 +56,7 @@ class ccp4i2_django_projects_manager(object):
         return self._db
 
     def __getattribute__(self, __name):
-        logger.debug("ccp4i2_django_projects_manager being interrogated for %s", __name)
+        logger.debug("CCP4i2DjangoProjectsManager being interrogated for %s", __name)
         return super().__getattribute__(__name)
 
     def setOutputFileNames(
@@ -80,7 +78,7 @@ class ccp4i2_django_projects_manager(object):
                         jobName=jobName, projectId=projectId, relPath=relPath
                     )
                 if isinstance(dobj, CCP4ModelData.CPdbDataFile):
-                    oldBaseName, oldExt = os.path.splitext(str(dobj.baseName))
+                    oldBaseName, _ = os.path.splitext(str(dobj.baseName))
                     if dobj.contentFlag is None or int(dobj.contentFlag) == 1:
                         dobj.baseName.set(f"{oldBaseName}.pdb")
                     if int(dobj.contentFlag) == 2:
@@ -185,7 +183,7 @@ class ccp4i2_django_projects_manager(object):
         return str(jobPath)
 
 
-def uploadFileToJob(fileRoot="output", jobId=None, fileExtension=".txt", file=b""):
+def upload_file_to_job(fileRoot="output", jobId=None, fileExtension=".txt", file=b""):
     the_job = models.Job.objects.get(uuid=jobId)
     baseName = f"{fileRoot}{fileExtension}"
     filePath = os.path.join(the_job.directory, baseName)

@@ -5,14 +5,14 @@ from django.conf import settings
 from ...db.models import Project
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db.ccp4i2_django_projects_manager import (
-    ccp4i2_django_projects_manager,
+    CCP4i2DjangoProjectsManager,
 )
 
 
 @override_settings(
     CCP4I2_PROJECTS_DIR=Path(__file__).parent.parent / "CCP4I2_TEST_PROJECT_DIRECTORY"
 )
-class Tests(TestCase):
+class CCP4i2TestCase(TestCase):
     def setUp(self):
         Path(settings.CCP4I2_PROJECTS_DIR).mkdir()
         import_ccp4_project_zip(
@@ -22,7 +22,7 @@ class Tests(TestCase):
             / "refmac_gamma_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
-        self.pm = ccp4i2_django_projects_manager()
+        self.pm = CCP4i2DjangoProjectsManager()
         return super().setUp()
 
     def tearDown(self):
@@ -48,4 +48,16 @@ class Tests(TestCase):
     def test_getJobInfo(self):
         project = Project.objects.get(name="refmac_gamma_test_0")
         job_info = self.pm.db().getJobInfo(projectName=project.name, jobNumber="1")
-        print(job_info)
+        self.assertDictContainsSubset(
+            {
+                "jobid": "99f93cd7-c449-11ea-a15f-3417eba0e4fd",
+                "jobnumber": "1",
+                "parentjobid": None,
+                "projectid": "99f93cd6-c449-11ea-a15f-3417eba0e4fd",
+                "taskname": "prosmart_refmac",
+                "title": "prosmart_refmac",
+                "status": 6,
+                "comments": "",
+            },
+            job_info,
+        )

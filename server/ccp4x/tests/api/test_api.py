@@ -11,7 +11,7 @@ from ...db import models
 @override_settings(
     CCP4I2_PROJECTS_DIR=Path(__file__).parent.parent / "CCP4I2_TEST_PROJECT_DIRECTORY"
 )
-class ApiTestCase(TestCase):
+class CCP4i2TestCase(TestCase):
     def setUp(self):
         Path(settings.CCP4I2_PROJECTS_DIR).mkdir()
         import_ccp4_project_zip(
@@ -58,4 +58,19 @@ class ApiTestCase(TestCase):
         response = self.client.post(
             "/jobs/1/clone/",
         )
-        print(response.json())
+        self.assertDictContainsSubset(
+            {
+                "id": 13,
+                "number": "2",
+                "title": "Refinement - Refmacat/Refmac5",
+                "status": 1,
+                "evaluation": 0,
+                "comments": "",
+                "finish_time": "1970-01-01T00:00:00Z",
+                "task_name": "prosmart_refmac",
+                "process_id": None,
+                "project": 1,
+                "parent": None,
+            },
+            response.json(),
+        )

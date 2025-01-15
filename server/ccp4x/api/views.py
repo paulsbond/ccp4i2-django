@@ -77,7 +77,7 @@ class ProjectViewSet(ModelViewSet):
     )
     def tags(self, request, pk=None):
         project = models.Project.objects.get(pk=pk)
-        print(project.tags)
+        # print(project.tags)
         project_tag_serializer = serializers.ProjectTagSerializer(
             project.tags, many=True
         )

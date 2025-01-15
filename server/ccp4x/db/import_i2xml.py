@@ -47,7 +47,7 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
         with zip_archive.open("DATABASE.db.xml", "r") as database_file:
             root_node = ET.parse(database_file)
             import_i2xml_result = import_i2xml(root_node, relocate_path=relocate_path)
-            print(import_i2xml_result)
+            # print(import_i2xml_result)
             all_archive_files = zip_archive.namelist()
             this_project_node = root_node.findall("ccp4i2_header/projectId")
             this_project = Project.objects.get(uuid=this_project_node[0].text.strip())
@@ -141,12 +141,11 @@ def renumber_top_job(job_node: ET.Element, root_node: ET.Element):
                 [job_node.attrib["jobnumber"]] + job_number_elements[1:]
             )
             descendent_import_job_node.attrib["jobnumber"] = new_job_number
-    print(original_job_number, job_node.attrib["jobnumber"])
+    # print(original_job_number, job_node.attrib["jobnumber"])
     return job_node.attrib["jobnumber"]
 
 
 def import_i2xml_from_file(xml_path: Path, relocate_path: Path = None):
-    logger.debug("Hello")
     root_node = ET.parse(xml_path)
     import_i2xml(root_node, relocate_path=relocate_path)
 
@@ -420,7 +419,6 @@ def import_project_tag(node: ET.Element):
         project_tag.save()
         return project_tag
     except KeyError as err:
-        print(tag_map)
         logging.error(f"Cannot determine text of tag  {node} {err}")
     except ProjectTag.DoesNotExist as err:
         logging.info(f"Creating new ProjectTag with text {tag_text} {err}")

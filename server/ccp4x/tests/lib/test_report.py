@@ -6,7 +6,7 @@ from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...lib.ccp4i2_report import get_report_job_info, get_job_container, make_old_report
 from ...db.ccp4i2_django_projects_manager import (
-    ccp4i2_django_projects_manager,
+    CCP4i2DjangoProjectsManager,
     using_django_pm,
 )
 from ...db.ccp4i2_django_dbapi import ccp4i2_django_dbapi
@@ -16,7 +16,7 @@ from ...db.ccp4i2_django_dbapi import ccp4i2_django_dbapi
     CCP4I2_PROJECTS_DIR=Path(__file__).parent.parent.parent.parent.parent
     / "CCP4I2_TEST_PROJECT_DIRECTORY"
 )
-class CCP4i2ReportTestCase(TestCase):
+class CCP4i2TestCase(TestCase):
     def setUp(self):
         Path(settings.CCP4I2_PROJECTS_DIR).mkdir()
         import_ccp4_project_zip(
@@ -34,16 +34,29 @@ class CCP4i2ReportTestCase(TestCase):
 
     def test_status_labels(self):
         the_job = Job.objects.get(id=1)
-        print(Job.Status(the_job.status).label)
+        self.assertEqual("Finished", Job.Status(the_job.status).label)
 
     def test_get_job_container(self):
         the_job = Job.objects.get(id=1)
         container = get_job_container(the_job)
-        print(container)
+        self.assertListEqual(
+            container.dataOrder(),
+            [
+                "inputData",
+                "outputData",
+                "controlParameters",
+                "prosmartProtein",
+                "prosmartNucleicAcid",
+                "libg",
+                "platonyzer",
+                "guiAdmin",
+            ],
+        )
 
     def test_get_report_job_info(self):
         the_job = Job.objects.get(id=1)
-        print(get_report_job_info(the_job.uuid))
+        result = get_report_job_info(the_job.uuid)
+        self.assertEqual(result["finishtime"], 1594563149.18)
 
     def test_make_old_report(self):
         the_job = Job.objects.get(id=1)
@@ -51,15 +64,16 @@ class CCP4i2ReportTestCase(TestCase):
 
     def test_ccp4_db(self):
         a = ccp4i2_django_dbapi()
-        print(a)
+        self.assertTrue(isinstance(a, ccp4i2_django_dbapi))
 
     def test_decorator(self):
         @using_django_pm
         def test_fn():
-            print("Hello")
+            return 1
 
         test_fn()
+        self.assertEqual(1, 1)
 
     def test_ccp4_projects_manager(self):
-        a = ccp4i2_django_projects_manager()
-        print(a.db())
+        a = CCP4i2DjangoProjectsManager()
+        self.assertEqual(1, 1)
