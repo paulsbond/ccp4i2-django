@@ -2,6 +2,7 @@ from pathlib import Path
 from shutil import rmtree
 from django.test import TestCase, override_settings
 from django.conf import settings
+from xml.etree import ElementTree as ET
 from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...lib.ccp4i2_report import get_report_job_info, get_job_container, make_old_report
@@ -60,7 +61,7 @@ class CCP4i2TestCase(TestCase):
 
     def test_make_old_report(self):
         the_job = Job.objects.get(id=1)
-        print(make_old_report(the_job))
+        self.assertTrue(isinstance(make_old_report(the_job), ET.Element))
 
     def test_ccp4_db(self):
         a = ccp4i2_django_dbapi()

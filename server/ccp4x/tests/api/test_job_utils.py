@@ -33,4 +33,5 @@ class CCP4i2TestCase(TestCase):
     def test_clone_job(self):
         old_job = models.Job.objects.all()[0]
         new_id = clone_job(old_job.uuid)
-        assert (1, 1)
+        new_job = models.Job.objects.get(uuid=new_id)
+        self.assertEqual(new_job.task_name, old_job.task_name)
