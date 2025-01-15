@@ -440,7 +440,7 @@ export const CCP4i2ReportTable = (props) => {
                 key: "col_" + iColumn,
                 searchable: true,
                 render: (text) => (
-                  <p dangerouslySetInnerHTML={{ __html: text }} />
+                  <div dangerouslySetInnerHTML={{ __html: text }} />
                 ),
               };
             });
