@@ -355,7 +355,7 @@ def create_job(
 
 
 @using_django_pm
-def getJobPlugin(the_job, parent=None, dbHandler=None):
+def get_job_plugin(the_job, parent=None, dbHandler=None):
     taskManager = CCP4TaskManager.CTaskManager()
 
     pluginClass = taskManager.getPluginScriptClass(the_job.taskname)
@@ -364,7 +364,7 @@ def getJobPlugin(the_job, parent=None, dbHandler=None):
             workDirectory=the_job.jobDirectory, parent=parent, dbHandler=dbHandler
         )
     except Exception as err:
-        logger.error("Error in getJobPlugin %s", err)
+        logger.error("Error in get_job_plugin %s", err)
         traceback.print_exc()
         return None
 
@@ -429,7 +429,7 @@ def getJobContainer(the_job: models.Job):
 def setJobParameterByXML(jobId, objectPath, valueXMLText):
     newValueEtree = ET.fromstring(valueXMLText)
     the_job = models.Job.objects.get(uuid=jobId)
-    the_job_plugin = getJobPlugin(the_job)
+    the_job_plugin = get_job_plugin(the_job)
     objectElement = the_job_plugin.container.locateElement(objectPath)
     objectElement.unSet()
     objectElement.setEtree(newValueEtree)
