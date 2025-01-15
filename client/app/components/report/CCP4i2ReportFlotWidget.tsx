@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import $ from "jquery";
 import CCP4GraphPlot from "./CCP4i2Pimple";
+import { CCP4i2ReportElementProps } from "./CCP4i2ReportElements";
 //window.jQuery = window.$ = $;
 
-export const useOnScreen = (ref) => {
+export const useOnScreen = (ref: React.RefObject<HTMLElement>) => {
   const [isIntersecting, setIntersecting] = useState(false);
 
   const observer = useMemo(
@@ -15,17 +16,25 @@ export const useOnScreen = (ref) => {
   );
 
   useEffect(() => {
-    observer.observe(ref.current);
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
     return () => observer.disconnect();
   }, [observer, ref]);
 
   return isIntersecting;
 };
 
-export const CCP4i2ReportFlotWidget = (props) => {
-  const divRef = useRef(null);
+interface CCP4i2ReportFlotWidgetProps extends CCP4i2ReportElementProps {
+  uniqueId?: string;
+}
+
+export const CCP4i2ReportFlotWidget: React.FC<CCP4i2ReportFlotWidgetProps> = (
+  props
+) => {
+  const divRef = useRef<HTMLDivElement | null>(null);
   const isVisible = useOnScreen(divRef);
-  const graphPlot = useRef(null);
+  const graphPlot = useRef<any>(null);
 
   useEffect(() => {
     return () => {
@@ -87,9 +96,10 @@ export const CCP4i2ReportFlotWidget = (props) => {
   );
 };
 
-export const prettifyXml = (sourceXml) => {
-  var theNode = sourceXml;
+export const prettifyXml = (sourceXml: Document) => {
+  let theNode = sourceXml;
   if (theNode.nodeName == null) {
+    //@ts-ignore
     theNode = sourceXml.get(0);
     //console.log('theNode', theNode)
     //Possible explanation is that the is a jQuery node

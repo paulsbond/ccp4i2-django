@@ -211,7 +211,10 @@ export const CCP4i2RVAPIRow: React.FC<CCP4i2ReportElementProps> = (props) => {
           return (
             <Grid item key={iCol}>
               <CCP4i2ReportFlotWidget
+                //Might the following line be because col is found bysearching from dt element
+                //@ts-ignore
                 item={$(col)}
+                iItem={iCol}
                 uniqueId={$(col).find("div[data-renderer]").data("data")}
               />
             </Grid>
@@ -393,7 +396,8 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
       } else if (["CCP4i2ReportFlotGraph"].includes(tagName)) {
         return (
           <CCP4i2ReportFlotWidget
-            key={iItem}
+            key={`${iItem}`}
+            iItem={iItem}
             item={item}
             uniqueId={$(item).attr("key")}
             job={job}
