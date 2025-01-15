@@ -20,7 +20,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
   return (
     <Stack
       spacing={2}
-      sx={{ height: "calc(100vh - 5rem)", paddingTop: "1rem" }}
+      sx={{ height: "calc(100vh - 4rem)", paddingTop: "1rem" }}
     >
       <ToolBar />
       <PanelGroup direction="horizontal">
