@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from . import serializers
 from ..db import models
 from ..lib.ccp4i2_report import make_old_report
-from ..lib.job_utils import clone_job
+from ..lib.job_utils.clone_job import clone_job
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("root")
@@ -163,8 +163,6 @@ class JobViewSet(ModelViewSet):
     )
     def clone(self, request, pk=None):
         old_job_id = models.Job.objects.get(id=pk).uuid
-        new_id = clone_job(old_job_id)
-        serializer = serializers.JobSerializer(
-            models.Job.objects.get(uuid=new_id), many=False
-        )
+        new_job = clone_job(old_job_id)
+        serializer = serializers.JobSerializer(new_job)
         return Response(serializer.data)

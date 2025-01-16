@@ -49,17 +49,17 @@ job_field_old_to_new = {
 job_field_new_to_old = {item[1]: item[0] for item in job_field_old_to_new.items()}
 
 
-class ccp4i2_django_dbapi(object):
+class CCP4i2DjangoDbApi(object):
     class FakeSignal:
         def emit(self, *arg, **kwarg):
             logger.info("Ive been asked to emit %s, %s", arg, kwarg)
 
     def __init__(self):
-        self.projectReset = ccp4i2_django_dbapi.FakeSignal()
+        self.projectReset = CCP4i2DjangoDbApi.FakeSignal()
         super().__init__()
 
     def __getattribute__(self, __name):
-        logger.debug("ccp4i2_django_dbapi being interrogated for %s", __name)
+        logger.debug("CCP4i2DjangoDbApi being interrogated for %s", __name)
         return super().__getattribute__(__name)
 
     def getFileByJobContext(

@@ -6,11 +6,11 @@ from xml.etree import ElementTree as ET
 from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...lib.ccp4i2_report import get_report_job_info, get_job_container, make_old_report
-from ...db.ccp4i2_django_projects_manager import (
-    CCP4i2DjangoProjectsManager,
-    using_django_pm,
-)
-from ...db.ccp4i2_django_dbapi import ccp4i2_django_dbapi
+from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
+
+from ...db.ccp4i2_django_wrapper import using_django_pm
+
+from ...db.ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
 
 @override_settings(
@@ -64,8 +64,8 @@ class CCP4i2TestCase(TestCase):
         self.assertTrue(isinstance(make_old_report(the_job), ET.Element))
 
     def test_ccp4_db(self):
-        a = ccp4i2_django_dbapi()
-        self.assertTrue(isinstance(a, ccp4i2_django_dbapi))
+        a = CCP4i2DjangoDbApi()
+        self.assertTrue(isinstance(a, CCP4i2DjangoDbApi))
 
     def test_decorator(self):
         @using_django_pm
@@ -76,5 +76,5 @@ class CCP4i2TestCase(TestCase):
         self.assertEqual(1, 1)
 
     def test_ccp4_projects_manager(self):
-        a = CCP4i2DjangoProjectsManager()
+        _ = CCP4i2DjangoProjectsManager()
         self.assertEqual(1, 1)

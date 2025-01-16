@@ -8,7 +8,8 @@ from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4Data import CList
 from ccp4i2.dbapi.CCP4DbApi import FILETYPES_CLASS, FILETYPES_TEXT
 from ..db.models import Job, FileUse, File
-from ..db.ccp4i2_django_projects_manager import using_django_pm
+from ..db.ccp4i2_django_wrapper import using_django_pm
+from .job_utils.get_job_container import get_job_container
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("root")
@@ -22,20 +23,6 @@ def simple_failed_report(reason: str, task_name: str):
            </body>
         </html>"""
     )
-
-
-def get_job_container(the_job: Job):
-    defFile = CTaskManager().lookupDefFile(name=the_job.task_name, version=None)
-    # print 'CProjectDirToDb.globJobs defFile',defFile
-    container: CContainer = CContainer()
-    container.loadContentsFromXml(defFile, guiAdmin=True)
-    params_xml_path = pathlib.Path(the_job.directory) / "params.xml"
-    input_params_xml_path = pathlib.Path(the_job.directory) / "input_params.xml"
-    if params_xml_path.exists():
-        container.loadDataFromXml(str(params_xml_path))
-    else:
-        container.loadDataFromXml(str(input_params_xml_path))
-    return container
 
 
 def get_report_job_info(jobId=None):

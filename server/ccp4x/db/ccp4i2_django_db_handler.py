@@ -2,7 +2,7 @@ import logging
 import datetime
 from ccp4i2.dbapi import CCP4DbApi
 from ccp4i2.core.CCP4PluginScript import CPluginScript
-from .ccp4i2_django_dbapi import ccp4i2_django_dbapi
+from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 from .ccp4i2_django_projects_manager import create_job
 from . import models
 
@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("root")
 
 
-def pluginStatusToJobStatus(finishStatus):
+def plugin_status_to_job_status(finishStatus):
     status = CCP4DbApi.JOB_STATUS_FAILED
     if isinstance(finishStatus, dict):
         finishStatus = finishStatus.get("finishStatus")
@@ -27,10 +27,10 @@ def pluginStatusToJobStatus(finishStatus):
     return status
 
 
-class ccp4i2_django_db_handler:
+class CCP4i2DjangoDbHandler:
 
     def __init__(self):
-        self.db = ccp4i2_django_dbapi()
+        self.db = CCP4i2DjangoDbApi()
 
     def createJob(self, pluginName, jobTitle=None, parentJobId=None, jobNumber=None):
         try:
@@ -58,22 +58,22 @@ class ccp4i2_django_db_handler:
         aJob = models.Job.objects.get(uuid=jobId)
         try:
             if status is None and finishStatus is not None:
-                status = pluginStatusToJobStatus(finishStatus)
+                status = plugin_status_to_job_status(finishStatus)
             try:
-                theJob = models.Job.objects.get(uuid=jobId)
-                theJob.status = status
-                theJob.save()
+                the_job = models.Job.objects.get(uuid=jobId)
+                the_job.status = status
+                the_job.save()
                 if models.Job.Status(status).label == "Finished":
-                    theJob.finish_time = datetime.datetime.now()
-                    theJob.save()
+                    the_job.finish_time = datetime.datetime.now()
+                    the_job.save()
                     self.db.gleanJobFiles(container=container, jobId=jobId)
-                if theJob.parentjobid is None and theJob.status.statustext in [
+                if the_job.parentjobid is None and the_job.status.statustext in [
                     "Finished",
                     "Interrupted",
                     "Failed",
                     "Unsatisfactory",
                 ]:
-                    pass  # backupProjectDb(theJob.projectid)
+                    pass  # backupProjectDb(the_job.projectid)
             except Exception as err:
                 logger.error(f"Failed in updateJobStatus {err} {aJob}")
         except Exception as err:
