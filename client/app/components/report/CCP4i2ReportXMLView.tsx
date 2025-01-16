@@ -46,19 +46,10 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
       );
       const reportXMLDocument1 = $.parseXML(report_xml.report_xml);
       const $reportXMLDocument1 = $(reportXMLDocument1);
-      return $reportXMLDocument1;
+      return $reportXMLDocument;
     }
     return null;
   }, []);
-
-  const callbackHandleItem = useCallback(
-    (iItem: Number, item: any) => {
-      if (job) {
-        return handleItem(iItem, item, job);
-      }
-    },
-    [job]
-  );
 
   const reportContent = useMemo<ReactNode[] | null[] | null>(() => {
     if (!bodyNode) return null;
@@ -66,7 +57,14 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
       .children()
       .children()
       .map((iItem: Number, item: any) => {
-        return <CCP4i2ReportElement iItem={iItem} item={item} job={job} />; //callbackHandleItem(iItem, item) as ReactNode;
+        return (
+          <CCP4i2ReportElement
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        ); //callbackHandleItem(iItem, item) as ReactNode;
       })
       .toArray();
   }, [bodyNode]);

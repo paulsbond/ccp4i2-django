@@ -23,7 +23,8 @@ export class File {
     public type: string,
     public name: string,
     public size: number,
-    public job: number
+    public job: number,
+    public annotation: string
   ) {}
 }
 

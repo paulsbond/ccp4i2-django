@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElements";
-import { Collapse, Toolbar, Typography } from "@mui/material";
+import {
+  Avatar,
+  CardHeader,
+  Chip,
+  Collapse,
+  LinearProgress,
+  Toolbar,
+  Typography,
+} from "@mui/material";
 import { MyExpandMore } from "../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useApi } from "../../api";
+import { fileTypeMapping } from "../files-table";
+//import { fileTypeMapping } from "../files-table";
 
 export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
   props
@@ -68,11 +79,56 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
           sx={{ flexGrow: 1 }}
         ></Typography>
       </Toolbar>
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
-        {fileUUIDs.map((item) => (
-          <p key={item}>{item}</p>
+      <Collapse in={expanded} timeout="auto" unmountOnExit sx={{ p: 2 }}>
+        {fileUUIDs.map((fileUUID: string, iFile: Number) => (
+          <CCP4i2ReportFile {...props} uuid={fileUUID} key={`${iFile}`} />
         ))}
       </Collapse>
     </>
+  );
+};
+
+interface CCP4i2ReportFileProps extends CCP4i2ReportElementProps {
+  uuid: string;
+}
+const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
+  const api = useApi();
+  const file: any = api.get(`files/${props.uuid}/by_uuid/`);
+  const fileTypeIcon = useMemo(() => {
+    if (!file?.data?.type) return "ccp4";
+    return Object.keys(fileTypeMapping).includes(file?.data?.type)
+      ? fileTypeMapping[file.data.type]
+      : "ccp4";
+  }, [file]);
+
+  if (!file || !file.data || file.isLoading) return <LinearProgress />;
+  return (
+    <CardHeader
+      title={
+        <Toolbar>
+          <Avatar
+            src={`/qticons/${fileTypeIcon}.png`}
+            sx={{ mr: 2, width: "2rem", height: "2rem" }}
+          />
+          <Typography variant="body1">{file.data?.annotation}</Typography>
+        </Toolbar>
+      }
+      subheader={
+        <>
+          <Chip
+            key="subType"
+            avatar={<div style={{ width: "3rem" }}>Subtype</div>}
+            label={file.data?.sub_type}
+          />
+          {file.data?.content && (
+            <Chip
+              key="content"
+              avatar={<div style={{ width: "3rem" }}>Content</div>}
+              label={file.data?.content}
+            />
+          )}
+        </>
+      }
+    ></CardHeader>
   );
 };

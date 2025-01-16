@@ -18,7 +18,7 @@ import {
 import { MyExpandMore } from "../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
-import { CCP4i2ReportFlotGraphGroupWidget } from "./CCP4i2ReportFlotGraphGroupWidget";
+import { CCP4i2ReportFlotGraphGroup } from "./CCP4i2ReportFlotGraphGroup";
 import { CCP4i2ReportTable } from "./CCP4i2ReportTable";
 import { CCP4i2ReportInputOutputData } from "./CCP4i2ReportInputOutputData";
 
@@ -66,7 +66,12 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
         .children()
         .toArray()
         .map((child, iChild) => (
-          <CCP4i2ReportElement iItem={iChild} item={child} job={props.job} />
+          <CCP4i2ReportElement
+            key={`${iChild}`}
+            iItem={iChild}
+            item={child}
+            job={props.job}
+          />
         ));
       setFoldContent(newContent);
     } catch (err) {
@@ -418,7 +423,7 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
         )
       ) {
         return (
-          <CCP4i2ReportFlotGraphGroupWidget
+          <CCP4i2ReportFlotGraphGroup
             iItem={iItem}
             key={`${iItem}`}
             item={item}
