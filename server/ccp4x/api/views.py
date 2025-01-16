@@ -8,6 +8,7 @@ from . import serializers
 from ..db import models
 from ..lib.ccp4i2_report import make_old_report
 from ..lib.job_utils.clone_job import clone_job
+from ..lib.job_utils.run_job import run_job
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("root")
@@ -165,4 +166,16 @@ class JobViewSet(ModelViewSet):
         old_job_id = models.Job.objects.get(id=pk).uuid
         new_job = clone_job(old_job_id)
         serializer = serializers.JobSerializer(new_job)
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def run(self, request, pk=None):
+        job = models.Job.objects.get(id=pk)
+        run_job(job.uuid)
+        serializer = serializers.JobSerializer(job)
         return Response(serializer.data)
