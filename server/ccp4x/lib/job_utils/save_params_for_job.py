@@ -28,9 +28,9 @@ def save_params_for_job(
     f.header = the_job_plugin.container.header
     f.header.function.set("PARAMS")
     f.header.projectName.set(theJob.project.name)
-    f.header.projectId.set(theJob.project.uuid)
+    f.header.projectId.set(str(theJob.project.uuid))
     f.header.jobNumber.set(theJob.number)
-    f.header.jobId.set(theJob.uuid)
+    f.header.jobId.set(str(theJob.uuid))
     f.header.setCurrent()
     f.header.pluginName.set(theJob.task_name)
     f.header.userId.set(getpass.getuser())

@@ -38,7 +38,7 @@ class CCP4i2DjangoProjectsManager(object):
             [f"job_{numberElement}" for numberElement in jobNumber.split(".")]
         )
         the_job = models.Job.objects.get(project__uuid=projectId, number=jobNumber)
-        jobName = f"{jobNumber}_{slugify(the_job.uuid.name)}_{the_job.taskname}_"
+        jobName = f"{jobNumber}_{slugify(the_job.project.name)}_{the_job.taskname}_"
         dataList = container.outputData.dataOrder()
         for objectName in dataList:
             try:
@@ -77,7 +77,7 @@ class CCP4i2DjangoProjectsManager(object):
             return (
                 theProject.name,
                 absPath[len(theProject.directory) + 1 :],
-                theProject.uuid,
+                str(theProject.uuid),
             )
         else:
             return [None, None, None]
@@ -169,7 +169,7 @@ def upload_file_to_job(fileRoot="output", jobId=None, fileExtension=".txt", file
         "CCP4_JOBS", "/".join([f"job_{jN}" for jN in the_job.jobnumber.split(".")])
     )
     return {
-        "project": the_job.uuid.uuid,
+        "project": str(the_job.project.uuid),
         "relPath": relPath,
         "baseName": baseName,
     }
@@ -190,4 +190,4 @@ def updateJobStatus(jobId=None, statusId=None):
     theStatus = models.Jobstatus.objects.get(statusid=statusId)
     the_job.status = theStatus
     the_job.save()
-    return the_job.jobid, the_job.uuid.uuid, theStatus.statustext
+    return str(the_job.uuid), str(the_job.project.uuid), theStatus.statustext

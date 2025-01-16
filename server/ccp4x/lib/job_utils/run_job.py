@@ -39,7 +39,7 @@ def run_job(jobId: str):
 def setup_db_handler(new_job: models.Job):
     db_handler = CCP4i2DjangoDbHandler()
     db_handler.projectName = new_job.project.name
-    db_handler.projectId = new_job.project.uuid
+    db_handler.projectId = str(new_job.project.uuid)
     return db_handler
 
 
@@ -89,7 +89,7 @@ def setup_plugin(
     the_plugin.setDbData(
         handler=dbHandler,
         projectName=new_job.project.name,
-        projectId=new_job.project.uuid,
+        projectId=str(new_job.project.uuid),
         jobNumber=new_job.number,
         jobId=jobId,
     )

@@ -95,7 +95,7 @@ def _processInput(
                 theFile.save()
 
                 input.dbFileId.set(theFile.uuid)
-                input.project.set(theJob.project.uuid)
+                input.project.set(str(theJob.project.uuid))
                 input.relPath.set("CCP4_IMPORTED_FILES")
                 input.baseName.set(destFilePath.name)
 
