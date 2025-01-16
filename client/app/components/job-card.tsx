@@ -22,7 +22,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { MyExpandMore } from "./expand-more";
 import { JobsGrid } from "./jobs-grid";
 import FilesTable from "./files-table";
-import { CopyAll, Menu as MenuIcon } from "@mui/icons-material";
+import { CopyAll, Menu as MenuIcon, RunCircle } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { JobHeader } from "./job-header";
 
@@ -102,10 +102,19 @@ export const JobCard: React.FC<JobCardProps> = ({
   const handleClone = async () => {
     const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
     console.log(cloneResult);
-    if (cloneResult.id) {
+    if (cloneResult?.id) {
       mutateJobs();
       setAnchorEl(null);
       router.push(`/project/${projectId}/job/${cloneResult.id}`);
+    }
+  };
+  const handleRun = async () => {
+    const runResult: Job = await api.post(`jobs/${job.id}/run/`);
+    console.log(runResult);
+    if (runResult?.id) {
+      mutateJobs();
+      setAnchorEl(null);
+      router.push(`/project/${projectId}/job/${runResult.id}`);
     }
   };
 
@@ -127,6 +136,9 @@ export const JobCard: React.FC<JobCardProps> = ({
     >
       <MenuItem onClick={handleClone}>
         <CopyAll /> Clone
+      </MenuItem>
+      <MenuItem onClick={handleRun}>
+        <RunCircle /> Run
       </MenuItem>
     </Menu>
   );
