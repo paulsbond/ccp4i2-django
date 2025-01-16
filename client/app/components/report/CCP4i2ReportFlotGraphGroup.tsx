@@ -5,9 +5,9 @@ import { Autocomplete, TextField } from "@mui/material";
 
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElements";
 
-export const CCP4i2ReportFlotGraphGroupWidget: React.FC<
-  CCP4i2ReportElementProps
-> = (props) => {
+export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
+  props
+) => {
   const [shown, setShown] = useState(0);
 
   const xmlGraphs = useMemo(() => {
