@@ -1,4 +1,5 @@
 import logging
+import sys
 import traceback
 import uuid
 from datetime import datetime
@@ -314,12 +315,14 @@ class CCP4i2DjangoDbApi(object):
         self, jobId=None, mode="all", projectName=None, jobNumber=None, returnType=None
     ):
         try:
-            # logger.info(f'jobId is {jobId}')
+            logger.info(f"jobId is {jobId}")
             if jobId is None:
                 the_job_qs = models.Job.objects.filter(
                     project__name=projectName, number=jobNumber
                 )
             else:
+                if "-" not in str(jobId):
+                    jobId = uuid_from_no_hyphens(jobId)
                 the_job_qs = models.Job.objects.filter(uuid=jobId)
             assert len(list(the_job_qs)) == 1
 
@@ -351,9 +354,10 @@ class CCP4i2DjangoDbApi(object):
             for jobFile in jobFiles:
                 result["filenames"][jobFile.job_param_name] = str(jobFile.path)
             return result
+        except AssertionError as err:
+            logger.exception("Assertion Error in getJobInfo", exc_info=err)
         except Exception as err:
-            logger.error("Err in getJobInfo %s %s %s", err, mode, returnType)
-            traceback.print_stack()
+            logger.exception("Err in getJobInfo", exc_info=err)
         return None
 
     def gleanJobFiles(

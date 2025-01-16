@@ -7,6 +7,7 @@ from ...db.import_i2xml import import_ccp4_project_zip
 from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
 from ...db import models
 from ...lib.job_utils.clone_job import clone_job
+from ...lib.job_utils.run_job import run_job
 
 
 @override_settings(
@@ -33,4 +34,10 @@ class CCP4i2TestCase(TestCase):
     def test_clone_job(self):
         old_job = models.Job.objects.all()[0]
         new_job = clone_job(old_job.uuid)
+        self.assertEqual(new_job.task_name, old_job.task_name)
+
+    def test_run_job(self):
+        old_job = models.Job.objects.all()[0]
+        new_job = clone_job(old_job.uuid)
+        _ = run_job(new_job.uuid)
         self.assertEqual(new_job.task_name, old_job.task_name)

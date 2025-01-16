@@ -1,23 +1,44 @@
+import pathlib
+import os
+import shutil
+import datetime
+import logging
 from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4File
+from ccp4i2.core import CCP4PluginScript
+from ccp4i2.core.CCP4Data import CList
 from ccp4i2.dbapi import CCP4DbApi
 from ...db import models
-from ...lib.utils import uuid_from_no_hyphens, save_params_for_job
+from ..utils import uuid_from_no_hyphens
+from .save_params_for_job import save_params_for_job
+
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger("root")
 
 
 def findInputs(ofContainer, inputsFound=[]):
-    for child in ofContainer.children():
-        if isinstance(child, CCP4Container.CContainer):
+    search_domain = []
+    if isinstance(ofContainer, CList):
+        search_domain = ofContainer
+    elif isinstance(ofContainer, CCP4Container.CContainer):
+        search_domain = ofContainer.children()
+
+    for child in search_domain:
+        if isinstance(child, CCP4Container.CContainer) or isinstance(child, CList):
             if child.objectName() != "outputData":
                 findInputs(child, inputsFound)
         else:
             if isinstance(child, CCP4File.CDataFile):
-                if not child in inputsFound:
+                if child not in inputsFound:
                     inputsFound.append(child)
     return inputsFound
 
 
-def _processInput(theJob, plugin, input):
+def _processInput(
+    theJob: models.Job,
+    plugin: CCP4PluginScript.CPluginScript,
+    input: CCP4File.CDataFile,
+):
     theFile = None
     if input.dbFileId is not None and len(str(input.dbFileId)) != 0:
         theFile = models.File.objects.get(
@@ -28,7 +49,7 @@ def _processInput(theJob, plugin, input):
             sourceFilePath = pathlib.Path(str(input.relPath)) / str(input.baseName)
             if not sourceFilePath.exists():
                 sourceFilePath = (
-                    pathlib.Path(theJob.projectid.projectdirectory)
+                    pathlib.Path(theJob.project.directory)
                     / str(input.relPath)
                     / str(input.baseName)
                 )
@@ -36,7 +57,7 @@ def _processInput(theJob, plugin, input):
             input.loadFile()
             input.setContentFlag()
             destFilePath = (
-                pathlib.Path(theJob.projectid.projectdirectory)
+                pathlib.Path(theJob.project.directory)
                 / "CCP4_IMPORTED_FILES"
                 / sourceFilePath.name
             )
@@ -51,7 +72,7 @@ def _processInput(theJob, plugin, input):
                 filetypeid = CCP4DbApi.FILETYPES_CLASS.index(
                     input.__class__.__name__[1:]
                 )
-                fileType = models.Filetypes.objects.get(filetypeid=filetypeid)
+                fileType = CCP4DbApi.FILETYPES_TEXT[filetypeid]
                 # print('What I know about import is', str(valueDictForObject(input)))
                 if (
                     not hasattr(input, "annotation")
@@ -62,55 +83,54 @@ def _processInput(theJob, plugin, input):
                 else:
                     annotation = str(input.annotation)
                 createDict = {
-                    "filename": str(destFilePath.name),
+                    "name": str(destFilePath.name),
                     "annotation": annotation,
-                    "filetypeid": fileType,
-                    "jobid": theJob,
-                    "jobparamname": input.objectName(),
-                    "pathflag": 2,
+                    "type": fileType,
+                    "job": theJob,
+                    "job_param_name": input.objectName(),
+                    "directory": 2,
                 }
                 # print(createDict)
-                theFile = models.Files(**createDict)
+                theFile = models.File(**createDict)
                 theFile.save()
 
-                input.dbFileId.set(theFile.fileid)
-                input.project.set(theJob.projectid.projectid)
+                input.dbFileId.set(theFile.uuid)
+                input.project.set(theJob.project.uuid)
                 input.relPath.set("CCP4_IMPORTED_FILES")
                 input.baseName.set(destFilePath.name)
 
                 createDict = {
-                    "fileid": theFile,
-                    "sourcefilename": str(sourceFilePath),
-                    "annotation": "",
-                    "creationtime": time.time(),
-                    "lastmodifiedtime": time.time(),
+                    "file": theFile,
+                    "name": str(sourceFilePath),
+                    "time": datetime.datetime.now(),
+                    "last_modified": datetime.datetime.now(),
                     "checksum": input.checksum(),
-                    "importnumber": "1",
-                    "reference": "",
                 }
                 # print(createDict)
-                newImportfile = models.Importfiles()
+                newImportfile = models.FileImport()
                 newImportfile.save()
                 for key in createDict:
                     setattr(newImportfile, key, createDict[key])
                     newImportfile.save()
             except ValueError as err:
                 theFile = None
-                logger.error(f"Encountered issue importing file {input.baseName}")
+                logger.error(
+                    f"Encountered issue - {err} importing file {input.baseName}"
+                )
 
     if theFile is not None:
-        theRole = models.Fileroles.objects.get(roletext="in")
+        theRole = 1
         createDict = {
-            "fileid": theFile,
-            "jobid": theJob,
-            "roleid": theRole,
-            "jobparamname": input.objectName(),
+            "file": theFile,
+            "job": theJob,
+            "role": theRole,
+            "job_param_name": input.objectName(),
         }
-        fileUse = models.Fileuses(**createDict)
+        fileUse = models.FileUse(**createDict)
         fileUse.save()
 
 
-def importFiles(theJob, plugin):
+def import_files(theJob, plugin):
     inputs = findInputs(plugin.container, inputsFound=[])
     for input in inputs:
         _processInput(theJob, plugin, input)

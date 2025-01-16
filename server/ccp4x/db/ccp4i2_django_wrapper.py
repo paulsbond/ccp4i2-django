@@ -17,7 +17,9 @@ def using_django_pm(func):
             CCP4ProjectsManager.CProjectsManager.insts = CCP4i2DjangoProjectsManager()
             result = func(*args, **kwargs)
         except Exception as err:
-            logging.error("Encountered issue while in FakePM decorator %s" % err)
+            logging.exception(
+                "Encountered issue while in FakePM decorator", exc_info=err
+            )
             traceback.print_exc()
         finally:
             if oldPM is not None:

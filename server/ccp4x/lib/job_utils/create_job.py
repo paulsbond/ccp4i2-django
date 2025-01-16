@@ -37,7 +37,7 @@ def create_job(
 
     if jobNumber is None:
         project_jobs = models.Job.objects.filter(project__uuid=projectId).filter(
-            parent_job__isnull=True
+            parent__isnull=True
         )
         if len(project_jobs) == 0:
             lastJobNumber = 0
@@ -53,40 +53,40 @@ def create_job(
     jobNumberElements[-1] = str(int(jobNumberElements[-1]) + 1)
     nextJobNumber = ".".join(jobNumberElements)
 
-    newJobDir = Path(theProject.directory).joinpath(
-        ["CCP4_JOBS"] + [f"job_{jNo}" for jNo in nextJobNumber.split(".")]
+    new_jobDir = Path(theProject.directory).joinpath(
+        *(["CCP4_JOBS"] + [f"job_{jNo}" for jNo in nextJobNumber.split(".")])
     )
 
     if jobId is None:
-        newJobId = uuid.uuid4()
+        new_jobId = uuid.uuid4()
     else:
-        if "-" not in newJobId:
-            newJobId = uuid_from_no_hyphens(newJobId)
+        if "-" not in new_jobId:
+            new_jobId = uuid_from_no_hyphens(new_jobId)
 
     taskManager = CCP4TaskManager.CTaskManager()
     pluginClass = taskManager.getPluginScriptClass(taskName)
     if saveParams:
-        newJobDir.mkdir(exist_ok=True, parents=True)
-    the_job_plugin = pluginClass(workDirectory=str(newJobDir))
+        new_jobDir.mkdir(exist_ok=True, parents=True)
+    the_job_plugin = pluginClass(workDirectory=str(new_jobDir))
 
     if title is None:
         title = taskManager.getTitle(taskName)
-    argDict = dict(
-        uuid=newJobId,
+    arg_dict = dict(
+        uuid=new_jobId,
         number=str(nextJobNumber),
         status=1,
-        evaluation=None,
+        evaluation=0,
         title=title,
         project=theProject,
         task_name=taskName,
-        parent_job=parentJob,
+        parent=parentJob,
     )
-    logger.info("argDict %s", argDict)
-    newJob = models.Job(**argDict)
+    logger.info("arg_dict %s", arg_dict)
+    new_job = models.Job(**arg_dict)
 
     if saveParams:
         remove_container_default_values(the_job_plugin.container)
-        save_params_for_job(the_job_plugin, newJob)
-    newJob.save()
+        save_params_for_job(the_job_plugin, new_job)
+    new_job.save()
 
-    return newJob.uuid, newJob.number, theProject.uuid, parentJobId
+    return str(new_job.uuid)

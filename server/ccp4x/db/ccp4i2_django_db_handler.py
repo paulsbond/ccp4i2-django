@@ -1,9 +1,11 @@
 import logging
 import datetime
+import sys
 from ccp4i2.dbapi import CCP4DbApi
 from ccp4i2.core.CCP4PluginScript import CPluginScript
 from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
-from .ccp4i2_django_projects_manager import create_job
+from ..lib.job_utils.create_job import create_job
+from ..lib.utils import uuid_from_no_hyphens
 from . import models
 
 logging.basicConfig(level=logging.ERROR)
@@ -53,8 +55,14 @@ class CCP4i2DjangoDbHandler:
         container=None,
         dbOutputData=None,
     ):
+        print(
+            "In update JobStatus", jobId, status, finishStatus, container, dbOutputData
+        )
+        sys.stdout.flush()
         if dbOutputData is not None:
             logger.error(f"dbOutputData is not None {dbOutputData}")
+        if "-" not in jobId:
+            jobId = uuid_from_no_hyphens(jobId)
         aJob = models.Job.objects.get(uuid=jobId)
         try:
             if status is None and finishStatus is not None:
@@ -67,7 +75,7 @@ class CCP4i2DjangoDbHandler:
                     the_job.finish_time = datetime.datetime.now()
                     the_job.save()
                     self.db.gleanJobFiles(container=container, jobId=jobId)
-                if the_job.parentjobid is None and the_job.status.statustext in [
+                if the_job.parent is None and the_job.status.statustext in [
                     "Finished",
                     "Interrupted",
                     "Failed",

@@ -2,20 +2,20 @@ import logging
 import contextlib
 from xml.etree import ElementTree as ET
 
-from server.ccp4x.db.ccp4i2_django_projects_manager import (
-    get_job_plugin,
-    save_params_for_job,
-)
-from ..db import models
-from ..db.ccp4i2_django_db_handler import CCP4i2DjangoDbHandler
+from ...db import models
+from ...db.ccp4i2_django_db_handler import CCP4i2DjangoDbHandler
+from .import_files import import_files
+from .get_job_plugin import get_job_plugin
+from .save_params_for_job import save_params_for_job
 from ccp4i2.core import CCP4Modules
+from ccp4i2.core import CCP4PluginScript
 from PySide2 import QtCore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("root")
 
 
-def run_job(jobId):
+def run_job(jobId: str):
     new_job = models.Job.objects.get(uuid=jobId)
     logger.info(f"Running job in {new_job.directory}")
 
@@ -25,29 +25,35 @@ def run_job(jobId):
                 new_job.directory / "stderr.txt", "w", encoding="utf-8"
             ) as stderr_file:
                 with contextlib.redirect_stderr(stderr_file):
-                    dbHandler = setup_db_handler(new_job)
-                    application_inst = setupapplication_instance()
-                    the_plugin = retrievePlugin(new_job, application_inst, dbHandler)
-                    saveParamsForJob(the_plugin, new_job)
-                    setupPlugin(the_plugin, new_job, dbHandler, jobId)
-                    importFiles(new_job, the_plugin)
+                    db_handler = setup_db_handler(new_job)
+                    application_inst = setup_application_instance()
+                    the_plugin = retrievePlugin(new_job, application_inst, db_handler)
+                    _save_params_for_job(the_plugin, new_job)
+                    setup_plugin(
+                        the_plugin, new_job, db_handler, jobId, application_inst
+                    )
+                    _import_files(new_job, the_plugin)
                     executePlugin(the_plugin, new_job, application_inst)
 
 
-def setup_db_handler(new_job):
-    dbHandler = CCP4i2DjangoDbHandler()
-    dbHandler.projectName = new_job.project.name
-    dbHandler.projectId = new_job.project.uuid
-    return dbHandler
+def setup_db_handler(new_job: models.Job):
+    db_handler = CCP4i2DjangoDbHandler()
+    db_handler.projectName = new_job.project.name
+    db_handler.projectId = new_job.project.uuid
+    return db_handler
 
 
-def setupapplication_instance():
+def setup_application_instance():
     application_inst = QtCore.QEventLoop(parent=CCP4Modules.QTAPPLICATION())
     logger.info(f"application_inst {str(application_inst)}")
     return application_inst
 
 
-def retrievePlugin(new_job, application_inst, dbHandler):
+def retrievePlugin(
+    new_job: models.Job,
+    application_inst: QtCore.QEventLoop,
+    dbHandler: CCP4i2DjangoDbHandler,
+):
     try:
         the_plugin = get_job_plugin(
             new_job, parent=application_inst, dbHandler=dbHandler
@@ -56,21 +62,30 @@ def retrievePlugin(new_job, application_inst, dbHandler):
         return the_plugin
     except Exception as err:
         logger.exception(f"Err getting job {str(err)}", exc_info=err)
-        new_job.fail()
+        new_job.status = 5
+        new_job.save()
         raise err
 
 
-def saveParamsForJob(the_plugin, new_job):
+def _save_params_for_job(
+    the_plugin: CCP4PluginScript.CPluginScript, new_job: models.Job
+):
     try:
         save_params_for_job(the_plugin, new_job)
     except Exception as err:
-        logger.exception(f"Exception setting filenames", exc_info=err)
+        logger.exception("Exception setting filenames", exc_info=err)
         new_job.status = 5
         raise err
     logger.info("Retrieved setOutputFileNames")
 
 
-def setupPlugin(the_plugin, new_job, dbHandler, jobId):
+def setup_plugin(
+    the_plugin: CCP4PluginScript.CPluginScript,
+    new_job: models.Job,
+    dbHandler: CCP4i2DjangoDbHandler,
+    jobId: str,
+    application_inst: QtCore.QEventLoop,
+):
     the_plugin.setDbData(
         handler=dbHandler,
         projectName=new_job.project.name,
@@ -92,30 +107,33 @@ def setupPlugin(the_plugin, new_job, dbHandler, jobId):
                 ET.indent(error_report, space="\t", level=0)
                 diagnosticXML.write(ET.tostring(error_report, encoding="utf-8"))
         except Exception as err:
-            logger.error(f"Exception in writing diagnostics", exc_info=err)
+            logger.exception("Exception in writing diagnostics", exc_info=err)
 
         QtCore.QTimer.singleShot(1, application_inst.quit)
         logger.info("Set singleshot quit timer")
 
     the_plugin.finished.connect(closeApp)
-    new_job.status = models.Jobstatus.objects.get(statustext="Running")
+    new_job.status = 3  # Running
     new_job.save()
     logger.info("Status running set")
 
 
-def importFiles(new_job, the_plugin):
+def _import_files(new_job: models.Job, the_plugin: CCP4PluginScript.CPluginScript):
     try:
-        pass
-        # PluginUtils.importFiles(new_job, the_plugin)
+        import_files(new_job, the_plugin)
     except Exception as err:
-        logger.exception(f"Failed importing files", exc_info=err)
+        logger.exception("Failed importing files", exc_info=err)
         new_job.status = 5
         new_job.save()
         raise err
     logger.info("Files imported")
 
 
-def executePlugin(the_plugin, new_job, application_inst):
+def executePlugin(
+    the_plugin: CCP4PluginScript.CPluginScript,
+    new_job: models.Job,
+    application_inst: QtCore.QEventLoop,
+):
     try:
         rv = the_plugin.process()
     except Exception as err:
@@ -130,7 +148,8 @@ def executePlugin(the_plugin, new_job, application_inst):
         logger.info(f"Returned from exec_ with result {result}")
         return result
     except Exception as err:
-        logger.exception(f"Failed to execute plugin {new_job.taskname}", exc_info=err)
-        new_job.fail()
+        logger.exception(f"Failed to execute plugin {new_job.task_name}", exc_info=err)
+        new_job.status = 5
+        new_job.save()
         # backupProjectDb(new_job.projectid)
         raise err
