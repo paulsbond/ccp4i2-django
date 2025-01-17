@@ -1,4 +1,5 @@
 import logging
+import subprocess
 from xml.etree import ElementTree as ET
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.viewsets import ModelViewSet
@@ -176,6 +177,15 @@ class JobViewSet(ModelViewSet):
     )
     def run(self, request, pk=None):
         job = models.Job.objects.get(id=pk)
-        run_job(job.uuid)
+        subprocess.Popen(
+            [
+                "ccp4-python",
+                "manage.py",
+                "run_job",
+                "-ju",
+                f"{str(job.uuid)}",
+            ],
+            start_new_session=True,
+        )
         serializer = serializers.JobSerializer(job)
         return Response(serializer.data)

@@ -29,6 +29,7 @@ def remove_container_default_values(container: CCP4Container.CContainer):
                     container.deleteObject(dobj.objectName())
                 except Exception as err:
                     logger.exception(
-                        "Error deleting default values %s" % (container.objectName(),),
+                        "Error deleting default values %s",
+                        container.objectName(),
                         exc_info=err,
                     )

@@ -8,6 +8,8 @@ from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
 from ...db import models
 from ...lib.job_utils.clone_job import clone_job
 from ...lib.job_utils.run_job import run_job
+from ...lib.job_utils.glean_job_files import glean_job_files
+from ...lib.job_utils.get_job_container import get_job_container
 
 
 @override_settings(
@@ -41,3 +43,16 @@ class CCP4i2TestCase(TestCase):
         new_job = clone_job(old_job.uuid)
         run_job(new_job.uuid)
         self.assertEqual(new_job.task_name, old_job.task_name)
+
+    def test_glean_job_files(self):
+        job = models.Job.objects.all()[0]
+        container = get_job_container(job)
+        # Delete old file_use entries
+        file_uses = models.FileUse.objects.filter(job=job)
+        for file_use in file_uses:
+            file_use.delete()
+        # Delete old file entries
+        files = models.File.objects.filter(job=job)
+        for file in files:
+            file.delete()
+        glean_job_files(str(job.uuid), container, [0, 1], True)
