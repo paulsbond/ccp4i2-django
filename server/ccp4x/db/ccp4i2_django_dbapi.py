@@ -1,15 +1,16 @@
+from datetime import datetime
 import logging
 import traceback
 import uuid
-from datetime import datetime
+
+from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4Data
+from ccp4i2.core import CCP4File
+from ccp4i2.core import CCP4PerformanceData
 from django.db import IntegrityError
 
 from . import models
-from ..lib.utils import uuid_from_no_hyphens
-from ccp4i2.core import CCP4File
-from ccp4i2.core import CCP4PerformanceData
-from ccp4i2.core import CCP4Container
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -211,7 +212,7 @@ class CCP4i2DjangoDbApi(object):
         self, projectId=None, projectName=None, mode="all", checkPermission=True
     ):
         if projectId is not None and "-" not in projectId:
-            projectId = uuid_from_no_hyphens(projectId)
+            projectId = uuid.UUID(projectId)
         try:
             the_qs = self._get_project_queryset(projectId, projectName)
             arg = self._get_mode_arguments(mode)
@@ -334,7 +335,7 @@ class CCP4i2DjangoDbApi(object):
                 )
             else:
                 if "-" not in str(jobId):
-                    jobId = uuid_from_no_hyphens(jobId)
+                    jobId = uuid.UUID(jobId)
                 the_job_qs = models.Job.objects.filter(uuid=jobId)
             assert len(list(the_job_qs)) == 1
 

@@ -1,16 +1,19 @@
-import pathlib
-import os
-import shutil
 import datetime
 import logging
+import os
+import pathlib
+import shutil
+import uuid
+
 from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4File
 from ccp4i2.core import CCP4PluginScript
 from ccp4i2.core.CCP4Data import CList
 from ccp4i2.dbapi import CCP4DbApi
+
 from ...db import models
-from ..utils import uuid_from_no_hyphens
 from .save_params_for_job import save_params_for_job
+
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -41,9 +44,7 @@ def _processInput(
 ):
     theFile = None
     if input.dbFileId is not None and len(str(input.dbFileId)) != 0:
-        theFile = models.File.objects.get(
-            uuid=str(uuid_from_no_hyphens(input.dbFileId))
-        )
+        theFile = models.File.objects.get(uuid=str(uuid.UUID(input.dbFileId)))
     else:
         if input.baseName is not None and len(str(input.baseName).strip()) != 0:
             sourceFilePath = pathlib.Path(str(input.relPath)) / str(input.baseName)

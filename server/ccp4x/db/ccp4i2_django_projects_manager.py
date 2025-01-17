@@ -1,14 +1,16 @@
-import os
 from pathlib import Path
 import logging
-from django.utils.text import slugify
-from ccp4i2.core import CCP4File
-from ccp4i2.core import CCP4ErrorHandling
-from ccp4i2.core import CCP4ModelData
-from . import models
-from ..lib.utils import uuid_from_no_hyphens
+import os
+import uuid
 
+from ccp4i2.core import CCP4ErrorHandling
+from ccp4i2.core import CCP4File
+from ccp4i2.core import CCP4ModelData
+from django.utils.text import slugify
+
+from . import models
 from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
+
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -94,7 +96,7 @@ class CCP4i2DjangoProjectsManager(object):
                 return str(Path(CCP4ModelData.__file__).parent.parent)
             try:
                 if "-" not in projectId:
-                    projectId = uuid_from_no_hyphens(projectId)
+                    projectId = uuid.UUID(projectId)
                 theProject = models.Project.objects.get(uuid=projectId)
             except models.Project.DoesNotExist as err:
                 logger.error(
