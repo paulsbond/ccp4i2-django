@@ -59,8 +59,8 @@ class CCP4i2DjangoDbHandler:
         dbOutputData=None,
     ):
         logger.debug(
-            "In update JobStatus %s %s %s %s %s",
-            (jobId, status, finishStatus, container, dbOutputData),
+            "In update JobStatus %s %s %s %s %s"
+            % (jobId, status, finishStatus, container, dbOutputData),
         )
         sys.stdout.flush()
         if dbOutputData is not None:
