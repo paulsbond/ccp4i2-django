@@ -1,5 +1,7 @@
 import logging
 
+# Note that these seem to have to be imported from "core" rather than "ccp4i2.core" for isinstance to work
+# MN
 from core import CCP4Container
 
 logging.basicConfig(level=logging.WARNING)
@@ -27,6 +29,6 @@ def remove_container_default_values(container: CCP4Container.CContainer):
                     container.deleteObject(dobj.objectName())
                 except Exception as err:
                     logger.exception(
-                        "Error deleting default values %s" % container.objectName(),
+                        "Error deleting default values %s" % (container.objectName(),),
                         exc_info=err,
                     )
