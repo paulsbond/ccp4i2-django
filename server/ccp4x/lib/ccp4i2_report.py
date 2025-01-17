@@ -1,15 +1,19 @@
 import logging
 import pathlib
-from xml.etree import ElementTree as ET
+import xml.etree.ElementTree as ET
+
 from ccp4i2.core import CCP4Modules
-from ccp4i2.core.CCP4TaskManager import CTaskManager
-from ccp4i2.report.CCP4ReportParser import ReportClass
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4Data import CList
+from ccp4i2.core.CCP4TaskManager import CTaskManager
 from ccp4i2.dbapi.CCP4DbApi import FILETYPES_CLASS, FILETYPES_TEXT
-from ..db.models import Job, FileUse, File
+from ccp4i2.report.CCP4ReportParser import ReportClass
+
 from ..db.ccp4i2_django_wrapper import using_django_pm
+from ..db.models import Job, FileUse, File
 from .job_utils.get_job_container import get_job_container
+from ..db.ccp4i2_static_data import PATH_FLAG_JOB_DIR, PATH_FLAG_IMPORT_DIR
+
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -25,113 +29,104 @@ def simple_failed_report(reason: str, task_name: str):
     )
 
 
-def get_report_job_info(jobId=None):
-    the_job = Job.objects.get(uuid=jobId)
-    result = _get_basic_job_info(the_job)
-    result["inputfiles"] = _get_input_files(the_job)
-    result["outputfiles"] = _get_output_files(the_job)
-    result["filenames"] = _get_filenames(
-        the_job,
-    )
+def get_report_job_info(job_id=None):
+    job = Job.objects.get(uuid=job_id)
+    result = _get_basic_job_info(job)
+    result["inputfiles"] = list(_input_files(job))
+    result["outputfiles"] = list(_output_files(job))
+    result["filenames"] = _get_filenames(job)
     return result
 
 
-def _get_basic_job_info(the_job: Job):
+def _get_basic_job_info(job: Job):
     return {
-        "finishtime": the_job.finish_time.timestamp(),
-        "status": Job.Status(the_job.status).label,
-        "taskname": the_job.task_name,
+        "finishtime": job.finish_time.timestamp(),
+        "status": Job.Status(job.status).label,
+        "taskname": job.task_name,
         "taskversion": "1.0",
-        "jobnumber": the_job.number,
-        "projectid": str(the_job.project.uuid),
-        "jobtitle": the_job.title,
-        "creationtime": the_job.creation_time.timestamp(),
-        "projectname": the_job.project.name,
-        "fileroot": str(the_job.directory),
-        "tasktitle": the_job.task_name,
-        "jobid": str(the_job.uuid),
+        "jobnumber": job.number,
+        "projectid": str(job.project.uuid),
+        "jobtitle": job.title,
+        "creationtime": job.creation_time.timestamp(),
+        "projectname": job.project.name,
+        "fileroot": str(job.directory),
+        "tasktitle": job.task_name,
+        "jobid": str(job.uuid),
     }
 
 
-def _get_input_files(the_job: Job):
-    inputFiles = []
-    for fileUse in FileUse.objects.filter(job=the_job):
-        inputFile = {
-            "filetypeid": FILETYPES_TEXT.index(fileUse.file.type.name),
-            "filename": fileUse.file.name,
-            "annotation": fileUse.file.annotation,
-            "jobparamname": fileUse.job_param_name,
-            "jobid": str(fileUse.file.job.uuid),
-            "pathflag": fileUse.file.directory,
-            "filetype": fileUse.file.type.name,
-            "projectid": str(fileUse.file.job.project.uuid),
-            "jobnumber": fileUse.file.job.number,
-            "projectname": fileUse.file.job.project.name,
+def _input_files(job: Job):
+    for file_use in FileUse.objects.filter(job=job):
+        path_flag = file_use.file.directory
+        input_file = {
+            "filetypeid": FILETYPES_TEXT.index(file_use.file.type.name),
+            "filename": file_use.file.name,
+            "annotation": file_use.file.annotation,
+            "jobparamname": file_use.job_param_name,
+            "jobid": str(file_use.file.job.uuid),
+            "pathflag": file_use.file.directory,
+            "filetype": file_use.file.type.name,
+            "projectid": str(file_use.file.job.project.uuid),
+            "jobnumber": file_use.file.job.number,
+            "projectname": file_use.file.job.project.name,
             "filetypeclass": FILETYPES_CLASS[
-                FILETYPES_TEXT.index(fileUse.file.type.name)
+                FILETYPES_TEXT.index(file_use.file.type.name)
             ],
-            "fileId": str(fileUse.file.uuid),
+            "fileId": str(file_use.file.uuid),
         }
-        if inputFile["pathflag"] == 1:
-            inputFile["relpath"] = str(
+        if path_flag == PATH_FLAG_JOB_DIR:
+            input_file["relpath"] = str(
                 pathlib.Path("CCP4_JOBS")
-                / (str(fileUse.file.job.directory).split("CCP4_JOBS/")[1])
+                / (str(file_use.file.job.directory).split("CCP4_JOBS/")[1])
             )
-        elif inputFile["pathflag"] == 2:
-            inputFile["relpath"] = "CCP4_IMPORTED_FILES"
+        elif path_flag == PATH_FLAG_IMPORT_DIR:
+            input_file["relpath"] = "CCP4_IMPORTED_FILES"
         else:
-            raise Exception(f"pathflag {inputFile}")
-        inputFiles.append(inputFile)
-    return inputFiles
+            raise ValueError(f"Invalid pathflag value: {path_flag}")
+        yield input_file
 
 
-def _get_output_files(the_job: Job):
-    outputFiles = []
-    for the_file in File.objects.filter(job=the_job):
+def _output_files(job: Job):
+    for file in File.objects.filter(job=job):
         try:
-            outputFile = {
-                "filetypeid": FILETYPES_TEXT.index(the_file.type.name),
-                "filename": the_file.name,
-                "annotation": the_file.annotation,
-                "jobparamname": the_file.job_param_name,
-                "jobid": str(the_file.job.uuid),
-                "pathflag": the_file.directory,
-                "filetype": the_file.type.name,
-                "projectid": str(the_file.job.project.uuid),
-                "jobnumber": the_file.job.number,
-                "projectname": the_file.job.project.name,
-                "filetypeclass": FILETYPES_CLASS[
-                    FILETYPES_TEXT.index(the_file.type.name)
-                ],
-                "fileId": str(the_file.uuid),
+            output_file = {
+                "filetypeid": FILETYPES_TEXT.index(file.type.name),
+                "filename": file.name,
+                "annotation": file.annotation,
+                "jobparamname": file.job_param_name,
+                "jobid": str(file.job.uuid),
+                "pathflag": file.directory,
+                "filetype": file.type.name,
+                "projectid": str(file.job.project.uuid),
+                "jobnumber": file.job.number,
+                "projectname": file.job.project.name,
+                "filetypeclass": FILETYPES_CLASS[FILETYPES_TEXT.index(file.type.name)],
+                "fileId": str(file.uuid),
             }
         except ValueError as err:
-            logger.error(f"Error in _get_output_files: {err}")
+            logger.error("Error in _get_output_files: %s", err)
             continue
-        outputFile["baseName"] = outputFile["filename"]
-        outputFile["relPath"] = outputFile["relpath"] = str(
-            pathlib.Path("CCP4_JOBS")
-            / (str(the_file.job.directory).split("CCP4_JOBS/")[1])
+        output_file["baseName"] = output_file["filename"]
+        output_file["relPath"] = output_file["relpath"] = str(
+            pathlib.Path("CCP4_JOBS") / (str(file.job.directory).split("CCP4_JOBS/")[1])
         )
-        if outputFile["pathflag"] == 2:
-            outputFile["relpath"] = "CCP4_IMPORTED_FILES"
-            outputFile["relPath"] = "CCP4_IMPORTED_FILES"
-        outputFiles.append(outputFile)
-    return outputFiles
+        if output_file["pathflag"] == PATH_FLAG_IMPORT_DIR:
+            output_file["relPath"] = "CCP4_IMPORTED_FILES"
+        yield output_file
 
 
-def _get_filenames(the_job: Job):
-    container: CContainer = get_job_container(the_job)
+def _get_filenames(job: Job):
+    container: CContainer = get_job_container(job)
     result_filenames = _get_input_filenames(container)
     result_filenames.update(_get_output_filenames(container))
     return result_filenames
 
 
 def _get_input_filenames(container: CContainer):
-    result_filenames = {}
-    for key in container.inputData.dataOrder():
-        result_filenames[key] = _get_filename(container.inputData.find(key))
-    return result_filenames
+    return {
+        key: _get_filename(container.inputData.find(key))
+        for key in container.inputData.dataOrder()
+    }
 
 
 def _get_output_filenames(container: CContainer):
@@ -144,69 +139,60 @@ def _get_output_filenames(container: CContainer):
 
 def _get_filename(data):
     if isinstance(data, CList):
-        filenames = []
-        for item in data:
-            filenames.append(_get_existing_path(item.__str__()))
-        return filenames
-    else:
-        return _get_existing_path(data.__str__())
+        return [_path_if_exists(str(item)) for item in data]
+    return _path_if_exists(str(data))
 
 
-def _get_existing_path(path_str):
+def _path_if_exists(path_str: str):
     if pathlib.Path(path_str).exists():
         return path_str
-    else:
-        return ""
+    return ""
 
 
 @using_django_pm
-def make_old_report(the_job: Job):
-    # print(self, 'reportForTask_XML_Status', taskname, outputXml, status, jobId)
-    taskManager: CTaskManager = CCP4Modules.TASKMANAGER()
-    reportClass = taskManager.getReportClass(name=the_job.task_name)
-    if reportClass is None:
-        logger.error(f"Failed to find report class for task {the_job.task_name}")
+def make_old_report(job: Job):
+    task_manager: CTaskManager = CCP4Modules.TASKMANAGER()
+    report_class = task_manager.getReportClass(name=job.task_name)
+    if report_class is None:
+        logger.error("Failed to find report class for task %s", job.task_name)
         return simple_failed_report(
-            "Failed to find report class for task", the_job.task_name
+            "Failed to find report class for task", job.task_name
         )
-    watchFile = taskManager.getReportAttribute(the_job.task_name, "WATCHED_FILE")
-    reportJobInfo = get_report_job_info(the_job.uuid)
-    logger.debug(str(reportJobInfo))
+    watch_file = task_manager.getReportAttribute(job.task_name, "WATCHED_FILE")
+    report_job_info = get_report_job_info(job.uuid)
+    logger.debug(str(report_job_info))
 
-    xmlPath = pathlib.Path(the_job.directory) / "program.xml"
-    if not xmlPath.exists():
-        xmlPath = pathlib.Path(the_job.directory) / "XMLOUT.xml"
-        if not xmlPath.exists():
-            xmlPath = pathlib.Path(the_job.directory) / "i2.xml"
-            if not xmlPath.exists():
-                if watchFile is None:
+    xml_path = pathlib.Path(job.directory) / "program.xml"
+    if not xml_path.exists():
+        xml_path = pathlib.Path(job.directory) / "XMLOUT.xml"
+        if not xml_path.exists():
+            xml_path = pathlib.Path(job.directory) / "i2.xml"
+            if not xml_path.exists():
+                if watch_file is None:
                     return simple_failed_report(
-                        "No programXML found", Job.Status(the_job.status).label
+                        "No programXML found", Job.Status(job.status).label
                     )
-                watchedPath = pathlib.Path(the_job.directory) / pathlib.Path(watchFile)
-                logger.warning(f"watchFile is {watchedPath}")
-                if watchedPath.exists():
-                    xmlPath = None
+                watched_path = pathlib.Path(job.directory) / pathlib.Path(watch_file)
+                logger.warning("watchFile is %s", watched_path)
+                if watched_path.exists():
+                    xml_path = None
                 else:
                     return simple_failed_report(
-                        "No programXML found", Job.Status(the_job.status).label
+                        "No programXML found", Job.Status(job.status).label
                     )
 
-    outputXml = None
+    output_xml = ET.parse(xml_path) if xml_path else None
 
-    if xmlPath is not None:
-        outputXml = ET.parse(xmlPath)
-
-    status = Job.Status(the_job.status).label
-    report: ReportClass = reportClass(
-        xmlnode=outputXml,
-        jobInfo=reportJobInfo,
+    status = Job.Status(job.status).label
+    report: ReportClass = report_class(
+        xmlnode=output_xml,
+        jobInfo=report_job_info,
         standardise=(
             status
             not in ["Running", "Running remotely", "Pending", "Unknown", "Queued"]
         ),
         jobStatus=status,
-        jobNumber=the_job.number,
+        jobNumber=job.number,
         xrtnode=None,
     )
     report_etree = report.as_data_etree()
