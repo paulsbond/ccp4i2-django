@@ -1,12 +1,14 @@
+from pathlib import Path
 import logging
 import uuid
-from pathlib import Path
+
+from ccp4i2.core import CCP4TaskManager
+
 from ...db import models
 from ...db.ccp4i2_django_wrapper import using_django_pm
-from ...lib.utils import uuid_from_no_hyphens
-from ccp4i2.core import CCP4TaskManager
-from .save_params_for_job import save_params_for_job
 from .remove_container_default_values import remove_container_default_values
+from .save_params_for_job import save_params_for_job
+
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("root")
@@ -59,9 +61,8 @@ def create_job(
 
     if jobId is None:
         new_jobId = uuid.uuid4()
-    else:
-        if "-" not in new_jobId:
-            new_jobId = uuid_from_no_hyphens(new_jobId)
+    elif "-" not in new_jobId:
+        new_jobId = uuid.UUID(new_jobId)
 
     taskManager = CCP4TaskManager.CTaskManager()
     pluginClass = taskManager.getPluginScriptClass(taskName)

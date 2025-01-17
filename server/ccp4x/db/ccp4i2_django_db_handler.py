@@ -1,13 +1,15 @@
-import logging
 import datetime
+import logging
 import sys
 import uuid
-from ccp4i2.dbapi import CCP4DbApi
+
 from ccp4i2.core.CCP4PluginScript import CPluginScript
-from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
-from ..lib.job_utils.create_job import create_job
-from ..lib.utils import uuid_from_no_hyphens
+from ccp4i2.dbapi import CCP4DbApi
+
 from . import models
+from ..lib.job_utils.create_job import create_job
+from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
+
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("root")
@@ -63,7 +65,7 @@ class CCP4i2DjangoDbHandler:
         if dbOutputData is not None:
             logger.error(f"dbOutputData is not None {dbOutputData}")
         if not isinstance(jobId, uuid.UUID) and "-" not in jobId:
-            jobId = uuid_from_no_hyphens(jobId)
+            jobId = uuid.UUID(jobId)
         aJob = models.Job.objects.get(uuid=jobId)
         try:
             if status is None and finishStatus is not None:
