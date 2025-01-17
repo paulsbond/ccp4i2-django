@@ -45,7 +45,7 @@ class CCP4i2TestCase(TestCase):
         unset_output_data(the_job_plugin)
         et = the_job_plugin.container.getEtree()
         ET.indent(et, "\t", 0)
-        print(ET.tostring(et).decode("utf-8"))
+        self.assertEqual(1, 1)
 
     def test_remove_container_default_values(self):
         job = Job.objects.get(pk=1)
@@ -54,4 +54,4 @@ class CCP4i2TestCase(TestCase):
         container: CCP4Container.CContainer = the_job_plugin.container
         et = container.getEtree()
         ET.indent(et, "\t", 0)
-        print(ET.tostring(et).decode("utf-8"))
+        self.assertEqual(1, 1)
