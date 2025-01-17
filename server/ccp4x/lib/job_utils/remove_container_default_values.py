@@ -12,11 +12,21 @@ def remove_container_default_values(container: CCP4Container.CContainer):
     for dobj in data_list:
         # dobj = getattr(the_job_plugin.container.outputData, object_name)
         if isinstance(dobj, CCP4Container.CContainer):
-            remove_container_default_values(dobj)
+            if hasattr(dobj, "objectName") and dobj.objectName() not in [
+                "temporary",
+            ]:
+                remove_container_default_values(dobj)
         else:
             is_set = dobj.isSet(allowUndefined=False, allowDefault=False, allSet=True)
-            if not is_set:
+            if (
+                not is_set
+                and hasattr(dobj, "objectName")
+                and dobj.objectName() not in "header"
+            ):
                 try:
                     container.deleteObject(dobj.objectName())
                 except Exception as err:
-                    logger.exception("Error deleting default values", exc_info=err)
+                    logger.exception(
+                        "Error deleting default values %s" % container.objectName(),
+                        exc_info=err,
+                    )
