@@ -12,7 +12,7 @@ from ..db.ccp4i2_django_wrapper import using_django_pm
 from .job_utils.get_job_container import get_job_container
 
 logging.basicConfig(level=logging.ERROR)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def simple_failed_report(reason: str, task_name: str):

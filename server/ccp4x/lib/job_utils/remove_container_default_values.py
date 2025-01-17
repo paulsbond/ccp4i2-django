@@ -1,42 +1,22 @@
 import logging
 
-from ccp4i2.core import CCP4Container
-from ccp4i2.core import CCP4Data
+from core import CCP4Container
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def remove_container_default_values(container: CCP4Container.CContainer):
-    for child in container.children():
-        try:
-            if _should_remove_child(child):
-                _remove_child(container, child)
-        except Exception as err:
-            logger.info("Issue with %s %s. %s", child, container, err)
-            continue
-
-
-def _should_remove_child(child: CCP4Data.CData):
-    if hasattr(child, "object_name") and child.get("object_name")() not in [
-        "inputData",
-        "outputData",
-    ]:
-        if isinstance(child, CCP4Container.CContainer):
-            return child.object_name() != "outputData"
+    # Unset the output file data, which should be recalculated for the new plugin, I guess
+    data_list = container.children()
+    for dobj in data_list:
+        # dobj = getattr(the_job_plugin.container.outputData, object_name)
+        if isinstance(dobj, CCP4Container.CContainer):
+            remove_container_default_values(dobj)
         else:
-            return not child.isSet(allowDefault=False, allSet=False)
-    return False
-
-
-def _remove_child(container: CCP4Container.CContainer, child: CCP4Data.CData):
-    if container.object_name() != "temporary":
-        try:
-            container.deleteObject(child.object_name())
-        except Exception as err:
-            logger.info(
-                "Issue deleting %s from %s. %s",
-                child.object_name(),
-                container.object_name(),
-                err,
-            )
+            is_set = dobj.isSet(allowUndefined=False, allowDefault=False, allSet=True)
+            if not is_set:
+                try:
+                    container.deleteObject(dobj.objectName())
+                except Exception as err:
+                    logger.exception("Error deleting default values", exc_info=err)

@@ -6,7 +6,7 @@ from ...db.ccp4i2_django_wrapper import using_django_pm
 from ...db.models import Job
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 @using_django_pm

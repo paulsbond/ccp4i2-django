@@ -10,9 +10,10 @@ from ...db import models
 from ...db.ccp4i2_django_wrapper import using_django_pm
 from .save_params_for_job import save_params_for_job
 from .remove_container_default_values import remove_container_default_values
+from .unset_output_data import unset_output_data
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 @using_django_pm
@@ -45,14 +46,13 @@ def clone_job(jobId=None):
         str(old_job.directory / "input_params.xml")
     )
 
-    try:
-        dataList = the_job_plugin.container.outputData.dataOrder()
-        for object_name in dataList:
-            dobj = the_job_plugin.container.outputData.find(object_name)
-            if isinstance(dobj, CCP4File.CDataFile):
-                dobj.unSet()
-    except Exception as err:
-        raise (err)
+    # Unset the output file data, which should be recalculated for the new plugin, I guess
+    unset_output_data(the_job_plugin)
+    data_list = the_job_plugin.container.outputData.children()
+    for dobj in data_list:
+        # dobj = getattr(the_job_plugin.container.outputData, object_name)
+        if isinstance(dobj, CCP4File.CDataFile):
+            dobj.unSet()
 
     new_job = models.Job(
         uuid=new_jobId,

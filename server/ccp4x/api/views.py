@@ -11,7 +11,7 @@ from ..lib.job_utils.clone_job import clone_job
 from ..lib.job_utils.run_job import run_job
 
 logging.basicConfig(level=logging.ERROR)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 class ProjectViewSet(ModelViewSet):

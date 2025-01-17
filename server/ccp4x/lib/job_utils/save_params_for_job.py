@@ -10,30 +10,33 @@ from ...db.ccp4i2_django_wrapper import using_django_pm
 from ...db import models
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 @using_django_pm
 def save_params_for_job(
     the_job_plugin: CCP4PluginScript.CPluginScript,
-    theJob: models.Job,
+    the_job: models.Job,
     mode="JOB_INPUT",
-    excludeUnset=True,
+    exclude_unset=True,
 ):
     fileName = the_job_plugin.makeFileName(mode)
-    if pathlib.Path(fileName).exists():
-        CCP4Utils.backupFile(fileName, delete=False)
+    # Rework to the directory of "the_job"
+    relocated_file_path = the_job.directory / pathlib.Path(fileName).name
 
-    f = CCP4File.CI2XmlDataFile(fullPath=fileName)
+    if relocated_file_path.exists():
+        CCP4Utils.backupFile(str(relocated_file_path), delete=False)
+
+    f = CCP4File.CI2XmlDataFile(fullPath=(relocated_file_path))
     f.header = the_job_plugin.container.header
     f.header.function.set("PARAMS")
-    f.header.projectName.set(theJob.project.name)
-    f.header.projectId.set(str(theJob.project.uuid))
-    f.header.jobNumber.set(theJob.number)
-    f.header.jobId.set(str(theJob.uuid))
+    f.header.projectName.set(the_job.project.name)
+    f.header.projectId.set(str(the_job.project.uuid))
+    f.header.jobNumber.set(the_job.number)
+    f.header.jobId.set(str(the_job.uuid))
     f.header.setCurrent()
-    f.header.pluginName.set(theJob.task_name)
+    f.header.pluginName.set(the_job.task_name)
     f.header.userId.set(getpass.getuser())
     old_job_container: CCP4Container.CContainer = the_job_plugin.container
-    bodyEtree = old_job_container.getEtree(excludeUnset=excludeUnset)
-    f.saveFile(bodyEtree=bodyEtree)
+    body_etree = old_job_container.getEtree()
+    f.saveFile(bodyEtree=body_etree)

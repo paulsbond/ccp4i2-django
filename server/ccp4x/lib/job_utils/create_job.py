@@ -5,11 +5,12 @@ from ...db import models
 from ...db.ccp4i2_django_wrapper import using_django_pm
 from ...lib.utils import uuid_from_no_hyphens
 from ccp4i2.core import CCP4TaskManager
+from ccp4i2.core import CCP4File
 from .save_params_for_job import save_params_for_job
 from .remove_container_default_values import remove_container_default_values
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 @using_django_pm

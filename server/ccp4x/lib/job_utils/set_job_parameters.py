@@ -7,7 +7,7 @@ from .get_job_plugin import get_job_plugin
 from .save_params_for_job import save_params_for_job
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 @using_django_pm

@@ -12,7 +12,7 @@ from ccp4i2.core import CCP4PluginScript
 from PySide2 import QtCore
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def run_job(jobId: str):

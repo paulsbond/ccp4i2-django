@@ -13,7 +13,7 @@ from ..utils import uuid_from_no_hyphens
 from .save_params_for_job import save_params_for_job
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def findInputs(ofContainer, inputsFound=[]):

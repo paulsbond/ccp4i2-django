@@ -11,7 +11,7 @@ from ..lib.utils import uuid_from_no_hyphens
 from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 class CCP4i2DjangoProjectsManager(object):
@@ -65,7 +65,6 @@ class CCP4i2DjangoProjectsManager(object):
 
     def interpretDirectory(self, path):
         absPath = os.path.abspath(path)
-        logger.info("absPath %s", absPath)
         theProject = None
         for project in models.Project.objects.all():
             # print(project.name, '{}/'.format(project.directory))

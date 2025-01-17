@@ -10,7 +10,7 @@ from ..lib.utils import uuid_from_no_hyphens
 from . import models
 
 logging.basicConfig(level=logging.ERROR)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def plugin_status_to_job_status(finishStatus):

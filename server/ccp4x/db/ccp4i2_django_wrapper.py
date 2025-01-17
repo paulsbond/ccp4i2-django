@@ -4,7 +4,7 @@ from core import CCP4ProjectsManager
 from .ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 # Decoorator to install and use FakeProjectManager

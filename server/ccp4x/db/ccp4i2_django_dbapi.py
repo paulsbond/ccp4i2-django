@@ -1,5 +1,4 @@
 import logging
-import sys
 import traceback
 import uuid
 from datetime import datetime
@@ -13,7 +12,7 @@ from ccp4i2.core import CCP4PerformanceData
 from ccp4i2.core import CCP4Container
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("root")
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 project_field_old_to_new = {
     "followfromjobid": "follow_from_job",
@@ -48,6 +47,19 @@ job_field_old_to_new = {
     "projectdirectory": "project__directory",
 }
 job_field_new_to_old = {item[1]: item[0] for item in job_field_old_to_new.items()}
+
+file_field_old_to_new = {
+    "filecontent": "content",
+    "subtype": "sub_type",
+    "fileid": "uuid",
+    "jobid": "job",
+    "jobparamname": "job_param_name",
+    "pathflag": "directory",
+    "filename": "name",
+    "annotation": "annotation",
+    "filetypeid": "type",
+}
+file_field_new_to_old = {item[1]: item[0] for item in file_field_old_to_new.items()}
 
 
 class CCP4i2DjangoDbApi(object):
@@ -261,10 +273,9 @@ class CCP4i2DjangoDbApi(object):
                     )
                     file.delete()
                 except models.File.DoesNotExist as err:
-                    logger.info(
-                        "Err in deleteFilesOnJobNumberAndParamName %s %s",
-                        err,
-                        jobNumberParam,
+                    logger.warning(
+                        "Err in deleteFilesOnJobNumberAndParamName %s %s %s"
+                        % (projectId, jobNumberParam[0], jobNumberParam[1])
                     )
         except Exception as err:
             logger.error(
@@ -279,12 +290,12 @@ class CCP4i2DjangoDbApi(object):
         if isinstance(mode, list):
             arg = [item.lower() for item in mode]
         elif mode.lower() == "all":
-            arg = [key for key in job_field_new_to_old.keys()]
+            arg = [key for key in job_field_old_to_new.keys()]
         else:
             arg = [mode.lower()]
 
         # Will need corrected for some cases
-        replacements = {}
+        replacements = file_field_old_to_new
 
         def patch(label):
             return replacements.get(label, label)
@@ -292,6 +303,7 @@ class CCP4i2DjangoDbApi(object):
         arg = list(map(patch, arg))
 
         unpatched_values = the_file_qs.values(*arg)
+
         listOfDicts = []
         for unPatchedValue in unpatched_values:
             # outer loop over jobs matching jobId
