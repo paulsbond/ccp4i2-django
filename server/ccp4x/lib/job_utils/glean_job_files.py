@@ -248,6 +248,10 @@ def glean_performance_indicators(container: CContainer, the_job: models.Job) -> 
                 kpi_object.save()
             except TypeError as err:
                 logger.exception(
-                    "Failed saving value %s for key %s" % (value, kpi_param_name),
+                    "Failed saving value %s for key %s"
+                    % (
+                        value,
+                        kpi_param_name,
+                    ),
                     exc_info=err,
                 )

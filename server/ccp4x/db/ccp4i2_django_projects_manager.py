@@ -14,6 +14,35 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 class CCP4i2DjangoProjectsManager(object):
+    """
+    A manager class for handling CCP4i2 Django projects.
+
+    Methods
+    -------
+    __init__():
+        Initializes the CCP4i2DjangoProjectsManager instance.
+
+    db():
+        Returns the database API instance.
+
+    __getattribute__(__name):
+        Logs access to attributes and returns the attribute value.
+
+    setOutputFileNames(container=None, projectId=None, jobNumber=None, force=True):
+        Sets the output file names for a given project and job.
+
+    interpretDirectory(path):
+        Interprets a directory path and returns the project name, relative path, and project ID.
+
+    getProjectDirectory(projectName=None, testAlias=True, projectId=None):
+        Retrieves the directory of a project based on its name or ID.
+
+    jobDirectory(jobId=None, projectName=None, jobNumber=None):
+        Retrieves the directory of a job based on its ID or project name and job number.
+
+    makeFileName(jobId=None, mode="PROGRAMXML"):
+        Generates a file name for a job based on its ID and the specified mode.
+    """
 
     def __init__(self):
         logger.debug("FakePM Init in")

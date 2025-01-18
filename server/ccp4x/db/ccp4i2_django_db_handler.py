@@ -33,6 +33,66 @@ def plugin_status_to_job_status(finishStatus):
 
 
 class CCP4i2DjangoDbHandler:
+    """
+    Handler class for interacting with the CCP4i2 Django database.
+
+    Methods
+    -------
+    __init__():
+        Initializes the database handler with a CCP4i2DjangoDbApi instance.
+
+    createJob(pluginName, jobTitle=None, parentJobId=None, jobNumber=None):
+        Creates a new job in the database.
+
+        Parameters
+        ----------
+        pluginName : str
+            The name of the plugin associated with the job.
+        jobTitle : str, optional
+            The title of the job (default is None).
+        parentJobId : str, optional
+            The ID of the parent job (default is None).
+        jobNumber : int, optional
+            The job number (default is None).
+
+        Returns
+        -------
+        Job
+            The created job object.
+
+        Raises
+        ------
+        Exception
+            If there is an error during job creation.
+
+    updateJobStatus(jobId=None, status=None, finishStatus=None, container=None, dbOutputData=None):
+        Updates the status of an existing job in the database.
+
+        Parameters
+        ----------
+        jobId : str
+            The ID of the job to update.
+        status : str, optional
+            The new status of the job (default is None).
+        finishStatus : str, optional
+            The finish status of the job (default is None).
+        container : object, optional
+            The container associated with the job (default is None).
+        dbOutputData : object, optional
+            Additional data output from the database (default is None).
+
+        Returns
+        -------
+        int
+            A status code indicating success (CPluginScript.SUCCEEDED).
+
+        Raises
+        ------
+        AssertionError
+            If jobId is not a string.
+        Exception
+            If there is an error during job status update.
+    """
 
     def __init__(self):
         self.db = CCP4i2DjangoDbApi()

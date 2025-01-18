@@ -151,6 +151,21 @@ def _path_if_exists(path_str: str):
 
 @using_django_pm
 def make_old_report(job: Job):
+    """
+    Generates a report for a given job using the old reporting system.
+    Args:
+        job (Job): The job object containing information about the task.
+    Returns:
+        xml.etree.ElementTree.Element: The generated report as an XML element tree.
+        If the report class or required XML files are not found, returns a simple failed report.
+    Raises:
+        ET.ParseError: If there is an error parsing the XML file.
+    Notes:
+        - The function attempts to locate the XML file in the job's directory.
+        - If the XML file is not found, it checks for a watched file specified in the task manager.
+        - The report is generated using the report class obtained from the task manager.
+    """
+
     task_manager: CTaskManager = CCP4Modules.TASKMANAGER()
     report_class = task_manager.getReportClass(name=job.task_name)
     if report_class is None:

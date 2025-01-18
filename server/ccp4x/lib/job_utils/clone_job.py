@@ -74,7 +74,7 @@ def clone_job(jobId=None):
         parent=None,
     )
     new_job.save()
-    remove_container_default_values(the_job_plugin.container)
+    # remove_container_default_values(the_job_plugin.container)
     save_params_for_job(the_job_plugin, new_job)
     the_project.last_access = datetime.datetime.now(tz=timezone("UTC"))
     the_project.last_job_number = new_job.number

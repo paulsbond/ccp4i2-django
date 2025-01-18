@@ -65,6 +65,62 @@ file_field_new_to_old = {item[1]: item[0] for item in file_field_old_to_new.item
 
 
 class CCP4i2DjangoDbApi(object):
+    """
+    A class to interact with the CCP4i2 Django database API.
+    Methods
+    -------
+    __init__():
+        Initializes the CCP4i2DjangoDbApi instance.
+    __getattribute__(__name):
+        Logs and retrieves the attribute of the instance.
+    getFileByJobContext(contextJobId=None, fileType=None, subType=None, contentFlag=None, projectId=None):
+        Retrieves files associated with a job context based on various filters.
+    _get_job_files(context_job, fileType, subType, contentFlag, projectId):
+        Retrieves job files based on the provided filters.
+    _get_file_uses(context_job, fileType, subType, contentFlag, projectId):
+        Retrieves file uses based on the provided filters.
+    getTaskNameLookup(projectId=None, jobId=None, extras=False):
+        Placeholder method to produce a lookup of subtasks for use in CCP4i2 purgeJob.
+    getProjectInfo(projectId=None, projectName=None, mode="all", checkPermission=True):
+        Retrieves project information based on the provided filters.
+    _get_project_queryset(projectId, projectName):
+        Retrieves the project queryset based on the provided filters.
+    _get_mode_arguments(mode):
+        Converts the mode argument to a list of arguments.
+    _get_values_from_queryset(unpatched_values, substitution_dict):
+        Converts queryset values to a list of dictionaries with substituted keys.
+    _to_simple_types(value):
+        Converts complex types to simple types.
+    deleteFilesOnJobNumberAndParamName(projectId=None, jobNumberParamList=[]):
+        Deletes files based on job number and parameter name.
+    getFileInfo(fileId=None, mode="all", returnType=None):
+        Retrieves file information based on the provided filters.
+    getJobInfo(jobId=None, mode="all", projectName=None, jobNumber=None, returnType=None):
+        Retrieves job information based on the provided filters.
+    gleanJobFiles(jobId=None, container=None, dbOutputData=None, roleList=[0, 1], unSetMissingFiles=True):
+        Gleans job files and processes input/output files.
+    _process_input_output_file(inputOutputFile, the_job, roleid):
+        Processes input/output files and saves them to the database.
+    _process_performance_indicator(inputOutputFile, the_job):
+        Processes performance indicators and saves them to the database.
+    _processDataFile(inputOutputFile, the_job, roleid):
+        Processes data files and saves them to the database.
+    _processExistingFile(theFile, the_job, roleid, jobParamName):
+        Processes existing files and saves them to the database.
+    _processOutputFile(inputOutputFile, the_job, roleid, jobParamName):
+        Processes output files and saves them to the database.
+    findInputOutputs(ofContainer, role, inputOutputsFound=None):
+        Finds input/output files in a container.
+    _findInputOutputsInContainer(container, role, inputOutputsFound):
+        Finds input/output files in a container.
+    _processChild(child, role, inputOutputsFound):
+        Processes a child object and adds it to the input/output files list.
+    _processContainerChild(child, role, inputOutputsFound):
+        Processes a container child object and adds it to the input/output files list.
+    _processListChild(child, role, inputOutputsFound):
+        Processes a list child object and adds it to the input/output files list.
+    """
+
     class FakeSignal:
         def emit(self, *arg, **kwarg):
             logger.info("Ive been asked to emit %s, %s", arg, kwarg)

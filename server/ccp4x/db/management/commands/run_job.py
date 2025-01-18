@@ -6,6 +6,24 @@ from ccp4x.lib.job_utils.run_job import run_job
 
 
 class Command(BaseCommand):
+    """
+    A Django management command to import a project and run a job.
+
+    Attributes:
+        help (str): Description of the command.
+        requires_system_checks (list): List of system checks required before running the command.
+
+    Methods:
+        add_arguments(parser):
+            Adds command-line arguments to the parser.
+
+        handle(*args, **options):
+            Handles the command execution. Retrieves the job based on provided options and runs it.
+            If the detach option is specified, the job is run in a detached subprocess.
+
+        get_job(options):
+            Retrieves the job based on the provided options. Raises Job.DoesNotExist if no job is found.
+    """
 
     help = "Import a project"
     requires_system_checks = []

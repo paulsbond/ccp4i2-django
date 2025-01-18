@@ -1,4 +1,51 @@
 import logging
+
+"""
+This module provides functions to import CCP4 project data from XML and ZIP files into a Django-based database.
+
+Functions:
+    job_number_hash(dotted_number: str) -> str:
+        Generates a hash for a job number by padding each element and concatenating them.
+
+    import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
+        Imports a CCP4 project from a ZIP file, extracting files and handling job remapping.
+
+    renumber_top_job(job_node: ET.Element, root_node: ET.Element) -> str:
+        Renumbers top-level jobs to avoid conflicts with existing jobs in the database.
+
+    import_i2xml_from_file(xml_path: Path, relocate_path: Path = None):
+        Imports CCP4 project data from an XML file.
+
+    import_i2xml(root_node: ET.Element, relocate_path: Path) -> dict:
+        Imports CCP4 project data from an XML root node and returns a job map.
+
+    import_project(node: ET.Element, relocate_path: Path = None):
+        Imports a project from an XML node, creating or updating the project in the database.
+
+    import_job(node: ET.Element):
+        Imports a job from an XML node, creating or updating the job in the database.
+
+    import_file(node: ET.Element):
+        Imports a file from an XML node, creating or updating the file in the database.
+
+    import_file_use(node: ET.Element):
+        Imports file usage information from an XML node, creating or updating the file usage in the database.
+
+    import_file_import(node: ET.Element):
+        Imports file import information from an XML node, creating or updating the file import in the database.
+
+    import_job_key_value(node: ET.Element):
+        Imports job key-value pairs from an XML node, creating or updating the job float value in the database.
+
+    import_job_key_char_value(node: ET.Element):
+        Imports job key-character value pairs from an XML node, creating or updating the job char value in the database.
+
+    import_tag(node: ET.Element):
+        Imports a tag from an XML node and stores it in a tag map.
+
+    import_project_tag(node: ET.Element):
+        Imports a project tag from an XML node, creating or updating the project tag in the database.
+"""
 import datetime
 import zipfile
 
@@ -43,6 +90,17 @@ def job_number_hash(dotted_number: str):
 
 
 def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
+    """
+    Imports a CCP4 project from a zip archive.
+    This function extracts the contents of a CCP4 project zip file into the appropriate
+    directories and handles any necessary remapping of job numbers.
+    Args:
+        zip_path (Path): The path to the zip file containing the CCP4 project.
+        relocate_path (Path, optional): The path to relocate the project files. Defaults to None.
+    Raises:
+        Project.DoesNotExist: If the project specified in the XML does not exist in the database.
+    """
+
     with zipfile.ZipFile(zip_path, "r") as zip_archive:
         with zip_archive.open("DATABASE.db.xml", "r") as database_file:
             root_node = ET.parse(database_file)
@@ -99,6 +157,22 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
 
 
 def renumber_top_job(job_node: ET.Element, root_node: ET.Element):
+    """
+    Renumber the top-level job node if necessary to avoid conflicts with existing job numbers.
+    Args:
+        job_node (ET.Element): The job node to be renumbered.
+        root_node (ET.Element): The root node containing all job nodes.
+    Returns:
+        str: The (possibly new) job number of the job node.
+    Notes:
+        - If the job node is not a top-level job (i.e., its job number contains a dot),
+          the function returns the original job number without changes.
+        - If the job number already exists in the database and belongs to a different job,
+          the job node is assigned the next available job number.
+        - The function also updates the job numbers of all descendant job nodes to reflect
+          the new top-level job number.
+    """
+
     # null operation if not top evel job
     if "." in job_node.attrib["jobnumber"]:
         return job_node.attrib["jobnumber"]
@@ -151,6 +225,16 @@ def import_i2xml_from_file(xml_path: Path, relocate_path: Path = None):
 
 
 def import_i2xml(root_node: ET.Element, relocate_path: Path):
+    """
+    Imports data from an XML structure into the system, processing various elements
+    such as projects, jobs, files, and tags.
+    Args:
+        root_node (ET.Element): The root element of the XML structure to import.
+        relocate_path (Path): The path to which certain elements may need to be relocated.
+    Returns:
+        dict: A dictionary containing a mapping of original job numbers to their new numbers.
+    """
+
     job_map = {}
     for node in root_node.findall("ccp4i2_body/projectTable/project"):
         import_project(node, relocate_path)
