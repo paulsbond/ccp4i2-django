@@ -25,6 +25,25 @@ def create_job(
     saveParams: bool = True,
     title: str = None,
 ):
+    """
+    Create a new job within a project.
+
+    Args:
+        projectId (str, optional): The UUID of the project. Defaults to None.
+        projectName (str, optional): The name of the project. Defaults to None.
+        parentJobId (str, optional): The UUID of the parent job. Defaults to None.
+        taskName (str, optional): The name of the task to be executed. Defaults to None.
+        jobNumber (str, optional): The job number. Defaults to None.
+        jobId (str, optional): The UUID of the job. Defaults to None.
+        saveParams (bool, optional): Whether to save parameters for the job. Defaults to True.
+        title (str, optional): The title of the job. Defaults to None.
+
+    Returns:
+        str: The UUID of the newly created job.
+
+    Raises:
+        models.Job.DoesNotExist: If the parent job or project does not exist.
+    """
     logger.debug("%s, %s", projectName, projectId)
     if parentJobId is not None and projectId is None:
         parentJob = models.Job.objects.get(uuid=parentJobId)

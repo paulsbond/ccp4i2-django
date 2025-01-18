@@ -18,6 +18,19 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 @using_django_pm
 def clone_job(jobId=None):
+    """
+    Clone an existing job by creating a new job with the same parameters.
+
+    Args:
+        jobId (str, optional): The UUID of the job to be cloned. Defaults to None.
+
+    Returns:
+        models.Job: The newly created job instance.
+
+    Raises:
+        models.Job.DoesNotExist: If the job with the given UUID does not exist.
+        Exception: If there is an error during the cloning process.
+    """
     old_job = models.Job.objects.get(uuid=jobId)
     the_project = old_job.project
     taskName = old_job.task_name

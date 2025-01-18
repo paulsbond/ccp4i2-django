@@ -20,6 +20,23 @@ def save_params_for_job(
     mode="JOB_INPUT",
     exclude_unset=True,
 ):
+    """
+    Save parameters for a given job to an XML file.
+
+    This function generates a file name based on the job plugin and mode,
+    relocates the file path to the job's directory, and saves the job's
+    parameters in XML format. If a file with the same name already exists,
+    it creates a backup before saving the new file.
+
+    Args:
+        the_job_plugin (CCP4PluginScript.CPluginScript): The job plugin script instance.
+        the_job (models.Job): The job instance containing job details.
+        mode (str, optional): The mode for generating the file name. Defaults to "JOB_INPUT".
+        exclude_unset (bool, optional): Flag to exclude unset parameters. Defaults to True.
+
+    Returns:
+        None
+    """
     fileName = the_job_plugin.makeFileName(mode)
     # Rework to the directory of "the_job"
     relocated_file_path = the_job.directory / pathlib.Path(fileName).name

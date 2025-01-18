@@ -17,6 +17,16 @@ def set_output_file_names(
     jobNumber: str = None,
     force: bool = True,
 ):
+    """
+    Sets the output file names for a given job in a CCP4 project.
+    Args:
+        container (CCP4Container.CContainer, optional): The container holding the output data. Defaults to None.
+        projectId (str, optional): The UUID of the project. Defaults to None.
+        jobNumber (str, optional): The job number in the project. Defaults to None.
+        force (bool, optional): If True, forces the setting of output paths even if they are already set. Defaults to True.
+    Returns:
+        CCP4ErrorHandling.CErrorReport: An error report object containing any errors encountered during the process.
+    """
     myErrorReport = CCP4ErrorHandling.CErrorReport()
     relPath = Path("CCP4_JOBS").joinpath(
         *[f"job_{numberElement}" for numberElement in jobNumber.split(".")]

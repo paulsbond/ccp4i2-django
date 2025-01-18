@@ -19,6 +19,25 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def run_job(jobId: str):
+    """
+    Executes a job based on the provided job ID.
+
+    This function retrieves the job from the database using the job ID, sets up the necessary
+    environment, and executes the job while redirecting stdout and stderr to respective files
+    in the job's directory.
+
+    Args:
+        jobId (str): The unique identifier of the job to be executed.
+
+    Raises:
+        models.Job.DoesNotExist: If no job with the given jobId is found in the database.
+        Exception: If any error occurs during the execution of the job.
+
+    Side Effects:
+        - Creates or overwrites "stdout.txt" and "stderr.txt" in the job's directory.
+        - Executes the job's plugin and handles database interactions.
+
+    """
     new_job = models.Job.objects.get(uuid=jobId)
     logger.info(f"Running job in {new_job.directory}")
 

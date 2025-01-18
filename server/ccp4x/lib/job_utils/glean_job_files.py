@@ -27,7 +27,23 @@ def glean_job_files(
     roleList: List[int] = [0, 1],
     unSetMissingFiles=True,
 ):
+    """
+    Gleans job files based on the provided job ID and container.
 
+    This function retrieves a job object using the provided job ID, then finds
+    and processes file objects based on the specified roles. It updates the job
+    with input and output files and their uses, and gleans performance indicators
+    from the output data.
+
+    Args:
+        jobId (str, optional): The UUID of the job as a string. Defaults to None.
+        container (CContainer, optional): The container holding input and output data. Defaults to None.
+        roleList (List[int], optional): A list of roles to process. Defaults to [0, 1].
+        unSetMissingFiles (bool, optional): Flag to unset missing files. Defaults to True.
+
+    Returns:
+        None
+    """
     job = models.Job.objects.get(uuid=uuid.UUID(jobId))
     inputs = []
     outputs = []
@@ -36,7 +52,7 @@ def glean_job_files(
         make_file_uses(job, inputs)
     if 0 in roleList:
         outputs = find_file_objects(container.outputData, role=0)
-        make_files_and_uses(job, outputs)
+        make_files_and_uses(job, outputs, unSetMissingFiles)
     glean_performance_indicators(container.outputData, job)
 
 
@@ -52,7 +68,9 @@ def find_file_objects(
     return items_with_roles
 
 
-def make_files_and_uses(job: models.Job, item_dicts: List[ItemAndRole]):
+def make_files_and_uses(
+    job: models.Job, item_dicts: List[ItemAndRole], unSetMissingFiles: bool = True
+):
     for item_dict in item_dicts:
         item: CDataFile = item_dict["item"]
         if item.exists():
@@ -61,6 +79,8 @@ def make_files_and_uses(job: models.Job, item_dicts: List[ItemAndRole]):
             )
             _ = create_new_file(job, item)
             # create_file_use(job, item, the_file, role)
+        elif unSetMissingFiles:
+            item.unSet()
 
 
 def create_new_file(job: models.Job, item: CDataFile):

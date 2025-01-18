@@ -12,6 +12,21 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 @using_django_pm
 def get_job_plugin(the_job: Job, parent=None, dbHandler: CCP4i2DjangoDbHandler = None):
+    """
+    Retrieves and initializes a job plugin instance based on the provided job.
+
+    Args:
+        the_job (Job): The job object containing details such as task name and directory.
+        parent (optional): The parent object, if any. Defaults to None.
+        dbHandler (CCP4i2DjangoDbHandler, optional): The database handler for CCP4i2. Defaults to None.
+
+    Returns:
+        pluginInstance: An instance of the plugin class initialized with the job's parameters.
+        None: If an error occurs during plugin initialization.
+
+    Raises:
+        Exception: If no parameter definition file (params.xml or input_params.xml) is found in the job directory.
+    """
 
     taskManager = CCP4TaskManager.CTaskManager()
 
