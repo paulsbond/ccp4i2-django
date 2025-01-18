@@ -129,7 +129,7 @@ class JobViewSet(ModelViewSet):
                 params_xml = params_xml_file.read()
             return Response({"status": "Success", "params_xml": params_xml})
         except FileNotFoundError as err:
-            logger.error(err)
+            logger.info(err)
             try:
                 with open(
                     the_job.directory / "input_params.xml", "r", encoding="UTF-8"
