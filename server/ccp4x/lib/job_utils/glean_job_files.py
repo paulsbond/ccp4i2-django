@@ -2,12 +2,15 @@ import uuid
 from typing import List, TypedDict
 import logging
 from core import CCP4Container
-from ccp4i2.core.CCP4Container import CContainer as CContainer
 from core import CCP4File
+from core import CCP4PerformanceData
+from core import CCP4Data
+from ccp4i2.core.CCP4Container import CContainer as CContainer
 from ccp4i2.core.CCP4File import CDataFile as CDataFile
 from ccp4i2.core.CCP4File import CI2XmlDataFile as CI2XmlDataFile
-from ccp4i2.dbapi import CCP4DbApi
+from ccp4i2.core.CCP4PerformanceData import CPerformanceIndicator
 from ...db import models
+from .find_objects import find_objects
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -34,53 +37,34 @@ def glean_job_files(
     if 0 in roleList:
         outputs = find_file_objects(container.outputData, role=0)
         make_files_and_uses(job, outputs)
+    glean_performance_indicators(container.outputData, job)
 
 
 def find_file_objects(
     container: CContainer, role=None, starting_list: List[ItemAndRole] = None
 ) -> List[ItemAndRole]:
 
-    assert role is not None
+    objects_found = find_objects(
+        container, lambda a: isinstance(a, CCP4File.CDataFile), True
+    )
+    items_with_roles = [{"role": role, "item": item} for item in objects_found]
 
-    if starting_list is None:
-        starting_list: List[ItemAndRole] = []
-
-    search_domain = []
-    if isinstance(container, CContainer) or isinstance(
-        container, CCP4Container.CContainer
-    ):
-        search_domain = container.children()
-
-    elif isinstance(container, list):
-        search_domain = container
-
-    for child in search_domain:
-        if (
-            isinstance(child, CContainer)
-            or isinstance(child, CCP4Container.CContainer)
-            or isinstance(child, list)
-        ):
-            find_file_objects(child, role=role, starting_list=starting_list)
-        elif isinstance(child, CDataFile) or isinstance(child, CCP4File.CDataFile):
-            starting_list.append({"item": child, "role": role})
-
-    return starting_list
+    return items_with_roles
 
 
 def make_files_and_uses(job: models.Job, item_dicts: List[ItemAndRole]):
     for item_dict in item_dicts:
         item: CDataFile = item_dict["item"]
-        role: int = item_dict["role"]
         if item.exists():
-            logger.error(
+            logger.debug(
                 "File for param %s exists=%s" % (item.objectName(), item.exists())
             )
-            the_file = create_new_file(job, item)
+            _ = create_new_file(job, item)
             # create_file_use(job, item, the_file, role)
 
 
 def create_new_file(job: models.Job, item: CDataFile):
-    logger.error("Creating new file %s" % item.objectName())
+    logger.info("Creating new file %s" % item.objectName())
     file_type = item.qualifiers("mimeTypeName")
     if len(file_type) == 0:
         logger.info(
@@ -158,7 +142,7 @@ def make_file_uses(job: models.Job, item_dicts: List[ItemAndRole]):
                 )
                 continue
             file_uuid = uuid.UUID(file_uuid_str)
-        logger.error(
+        logger.debug(
             "objectName [%s] iSet[%s] exists[%s] uuid_str[%s]"
             % (
                 item.objectName(),
@@ -209,3 +193,41 @@ def make_file_uses(job: models.Job, item_dicts: List[ItemAndRole]):
                         ),
                         exc_info=err,
                     )
+
+
+def glean_performance_indicators(container: CContainer, the_job: models.Job) -> None:
+    kpis = find_objects(
+        container,
+        lambda a: isinstance(a, CCP4PerformanceData.CPerformanceIndicator),
+        True,
+    )
+    for kpi in kpis:
+        for kpi_param_name in kpi.dataOrder():
+            value = getattr(kpi, kpi_param_name)
+            if value is None:
+                continue
+
+            job_value_key, created = models.JobValueKey.objects.get_or_create(
+                name=str(kpi_param_name), defaults={"description": str(kpi_param_name)}
+            )
+            try:
+                if isinstance(value, CCP4Data.CFloat):
+                    model_class = models.JobFloatValue
+                    value = float(value)
+                elif isinstance(value, CCP4Data.CString) and len(str(value)) > 0:
+                    model_class = models.JobCharValue
+                    value = str(value)
+                else:
+                    continue
+            except TypeError as err:
+                logging.debug("Failed to glean value", exc_info=err)
+                continue
+
+            try:
+                kpi_object = model_class(job=the_job, key=job_value_key, value=value)
+                kpi_object.save()
+            except TypeError as err:
+                logger.exception(
+                    "Failed saving value %s for key %s" % (value, kpi_param_name),
+                    exc_info=err,
+                )

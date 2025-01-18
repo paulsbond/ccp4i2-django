@@ -14,31 +14,14 @@ from ccp4i2.core.CCP4File import CI2XmlDataFile as CI2XmlDataFile
 
 from ...db import models
 from .save_params_for_job import save_params_for_job
+from .find_objects import find_objects
 
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
-def findInputs(ofContainer, inputsFound=[]):
-    search_domain = []
-    if isinstance(ofContainer, CList):
-        search_domain = ofContainer
-    elif isinstance(ofContainer, CCP4Container.CContainer):
-        search_domain = ofContainer.children()
-
-    for child in search_domain:
-        if isinstance(child, CCP4Container.CContainer) or isinstance(child, CList):
-            if child.objectName() != "outputData":
-                findInputs(child, inputsFound)
-        else:
-            if isinstance(child, CCP4File.CDataFile):
-                if child not in inputsFound:
-                    inputsFound.append(child)
-    return inputsFound
-
-
-def _processInput(
+def _process_input(
     theJob: models.Job,
     plugin: CCP4PluginScript.CPluginScript,
     input: CCP4File.CDataFile,
@@ -142,9 +125,11 @@ def _processInput(
 
 
 def import_files(theJob, plugin):
-    inputs = findInputs(plugin.container, inputsFound=[])
-    for input in inputs:
-        _processInput(theJob, plugin, input)
+    inputs = find_objects(
+        plugin.container.inputData, lambda a: isinstance(a, CCP4File.CDataFile)
+    )
+    for the_input in inputs:
+        _process_input(theJob, plugin, the_input)
 
     # removeDefaults(plugin.container)
     save_params_for_job(plugin, theJob, mode="JOB_INPUT")

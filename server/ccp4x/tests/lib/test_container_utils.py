@@ -3,7 +3,8 @@ from shutil import rmtree
 from django.test import TestCase, override_settings
 from django.conf import settings
 from xml.etree import ElementTree as ET
-from core import CCP4File
+from core import CCP4PerformanceData
+from core import CCP4Data
 from ccp4i2.core import CCP4Container
 from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
@@ -15,6 +16,7 @@ from ...lib.job_utils.unset_output_data import unset_output_data
 from ...lib.job_utils.remove_container_default_values import (
     remove_container_default_values,
 )
+from ...lib.job_utils.find_objects import find_objects
 
 from ...db.ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
@@ -55,3 +57,18 @@ class CCP4i2TestCase(TestCase):
         et = container.getEtree()
         ET.indent(et, "\t", 0)
         self.assertEqual(1, 1)
+
+    def test_find_objects(self):
+        job = Job.objects.get(pk=1)
+        the_job_plugin = get_job_plugin(job)
+        container: CCP4Container.CContainer = the_job_plugin.container
+        kpis = find_objects(
+            container,
+            lambda a: isinstance(a, CCP4PerformanceData.CPerformanceIndicator),
+            True,
+        )
+        for kpi in kpis:
+            for kpi_param_name in kpi.dataOrder():
+                value = getattr(kpi, kpi_param_name)
+                print(kpi_param_name, value, isinstance(value, CCP4Data.CString))
+                print(kpi_param_name, value, isinstance(value, CCP4Data.CFloat))
