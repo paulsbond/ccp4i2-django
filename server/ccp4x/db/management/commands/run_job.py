@@ -38,7 +38,7 @@ class Command(BaseCommand):
                 start_new_session=True,
             )
         else:
-            run_job(the_job.uuid)
+            run_job(str(the_job.uuid))
 
     def get_job(self, options):
         if options["jobid"] is not None:

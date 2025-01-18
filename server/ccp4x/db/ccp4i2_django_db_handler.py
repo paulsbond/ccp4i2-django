@@ -58,6 +58,12 @@ class CCP4i2DjangoDbHandler:
         container=None,
         dbOutputData=None,
     ):
+        try:
+            assert isinstance(jobId, str)
+        except AssertionError as err:
+            logger.exception("In updateJobStatus %s" % (type(jobId),), exc_info=err)
+            jobId = str(jobId)
+
         logger.debug(
             "In update JobStatus %s %s %s %s %s",
             jobId,
@@ -69,14 +75,14 @@ class CCP4i2DjangoDbHandler:
         sys.stdout.flush()
         if dbOutputData is not None:
             logger.error("dbOutputData is not None %s", dbOutputData)
-        if not isinstance(jobId, uuid.UUID) and "-" not in jobId:
-            jobId = uuid.UUID(jobId)
-        aJob = models.Job.objects.get(uuid=jobId)
+
+        job_uuid = uuid.UUID(jobId)
+
         try:
             if status is None and finishStatus is not None:
                 status = plugin_status_to_job_status(finishStatus)
             try:
-                the_job = models.Job.objects.get(uuid=jobId)
+                the_job = models.Job.objects.get(uuid=job_uuid)
                 the_job.status = status
                 the_job.save()
                 if models.Job.Status(status).label == "Finished":
@@ -93,7 +99,10 @@ class CCP4i2DjangoDbHandler:
                 ]:
                     pass  # backupProjectDb(the_job.projectid)
             except Exception as err:
-                logger.error("Failed in updateJobStatus %s %s", err, aJob)
+                logger.exception(
+                    "Failed in updateJobStatus %s" % (the_job,),
+                    exc_info=err,
+                )
         except Exception as err:
-            logger.error("Issue in reportStatus %s %s", err, aJob, exc_info=True)
+            logger.error("Issue in reportStatus %s %s", err, the_job, exc_info=err)
         return CPluginScript.SUCCEEDED

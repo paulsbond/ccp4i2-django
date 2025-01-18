@@ -2,14 +2,17 @@ import logging
 import contextlib
 from xml.etree import ElementTree as ET
 
+from ccp4i2.core import CCP4Modules
+from ccp4i2.core import CCP4PluginScript
+from PySide2 import QtCore
+
 from ...db import models
 from ...db.ccp4i2_django_db_handler import CCP4i2DjangoDbHandler
 from .import_files import import_files
 from .get_job_plugin import get_job_plugin
 from .save_params_for_job import save_params_for_job
-from ccp4i2.core import CCP4Modules
-from ccp4i2.core import CCP4PluginScript
-from PySide2 import QtCore
+from .set_output_file_names import set_output_file_names
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -28,9 +31,16 @@ def run_job(jobId: str):
                     db_handler = setup_db_handler(new_job)
                     application_inst = setup_application_instance()
                     the_plugin = retrievePlugin(new_job, application_inst, db_handler)
+
                     _save_params_for_job(the_plugin, new_job)
                     setup_plugin(
                         the_plugin, new_job, db_handler, jobId, application_inst
+                    )
+                    set_output_file_names(
+                        the_plugin.container,
+                        projectId=str(new_job.project.uuid),
+                        jobNumber=new_job.number,
+                        force=True,
                     )
                     _import_files(new_job, the_plugin)
                     executePlugin(the_plugin, new_job, application_inst)

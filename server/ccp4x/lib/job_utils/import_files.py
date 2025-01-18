@@ -10,6 +10,7 @@ from ccp4i2.core import CCP4File
 from ccp4i2.core import CCP4PluginScript
 from ccp4i2.core.CCP4Data import CList
 from ccp4i2.dbapi import CCP4DbApi
+from ccp4i2.core.CCP4File import CI2XmlDataFile as CI2XmlDataFile
 
 from ...db import models
 from .save_params_for_job import save_params_for_job
@@ -70,23 +71,32 @@ def _processInput(
             # Now have to change the plugin to reflect the new location
 
             try:
-                filetypeid = CCP4DbApi.FILETYPES_CLASS.index(
-                    input.__class__.__name__[1:]
-                )
-                fileType = CCP4DbApi.FILETYPES_TEXT[filetypeid]
+
+                file_mime_type = input.qualifiers("mimeTypeName")
+                if len(file_mime_type) == 0:
+                    logger.error(
+                        "Class %s Does not have an associated mimeTypeName....ASK FOR DEVELOPER FIX",
+                        str(input.objectName()),
+                    )
+                    if isinstance(input, CCP4File.CI2XmlDataFile) or isinstance(
+                        input, CI2XmlDataFile
+                    ):
+                        file_mime_type = "application/xml"
+                file_type_object = models.FileType.objects.get(name=file_mime_type)
+
                 # print('What I know about import is', str(valueDictForObject(input)))
                 if (
                     not hasattr(input, "annotation")
                     or input.annotation is None
                     or len(str(input.annotation).strip()) == 0
                 ):
-                    annotation = "Imported from file {}".format(sourceFilePath.name)
+                    annotation = f"Imported from file {sourceFilePath.name}"
                 else:
                     annotation = str(input.annotation)
                 createDict = {
                     "name": str(destFilePath.name),
                     "annotation": annotation,
-                    "type": fileType,
+                    "type": file_type_object,
                     "job": theJob,
                     "job_param_name": input.objectName(),
                     "directory": 2,

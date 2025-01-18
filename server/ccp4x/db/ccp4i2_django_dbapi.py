@@ -8,6 +8,7 @@ from ccp4i2.core import CCP4Data
 from ccp4i2.core import CCP4File
 from ccp4i2.core import CCP4PerformanceData
 from django.db import IntegrityError
+from ..lib.job_utils.glean_job_files import glean_job_files
 
 from . import models
 
@@ -153,9 +154,9 @@ class CCP4i2DjangoDbApi(object):
         job_file_id_list = [jobFile.uuid for jobFile in job_file_qs]
 
         file_imports = models.FileImport.objects.filter(file__uuid__in=job_file_id_list)
-        import_file_ids = [importFile.file.uuid for importFile in file_imports]
+        import_file_ids = [str(importFile.file.uuid) for importFile in file_imports]
         output_file_ids = [
-            jobFileId
+            str(jobFileId)
             for jobFileId in job_file_id_list
             if jobFileId not in import_file_ids
         ]
@@ -187,10 +188,12 @@ class CCP4i2DjangoDbApi(object):
         jobfileuse_qs = fileuse_qs.filter(job=context_job)
 
         output_file_qs = jobfileuse_qs.filter(role=0)
-        output_id_list = [outputFileUse.file.uuid for outputFileUse in output_file_qs]
+        output_id_list = [
+            str(outputFileUse.file.uuid) for outputFileUse in output_file_qs
+        ]
 
         inputfile_qs = jobfileuse_qs.filter(role=1)
-        input_id_list = [inputFile.file.uuid for inputFile in inputfile_qs]
+        input_id_list = [str(inputFile.file.uuid) for inputFile in inputfile_qs]
 
         return output_id_list + input_id_list
 
@@ -381,6 +384,13 @@ class CCP4i2DjangoDbApi(object):
         roleList=[0, 1],
         unSetMissingFiles=True,
     ):
+        glean_job_files(
+            jobId,
+            container=container,
+            roleList=roleList,
+            unSetMissingFiles=unSetMissingFiles,
+        )
+        return
         try:
             the_job = models.Job.objects.get(uuid=jobId)
             for role in roleList:

@@ -2,14 +2,11 @@ from pathlib import Path
 import logging
 import os
 import uuid
-
-from ccp4i2.core import CCP4ErrorHandling
-from ccp4i2.core import CCP4File
 from ccp4i2.core import CCP4ModelData
-from django.utils.text import slugify
 
 from . import models
 from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
+from ..lib.job_utils.set_output_file_names import set_output_file_names
 
 
 logging.basicConfig(level=logging.WARNING)
@@ -35,35 +32,7 @@ class CCP4i2DjangoProjectsManager(object):
     def setOutputFileNames(
         self, container=None, projectId=None, jobNumber=None, force=True
     ):
-        myErrorReport = CCP4ErrorHandling.CErrorReport()
-        relPath = Path("CCP4_JOBS").joinpath(
-            [f"job_{numberElement}" for numberElement in jobNumber.split(".")]
-        )
-        the_job = models.Job.objects.get(project__uuid=projectId, number=jobNumber)
-        jobName = f"{jobNumber}_{slugify(the_job.project.name)}_{the_job.taskname}_"
-        dataList = container.outputData.dataOrder()
-        for objectName in dataList:
-            try:
-                dobj = container.outputData.find(objectName)
-                # print 'setOutputData get',objectName,dobj.get(),dobj.isSet()
-                if isinstance(dobj, CCP4File.CDataFile) and (force or not dobj.isSet()):
-                    dobj.setOutputPath(
-                        jobName=jobName, projectId=projectId, relPath=relPath
-                    )
-                if isinstance(dobj, CCP4ModelData.CPdbDataFile):
-                    oldBaseName, _ = os.path.splitext(str(dobj.baseName))
-                    if dobj.contentFlag is None or int(dobj.contentFlag) == 1:
-                        dobj.baseName.set(f"{oldBaseName}.pdb")
-                    if int(dobj.contentFlag) == 2:
-                        dobj.baseName.set(f"{oldBaseName}.cif")
-
-            except Exception as err:
-                logger.error(
-                    "Exception in setOutputFileNames for %s %s",
-                    dobj.objectPath(),
-                    str(err),
-                )
-        return myErrorReport
+        return set_output_file_names(container, projectId, jobNumber, force)
 
     def interpretDirectory(self, path):
         absPath = os.path.abspath(path)
@@ -95,8 +64,7 @@ class CCP4i2DjangoProjectsManager(object):
             if testAlias and projectId == "CCP4I2_TOP":
                 return str(Path(CCP4ModelData.__file__).parent.parent)
             try:
-                if "-" not in projectId:
-                    projectId = uuid.UUID(projectId)
+                projectId = uuid.UUID(projectId)
                 theProject = models.Project.objects.get(uuid=projectId)
             except models.Project.DoesNotExist as err:
                 logger.error(
@@ -153,42 +121,3 @@ class CCP4i2DjangoProjectsManager(object):
         }
         jobPath = Path(the_job.directory) / defNames[mode]
         return str(jobPath)
-
-
-def upload_file_to_job(fileRoot="output", jobId=None, fileExtension=".txt", file=b""):
-    the_job = models.Job.objects.get(uuid=jobId)
-    baseName = f"{fileRoot}{fileExtension}"
-    filePath = os.path.join(the_job.directory, baseName)
-    iFile = 0
-    while os.path.exists(filePath):
-        baseName = f"{fileRoot}_{iFile}{fileExtension}"
-        filePath = os.path.join(the_job.directory, baseName)
-        iFile += 1
-    with open(filePath, "wb") as outputFile:
-        outputFile.write(file)
-    relPath = os.path.join(
-        "CCP4_JOBS", "/".join([f"job_{jN}" for jN in the_job.jobnumber.split(".")])
-    )
-    return {
-        "project": str(the_job.project.uuid),
-        "relPath": relPath,
-        "baseName": baseName,
-    }
-
-
-def getProjectDirectory(projectId=None, projectName=None, jobId=None):
-    if projectId is not None:
-        return models.Project.objects.get(uuid=projectId).directory
-    elif projectName is not None:
-        return models.Project.objects.get(name=projectName).directory
-    elif jobId is not None:
-        return models.Job.objects.get(uuid=jobId).project.directory
-    return None
-
-
-def updateJobStatus(jobId=None, statusId=None):
-    the_job = models.Jobs.objects.get(jobid=jobId)
-    theStatus = models.Jobstatus.objects.get(statusid=statusId)
-    the_job.status = theStatus
-    the_job.save()
-    return str(the_job.uuid), str(the_job.project.uuid), theStatus.statustext

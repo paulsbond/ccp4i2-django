@@ -47,12 +47,7 @@ def clone_job(jobId=None):
     )
 
     # Unset the output file data, which should be recalculated for the new plugin, I guess
-    unset_output_data(the_job_plugin)
-    data_list = the_job_plugin.container.outputData.children()
-    for dobj in data_list:
-        # dobj = getattr(the_job_plugin.container.outputData, object_name)
-        if isinstance(dobj, CCP4File.CDataFile):
-            dobj.unSet()
+    # unset_output_data(the_job_plugin)
 
     new_job = models.Job(
         uuid=new_jobId,
