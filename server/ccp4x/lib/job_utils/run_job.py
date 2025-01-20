@@ -48,7 +48,7 @@ def run_job(jobId: str):
             ) as stderr_file:
                 with contextlib.redirect_stderr(stderr_file):
                     db_handler = setup_db_handler(new_job)
-                    application_inst = setup_application_instance()
+                    application_inst = setup_application_instance(new_job)
                     the_plugin = retrievePlugin(new_job, application_inst, db_handler)
 
                     _save_params_for_job(the_plugin, new_job)
@@ -72,8 +72,10 @@ def setup_db_handler(new_job: models.Job):
     return db_handler
 
 
-def setup_application_instance():
+def setup_application_instance(the_job: models.Job):
     application_inst = QtCore.QEventLoop(parent=CCP4Modules.QTAPPLICATION())
+    application_inst.pluginName = the_job.task_name
+    application_inst.comFilePath = str(the_job.directory)
     logger.info(f"application_inst {str(application_inst)}")
     return application_inst
 
