@@ -25,6 +25,7 @@ export default function JobsPage({
   const { data: project } = api.get<Project>(`projects/${id}`);
   const { data: params_xml } = api.get<any>(`jobs/${jobid}/params_xml`);
   const { data: report_xml } = api.get<any>(`jobs/${jobid}/report_xml`);
+  const { data: diagnostic_xml } = api.get<any>(`jobs/${jobid}/diagnostic_xml`);
   const [tabValue, setTabValue] = useState<Number>(0);
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
@@ -38,6 +39,7 @@ export default function JobsPage({
         <Tab value={0} label="Interface as xml" />
         <Tab value={1} label="Report as xml" />
         <Tab value={2} label="Report" />
+        <Tab value={3} label="Diagnostic xml" />
       </Tabs>
       {tabValue == 0 && (
         <Editor
@@ -57,6 +59,13 @@ export default function JobsPage({
         <CCP4i2ReportXMLView report_xml={report_xml} job={job} />
       ) : (
         <LinearProgress />
+      )}
+      {tabValue == 3 && diagnostic_xml && (
+        <Editor
+          height="calc(100vh - 15rem)"
+          value={prettifyXml($.parseXML(diagnostic_xml.diagnostic_xml))}
+          language="xml"
+        />
       )}
     </Container>
   );

@@ -189,3 +189,24 @@ class JobViewSet(ModelViewSet):
         )
         serializer = serializers.JobSerializer(job)
         return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def diagnostic_xml(self, request, pk=None):
+        the_job = models.Job.objects.get(id=pk)
+        try:
+            with open(
+                the_job.directory / "diagnostic.xml", "r", encoding="UTF-8"
+            ) as diagnostic_xml_file:
+                diagnostic_xml = diagnostic_xml_file.read()
+            return Response({"status": "Success", "diagnostic_xml": diagnostic_xml})
+        except FileNotFoundError as err:
+            logger.exception(
+                "Failed to find file %s" % (the_job.directory / "diagnostic.xml",),
+                exc_info=err,
+            )
+            return Response({"status": "Failed", "reason": str(err)})
