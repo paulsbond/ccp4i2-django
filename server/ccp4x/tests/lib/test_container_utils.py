@@ -1,14 +1,13 @@
 from pathlib import Path
 from shutil import rmtree
+from xml.etree import ElementTree as ET
 from django.test import TestCase, override_settings
 from django.conf import settings
-from xml.etree import ElementTree as ET
 from core import CCP4PerformanceData
 from core import CCP4Data
 from ccp4i2.core import CCP4Container
 from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
-from ...lib.ccp4i2_report import get_report_job_info, get_job_container, make_old_report
 from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
 
 from ...lib.job_utils.get_job_plugin import get_job_plugin

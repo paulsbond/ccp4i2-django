@@ -4,7 +4,7 @@ from pathlib import Path
 import datetime
 from pytz import timezone
 from ccp4i2.core import CCP4TaskManager
-from ccp4i2.core import CCP4Container
+from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core import CCP4File
 from ...db import models
 from ...db.ccp4i2_django_wrapper import using_django_pm
@@ -17,7 +17,7 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 @using_django_pm
-def clone_job(jobId=None):
+def clone_job(jobId: str = None):
     """
     Clone an existing job by creating a new job with the same parameters.
 
@@ -33,7 +33,7 @@ def clone_job(jobId=None):
     """
     old_job = models.Job.objects.get(uuid=jobId)
     the_project = old_job.project
-    taskName = old_job.task_name
+    task_name = old_job.task_name
     try:
         last_job_number = max(
             int(job.number)
@@ -49,15 +49,12 @@ def clone_job(jobId=None):
     new_jobId = uuid.uuid4()
 
     task_manager = CCP4TaskManager.CTaskManager()
-    plugin_class = task_manager.getPluginScriptClass(taskName)
+    plugin_class = task_manager.getPluginScriptClass(task_name)
     new_job_dir.mkdir(exist_ok=True, parents=True)
-    the_job_plugin: CCP4Container.CContainer = plugin_class(
-        workDirectory=str(new_job_dir)
-    )
+    the_job_plugin: CContainer = plugin_class(workDirectory=str(new_job_dir))
     # Load cloned parameters
-    the_job_plugin.container.loadDataFromXml(
-        str(old_job.directory / "input_params.xml")
-    )
+    the_job_container: CContainer = the_job_plugin.container
+    the_job_container.loadDataFromXml(str(old_job.directory / "input_params.xml"))
 
     # Unset the output file data, which should be recalculated for the new plugin, I guess
     # unset_output_data(the_job_plugin)
@@ -68,9 +65,9 @@ def clone_job(jobId=None):
         finish_time=datetime.datetime.fromtimestamp(0, tz=timezone("UTC")),
         status=1,
         evaluation=0,
-        title=task_manager.getTitle(taskName),
+        title=task_manager.getTitle(task_name),
         project=the_project,
-        task_name=taskName,
+        task_name=task_name,
         parent=None,
     )
     new_job.save()

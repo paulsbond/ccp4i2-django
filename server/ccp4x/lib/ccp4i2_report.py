@@ -11,7 +11,7 @@ from ccp4i2.report.CCP4ReportParser import ReportClass
 
 from ..db.ccp4i2_django_wrapper import using_django_pm
 from ..db.models import Job, FileUse, File
-from .job_utils.get_job_container import get_job_container
+from .job_utils.get_job_plugin import get_job_plugin
 from ..db.ccp4i2_static_data import PATH_FLAG_JOB_DIR, PATH_FLAG_IMPORT_DIR
 
 
@@ -116,7 +116,7 @@ def _output_files(job: Job):
 
 
 def _get_filenames(job: Job):
-    container: CContainer = get_job_container(job)
+    container: CContainer = get_job_plugin(job).container
     result_filenames = _get_input_filenames(container)
     result_filenames.update(_get_output_filenames(container))
     return result_filenames

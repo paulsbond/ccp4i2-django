@@ -1,4 +1,8 @@
+from xml.etree import ElementTree as ET
 from core import CCP4Container
+from core import CCP4Data
+from ccp4i2.core.CCP4Container import CContainer
+from ccp4i2.core.CCP4Data import CList
 
 
 def find_objects(within, func, multiple=True, growing_list=None):
@@ -16,19 +20,48 @@ def find_objects(within, func, multiple=True, growing_list=None):
     """
     if growing_list is None:
         growing_list = []
-    search_domain = []
-    if isinstance(within, CCP4Container.CContainer):
-        search_domain = within.children()
-    elif isinstance(within, list):
-        search_domain = within
     original_length = len(growing_list)
-    for child in search_domain:
+    search_domain = (
+        within.CONTENTS
+        if isinstance(
+            within,
+            (
+                CCP4Container.CContainer,
+                CContainer,
+            ),
+        )
+        else (
+            within.__dict__["_value"]
+            if isinstance(
+                within,
+                (
+                    CCP4Data.CList,
+                    CList,
+                ),
+            )
+            else within
+        )
+    )
+    for iChild, child_ref in enumerate(search_domain):
+        child = None
+        if isinstance(
+            within,
+            (
+                CCP4Container.CContainer,
+                CContainer,
+            ),
+        ):
+            child = getattr(within, child_ref, None)
+        else:
+            child = child_ref
         if func(child):
             growing_list.append(child)
             if not multiple:
-                break
-        elif isinstance(child, CCP4Container.CContainer) or isinstance(child, list):
+                return growing_list
+        elif isinstance(
+            child, (CCP4Container.CContainer, CContainer, CCP4Data.CList, CList, list)
+        ):
             find_objects(child, func, multiple, growing_list)
-            if not multiple and len(growing_list) > original_length:
-                break
+            if (not multiple) and (len(growing_list) > original_length):
+                return growing_list
     return growing_list

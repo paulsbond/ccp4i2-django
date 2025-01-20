@@ -1,7 +1,6 @@
 import uuid
-from typing import List, TypedDict
+from typing import List
 import logging
-from core import CCP4Container
 from core import CCP4File
 from core import CCP4PerformanceData
 from core import CCP4Data
@@ -14,11 +13,6 @@ from .find_objects import find_objects
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
-
-
-class ItemAndRole(TypedDict):
-    item: CDataFile
-    role: int
 
 
 def glean_job_files(
@@ -47,32 +41,27 @@ def glean_job_files(
     job = models.Job.objects.get(uuid=uuid.UUID(jobId))
     inputs = []
     outputs = []
-    if 1 in roleList:
-        inputs = find_file_objects(container.inputData, role=1)
-        make_file_uses(job, inputs)
     if 0 in roleList:
-        outputs = find_file_objects(container.outputData, role=0)
-        make_files_and_uses(job, outputs, unSetMissingFiles)
+        outputs: List[CDataFile] = find_objects(
+            container.outputData,
+            lambda a: isinstance(a, CCP4File.CDataFile) or isinstance(a, CDataFile),
+            True,
+        )
+        make_files(job, outputs, unSetMissingFiles)
+    if 1 in roleList:
+        inputs: List[CDataFile] = find_objects(
+            container.inputData,
+            lambda a: isinstance(a, CCP4File.CDataFile) or isinstance(a, CDataFile),
+            True,
+        )
+        make_file_uses(job, inputs)
     glean_performance_indicators(container.outputData, job)
 
 
-def find_file_objects(
-    container: CContainer, role=None, starting_list: List[ItemAndRole] = None
-) -> List[ItemAndRole]:
-
-    objects_found = find_objects(
-        container, lambda a: isinstance(a, CCP4File.CDataFile), True
-    )
-    items_with_roles = [{"role": role, "item": item} for item in objects_found]
-
-    return items_with_roles
-
-
-def make_files_and_uses(
-    job: models.Job, item_dicts: List[ItemAndRole], unSetMissingFiles: bool = True
+def make_files(
+    job: models.Job, objects: List[CDataFile], unSetMissingFiles: bool = True
 ):
-    for item_dict in item_dicts:
-        item: CDataFile = item_dict["item"]
+    for item in objects:
         if item.exists():
             logger.debug(
                 "File for param %s exists=%s" % (item.objectName(), item.exists())
@@ -86,20 +75,50 @@ def make_files_and_uses(
 def create_new_file(job: models.Job, item: CDataFile):
     logger.info("Creating new file %s" % item.objectName())
     file_type = item.qualifiers("mimeTypeName")
-    if len(file_type) == 0:
+    if file_type is None or len(file_type) == 0:
         logger.info(
             "Class %s Does not have an associated mimeTypeName....ASK FOR DEVELOPER FIX",
             str(item.__class__),
         )
-        if isinstance(type, CCP4File.CI2XmlDataFile) or isinstance(CI2XmlDataFile):
-            file_type = "application/xml"
-    file_type_object = models.FileType.objects.get(name=file_type)
+        if isinstance(item, CCP4File.CI2XmlDataFile) or isinstance(CI2XmlDataFile):
+            file_type = "Unknown"
+    elif file_type == "application/xml":
+        file_type = "Unknown"
+    try:
+        file_type_object = models.FileType.objects.get(name=file_type)
+    except models.FileType.DoesNotExist as err:
+        logger.exception(
+            "Could not find file type matching %s" % (file_type,), exc_info=err
+        )
+        return
+
     sub_type = getattr(item, "subType", None)
-    if sub_type is not None:
+    try:
         sub_type = int(sub_type)
+    except AttributeError as err:
+        logger.warning(
+            "No sub_type %s on %s"
+            % (
+                sub_type,
+                item.baseName,
+            ),
+            exc_info=err,
+        )
+        sub_type = None
+
     content = getattr(item, "contentFlag", None)
-    if content is not None:
-        content = str(content)
+    try:
+        content = int(content)
+    except AttributeError as err:
+        logger.warning(
+            "No content %s on %s"
+            % (
+                content,
+                item.baseName,
+            ),
+            exc_info=err,
+        )
+        content = None
     annotation = getattr(item, "annotation", None)
     if annotation is not None:
         annotation = str(annotation)
@@ -122,7 +141,7 @@ def create_new_file(job: models.Job, item: CDataFile):
         )
         the_file.save()
         item.dbFileId.set(str(the_file.uuid))
-        logger.info("Created File for param %s" % item.objectName())
+        logger.debug("Created File for param %s" % item.objectName())
     except Exception as err:
         logger.exception("Exception harvesting %s", job_param_name, exc_info=err)
     return the_file
@@ -147,10 +166,9 @@ def create_file_use(job: models.Job, item: CDataFile, the_file: models.File, rol
     logger.info("Created FileUse for param %s" % item.objectName())
 
 
-def make_file_uses(job: models.Job, item_dicts: List[ItemAndRole]):
-    for item_dict in item_dicts:
-        item: CDataFile = item_dict["item"]
-        role: int = item_dict["role"]
+def make_file_uses(job: models.Job, item_dicts: List[CDataFile]):
+    for item in item_dicts:
+        role: int = models.FileUse.Role.IN
         file_uuid_member = getattr(item, "dbFileId", None)
         if file_uuid_member is None:
             continue
@@ -218,7 +236,13 @@ def make_file_uses(job: models.Job, item_dicts: List[ItemAndRole]):
 def glean_performance_indicators(container: CContainer, the_job: models.Job) -> None:
     kpis = find_objects(
         container,
-        lambda a: isinstance(a, CCP4PerformanceData.CPerformanceIndicator),
+        lambda a: isinstance(
+            a,
+            (
+                CCP4PerformanceData.CPerformanceIndicator,
+                CPerformanceIndicator,
+            ),
+        ),
         True,
     )
     for kpi in kpis:

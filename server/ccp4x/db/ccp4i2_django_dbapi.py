@@ -3,13 +3,8 @@ import logging
 import traceback
 import uuid
 
-from ccp4i2.core import CCP4Container
-from ccp4i2.core import CCP4Data
-from ccp4i2.core import CCP4File
-from ccp4i2.core import CCP4PerformanceData
-from django.db import IntegrityError
 from ..lib.job_utils.glean_job_files import glean_job_files
-
+from ..lib.job_utils.get_file_by_job_context import get_file_by_job_context
 from . import models
 
 
@@ -65,65 +60,10 @@ file_field_new_to_old = {item[1]: item[0] for item in file_field_old_to_new.item
 
 
 class CCP4i2DjangoDbApi(object):
-    """
-    A class to interact with the CCP4i2 Django database API.
-    Methods
-    -------
-    __init__():
-        Initializes the CCP4i2DjangoDbApi instance.
-    __getattribute__(__name):
-        Logs and retrieves the attribute of the instance.
-    getFileByJobContext(contextJobId=None, fileType=None, subType=None, contentFlag=None, projectId=None):
-        Retrieves files associated with a job context based on various filters.
-    _get_job_files(context_job, fileType, subType, contentFlag, projectId):
-        Retrieves job files based on the provided filters.
-    _get_file_uses(context_job, fileType, subType, contentFlag, projectId):
-        Retrieves file uses based on the provided filters.
-    getTaskNameLookup(projectId=None, jobId=None, extras=False):
-        Placeholder method to produce a lookup of subtasks for use in CCP4i2 purgeJob.
-    getProjectInfo(projectId=None, projectName=None, mode="all", checkPermission=True):
-        Retrieves project information based on the provided filters.
-    _get_project_queryset(projectId, projectName):
-        Retrieves the project queryset based on the provided filters.
-    _get_mode_arguments(mode):
-        Converts the mode argument to a list of arguments.
-    _get_values_from_queryset(unpatched_values, substitution_dict):
-        Converts queryset values to a list of dictionaries with substituted keys.
-    _to_simple_types(value):
-        Converts complex types to simple types.
-    deleteFilesOnJobNumberAndParamName(projectId=None, jobNumberParamList=[]):
-        Deletes files based on job number and parameter name.
-    getFileInfo(fileId=None, mode="all", returnType=None):
-        Retrieves file information based on the provided filters.
-    getJobInfo(jobId=None, mode="all", projectName=None, jobNumber=None, returnType=None):
-        Retrieves job information based on the provided filters.
-    gleanJobFiles(jobId=None, container=None, dbOutputData=None, roleList=[0, 1], unSetMissingFiles=True):
-        Gleans job files and processes input/output files.
-    _process_input_output_file(inputOutputFile, the_job, roleid):
-        Processes input/output files and saves them to the database.
-    _process_performance_indicator(inputOutputFile, the_job):
-        Processes performance indicators and saves them to the database.
-    _processDataFile(inputOutputFile, the_job, roleid):
-        Processes data files and saves them to the database.
-    _processExistingFile(theFile, the_job, roleid, jobParamName):
-        Processes existing files and saves them to the database.
-    _processOutputFile(inputOutputFile, the_job, roleid, jobParamName):
-        Processes output files and saves them to the database.
-    findInputOutputs(ofContainer, role, inputOutputsFound=None):
-        Finds input/output files in a container.
-    _findInputOutputsInContainer(container, role, inputOutputsFound):
-        Finds input/output files in a container.
-    _processChild(child, role, inputOutputsFound):
-        Processes a child object and adds it to the input/output files list.
-    _processContainerChild(child, role, inputOutputsFound):
-        Processes a container child object and adds it to the input/output files list.
-    _processListChild(child, role, inputOutputsFound):
-        Processes a list child object and adds it to the input/output files list.
-    """
 
     class FakeSignal:
         def emit(self, *arg, **kwarg):
-            logger.info("Ive been asked to emit %s, %s", arg, kwarg)
+            logger.info("CCP4i2DjangoDbApi been asked to emit %s, %s", arg, kwarg)
 
     def __init__(self):
         self.projectReset = CCP4i2DjangoDbApi.FakeSignal()
@@ -135,141 +75,52 @@ class CCP4i2DjangoDbApi(object):
 
     def getFileByJobContext(
         self,
-        contextJobId=None,
-        fileType=None,
-        subType=None,
-        contentFlag=None,
-        projectId=None,
-    ):
+        contextJobId: str = None,
+        fileType: str = None,
+        subType: int = None,
+        contentFlag: int = None,
+        projectId: str = None,
+    ) -> list:
         assert contextJobId is not None
         assert fileType is not None
-
-        context_job_in = models.Job.objects.get(uuid=contextJobId)
-        project_jobs = models.Job.objects.filter(
-            parentjobid__isnull=True, projectid=context_job_in.uuid
+        return get_file_by_job_context(
+            contextJobId, fileType, subType, contentFlag, projectId
         )
-        search_jobs_list = [
-            project_job
-            for project_job in project_jobs
-            if int(project_job.number) <= int(context_job_in.number)
-        ]
-        search_jobs_list.reverse()
-
-        while len(search_jobs_list) > 0:
-            context_job = search_jobs_list.pop()
-            logger.info("Looking for context in %s", context_job.number)
-
-            output_file_ids, import_file_ids = self._get_job_files(
-                context_job, fileType, subType, contentFlag, projectId
-            )
-
-            if len(output_file_ids) > 0:
-                if context_job.task_name == "coot_rebuild":
-                    return output_file_ids[::-1]
-                else:
-                    return output_file_ids
-            elif len(import_file_ids) > 0:
-                return import_file_ids
-
-            input_file_ids = self._get_file_uses(
-                context_job, fileType, subType, contentFlag, projectId
-            )
-
-            if len(input_file_ids) > 0:
-                if context_job.task_name == "coot_rebuild":
-                    return input_file_ids[::-1]
-                else:
-                    return input_file_ids
-
-        return []
-
-    def _get_job_files(
-        self,
-        context_job: models.Job,
-        fileType: str,
-        subType: int,
-        contentFlag: int,
-        projectId: str,
-    ):
-        filter_dict = {"file_type__name": fileType}
-        if isinstance(subType, list) and 0 not in subType and subType is not None:
-            filter_dict["sub_type__in"] = subType
-        elif not isinstance(subType, list) and subType != 0 and subType is not None:
-            filter_dict["sub_type"] = subType
-        if contentFlag is not None and contentFlag is not NotImplemented:
-            if not isinstance(contentFlag, list):
-                filter_dict["content"] = contentFlag
-            else:
-                filter_dict["content__in"] = contentFlag
-        if projectId is not None:
-            filter_dict["job__project__uuid"] = projectId
-        logger.debug("Using filter_dict %s", filter_dict)
-        file_qs = models.File.objects.filter(**filter_dict)
-
-        job_file_qs = file_qs.filter(job=context_job)
-        job_file_id_list = [jobFile.uuid for jobFile in job_file_qs]
-
-        file_imports = models.FileImport.objects.filter(file__uuid__in=job_file_id_list)
-        import_file_ids = [str(importFile.file.uuid) for importFile in file_imports]
-        output_file_ids = [
-            str(jobFileId)
-            for jobFileId in job_file_id_list
-            if jobFileId not in import_file_ids
-        ]
-
-        return output_file_ids, import_file_ids
-
-    def _get_file_uses(
-        self,
-        context_job: models.Job,
-        fileType: str,
-        subType: int,
-        contentFlag: int,
-        projectId: str,
-    ):
-        filter_dict = {"file__type__name": fileType}
-        if isinstance(subType, list) and 0 not in subType and subType is not None:
-            filter_dict["file__sub_type__in"] = subType
-        elif not isinstance(subType, list) and subType != 0 and subType is not None:
-            filter_dict["file__sub_type"] = subType
-        if contentFlag is not None and contentFlag is not NotImplemented:
-            if not isinstance(contentFlag, list):
-                filter_dict["file__content"] = contentFlag
-            else:
-                filter_dict["file__content__in"] = contentFlag
-        if projectId is not None:
-            filter_dict["job__project__uuid"] = projectId
-
-        fileuse_qs = models.FileUse.objects.filter(**filter_dict)
-        jobfileuse_qs = fileuse_qs.filter(job=context_job)
-
-        output_file_qs = jobfileuse_qs.filter(role=0)
-        output_id_list = [
-            str(outputFileUse.file.uuid) for outputFileUse in output_file_qs
-        ]
-
-        inputfile_qs = jobfileuse_qs.filter(role=1)
-        input_id_list = [str(inputFile.file.uuid) for inputFile in inputfile_qs]
-
-        return output_id_list + input_id_list
 
     def getTaskNameLookup(self, projectId=None, jobId=None, extras=False):
         # Fixme....this should produce a lookup of subtasks sfor use in CCP4i2 purgeJob
         try:
             logger.warning(
-                "In unimplemented toutine getTaskNameLookup %s, %s, %s",
+                "In unimplemented routine getTaskNameLookup %s, %s, %s",
                 projectId,
                 jobId,
                 extras,
             )
         except Exception as err:
-            logger.warning("Err in unimplemented routine getTaskNameLookup %s", err)
-            traceback.print_stack()
+            logger.exception(
+                "Err in unimplemented routine getTaskNameLookup", exc_info=err
+            )
         return {}
 
     def getProjectInfo(
         self, projectId=None, projectName=None, mode="all", checkPermission=True
     ):
+        """
+        Retrieve project information based on project ID or project name.
+
+        Args:
+            projectId (str, optional): The unique identifier of the project. Defaults to None.
+            projectName (str, optional): The name of the project. Defaults to None.
+            mode (str, optional): The mode of information retrieval. Defaults to "all".
+            checkPermission (bool, optional): Flag to check permissions. Defaults to True.
+
+        Returns:
+            dict or any: The project information. If only one field is requested, returns the value of that field.
+                         Returns None if an error occurs.
+
+        Raises:
+            Exception: Logs any exceptions that occur during the retrieval process.
+        """
         if projectId is not None and "-" not in projectId:
             projectId = uuid.UUID(projectId)
         try:
@@ -284,7 +135,7 @@ class CCP4i2DjangoDbApi(object):
                 return result[project_field_new_to_old[arg[0]]]
             return result
         except Exception as err:
-            logger.exception("Err in getProjectInfo %s", err)
+            logger.exception("Err in getProjectInfo", exc_info=err)
         return None
 
     def _get_project_queryset(self, projectId, projectName):
@@ -338,8 +189,10 @@ class CCP4i2DjangoDbApi(object):
                         % (projectId, jobNumberParam[0], jobNumberParam[1])
                     )
         except Exception as err:
-            logger.error(
-                "Err in deleteFilesOnJobNumberAndParamName %s", err, stack_info=True
+            logger.exception(
+                "Err in deleteFilesOnJobNumberAndParamName",
+                exc_info=err,
+                stack_info=True,
             )
         return None
 
@@ -440,181 +293,9 @@ class CCP4i2DjangoDbApi(object):
         roleList=[0, 1],
         unSetMissingFiles=True,
     ):
-        glean_job_files(
+        return glean_job_files(
             jobId,
             container=container,
             roleList=roleList,
             unSetMissingFiles=unSetMissingFiles,
         )
-        return
-        try:
-            the_job = models.Job.objects.get(uuid=jobId)
-            for role in roleList:
-                roleid = role
-                inputOutputFiles = self.findInputOutputs(container, role, [])
-                for inputOutputFile in inputOutputFiles:
-                    self._process_input_output_file(inputOutputFile, the_job, roleid)
-            return 0
-        except Exception as err:
-            logger.info("Err in gleanFiles %s", err)
-            traceback.print_stack()
-        return None
-
-    def _process_input_output_file(self, inputOutputFile, the_job, roleid):
-        if isinstance(inputOutputFile, CCP4PerformanceData.CPerformanceIndicator):
-            self._process_performance_indicator(inputOutputFile, the_job)
-        elif isinstance(inputOutputFile, CCP4File.CDataFile):
-            self._processDataFile(inputOutputFile, the_job, roleid)
-
-    def _process_performance_indicator(self, inputOutputFile, the_job):
-        keyValues = {}
-        try:
-            _, _, keyValues = inputOutputFile.saveToDb()
-        except Exception as err:
-            logger.info(
-                "ERROR in gleanJobFiles for %s - %s", inputOutputFile.objectName(), err
-            )
-            _, _, keyValues = [], None, {}
-        for key, value in keyValues.items():
-            keyType = key
-            if isinstance(value, str):
-                newKeyvalue = models.JobCharValue(job=the_job, key=keyType, value=value)
-                newKeyvalue.save()
-            else:
-                newKeyvalue = models.JobFloatValue(
-                    job=the_job, key=keyType, value=value
-                )
-                newKeyvalue.save()
-
-    def _processDataFile(self, inputOutputFile, the_job, roleid):
-        logger.info(
-            "Gleaning %s - %s",
-            inputOutputFile.objectName(),
-            inputOutputFile.getFullPath(),
-        )
-        jobParamName = inputOutputFile.objectName()
-        if len(inputOutputFile.getFullPath()) > 0:
-            try:
-                if (
-                    inputOutputFile.dbFileId is not None
-                    and len(str(inputOutputFile.dbFileId)) != 0
-                ):
-                    theFile = models.File.objects.get(
-                        uuid=str(inputOutputFile.dbFileId)
-                    )
-                    self._processExistingFile(theFile, the_job, roleid, jobParamName)
-            except models.FileUse.DoesNotExist as err:
-                logger.info(
-                    "ObjectDoesNotExist issue gleaning %s - file not found %s",
-                    jobParamName,
-                    err,
-                )
-            except IntegrityError as err:
-                logger.info(
-                    "IntegrityError Issue gleaning %s %s %s %s - %s",
-                    jobParamName,
-                    inputOutputFile.dbFileId,
-                    roleid,
-                    theFile.name,
-                    err,
-                )
-            if roleid == 1:
-                self._processOutputFile(inputOutputFile, the_job, roleid, jobParamName)
-
-    def _processExistingFile(self, theFile, the_job, roleid, jobParamName):
-        try:
-            _ = models.FileUse.objects.get(file=theFile, job=the_job, role=roleid)
-        except models.FileUse.DoesNotExist:
-            newFileUse = models.FileUse(
-                file=theFile,
-                job=the_job,
-                role=roleid,
-                job_param_name=jobParamName,
-            )
-            newFileUse.save()
-
-    def _processOutputFile(self, inputOutputFile, the_job, roleid, jobParamName):
-        if inputOutputFile.exists():
-            fileTypeName = inputOutputFile.qualifiers("mimeTypeName")
-            if len(fileTypeName) == 0:
-                logger.info(
-                    "Class %s Does not have an associated mimeTypeName....ASK FOR DEVELOPER FIX",
-                    str(inputOutputFile.__class__),
-                )
-                if isinstance(inputOutputFile, CCP4File.CXmlDataFile):
-                    fileTypeName = "application/xml"
-            try:
-                subType = (
-                    int(inputOutputFile.subType) if inputOutputFile.subType else None
-                )
-                fileContent = (
-                    int(inputOutputFile.contentFlag)
-                    if inputOutputFile.contentFlag
-                    else None
-                )
-                newFile = models.File(
-                    name=str(inputOutputFile.baseName),
-                    annotation=str(inputOutputFile.annotation),
-                    type=fileTypeName,
-                    sub_type=subType,
-                    content=fileContent,
-                    job=the_job,
-                    job_param_name=jobParamName,
-                    directory=1,
-                )
-                newFile.save()
-                newFileUse = models.FileUse(
-                    file=newFile,
-                    job=the_job,
-                    role=roleid,
-                    job_param_name=jobParamName,
-                )
-                newFileUse.save()
-            except Exception as err:
-                logger.info(
-                    "Issue saving new file %s - filetype ]%s] not recognised %s",
-                    jobParamName,
-                    fileTypeName,
-                    err,
-                )
-
-    def findInputOutputs(self, ofContainer, role, inputOutputsFound=None):
-        if inputOutputsFound is None:
-            inputOutputsFound = []
-        if isinstance(ofContainer, str):
-            logger.info("Cant findInputOutputs of string %s", ofContainer)
-            return inputOutputsFound
-        else:
-            return self._findInputOutputsInContainer(
-                ofContainer, role, inputOutputsFound
-            )
-
-    def _findInputOutputsInContainer(self, container, role, inputOutputsFound):
-        for child in container.children():
-            self._processChild(child, role, inputOutputsFound)
-        return inputOutputsFound
-
-    def _processChild(self, child, role, inputOutputsFound):
-        if isinstance(child, CCP4PerformanceData.CPerformanceIndicator):
-            inputOutputsFound.append(child)
-        elif isinstance(child, CCP4Container.CContainer):
-            self._processContainerChild(child, role, inputOutputsFound)
-        elif isinstance(child, CCP4Data.CList):
-            self._processListChild(child, role, inputOutputsFound)
-        elif isinstance(child, CCP4File.CDataFile):
-            inputOutputsFound.append(child)
-
-    def _processContainerChild(self, child, role, inputOutputsFound):
-        if role == 0 and child.objectName() != "outputData":
-            self.findInputOutputs(child, role, inputOutputsFound=inputOutputsFound)
-        elif role == 1 and child.objectName() == "outputData":
-            self.findInputOutputs(child, role, inputOutputsFound=inputOutputsFound)
-
-    def _processListChild(self, child, role, inputOutputsFound):
-        for item in child:
-            if isinstance(item, CCP4File.CDataFile):
-                if len(item.objectName()) == 0:
-                    item.setObjectName(child.objectName())
-                inputOutputsFound.append(item)
-            elif isinstance(item, CCP4Container.CContainer):
-                self.findInputOutputs(item, role, inputOutputsFound=inputOutputsFound)

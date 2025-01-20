@@ -110,6 +110,11 @@ class Job(Model):
         return f"{self.number} {self.title}"
 
     @property
+    def rel_path(self) -> str:
+        path_elements = [f"job_{element}" for element in self.number.split(".")]
+        return ".".join(path_elements)
+
+    @property
     def directory(self):
         path_elements = [f"job_{element}" for element in self.number.split(".")]
         jobs_dir = Path(self.project.directory) / "CCP4_JOBS"
@@ -191,11 +196,19 @@ class File(Model):
         return self.name
 
     @property
-    def path(self):
+    def path(self) -> Path:
         if self.directory == File.Directory.JOB_DIR:
             return self.job.directory / self.name
         elif self.directory == File.Directory.IMPORT_DIR:
             return Path(self.job.project.directory) / "CCP4_IMPORTED_FILES"
+
+    @property
+    def rel_path(self) -> str:
+        if self.directory == File.Directory.JOB_DIR:
+            return self.job.rel_path
+        if self.directory == File.Directory.IMPORT_DIR:
+            return "CCP4_IMPORTED_FILES"
+        return ""
 
 
 class FileExport(Model):
