@@ -96,7 +96,7 @@ def create_new_file(job: models.Job, item: CDataFile):
     try:
         sub_type = int(sub_type)
     except AttributeError as err:
-        logger.warning(
+        logger.debug(
             "No sub_type %s on %s"
             % (
                 sub_type,
@@ -110,7 +110,7 @@ def create_new_file(job: models.Job, item: CDataFile):
     try:
         content = int(content)
     except AttributeError as err:
-        logger.warning(
+        logger.debug(
             "No content %s on %s"
             % (
                 content,
