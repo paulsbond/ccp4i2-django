@@ -37,7 +37,6 @@ def set_output_file_names(
     for objectName in dataList:
         try:
             dobj = container.outputData.find(objectName)
-            print("setOutputData get", objectName, dobj.get(), dobj.isSet())
             if isinstance(dobj, CCP4File.CDataFile) and (force or not dobj.isSet()):
                 dobj.setOutputPath(
                     jobName=jobName, projectId=projectId, relPath=str(relPath)
