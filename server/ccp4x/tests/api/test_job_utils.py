@@ -12,6 +12,7 @@ from ...lib.job_utils.run_job import run_job
 from ...lib.job_utils.glean_job_files import glean_job_files
 from ...lib.job_utils.get_job_container import get_job_container
 from ...lib.job_utils.get_file_by_job_context import get_file_by_job_context
+from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
 
 
 @override_settings(
@@ -32,6 +33,13 @@ class CCP4i2TestCase(TestCase):
             / "test101"
             / "ProjectZips"
             / "aimless_gamma_native_test_1.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "molrep_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
         self.pm = CCP4i2DjangoProjectsManager()
@@ -131,8 +139,15 @@ class CCP4i2TestCase(TestCase):
             self.assertDictEqual(old_job_float_values_dict, new_job_float_values_dict)
 
     def test_get_file_by_job_context(self):
-        old_job = models.Job.objects.get(id=1)
+        old_job = models.Job.objects.get(
+            project__name="refmac_gamma_test_0", number="1"
+        )
         file_uuids: List[str] = get_file_by_job_context(
             contextJobId=str(old_job.uuid), fileType="application/CCP4-mtz-observed"
         )
         self.assertListEqual(file_uuids, ["99f93cda-c449-11ea-a15f-3417eba0e4fd"])
+
+    def test_find_descendent_jobs(self):
+        old_job = models.Job.objects.get(project__name="molrep_test_0", number="1")
+        dependents = find_dependent_jobs(old_job)
+        print(dependents)

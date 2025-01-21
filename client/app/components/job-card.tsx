@@ -9,8 +9,11 @@ import {
   Chip,
   Collapse,
   Grid2,
+  List,
+  ListItem,
   Menu,
   MenuItem,
+  Paper,
   styled,
   Toolbar,
   Typography,
@@ -22,9 +25,15 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { MyExpandMore } from "./expand-more";
 import { JobsGrid } from "./jobs-grid";
 import FilesTable from "./files-table";
-import { CopyAll, Menu as MenuIcon, RunCircle } from "@mui/icons-material";
+import {
+  CopyAll,
+  Delete,
+  Menu as MenuIcon,
+  RunCircle,
+} from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { JobHeader } from "./job-header";
+import { useDeleteDialog } from "./delete-dialog";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -41,9 +50,13 @@ export const JobCard: React.FC<JobCardProps> = ({
 }) => {
   const api = useApi();
   const router = useRouter();
+  const deleteDialog = useDeleteDialog();
   const projectId = useMemo(() => {
     return job.project;
   }, [job]);
+  const { data: dependentJobs, mutate: mutateDependentJobs } = api.get<Job[]>(
+    `/jobs/${job.id}/dependent_jobs/`
+  );
   const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
     `/projects/${projectId}/jobs/`
   );
@@ -118,6 +131,33 @@ export const JobCard: React.FC<JobCardProps> = ({
     }
   };
 
+  function handleDelete() {
+    if (deleteDialog)
+      deleteDialog({
+        type: "show",
+        what: `${job.number}: ${job.title}`,
+        onDelete: () => {
+          api.delete(`jobs/${job.id}`).then(() => {
+            mutateJobs();
+          });
+        },
+        children: [
+          <Paper>
+            <List>
+              {dependentJobs &&
+                dependentJobs.map((dependentJob: Job) => {
+                  return (
+                    <ListItem key={dependentJob.uuid}>
+                      {dependentJob.uuid}
+                    </ListItem>
+                  );
+                })}
+            </List>
+          </Paper>,
+        ],
+      });
+  }
+
   const renderMenu = (
     <Menu
       anchorEl={anchorEl}
@@ -134,11 +174,14 @@ export const JobCard: React.FC<JobCardProps> = ({
       open={isMenuOpen}
       onClose={handleMenuClose}
     >
-      <MenuItem onClick={handleClone}>
+      <MenuItem key="Clone" onClick={handleClone}>
         <CopyAll /> Clone
       </MenuItem>
-      <MenuItem onClick={handleRun}>
+      <MenuItem key="Run" onClick={handleRun}>
         <RunCircle /> Run
+      </MenuItem>
+      <MenuItem key="Delete" onClick={handleDelete}>
+        <Delete /> Delete
       </MenuItem>
     </Menu>
   );
