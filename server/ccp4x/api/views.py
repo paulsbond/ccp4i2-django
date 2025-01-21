@@ -268,7 +268,7 @@ class JobViewSet(ModelViewSet):
             return Response({"status": "Failed", "reason": str(err)})
 
     @action(
-        detail=False,
+        detail=True,
         methods=["get"],
         permission_classes=[],
         serializer_class=serializers.JobSerializer,
@@ -285,8 +285,8 @@ class JobViewSet(ModelViewSet):
 
         the_job = models.Job.objects.get(id=pk)
         dependent_jobs = find_dependent_jobs(the_job)
-        serializer = serializers.FileSerializer(dependent_jobs, many=True)
-        return serializer.data
+        serializer = serializers.JobSerializer(dependent_jobs, many=True)
+        return Response(serializer.data)
 
     @action(
         detail=True,
