@@ -39,6 +39,15 @@ const theme = createTheme({
               props: { variant: "head" },
               style: {
                 backgroundColor: "rgb(179,208,216)",
+                paddingTop: 0,
+                paddingBottom: 0,
+              },
+            },
+            {
+              props: { variant: "body" },
+              style: {
+                paddingTop: 0,
+                paddingBottom: 0,
               },
             },
           ],

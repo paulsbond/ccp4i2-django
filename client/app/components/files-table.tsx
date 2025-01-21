@@ -72,7 +72,10 @@ export default function FilesTable({
         {files.map((file: File) => (
           <TableRow key={file.id}>
             <TableCell title={file.type}>
-              <Avatar src={`/qticons/${fileTypeIcon(file.type)}.png`} />
+              <Avatar
+                src={`/qticons/${fileTypeIcon(file.type)}.png`}
+                sx={{ height: "1.5rem", width: "1.5rem" }}
+              />
             </TableCell>
             <TableCell>{file.name}</TableCell>
             <TableCell>{fileSize(file.size)}</TableCell>
