@@ -28,6 +28,8 @@ The ccp4i2 test suite can be used to provide substrate for development
 To recover and import the test suite, navigate to the directory in which you have installed ccp4x:
 
 ```console
+user:~/ccp4x/server$ #Starting from the directory where you ended up above
+user:~/ccp4x/server$ cd ~
 user:~$ git clone git@gitlab.com:ccp4i2/test101.git
 user:~$ cd ccp4x/server
 user:~$ ccp4-python manage.py import_ccp4_project_zip ../../test101/ProjectZips/*.ccp4_project.zip
