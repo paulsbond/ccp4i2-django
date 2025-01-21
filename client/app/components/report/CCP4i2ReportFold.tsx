@@ -30,7 +30,7 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
             const fixedStyle = oldStyle
               .replace("float:left;", "")
               .replace("float:right;", "");
-            console.log({ oldStyle, fixedStyle });
+            //console.log({ oldStyle, fixedStyle });
             $(child).attr("style", fixedStyle);
             nFloatingChildren += 1;
           }

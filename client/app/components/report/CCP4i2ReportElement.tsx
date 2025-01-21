@@ -13,6 +13,7 @@ import { CCP4i2ReportGeneric } from "./CCP4i2ReportGeneric";
 import { CCP4i2ReportTitle } from "./CCP4i2ReportTitle";
 import { CCP4i2ReportText } from "./CCP4i2ReportText";
 import { CCP4i2ReportReference } from "./CCP4i2ReportReference";
+import { CCP4i2ReportObjectGallery } from "./CCP4i2ReportObjectGallery";
 
 export interface CCP4i2ReportElementProps {
   iItem: Number;
@@ -82,13 +83,18 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
             job={job}
           />
         );
-      } else if (
-        ["CCP4i2ReportFlotGraphGroup", "CCP4i2ReportObjectGallery"].includes(
-          tagName
-        )
-      ) {
+      } else if (["CCP4i2ReportFlotGraphGroup"].includes(tagName)) {
         return (
           <CCP4i2ReportFlotGraphGroup
+            iItem={iItem}
+            key={`${iItem}`}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportObjectGallery"].includes(tagName)) {
+        return (
+          <CCP4i2ReportObjectGallery
             iItem={iItem}
             key={`${iItem}`}
             item={item}

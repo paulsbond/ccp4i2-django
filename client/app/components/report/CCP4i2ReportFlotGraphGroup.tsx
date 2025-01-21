@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import $ from "jquery";
 import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
 import { Autocomplete, TextField } from "@mui/material";
@@ -9,7 +9,9 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
   props
 ) => {
   const [shown, setShown] = useState(0);
-
+  useEffect(() => {
+    console.log(props.item);
+  }, [props.item]);
   const xmlGraphs = useMemo(() => {
     if (props.item && props.job) {
       const childGraphs = $(props.item).children().toArray();

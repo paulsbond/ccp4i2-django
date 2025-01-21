@@ -24,8 +24,8 @@ export const CCP4i2ReportDiv: React.FC<CCP4i2ReportElementProps> = (props) => {
             const fixedStyle = oldStyle
               .replace("float:left;", "")
               .replace("float:right;", "");
-            console.log({ oldStyle, fixedStyle });
-            $(child).attr("style", fixedStyle);
+            //console.log({ oldStyle, fixedStyle });
+            //$(child).attr("style", fixedStyle);
             nFloatingChildren += 1;
           }
         } catch (err) {}

@@ -21,7 +21,6 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
   const [fileUUIDs, setFileUUIDs] = useState<string[]>([]);
   const [expanded, setExpanded] = useState(true);
   useEffect(() => {
-    console.log(props.item);
     if (!props.item) return;
     const fileUUIDs: string[] = [];
     $(props.item)
@@ -30,7 +29,7 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
         const divId = $(div).attr("id");
         if (divId) {
           const matches = /input_file_(.*)/.exec(divId);
-          console.log(divId, matches);
+          //console.log(divId, matches);
           if (matches) {
             fileUUIDs.push(matches[1]);
           }
@@ -41,13 +40,11 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
 
   const title = useMemo<string>(() => {
     const h5Nodes = $(props.item).find("h5");
-    console.log({ h5Nodes });
     const h5s = h5Nodes
       .map((iItem, item) => {
         return $(item).text();
       })
       .toArray();
-    console.log({ h5s });
     return h5s.length > 0 ? h5s.join(", ") : "Input or Output data";
   }, [props.item]);
 

@@ -1,0 +1,67 @@
+import React, { useState, useMemo } from "react";
+import $ from "jquery";
+import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
+import {
+  Autocomplete,
+  Grid2,
+  List,
+  ListItem,
+  Paper,
+  TextField,
+} from "@mui/material";
+
+import {
+  CCP4i2ReportElement,
+  CCP4i2ReportElementProps,
+} from "./CCP4i2ReportElement";
+
+export const CCP4i2ReportObjectGallery: React.FC<CCP4i2ReportElementProps> = (
+  props
+) => {
+  const [selected, setSelected] = useState<number | null>(null);
+  const childItems = useMemo(() => {
+    if (props.item && props.job) {
+      const childGraphs = $(props.item).children().toArray();
+      if (childGraphs.length > 0) {
+        setSelected(0);
+      }
+      return childGraphs;
+    }
+    return [];
+  }, [props.item, props.job]);
+  return (
+    <Grid2 container>
+      <Grid2 size={{ xs: 12, sm: 6 }}>
+        <Paper sx={{ maxHeight: "15rem", overflowY: "auto" }}>
+          {childItems &&
+            childItems.map((childItem: any, iItem: number) => (
+              <ListItem
+                key={`${iItem}`}
+                {...props}
+                sx={iItem === selected ? { border: "2px solid black" } : {}}
+                onClick={() => {
+                  setSelected(iItem);
+                }}
+              >
+                {$(childItem).attr("title")
+                  ? $(childItem).attr("title")
+                  : `Object ${iItem}`}
+              </ListItem>
+            ))}
+        </Paper>
+      </Grid2>
+      <Grid2 size={{ xs: 12, sm: 6 }}>
+        <Paper>
+          {childItems &&
+            childItems.map((childItem: any, iItem: number) => (
+              <CCP4i2ReportElement
+                key={`${iItem}`}
+                {...props}
+                item={childItem}
+              />
+            ))}
+        </Paper>
+      </Grid2>
+    </Grid2>
+  );
+};
