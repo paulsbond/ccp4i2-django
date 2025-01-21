@@ -18,12 +18,14 @@ import {
 interface DeleteDialogState {
   open: boolean;
   what?: string;
+  children?: React.ReactNode[];
   onDelete?: () => void;
 }
 
 interface DeleteDialogAction {
   type: "show" | "hide";
   what?: string;
+  children?: React.ReactNode[];
   onDelete?: () => void;
 }
 
@@ -48,7 +50,9 @@ export function DeleteDialogProvider(props: PropsWithChildren) {
       <Dialog open={state.open}>
         <DialogTitle>{`Delete ${state.what}?`}</DialogTitle>
         <DialogContent>
-          <DialogContentText>This action cannot be undone.</DialogContentText>
+          <DialogContentText>
+            This action cannot be undone.{state.children}
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button autoFocus onClick={handleCancel}>
@@ -76,7 +80,12 @@ function deleteDialogReducer(
 ): DeleteDialogState {
   switch (action.type) {
     case "show":
-      return { open: true, what: action.what, onDelete: action.onDelete };
+      return {
+        open: true,
+        what: action.what,
+        children: action.children,
+        onDelete: action.onDelete,
+      };
     case "hide":
       return { open: false };
   }
