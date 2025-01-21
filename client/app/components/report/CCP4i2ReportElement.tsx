@@ -1,0 +1,157 @@
+import React, { useMemo } from "react";
+import $ from "jquery";
+import { Job } from "../../models";
+
+import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
+import { CCP4i2ReportFlotGraphGroup } from "./CCP4i2ReportFlotGraphGroup";
+import { CCP4i2ReportTable } from "./CCP4i2ReportTable";
+import { CCP4i2ReportInputOutputData } from "./CCP4i2ReportInputOutputData";
+import { CCP4i2ReportFold } from "./CCP4i2ReportFold";
+import { CCP4i2ReportDiv } from "./CCP4i2ReportDiv";
+import { CCP4i2ReportPre } from "./CCP4i2ReportPre";
+import { CCP4i2ReportGeneric } from "./CCP4i2ReportGeneric";
+import { CCP4i2ReportTitle } from "./CCP4i2ReportTitle";
+import { CCP4i2ReportText } from "./CCP4i2ReportText";
+import { CCP4i2ReportReference } from "./CCP4i2ReportReference";
+
+export interface CCP4i2ReportElementProps {
+  iItem: Number;
+  item: HTMLElement | HTMLTableSectionElement;
+  job: Job;
+}
+
+export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
+  iItem,
+  item,
+  job,
+}) => {
+  const returnElement = useMemo<React.ReactNode>(() => {
+    const htmlElement = $(item).get(0);
+    const tagName = htmlElement?.tagName;
+    if (tagName) {
+      if (["CCP4i2ReportFold"].includes(tagName)) {
+        return (
+          <CCP4i2ReportFold
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (
+        [
+          "CCP4i2ReportDiv",
+          "div",
+          "CCP4i2ReportResults",
+          "CCP4i2ReportReferenceGroup",
+        ].includes(tagName)
+      ) {
+        return (
+          <CCP4i2ReportDiv
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportPre"].includes(tagName)) {
+        return (
+          <CCP4i2ReportPre
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportFlotGraph"].includes(tagName)) {
+        return (
+          <CCP4i2ReportFlotWidget
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            uniqueId={$(item).attr("key")}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportGeneric"].includes(tagName)) {
+        return (
+          <CCP4i2ReportGeneric
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (
+        ["CCP4i2ReportFlotGraphGroup", "CCP4i2ReportObjectGallery"].includes(
+          tagName
+        )
+      ) {
+        return (
+          <CCP4i2ReportFlotGraphGroup
+            iItem={iItem}
+            key={`${iItem}`}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportTable"].includes(tagName)) {
+        return (
+          <CCP4i2ReportTable
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportText"].includes(tagName)) {
+        return (
+          <CCP4i2ReportText
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportTitle"].includes(tagName)) {
+        return (
+          <CCP4i2ReportTitle
+            iItem={iItem}
+            key={`${iItem}`}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportReference"].includes(tagName)) {
+        return (
+          <CCP4i2ReportReference
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportInputData"].includes(tagName)) {
+        return (
+          <CCP4i2ReportInputOutputData
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportOutputData"].includes(tagName)) {
+        return (
+          <CCP4i2ReportInputOutputData
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      }
+    }
+    return <div>{$(item).get(0)?.tagName}</div>;
+  }, [item, iItem, job]);
+  return <>{returnElement}</>;
+};

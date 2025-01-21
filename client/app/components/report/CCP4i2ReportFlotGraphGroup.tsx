@@ -3,7 +3,7 @@ import $ from "jquery";
 import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
 import { Autocomplete, TextField } from "@mui/material";
 
-import { CCP4i2ReportElementProps } from "./CCP4i2ReportElements";
+import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 
 export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
   props

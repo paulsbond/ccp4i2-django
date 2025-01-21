@@ -1,10 +1,8 @@
-import { Fragment, ReactNode, useCallback, useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import $ from "jquery";
-import { Paper, Skeleton, Typography } from "@mui/material";
-//@ts-ignore
-import { handleItem } from "./CCP4i2ReportElements";
+import { Paper, Skeleton } from "@mui/material";
 import { Job } from "../../models";
-import { CCP4i2ReportElement } from "./CCP4i2ReportElements";
+import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 
 interface CCP4i2ReportXMLViewProps {
   report_xml: { report_xml: string };

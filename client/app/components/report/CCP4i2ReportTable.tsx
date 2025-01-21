@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { GeneralTable } from "../General/GeneralTable";
-import { CCP4i2ReportElementProps } from "./CCP4i2ReportElements";
+import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 
 export const CCP4i2ReportTable: React.FC<CCP4i2ReportElementProps> = (
   props

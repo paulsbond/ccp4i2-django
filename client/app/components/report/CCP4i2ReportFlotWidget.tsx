@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import $ from "jquery";
 import CCP4GraphPlot from "./CCP4i2Pimple";
-import { CCP4i2ReportElementProps } from "./CCP4i2ReportElements";
+import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 //window.jQuery = window.$ = $;
 
 export const useOnScreen = (ref: React.RefObject<HTMLElement>) => {

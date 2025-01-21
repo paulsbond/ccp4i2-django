@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CCP4i2ReportElementProps } from "./CCP4i2ReportElements";
+import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 import {
   Avatar,
   CardHeader,
