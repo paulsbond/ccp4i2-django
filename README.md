@@ -12,7 +12,9 @@ provided (and required) by the main ccp4 install.
 
 ```console
 user:~$ git clone https://github.com/paulsbond/ccp4x
+user:~$ git clone git@gitlab.com:ccp4i2/test101.git
 user:~$ cd ccp4x/server
+user:~$ mkdir $HOME/CCP4X_PROJECTS
 user:~/ccp4x/server$ ccp4-python -m pip install --editable .
 user:~/ccp4x/server$ ccp4-python manage.py migrate
 user:~/ccp4x/server$ ccp4-python manage.py runserver
