@@ -19,6 +19,7 @@ interface DeleteDialogState {
   open: boolean;
   what?: string;
   children?: React.ReactNode[];
+  deleteDisabled?: boolean;
   onDelete?: () => void;
 }
 
@@ -26,6 +27,7 @@ interface DeleteDialogAction {
   type: "show" | "hide";
   what?: string;
   children?: React.ReactNode[];
+  deleteDisabled?: boolean;
   onDelete?: () => void;
 }
 
@@ -33,7 +35,11 @@ const DeleteDialogContext = createContext<Dispatch<DeleteDialogAction> | null>(
   null
 );
 
-export function DeleteDialogProvider(props: PropsWithChildren) {
+interface DeleteDialogProviderProps extends PropsWithChildren {
+  deleteDisabled?: boolean;
+}
+
+export function DeleteDialogProvider(props: DeleteDialogProviderProps) {
   const [state, dispatch] = useReducer(deleteDialogReducer, { open: false });
 
   function handleCancel() {
@@ -55,10 +61,15 @@ export function DeleteDialogProvider(props: PropsWithChildren) {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button autoFocus onClick={handleCancel}>
+          <Button key="Close" autoFocus onClick={handleCancel}>
             Cancel
           </Button>
-          <Button variant="contained" onClick={handleDelete}>
+          <Button
+            key="Delete"
+            disabled={props.deleteDisabled}
+            variant="contained"
+            onClick={handleDelete}
+          >
             Delete
           </Button>
         </DialogActions>
@@ -84,6 +95,7 @@ function deleteDialogReducer(
         open: true,
         what: action.what,
         children: action.children,
+        deleteDisabled: action.deleteDisabled,
         onDelete: action.onDelete,
       };
     case "hide":

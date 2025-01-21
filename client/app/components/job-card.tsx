@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import { File, Job, JobCharValue, JobFloatValue } from "../models";
 import EditableTypography from "./editable-typography";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { MyExpandMore } from "./expand-more";
 import { JobsGrid } from "./jobs-grid";
@@ -34,6 +34,7 @@ import {
 import { useRouter } from "next/navigation";
 import { JobHeader } from "./job-header";
 import { useDeleteDialog } from "./delete-dialog";
+import { CCP4i2JobAvatar } from "./job-avatar";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -55,7 +56,7 @@ export const JobCard: React.FC<JobCardProps> = ({
     return job.project;
   }, [job]);
   const { data: dependentJobs, mutate: mutateDependentJobs } = api.get<Job[]>(
-    `/jobs/${job.id}/dependent_jobs/`
+    `jobs/${job.id}/dependent_jobs/`
   );
   const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
     `/projects/${projectId}/jobs/`
@@ -131,7 +132,7 @@ export const JobCard: React.FC<JobCardProps> = ({
     }
   };
 
-  function handleDelete() {
+  const handleDelete = useCallback(() => {
     if (deleteDialog)
       deleteDialog({
         type: "show",
@@ -142,21 +143,35 @@ export const JobCard: React.FC<JobCardProps> = ({
           });
         },
         children: [
-          <Paper>
-            <List>
-              {dependentJobs &&
-                dependentJobs.map((dependentJob: Job) => {
-                  return (
-                    <ListItem key={dependentJob.uuid}>
-                      {dependentJob.uuid}
-                    </ListItem>
-                  );
-                })}
-            </List>
+          <Paper sx={{ maxHeight: "10rem", overflowY: "auto" }}>
+            {dependentJobs && dependentJobs?.length > 0 && (
+              <>
+                The following {dependentJobs.length} dependent jobs would be
+                deleted
+                <List dense>
+                  {dependentJobs &&
+                    dependentJobs.map((dependentJob: Job) => {
+                      return (
+                        <ListItem key={dependentJob.uuid}>
+                          <Toolbar>
+                            <CCP4i2JobAvatar job={dependentJob} />
+                            {`${dependentJob.number}: ${dependentJob.title}`}
+                          </Toolbar>
+                        </ListItem>
+                      );
+                    })}
+                </List>
+              </>
+            )}
           </Paper>,
         ],
+        deleteDisabled: !(
+          (dependentJobs && dependentJobs?.length == 0) ||
+          (dependentJobs &&
+            dependentJobs.some((dependentJob: Job) => dependentJob.status == 6))
+        ),
       });
-  }
+  }, [dependentJobs]);
 
   const renderMenu = (
     <Menu
