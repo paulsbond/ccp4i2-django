@@ -60,7 +60,7 @@ FILETYPES_TEXT = [
     "application/CCP4-mtz-observed",
     "application/CCP4-mtz-phases",
     "application/CCP4-mtz-map",
-    "",
+    "Dummy",
     "application/CCP4-seqalign",
     "application/CCP4-mtz-mini",
     "application/coot-script",

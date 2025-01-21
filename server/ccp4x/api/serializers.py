@@ -16,7 +16,7 @@ class ProjectSerializer(ModelSerializer):
                 Path(settings.CCP4I2_PROJECTS_DIR) / slugify(validated_data["name"])
             )
 
-        Path(validated_data["directory"]).mkdir()
+        Path(validated_data["directory"]).mkdir(parents=True)
 
         for sub_dir in [
             "CCP4_JOBS",

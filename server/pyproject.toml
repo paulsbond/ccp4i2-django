@@ -27,7 +27,7 @@ dependencies = [
     "requests-cache",
     "requests",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9.8"
 
 [project.gui-scripts]
 ccp4x = "ccp4x.__main__:main"

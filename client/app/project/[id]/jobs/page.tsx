@@ -4,7 +4,6 @@ import { Container, LinearProgress } from "@mui/material";
 import { JobsGrid } from "../../../components/jobs-grid";
 import { Project } from "../../../models";
 import { useApi } from "../../../api";
-import EditableTypography from "../../../components/editable-typography";
 
 export default function JobsPage({
   params,
@@ -17,7 +16,7 @@ export default function JobsPage({
   if (!project) return <LinearProgress />;
   return (
     <Container>
-      <JobsGrid projectId={parseInt(id)} />
+      <JobsGrid projectId={parseInt(id)} size={12} />
     </Container>
   );
 }

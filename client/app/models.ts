@@ -7,24 +7,37 @@ export class Project {
   ) {}
 }
 
+export class ProjectTag {
+  constructor(
+    public id: number,
+    public text: string,
+    public parent?: number,
+    public projects: number[] = []
+  ) {}
+}
+
 export class File {
   constructor(
     public id: number,
     public file: string,
+    public type: string,
     public name: string,
     public size: number,
-    public job: number
+    public job: number,
+    public annotation: string
   ) {}
 }
 
 export class Job {
   constructor(
     public id: number,
+    public project: number,
     public parent: number,
     public uuid: string,
     public title: string,
     public number: string,
-    public task_name: string
+    public task_name: string,
+    public status: number
   ) {}
 }
 

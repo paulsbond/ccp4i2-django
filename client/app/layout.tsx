@@ -4,6 +4,7 @@ import { CssBaseline } from "@mui/material";
 import { PropsWithChildren } from "react";
 import { DeleteDialogProvider } from "./components/delete-dialog";
 import theme from "./theme";
+import MenuBar from "./components/menu-bar";
 
 export const metadata = {
   title: "CCP4",
@@ -18,6 +19,7 @@ export default function RootLayout(props: PropsWithChildren) {
           <ThemeProvider theme={theme}>
             <DeleteDialogProvider>
               <CssBaseline />
+              <MenuBar />
               {props.children}
             </DeleteDialogProvider>
           </ThemeProvider>

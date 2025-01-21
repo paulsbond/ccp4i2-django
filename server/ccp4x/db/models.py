@@ -1,6 +1,8 @@
 from getpass import getuser
+from pathlib import Path
 from socket import gethostname
 from uuid import uuid4
+
 from django.core.validators import RegexValidator
 from django.db.models import (
     CASCADE,
@@ -82,23 +84,23 @@ class ProjectImport(Model):
 
 class Job(Model):
     class Status(IntegerChoices):
-        UNKNOWN = 0
-        PENDING = 1
-        QUEUED = 2
-        RUNNING = 3
-        INTERRUPTED = 4
-        FAILED = 5
-        FINISHED = 6
-        RUNNING_REMOTELY = 7
-        FILE_HOLDER = 8
-        TO_DELETE = 9
-        UNSATISFACTORY = 10
+        UNKNOWN = 0, "Unknown"
+        PENDING = 1, "Pending"
+        QUEUED = 2, "Queued"
+        RUNNING = 3, "Running"
+        INTERRUPTED = 4, "Interrupted"
+        FAILED = 5, "Failed"
+        FINISHED = 6, "Finished"
+        RUNNING_REMOTELY = 7, "Running remotely"
+        FILE_HOLDER = 8, "File holder"
+        TO_DELETE = 9, "To delete"
+        UNSATISFACTORY = 10, "Unsatisfactory"
 
     class Evaluation(IntegerChoices):
-        UNKNOWN = 0
-        BEST = 1
-        GOOD = 2
-        REJECTED = 3
+        UNKNOWN = 0, "Unknown"
+        BEST = 1, "Best"
+        GOOD = 2, "Good"
+        REJECTED = 3, "Rejected"
 
     uuid = UUIDField(default=uuid4, unique=True)
     project = ForeignKey(Project, CASCADE, related_name="jobs")
@@ -118,6 +120,17 @@ class Job(Model):
 
     def __str__(self):
         return f"{self.number} {self.title}"
+
+    @property
+    def rel_path(self) -> str:
+        path_elements = [f"job_{element}" for element in self.number.split(".")]
+        return ".".join(path_elements)
+
+    @property
+    def directory(self):
+        path_elements = [f"job_{element}" for element in self.number.split(".")]
+        jobs_dir = Path(self.project.directory) / "CCP4_JOBS"
+        return jobs_dir.joinpath(*path_elements)
 
 
 class ServerJob(Model):
@@ -178,8 +191,8 @@ class FileType(Model):
 
 class File(Model):
     class Directory(IntegerChoices):
-        JOB_DIR = 1
-        IMPORT_DIR = 2
+        JOB_DIR = 1, "Job"
+        IMPORT_DIR = 2, "Import"
 
     uuid = UUIDField(default=uuid4, unique=True)
     name = TextField()
@@ -193,6 +206,21 @@ class File(Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def path(self) -> Path:
+        if self.directory == File.Directory.JOB_DIR:
+            return self.job.directory / self.name
+        elif self.directory == File.Directory.IMPORT_DIR:
+            return Path(self.job.project.directory) / "CCP4_IMPORTED_FILES"
+
+    @property
+    def rel_path(self) -> str:
+        if self.directory == File.Directory.JOB_DIR:
+            return self.job.rel_path
+        if self.directory == File.Directory.IMPORT_DIR:
+            return "CCP4_IMPORTED_FILES"
+        return ""
 
 
 class FileExport(Model):
@@ -218,8 +246,8 @@ class FileImport(Model):
 
 class FileUse(Model):
     class Role(IntegerChoices):
-        OUT = 0
-        IN = 1
+        OUT = 0, "OUT"
+        IN = 1, "IN"
 
     file = ForeignKey(File, CASCADE, related_name="file_uses")
     job = ForeignKey(Job, CASCADE, related_name="file_uses")

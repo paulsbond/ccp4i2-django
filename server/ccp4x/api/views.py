@@ -1,9 +1,18 @@
+import logging
+import subprocess
+from xml.etree import ElementTree as ET
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from . import serializers
 from ..db import models
-from rest_framework.response import Response
+from ..lib.ccp4i2_report import make_old_report
+from ..lib.job_utils.clone_job import clone_job
+from ..lib.job_utils.run_job import run_job
+
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 class ProjectViewSet(ModelViewSet):
@@ -70,11 +79,16 @@ class ProjectViewSet(ModelViewSet):
     )
     def tags(self, request, pk=None):
         project = models.Project.objects.get(pk=pk)
-        print(project.tags)
+        # print(project.tags)
         project_tag_serializer = serializers.ProjectTagSerializer(
             project.tags, many=True
         )
         return Response(project_tag_serializer.data)
+
+
+class ProjectTagViewSet(ModelViewSet):
+    queryset = models.ProjectTag.objects.all()
+    serializer_class = serializers.ProjectTagSerializer
 
 
 class FileViewSet(ModelViewSet):
@@ -82,9 +96,117 @@ class FileViewSet(ModelViewSet):
     serializer_class = serializers.FileSerializer
     parser_classes = [FormParser, MultiPartParser]
 
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def by_uuid(self, request, pk=None):
+        the_file = models.File.objects.get(uuid=pk)
+        serializer = serializers.FileSerializer(the_file, many=False)
+        return Response(serializer.data)
+
 
 class JobViewSet(ModelViewSet):
     queryset = models.Job.objects.all()
     serializer_class = serializers.JobSerializer
     parser_classes = [FormParser, MultiPartParser]
     filterset_fields = ["project"]
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def params_xml(self, request, pk=None):
+        the_job = models.Job.objects.get(id=pk)
+        try:
+            with open(
+                the_job.directory / "params.xml", "r", encoding="UTF-8"
+            ) as params_xml_file:
+                params_xml = params_xml_file.read()
+            return Response({"status": "Success", "params_xml": params_xml})
+        except FileNotFoundError as err:
+            logger.info(err)
+            try:
+                with open(
+                    the_job.directory / "input_params.xml", "r", encoding="UTF-8"
+                ) as params_xml_file:
+                    params_xml = params_xml_file.read()
+                    return Response({"status": "Success", "params_xml": params_xml})
+            except FileNotFoundError as err:
+                return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def report_xml(self, request, pk=None):
+        the_job = models.Job.objects.get(id=pk)
+        try:
+            report_xml = make_old_report(the_job)
+            ET.indent(report_xml, space="\t", level=0)
+            report_xml = ET.tostring(make_old_report(the_job))
+            return Response({"status": "Success", "report_xml": report_xml})
+        except FileNotFoundError as err:
+            return Response({"status": "Failed", "reason": str(err)})
+        except Exception as err:
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def clone(self, request, pk=None):
+        old_job_id = models.Job.objects.get(id=pk).uuid
+        new_job = clone_job(old_job_id)
+        serializer = serializers.JobSerializer(new_job)
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def run(self, request, pk=None):
+        job = models.Job.objects.get(id=pk)
+        subprocess.Popen(
+            [
+                "ccp4-python",
+                "manage.py",
+                "run_job",
+                "-ju",
+                f"{str(job.uuid)}",
+            ],
+            start_new_session=True,
+        )
+        serializer = serializers.JobSerializer(job)
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def diagnostic_xml(self, request, pk=None):
+        the_job = models.Job.objects.get(id=pk)
+        try:
+            with open(
+                the_job.directory / "diagnostic.xml", "r", encoding="UTF-8"
+            ) as diagnostic_xml_file:
+                diagnostic_xml = diagnostic_xml_file.read()
+            return Response({"status": "Success", "diagnostic_xml": diagnostic_xml})
+        except FileNotFoundError as err:
+            logger.exception(
+                "Failed to find file %s" % (the_job.directory / "diagnostic.xml",),
+                exc_info=err,
+            )
+            return Response({"status": "Failed", "reason": str(err)})
