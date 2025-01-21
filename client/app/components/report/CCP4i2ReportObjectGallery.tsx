@@ -30,38 +30,60 @@ export const CCP4i2ReportObjectGallery: React.FC<CCP4i2ReportElementProps> = (
     return [];
   }, [props.item, props.job]);
   return (
-    <Grid2 container>
-      <Grid2 size={{ xs: 12, sm: 6 }}>
-        <Paper sx={{ maxHeight: "15rem", overflowY: "auto" }}>
-          {childItems &&
-            childItems.map((childItem: any, iItem: number) => (
-              <ListItem
-                key={`${iItem}`}
-                {...props}
-                sx={iItem === selected ? { border: "2px solid black" } : {}}
-                onClick={() => {
-                  setSelected(iItem);
-                }}
-              >
-                {$(childItem).attr("title")
-                  ? $(childItem).attr("title")
-                  : `Object ${iItem}`}
-              </ListItem>
-            ))}
-        </Paper>
+    <Paper
+      sx={{
+        borderColor: "primary.main",
+        borderTopLeftRadius: "2px",
+        borderBottomLeftRadius: "2px",
+      }}
+    >
+      <Grid2 container>
+        <Grid2 size={{ xs: 12, sm: 6 }}>
+          <Paper
+            sx={{
+              maxHeight: "35rem",
+              overflowY: "auto",
+              borderRadius: "2px",
+              height: "100%",
+            }}
+          >
+            {childItems &&
+              childItems.map((childItem: any, iItem: number) => (
+                <ListItem
+                  key={`${iItem}`}
+                  {...props}
+                  sx={iItem === selected ? { border: "2px solid black" } : {}}
+                  onClick={() => {
+                    setSelected(iItem);
+                  }}
+                >
+                  {$(childItem).attr("title")
+                    ? $(childItem).attr("title")
+                    : `Object ${iItem}`}
+                </ListItem>
+              ))}
+          </Paper>
+        </Grid2>
+        <Grid2 size={{ xs: 12, sm: 6 }}>
+          <Paper
+            sx={{
+              maxHeight: "35rem",
+              overflowY: "auto",
+              borderRadius: "2px",
+              height: "100%",
+            }}
+          >
+            {childItems &&
+              childItems.map((childItem: any, iItem: number) => (
+                <CCP4i2ReportElement
+                  key={`${iItem}`}
+                  {...props}
+                  item={childItem}
+                />
+              ))}
+          </Paper>
+        </Grid2>
       </Grid2>
-      <Grid2 size={{ xs: 12, sm: 6 }}>
-        <Paper>
-          {childItems &&
-            childItems.map((childItem: any, iItem: number) => (
-              <CCP4i2ReportElement
-                key={`${iItem}`}
-                {...props}
-                item={childItem}
-              />
-            ))}
-        </Paper>
-      </Grid2>
-    </Grid2>
+    </Paper>
   );
 };
