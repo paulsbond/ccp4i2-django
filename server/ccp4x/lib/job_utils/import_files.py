@@ -28,7 +28,7 @@ def _process_input(
 ):
     theFile = None
     if input.dbFileId is not None and len(str(input.dbFileId)) != 0:
-        theFile = models.File.objects.get(uuid=str(uuid.UUID(input.dbFileId)))
+        theFile = models.File.objects.get(uuid=uuid.UUID(input.dbFileId))
     else:
         if input.baseName is not None and len(str(input.baseName).strip()) != 0:
             sourceFilePath = pathlib.Path(str(input.relPath)) / str(input.baseName)
