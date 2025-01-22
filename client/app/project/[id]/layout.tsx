@@ -1,17 +1,31 @@
 "use client";
-import { PropsWithChildren, use, useState } from "react";
+import { PropsWithChildren, use, useContext, useEffect, useState } from "react";
 import { Paper, Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import ProjectDirectory from "../../components/project-directory";
 import ToolBar from "../../components/tool-bar";
 import { JobsGrid } from "../../components/jobs-grid";
+import { CCP4i2Context } from "../../app-context";
+import { useApi } from "../../api";
+import { Project } from "../../models";
 
 export interface ProjectLayoutProps extends PropsWithChildren {
   params: Promise<{ id: number }>;
 }
 export default function ProjectLayout(props: ProjectLayoutProps) {
+  const { setProjectId } = useContext(CCP4i2Context);
+  const api = useApi();
   const [tabValue, setTabValue] = useState(0);
   const { id } = use(props.params);
+  const { data: project } = api.get<Project>(`projects/${id}`);
+  useEffect(() => {
+    const asyncFunc = async () => {
+      if (project && setProjectId) {
+        setProjectId(project.id);
+      }
+    };
+    asyncFunc();
+  }, [project, setProjectId]);
 
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);

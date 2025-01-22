@@ -1,5 +1,5 @@
 "use client";
-import { use, useMemo, useState } from "react";
+import { use, useContext, useEffect, useMemo, useState } from "react";
 import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
 import { Job, Project } from "../../../../models";
 import { useApi } from "../../../../api";
@@ -8,6 +8,7 @@ import { JobHeader } from "../../../../components/job-header";
 import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportXMLView";
 import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidget";
 import $ from "jquery";
+import { CCP4i2Context } from "../../../../app-context";
 
 export default function JobsPage({
   params,
@@ -15,6 +16,7 @@ export default function JobsPage({
   params: Promise<{ id: string; jobid: string }>;
 }) {
   const { id, jobid } = use(params);
+  const { setJobId } = useContext(CCP4i2Context);
   const api = useApi();
   const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
     `/projects/${id}/jobs/`
@@ -30,6 +32,14 @@ export default function JobsPage({
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
   };
+  useEffect(() => {
+    const asyncFunc = async () => {
+      if (job && setJobId) {
+        setJobId(job.id);
+      }
+    };
+    asyncFunc();
+  }, [job, setJobId]);
   if (!project || !params_xml || !jobs || !job) return <LinearProgress />;
 
   return (

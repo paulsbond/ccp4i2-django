@@ -9,8 +9,16 @@ import {
   MenuBook,
   SystemUpdateAlt,
 } from "@mui/icons-material";
+import { useContext } from "react";
+import { useApi } from "../api";
+import { Job, Project } from "../models";
+import { CCP4i2Context } from "../app-context";
 
 export default function ToolBar() {
+  const { projectId, jobId } = useContext(CCP4i2Context);
+  const api = useApi();
+  const { data: project } = api.get<Project>(`projects/${projectId}`);
+  const { data: job } = api.get<Job>(`jobs/${jobId}`);
   return (
     <Stack
       direction="row"
@@ -21,7 +29,11 @@ export default function ToolBar() {
       <Button variant="outlined" startIcon={<Menu />}>
         Task menu
       </Button>
-      <Button variant="outlined" startIcon={<DirectionsRun />}>
+      <Button
+        variant="outlined"
+        startIcon={<DirectionsRun />}
+        disabled={job?.status != 1}
+      >
         Run
       </Button>
       <Button variant="outlined" startIcon={<ContentCopy />}>
@@ -33,7 +45,11 @@ export default function ToolBar() {
       <Button variant="outlined" startIcon={<MenuBook />}>
         Bibliography
       </Button>
-      <Button variant="outlined" startIcon={<SystemUpdateAlt />}>
+      <Button
+        variant="outlined"
+        startIcon={<SystemUpdateAlt />}
+        disabled={job?.status != 6}
+      >
         Export MTZ
       </Button>
       <Button variant="outlined" startIcon={<Description />}>

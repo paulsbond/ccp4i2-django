@@ -5,6 +5,9 @@ import { PropsWithChildren } from "react";
 import { DeleteDialogProvider } from "./components/delete-dialog";
 import theme from "./theme";
 import MenuBar from "./components/menu-bar";
+import { CCP4i2Context } from "./app-context";
+import { Job, Project } from "./models";
+import { CCP4i2App } from "./components/ccp4i2-app";
 
 export const metadata = {
   title: "CCP4",
@@ -18,9 +21,7 @@ export default function RootLayout(props: PropsWithChildren) {
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <DeleteDialogProvider>
-              <CssBaseline />
-              <MenuBar />
-              {props.children}
+              <CCP4i2App children={props.children} />
             </DeleteDialogProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
