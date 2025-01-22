@@ -63,6 +63,7 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
     <>
       <Toolbar
         variant="dense"
+        sx={{ backgroundColor: "primary.main", color: "primary.contrastText" }}
         key={$(props.item).attr("key")}
         onClick={(ev) => {
           ev.stopPropagation();

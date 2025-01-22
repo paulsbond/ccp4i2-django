@@ -41,7 +41,7 @@ export const CCP4i2ReportObjectGallery: React.FC<CCP4i2ReportElementProps> = (
         <Grid2 size={{ xs: 12, sm: 6 }}>
           <Paper
             sx={{
-              maxHeight: "35rem",
+              maxHeight: "20rem",
               overflowY: "auto",
               borderRadius: "2px",
               height: "100%",
@@ -74,13 +74,16 @@ export const CCP4i2ReportObjectGallery: React.FC<CCP4i2ReportElementProps> = (
             }}
           >
             {childItems &&
-              childItems.map((childItem: any, iItem: number) => (
-                <CCP4i2ReportElement
-                  key={`${iItem}`}
-                  {...props}
-                  item={childItem}
-                />
-              ))}
+              childItems.map(
+                (childItem: any, iItem: number) =>
+                  iItem == selected && (
+                    <CCP4i2ReportElement
+                      key={`${iItem}`}
+                      {...props}
+                      item={childItem}
+                    />
+                  )
+              )}
           </Paper>
         </Grid2>
       </Grid2>

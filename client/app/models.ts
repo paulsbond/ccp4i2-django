@@ -3,7 +3,8 @@ export class Project {
     public id: number,
     public uuid: string,
     public name: string,
-    public creation_time: string
+    public creation_time: string,
+    public last_access: string
   ) {}
 }
 

@@ -1,4 +1,7 @@
 import logging
+import datetime
+import time
+from pytz import timezone
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -79,6 +82,8 @@ class ProjectViewSet(ModelViewSet):
         serializer = serializers.FileSerializer(
             models.File.objects.filter(job__project=project), many=True
         )
+        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+        project.save()
         return Response(serializer.data)
 
     @action(
@@ -101,6 +106,8 @@ class ProjectViewSet(ModelViewSet):
         serializer = serializers.JobSerializer(
             models.Job.objects.filter(project=project), many=True
         )
+        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+        project.save()
         return Response(serializer.data)
 
     @action(
@@ -123,6 +130,8 @@ class ProjectViewSet(ModelViewSet):
         serializer = serializers.JobFloatValueSerializer(
             models.JobFloatValue.objects.filter(job__project=project), many=True
         )
+        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+        project.save()
         return Response(serializer.data)
 
     @action(
@@ -145,6 +154,8 @@ class ProjectViewSet(ModelViewSet):
         serializer = serializers.JobCharValueSerializer(
             models.JobCharValue.objects.filter(job__project=project), many=True
         )
+        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+        project.save()
         return Response(serializer.data)
 
     @action(
@@ -168,6 +179,8 @@ class ProjectViewSet(ModelViewSet):
         project_tag_serializer = serializers.ProjectTagSerializer(
             project.tags, many=True
         )
+        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+        project.save()
         return Response(project_tag_serializer.data)
 
 

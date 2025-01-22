@@ -10,9 +10,15 @@ import {
   MenuItem,
 } from "@mui/material";
 import { Add, Download, Menu as MenuIcon, Upload } from "@mui/icons-material";
+import { useApi } from "../api";
+import { Project } from "../models";
 
 export default function FileMenu() {
   const router = useRouter();
+  const api = useApi();
+  const { data: projects, mutate: mutateProjects } =
+    api.get<Project[]>("projects");
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -63,8 +69,30 @@ export default function FileMenu() {
           <ListItemText>Import project</ListItemText>
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleClose}>Project 1</MenuItem>
-        <MenuItem onClick={handleClose}>Project 2</MenuItem>
+        {projects
+          ?.sort((a: Project, b: Project) => {
+            const dateA = new Date(a.last_access);
+            const dateB = new Date(b.last_access);
+            return dateB.getTime() - dateA.getTime();
+          })
+          .map((project: Project) => (
+            <MenuItem
+              onClick={async () => {
+                setAnchorEl(null);
+                const formData = new FormData();
+                const nowString = new Date().toISOString();
+                formData.set("last_access", nowString);
+                const result = await api
+                  .patch(`projects/${project.id}`, formData)
+                  .then(() => {
+                    mutateProjects();
+                  });
+                router.push(`/project/${project.id}`);
+              }}
+            >
+              {project.name} - {`${new Date(project.last_access)}`}
+            </MenuItem>
+          ))}
         <MenuItem onClick={handleClose}>More Projects</MenuItem>
         <Divider />
         <MenuItem onClick={handleClose}>View old CCP4i projects</MenuItem>
