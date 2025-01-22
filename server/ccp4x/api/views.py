@@ -1,7 +1,14 @@
 import logging
 import datetime
-import time
+import pathlib
+from typing import Union
+from xml.etree import ElementTree as ET
 from pytz import timezone
+from ccp4i2.core import CCP4TaskManager
+from ccp4i2.core.CCP4Utils import openFileToEtree
+from ccp4i2.core.CCP4File import CI2XmlDataFile
+from ccp4i2.core.CCP4Container import CContainer
+from ..lib.job_utils.load_nested_xml import load_nested_xml
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -289,9 +296,11 @@ class JobViewSet(ModelViewSet):
     def dependent_jobs(self, request, pk=None):
         """
         Retrieve dependent jobs for a given job.
+
         Args:
             request (Request): The HTTP request object.
             pk (int, optional): The primary key of the job.
+
         Returns:
             list: Serialized data of dependent jobs.
         """
@@ -310,9 +319,11 @@ class JobViewSet(ModelViewSet):
     def clone(self, request, pk=None):
         """
         Clone an existing job and return the details of the new job.
+
         Args:
             request (Request): The HTTP request object.
             pk (int, optional): The primary key of the job to be cloned.
+
         Returns:
             Response: A Response object containing the serialized data of the new job.
         """
@@ -331,9 +342,11 @@ class JobViewSet(ModelViewSet):
     def run(self, request, pk=None):
         """
         Executes a job by its primary key (pk) and returns the serialized job data.
+
         Args:
             request (Request): The HTTP request object.
             pk (int, optional): The primary key of the job to be executed.
+
         Returns:
             Response: A Response object containing the serialized job data.
         """
@@ -361,9 +374,11 @@ class JobViewSet(ModelViewSet):
     def diagnostic_xml(self, request, pk=None):
         """
         Retrieve the diagnostic XML file for a given job.
+
         Args:
             request: The HTTP request object.
             pk (int, optional): The primary key of the job.
+
         Returns:
             Response: A Response object containing the status and the diagnostic XML content
                       if the file is found, or an error message if the file is not found.
@@ -381,6 +396,46 @@ class JobViewSet(ModelViewSet):
         except FileNotFoundError as err:
             logger.exception(
                 "Failed to find file %s" % (the_job.directory / "diagnostic.xml",),
+                exc_info=err,
+            )
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def def_xml(self, request, pk=None):
+        """
+        Retrieve the def XML file for a given job.
+
+        Args:
+            request: The HTTP request object.
+            pk (int, optional): The primary key of the job.
+
+        Returns:
+            Response: A Response object containing the status and the def XML content
+                      if the file is found, or an error message if the file is not found.
+        Raises:
+            FileNotFoundError: If the def XML file does not exist.
+        """
+
+        the_job = models.Job.objects.get(id=pk)
+        def_xml_path = CCP4TaskManager.TASKMANAGER().lookupDefFile(
+            name=the_job.task_name, version=None
+        )
+        try:
+            with open(def_xml_path, "r") as def_xml_file:
+                def_xml = def_xml_file.read()
+                packedXML = ET.fromstring(def_xml)
+                unpackedXML = load_nested_xml(packedXML)
+                return Response(
+                    {"status": "Success", "def_xml": ET.tostring(unpackedXML)}
+                )
+        except FileNotFoundError as err:
+            logger.exception(
+                "Failed to find file %s" % (def_xml_path,),
                 exc_info=err,
             )
             return Response({"status": "Failed", "reason": str(err)})

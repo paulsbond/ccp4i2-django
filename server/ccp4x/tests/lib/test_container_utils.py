@@ -16,6 +16,7 @@ from ...lib.job_utils.remove_container_default_values import (
     remove_container_default_values,
 )
 from ...lib.job_utils.find_objects import find_objects
+from ...lib.job_utils.load_nested_xml import load_nested_xml
 
 from ...db.ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
@@ -71,3 +72,48 @@ class CCP4i2TestCase(TestCase):
                 value = getattr(kpi, kpi_param_name)
                 print(kpi_param_name, value, isinstance(value, CCP4Data.CString))
                 print(kpi_param_name, value, isinstance(value, CCP4Data.CFloat))
+
+    def test_load_nested_xml(self):
+        startXML = ET.fromstring(prosmart_defmac_xml)
+        result = load_nested_xml(startXML)
+        ET.indent(result, " ")
+        print(ET.tostring(result).decode("utf-8"))
+
+
+prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">
+  <ccp4i2_header>
+    <function>DEF</function>
+    <comment/>
+    <creationTime>14:00 19/Jul/12</creationTime>
+    <userId>cowtan</userId>
+    <ccp4iVersion>0.0.1</ccp4iVersion>
+    <jobId/>
+    <project/>
+    <pluginName>prosmart_refmac</pluginName>
+    <pluginVersion/>
+    <jobNumber/>
+  </ccp4i2_header>
+  <ccp4i2_body id="prosmart_refmac">
+    <file>
+      <CI2XmlDataFile>
+        <project>CCP4I2_TOP</project>
+        <relPath>wrappers/refmac_i2/script</relPath>
+        <baseName>refmac.def.xml</baseName>
+      </CI2XmlDataFile>
+    </file>
+    <container id="inputData">
+      <content id="AMINOACID_CHAINS">
+        <className>CList</className>
+        <qualifiers>
+          <allowUndefined>True</allowUndefined>
+        </qualifiers>
+      </content>
+      <content id="NUCLEOTIDE_CHAINS">
+        <className>CList</className>
+        <qualifiers>
+          <allowUndefined>True</allowUndefined>
+        </qualifiers>
+      </content>
+    </container>
+  </ccp4i2_body>
+</ns0:ccp4i2>"""
