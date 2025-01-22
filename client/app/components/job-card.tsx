@@ -96,7 +96,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               key={item.key}
               sx={{ backgroundColor: "#DFD" }}
               avatar={<div style={{ width: "5rem" }}>{item.key}</div>}
-              label={item.value}
+              label={item.value.toPrecision(3)}
             />
           ))}
       </>
