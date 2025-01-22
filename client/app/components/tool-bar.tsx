@@ -13,12 +13,36 @@ import { useContext } from "react";
 import { useApi } from "../api";
 import { Job, Project } from "../models";
 import { CCP4i2Context } from "../app-context";
+import { useRouter } from "next/navigation";
 
 export default function ToolBar() {
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
   const { data: project } = api.get<Project>(`projects/${projectId}`);
   const { data: job } = api.get<Job>(`jobs/${jobId}`);
+  const { mutate: mutateJobs } = api.get<Job[]>(`/projects/${projectId}/jobs/`);
+  const router = useRouter();
+  const handleClone = async () => {
+    if (job) {
+      const cloneResult: Job = await api.post(`jobs/${job?.id}/clone/`);
+      console.log(cloneResult);
+      if (cloneResult?.id) {
+        mutateJobs();
+        router.push(`/project/${projectId}/job/${cloneResult.id}`);
+      }
+    }
+  };
+  const handleRun = async () => {
+    if (job) {
+      const runResult: Job = await api.post(`jobs/${job.id}/run/`);
+      console.log(runResult);
+      if (runResult?.id) {
+        mutateJobs();
+        router.push(`/project/${projectId}/job/${runResult.id}`);
+      }
+    }
+  };
+
   return (
     <Stack
       direction="row"
@@ -33,10 +57,15 @@ export default function ToolBar() {
         variant="outlined"
         startIcon={<DirectionsRun />}
         disabled={job?.status != 1}
+        onClick={handleRun}
       >
         Run
       </Button>
-      <Button variant="outlined" startIcon={<ContentCopy />}>
+      <Button
+        variant="outlined"
+        startIcon={<ContentCopy />}
+        onClick={handleClone}
+      >
         Clone job
       </Button>
       <Button variant="outlined" startIcon={<Help />}>
