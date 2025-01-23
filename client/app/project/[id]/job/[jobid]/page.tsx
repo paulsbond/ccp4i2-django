@@ -79,9 +79,7 @@ export default function JobsPage({
           language="xml"
         />
       )}
-      {tabValue == 2 && report_xml && (
-        <CCP4i2ReportXMLView report_xml={report_xml} job={job} />
-      )}
+      {tabValue == 2 && jobid && <CCP4i2ReportXMLView jobId={jobid} />}
       {tabValue == 3 && diagnostic_xml && (
         <Editor
           height="calc(100vh - 15rem)"
