@@ -2,6 +2,7 @@ import { Job } from "../../../models";
 import { CIntElement } from "./cint";
 import { useMemo } from "react";
 import { Typography } from "@mui/material";
+import { CStringElement } from "./cstring";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
@@ -86,6 +87,14 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CInt":
         return (
           <CIntElement
+            {...props}
+            qualifiers={qualifiers}
+            objectPath={objectPath}
+          />
+        );
+      case "CString":
+        return (
+          <CStringElement
             {...props}
             qualifiers={qualifiers}
             objectPath={objectPath}

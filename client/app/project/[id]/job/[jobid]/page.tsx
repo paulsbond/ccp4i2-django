@@ -28,6 +28,7 @@ export default function JobsPage({
   }, [jobid, jobs]);
   const { data: project } = api.get<Project>(`projects/${id}`);
   const { data: params_xml } = api.get<any>(`jobs/${jobid}/params_xml`);
+
   const params_json = useMemo<any | null>(() => {
     if (params_xml) {
       const result = convert.xml2json(params_xml.params_xml, { spaces: "\t" });
@@ -35,6 +36,7 @@ export default function JobsPage({
     }
     return null;
   }, [params_xml]);
+
   const { data: report_xml } = api.get<any>(`jobs/${jobid}/report_xml`);
   const { data: diagnostic_xml } = api.get<any>(`jobs/${jobid}/diagnostic_xml`);
   const { data: def_xml } = api.get<any>(`jobs/${jobid}/def_xml`);
@@ -57,7 +59,6 @@ export default function JobsPage({
       <JobHeader job={job} mutateJobs={mutateJobs} />
       <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
         <Tab value={0} label="Params as xml" />
-        <Tab value={4} label="Params as json" />
         <Tab value={5} label="Task interface" />
         <Tab value={1} label="Report as xml" />
         <Tab value={2} label="Report" />
@@ -69,13 +70,6 @@ export default function JobsPage({
           height="calc(100vh - 15rem)"
           value={prettifyXml($.parseXML(params_xml.params_xml))}
           language="xml"
-        />
-      )}
-      {tabValue == 4 && params_json && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={params_json}
-          language="json"
         />
       )}
       {tabValue == 1 && report_xml && (
