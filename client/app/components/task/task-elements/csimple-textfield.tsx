@@ -73,12 +73,13 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   return (
     value && (
       <TextField
+        disabled={job.status !== 1}
         sx={sx}
         type={type}
         value={value}
         label={
           qualifiers?.guiLabel
-            ? qualifiers?.guiLabel
+            ? qualifiers.guiLabel
             : objectPath?.split(".").at(-1)
         }
         title={qualifiers?.toolTip ? qualifiers?.toolTip : objectPath}

@@ -48,7 +48,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel
-      ? qualifiers?.guiLabel
+      ? qualifiers.guiLabel
       : objectPath?.split(".").at(-1);
   }, [objectPath, qualifiers]);
 

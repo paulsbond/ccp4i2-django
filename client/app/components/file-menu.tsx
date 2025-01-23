@@ -35,6 +35,7 @@ export default function FileMenu() {
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem
+          key="Manage"
           onClick={() => {
             handleClose();
             router.push("/");
@@ -46,6 +47,7 @@ export default function FileMenu() {
           <ListItemText>Manage/open projects</ListItemText>
         </MenuItem>
         <MenuItem
+          key="Add"
           onClick={() => {
             handleClose();
             router.push("/new-project");
@@ -56,13 +58,13 @@ export default function FileMenu() {
           </ListItemIcon>
           <ListItemText>New project</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem key="Export" onClick={handleClose}>
           <ListItemIcon>
             <Download fontSize="small" />
           </ListItemIcon>
           <ListItemText>Export project</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem key="Import" onClick={handleClose}>
           <ListItemIcon>
             <Upload fontSize="small" />
           </ListItemIcon>
@@ -77,6 +79,7 @@ export default function FileMenu() {
           })
           .map((project: Project) => (
             <MenuItem
+              key={project.id}
               onClick={async () => {
                 setAnchorEl(null);
                 const formData = new FormData();
@@ -93,11 +96,19 @@ export default function FileMenu() {
               {project.name} - {`${new Date(project.last_access)}`}
             </MenuItem>
           ))}
-        <MenuItem onClick={handleClose}>More Projects</MenuItem>
+        <MenuItem key="MoreProjects" onClick={handleClose}>
+          More Projects
+        </MenuItem>
         <Divider />
-        <MenuItem onClick={handleClose}>View old CCP4i projects</MenuItem>
-        <MenuItem onClick={handleClose}>Browser</MenuItem>
-        <MenuItem onClick={handleClose}>Quit CCP4i2</MenuItem>
+        <MenuItem key="CCP4i" onClick={handleClose}>
+          View old CCP4i projects
+        </MenuItem>
+        <MenuItem key="Browser" onClick={handleClose}>
+          Browser
+        </MenuItem>
+        <MenuItem key="Quit" onClick={handleClose}>
+          Quit CCP4i2
+        </MenuItem>
       </Menu>
     </>
   );
