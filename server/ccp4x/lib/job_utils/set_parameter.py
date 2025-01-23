@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 from ccp4i2.core.CCP4Container import CContainer
 from .save_params_for_job import save_params_for_job
@@ -5,6 +6,10 @@ from .find_objects import find_objects
 from .get_job_plugin import get_job_plugin
 from ...db import models
 import xml.etree.ElementTree as ET
+
+
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict]):
@@ -17,7 +22,21 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
     object_element.unSet()
     if hasattr(object_element, "update"):
         object_element.update(value)
+        logger.warning(
+            "Updating parameter %s with dict %s"
+            % (
+                object_element.objectName(),
+                value,
+            )
+        )
     else:
         object_element.set(value)
+        logger.warning(
+            "Setting parameter %s to %s"
+            % (
+                object_element.objectName(),
+                value,
+            )
+        )
     save_params_for_job(the_job_plugin=the_job_plugin, the_job=job)
     return ET.tostring(object_element.getEtree()).decode("utf-8")
