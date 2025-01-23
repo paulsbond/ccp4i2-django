@@ -115,7 +115,6 @@ export const JobCard: React.FC<JobCardProps> = ({
   };
   const handleClone = async () => {
     const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
-    console.log(cloneResult);
     if (cloneResult?.id) {
       mutateJobs();
       setAnchorEl(null);
@@ -124,7 +123,6 @@ export const JobCard: React.FC<JobCardProps> = ({
   };
   const handleRun = async () => {
     const runResult: Job = await api.post(`jobs/${job.id}/run/`);
-    console.log(runResult);
     if (runResult?.id) {
       mutateJobs();
       setAnchorEl(null);
