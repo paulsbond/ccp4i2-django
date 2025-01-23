@@ -98,11 +98,11 @@ export const CCP4i2ReportFlotWidget: React.FC<CCP4i2ReportFlotWidgetProps> = (
 
 export const prettifyXml = (sourceXml: Document) => {
   let theNode = sourceXml;
-  if (theNode.nodeName == null) {
+  if (!theNode?.nodeName) {
+    //Possible explanation is that the is a jQuery node
     //@ts-ignore
     theNode = sourceXml.get(0);
     //console.log('theNode', theNode)
-    //Possible explanation is that the is a jQuery node
   }
   var xsltDoc = new DOMParser().parseFromString(
     [
