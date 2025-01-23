@@ -6,7 +6,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { CCP4i2TaskElementProps } from "./task-element";
 import { TextField } from "@mui/material";
 import { useApi } from "../../../api";
 import { Job } from "../../../models";

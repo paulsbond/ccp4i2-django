@@ -1,16 +1,12 @@
 import {
-  ChangeEventHandler,
-  KeyboardEventHandler,
   SyntheticEvent,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
-import { CCP4i2TaskElementProps } from "./task-element";
 import {
   Autocomplete,
-  AutocompleteChangeDetails,
   AutocompleteChangeReason,
   TextField,
 } from "@mui/material";

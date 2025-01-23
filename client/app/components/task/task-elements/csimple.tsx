@@ -1,15 +1,5 @@
-import {
-  ChangeEventHandler,
-  KeyboardEventHandler,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useMemo } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
-import { TextField, Typography } from "@mui/material";
-import { useApi } from "../../../api";
-import { Job } from "../../../models";
 import { CSimpleTextFieldElement } from "./csimple-textfield";
 import { CSimpleAutocompleteElement } from "./csimple-autocomplete";
 
