@@ -1,9 +1,12 @@
 import logging
 import datetime
 import pathlib
+import json
 from typing import Union
 from xml.etree import ElementTree as ET
 from pytz import timezone
+
+from django.shortcuts import get_object_or_404
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Utils import openFileToEtree
 from ccp4i2.core.CCP4File import CI2XmlDataFile
@@ -48,6 +51,8 @@ from ..db import models
 from ..lib.ccp4i2_report import make_old_report
 from ..lib.job_utils.clone_job import clone_job
 from ..lib.job_utils.find_dependent_jobs import find_dependent_jobs
+from ..lib.job_utils.set_parameter import set_parameter
+from django.http import JsonResponse
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -439,3 +444,24 @@ class JobViewSet(ModelViewSet):
                 exc_info=err,
             )
             return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def set_parameter(self, request, pk=None):
+        """
+        Set parameter in a job's input_params.xml
+
+        Args:
+            request. Unusually for a post, this will have the data JSON encoded
+        """
+        form_data = json.loads(request.body.decode("utf-8"))
+        job = models.Job.objects.get(id=pk)
+        object_path = form_data["object_path"]
+        value = form_data["value"]
+        result = set_parameter(job, object_path, value)
+
+        return JsonResponse({"status": "Success", "updated_item": result})
