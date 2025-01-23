@@ -4,7 +4,6 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <Paper>
-      <span>{props.job.task_name}</span>
       <CCP4i2TaskElement itemName="NCYCLES" {...props} />
     </Paper>
   );

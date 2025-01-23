@@ -13,7 +13,6 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
     object_elements = find_objects(
         the_container, lambda a: a.objectPath() == object_path, multiple=False
     )
-    print(object_elements)
     object_element = object_elements[0]
     object_element.unSet()
     if hasattr(object_element, "update"):

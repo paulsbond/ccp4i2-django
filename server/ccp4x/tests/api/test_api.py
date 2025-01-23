@@ -1,5 +1,6 @@
 from pathlib import Path
 from shutil import rmtree
+import json
 from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
@@ -73,4 +74,44 @@ class CCP4i2TestCase(TestCase):
                 "parent": None,
             },
             response.json(),
+        )
+
+    def test_set_simple_parameter(self):
+        response = self.client.post(
+            "/jobs/1/set_parameter/",
+            content_type="application/json; charset=utf-8",
+            data=json.dumps(
+                {
+                    "object_path": "prosmart_refmac.controlParameters.NCYCLES",
+                    "value": 20,
+                }
+            ),
+        )
+        result = response.json()
+        self.assertDictEqual(
+            result,
+            {
+                "status": "Success",
+                "updated_item": "<NCYCLES>20</NCYCLES>",
+            },
+        )
+
+    def test_set_file(self):
+        response = self.client.post(
+            "/jobs/1/set_parameter/",
+            content_type="application/json; charset=utf-8",
+            data=json.dumps(
+                {
+                    "object_path": "prosmart_refmac.inputData.XYZIN",
+                    "value": {"dbFileId": "AFILEID", "subType": 1},
+                }
+            ),
+        )
+        result = response.json()
+        self.assertDictEqual(
+            result,
+            {
+                "status": "Success",
+                "updated_item": "<XYZIN><dbFileId>AFILEID</dbFileId><subType>1</subType></XYZIN>",
+            },
         )

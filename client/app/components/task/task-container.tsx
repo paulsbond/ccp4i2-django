@@ -2,8 +2,8 @@ import { useContext, useMemo } from "react";
 import { CCP4i2Context } from "../../app-context";
 import { useApi } from "../../api";
 import { Job } from "../../models";
-import { LinearProgress, Paper } from "@mui/material";
-import ProsmartRefmacInterface from "./task-interfaces/prosmart-refmac";
+import { LinearProgress, Paper, Toolbar, Typography } from "@mui/material";
+import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
 
 export interface CCP4i2TaskInterfaceProps {
   job: Job;
@@ -44,5 +44,12 @@ export const TaskContainer = () => {
     }
   }, [job]);
 
-  return <ProsmartRefmacInterface {...{ paramsXML, defXML, mutate, job }} />;
+  return (
+    <Paper>
+      <Toolbar>
+        <Typography variant="h5">{job.task_name}</Typography>
+      </Toolbar>
+      {taskInterface}
+    </Paper>
+  );
 };
