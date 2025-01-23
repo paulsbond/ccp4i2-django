@@ -46,6 +46,12 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     return options;
   }, [qualifiers]);
 
+  const guiLabel = useMemo<string>(() => {
+    return qualifiers?.guiLabel
+      ? qualifiers?.guiLabel
+      : objectPath?.split(".").at(-1);
+  }, [objectPath, qualifiers]);
+
   useEffect(() => {
     if (paramsXML && itemName) {
       const valueNode = $(paramsXML).find(itemName);
@@ -99,7 +105,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
       value={value}
       onChange={handleSelect}
       options={options || []}
-      renderInput={(params) => <TextField {...params} label={objectPath} />}
+      renderInput={(params) => <TextField {...params} label={guiLabel} />}
     />
   );
 };

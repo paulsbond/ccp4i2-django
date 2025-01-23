@@ -1,17 +1,24 @@
 import { Job } from "../../../models";
 import { CIntElement } from "./cint";
-import { useMemo } from "react";
-import { Typography } from "@mui/material";
+import { useCallback, useMemo } from "react";
+import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
+import {
+  classOfDefItem,
+  valueOfItemPath as valueOfItemPathFunction,
+} from "../task-utils";
+import { CFloatElement } from "./cfloat";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
   paramsXML: any;
   defXML: any;
-  mutate: () => void;
   itemName: string;
   qualifiers?: any;
   objectPath?: string | null;
+  sx?: SxProps<Theme>;
+  mutate: () => void;
+  pathOfItem?: (item: HTMLElement) => string;
 }
 
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
@@ -25,8 +32,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
 
   const elementType = useMemo<string | null | undefined>(() => {
     if (itemDefElement) {
-      const $classNode = $(itemDefElement).find("className");
-      return $classNode.get(0)?.textContent;
+      return classOfDefItem(itemDefElement);
     }
     return null;
   }, [itemDefElement]);
@@ -37,9 +43,12 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         const qualifiersNode = $(itemDefElement).find("qualifiers").get(0);
         const qualifiers: any = {};
         qualifiersNode?.childNodes.forEach((childNode) => {
-          qualifiers[childNode.nodeName] = $(childNode).text();
+          qualifiers[childNode.nodeName.trim()] = $(childNode).text().trim();
         });
-        return qualifiers;
+        const overriddenQualifiers = props.qualifiers
+          ? { ...qualifiers, ...props.qualifiers }
+          : qualifiers;
+        return overriddenQualifiers;
       } catch (err) {
         console.log(`Error getting qualifiers on ${props.itemName}`);
       }
@@ -82,11 +91,24 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return null;
   }, [itemParamsElement]);
 
+  const valueOfItem = useCallback(
+    (itemName: string) => {},
+    [props.paramsXML, props.defXML]
+  );
+
   const interfaceElement = useMemo(() => {
     switch (elementType) {
       case "CInt":
         return (
           <CIntElement
+            {...props}
+            qualifiers={qualifiers}
+            objectPath={objectPath}
+          />
+        );
+      case "CFloat":
+        return (
+          <CFloatElement
             {...props}
             qualifiers={qualifiers}
             objectPath={objectPath}

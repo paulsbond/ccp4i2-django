@@ -8,8 +8,7 @@ export interface CCP4i2CSimpleElementProps extends CCP4i2TaskElementProps {
 }
 
 export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
-  const { paramsXML, itemName, objectPath, job, mutate, type, qualifiers } =
-    props;
+  const { qualifiers } = props;
 
   const usingSelect = useMemo(() => {
     if (qualifiers) {
