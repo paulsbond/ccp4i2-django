@@ -4,7 +4,6 @@ import { useApi } from "../../api";
 import { Job } from "../../models";
 import { LinearProgress, Paper } from "@mui/material";
 import ProsmartRefmacInterface from "./task-interfaces/prosmart-refmac";
-import { xml2js } from "xml-js";
 
 export interface CCP4i2TaskInterfaceProps {
   job: Job;

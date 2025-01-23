@@ -9,8 +9,8 @@ import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportX
 import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidget";
 import $ from "jquery";
 import { CCP4i2Context } from "../../../../app-context";
-import convert from "xml-js";
 import { TaskContainer } from "../../../../components/task/task-container";
+import convert from "xml-js";
 
 export default function JobsPage({
   params,
