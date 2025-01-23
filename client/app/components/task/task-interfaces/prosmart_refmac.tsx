@@ -22,17 +22,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   return (
     <Paper>
-      <Typography variant="h3">Refinement in mode {refinementMode}</Typography>
+      <Typography variant="h5">Refinement in mode {refinementMode}</Typography>
       <CCP4i2TaskElement
         itemName="NCYCLES"
         {...props}
-        sx={{ m: 2, maxWidth: "15rem" }}
+        sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
         qualifiers={{ guiLabel: "Number of cycles" }}
       />
       <CCP4i2TaskElement
         itemName="REFINEMENT_MODE"
         {...props}
-        sx={{ m: 2, maxWidth: "15rem" }}
+        sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
         qualifiers={{ guiLabel: "Refinement mode" }}
       />
     </Paper>
