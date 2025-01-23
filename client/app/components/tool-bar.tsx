@@ -19,7 +19,7 @@ export default function ToolBar() {
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
   const { data: project } = api.get<Project>(`projects/${projectId}`);
-  const { data: job } = api.get<Job>(`jobs/${jobId}`);
+  const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
   const { mutate: mutateJobs } = api.get<Job[]>(`/projects/${projectId}/jobs/`);
   const router = useRouter();
   const handleClone = async () => {
@@ -27,6 +27,7 @@ export default function ToolBar() {
       const cloneResult: Job = await api.post(`jobs/${job?.id}/clone/`);
       console.log(cloneResult);
       if (cloneResult?.id) {
+        mutateJob();
         mutateJobs();
         router.push(`/project/${projectId}/job/${cloneResult.id}`);
       }
@@ -37,8 +38,10 @@ export default function ToolBar() {
       const runResult: Job = await api.post(`jobs/${job.id}/run/`);
       console.log(runResult);
       if (runResult?.id) {
-        mutateJobs();
-        router.push(`/project/${projectId}/job/${runResult.id}`);
+        setTimeout(() => {
+          mutateJob();
+          mutateJobs();
+        }, 1000);
       }
     }
   };
