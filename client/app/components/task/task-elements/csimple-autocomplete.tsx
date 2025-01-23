@@ -101,6 +101,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   return (
     <Autocomplete
+      disabled={job.status !== 1}
       sx={sx}
       value={value}
       onChange={handleSelect}

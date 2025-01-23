@@ -12,12 +12,14 @@ export const classOfDefItem = (
 
 export const pathOfParamsItem = (item: HTMLElement): string => {
   const parentElements = $(item).parents().toArray();
+  console.log(parentElements);
   if (parentElements.at(-1)?.nodeName === `ccp4:ccp4i2`) parentElements.pop();
   if (parentElements.at(-1)?.nodeName === `ccp4i2_body`) parentElements.pop();
   const pathElements = parentElements.map(
     (element: HTMLElement) => element.nodeName
   );
   const reversedElements = pathElements.reverse();
+  reversedElements.push(item.nodeName);
   return reversedElements.join(".");
 };
 

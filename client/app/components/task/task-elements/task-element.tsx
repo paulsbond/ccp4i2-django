@@ -5,6 +5,7 @@ import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
 import {
   classOfDefItem,
+  pathOfParamsItem,
   valueOfItemPath as valueOfItemPathFunction,
 } from "../task-utils";
 import { CFloatElement } from "./cfloat";
@@ -73,28 +74,12 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   }, []);
 
   const objectPath = useMemo<string | null>(() => {
-    if (itemParamsElement && props.itemName) {
-      const parentElements = $(itemParamsElement).parents().toArray();
-      if (parentElements.at(-1)?.nodeName === `ccp4:ccp4i2`)
-        parentElements.pop();
-      if (parentElements.at(-1)?.nodeName === `ccp4i2_body`)
-        parentElements.pop();
-      const pathElements = parentElements.map(
-        (element: HTMLElement) => element.nodeName
-      );
-      pathElements.push(taskName);
-      const reversedElements = pathElements.reverse();
-      if (props.itemName) reversedElements.push(props.itemName);
-
-      return reversedElements.join(".");
+    if (itemParamsElement) {
+      const objectPath = `${taskName}.${pathOfParamsItem(itemParamsElement)}`;
+      return objectPath;
     }
     return null;
   }, [itemParamsElement]);
-
-  const valueOfItem = useCallback(
-    (itemName: string) => {},
-    [props.paramsXML, props.defXML]
-  );
 
   const interfaceElement = useMemo(() => {
     switch (elementType) {
