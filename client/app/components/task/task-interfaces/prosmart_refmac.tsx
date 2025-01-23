@@ -14,11 +14,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   if (!params_xml) return <LinearProgress />;
   const paramsXML = $($.parseXML(params_xml.params_xml));
 
-  const refinementMode = useMemo(() => {
-    if (paramsXML) {
-      return valueOfItemPath("REFINEMENT_MODE", paramsXML);
-    }
-  }, [paramsXML]);
+  const refinementMode = valueOfItemPath("REFINEMENT_MODE", paramsXML);
 
   return (
     <Paper>
