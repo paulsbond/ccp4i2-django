@@ -9,6 +9,7 @@ import {
   valueOfItemPath as valueOfItemPathFunction,
 } from "../task-utils";
 import { CFloatElement } from "./cfloat";
+import { CPdbDataFileElement } from "./cpdbdatafile";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
@@ -20,6 +21,7 @@ export interface CCP4i2TaskElementProps {
   sx?: SxProps<Theme>;
   mutate: () => void;
   pathOfItem?: (item: HTMLElement) => string;
+  visibility?: boolean | (() => boolean);
 }
 
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
@@ -37,6 +39,14 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     }
     return null;
   }, [itemDefElement]);
+
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
 
   const qualifiers = useMemo<any>(() => {
     if (itemDefElement) {
@@ -79,7 +89,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       return objectPath;
     }
     return null;
-  }, [itemParamsElement]);
+  }, [itemParamsElement, taskName]);
 
   const interfaceElement = useMemo(() => {
     switch (elementType) {
@@ -107,10 +117,18 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             objectPath={objectPath}
           />
         );
+      case "CPdbDataFile":
+        return (
+          <CPdbDataFileElement
+            {...props}
+            qualifiers={qualifiers}
+            objectPath={objectPath}
+          />
+        );
       default:
         return <Typography>{elementType}</Typography>;
     }
   }, [elementType]);
 
-  return <>{interfaceElement}</>;
+  return inferredVisibility && <>{interfaceElement}</>;
 };

@@ -63,13 +63,6 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     }
   };
 
-  const usingSelect = useMemo(() => {
-    if (qualifiers) {
-      return Object.keys(qualifiers).includes("onlyEnumerators");
-    }
-    return false;
-  }, [qualifiers]);
-
   return (
     value && (
       <TextField

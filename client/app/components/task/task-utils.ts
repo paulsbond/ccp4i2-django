@@ -49,6 +49,7 @@ export const valueOfItemPath = (
     | JQuery<XMLDocument>
     | JQuery<HTMLElement>
     | undefined = paramsXML;
+  console.log({ itemPathElements });
   while (itemPathElements.length > 0) {
     const lastPathElement = itemPathElements.pop();
     if (lastPathElement && paramsXMLElement) {

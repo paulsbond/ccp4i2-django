@@ -20,22 +20,26 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <Paper>
       <Typography variant="h5">Refinement in mode {refinementMode}</Typography>
-      {refinementMode === "RIGID" && (
-        <CCP4i2TaskElement
-          itemName="NCYCRIGID"
-          {...props}
-          sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
-          qualifiers={{ guiLabel: "Number of rigid  body cycles" }}
-        />
-      )}
-      {refinementMode === "RESTR" && (
-        <CCP4i2TaskElement
-          itemName="NCYCLES"
-          {...props}
-          sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
-          qualifiers={{ guiLabel: "Number of cycles" }}
-        />
-      )}
+      <CCP4i2TaskElement
+        itemName="XYZIN"
+        {...props}
+        sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
+        qualifiers={{ guiLabel: "Coordinates" }}
+      />
+      <CCP4i2TaskElement
+        itemName="NCYCRIGID"
+        {...props}
+        sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
+        qualifiers={{ guiLabel: "Number of rigid  body cycles" }}
+        visibility={() => refinementMode === "RIGID"}
+      />
+      <CCP4i2TaskElement
+        itemName="NCYCLES"
+        {...props}
+        sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
+        qualifiers={{ guiLabel: "Number of cycles" }}
+        visibility={() => refinementMode === "RESTR"}
+      />
       <CCP4i2TaskElement
         itemName="REFINEMENT_MODE"
         {...props}
