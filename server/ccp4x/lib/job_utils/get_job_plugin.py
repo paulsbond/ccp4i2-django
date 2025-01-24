@@ -36,8 +36,7 @@ def get_job_plugin(the_job: Job, parent=None, dbHandler: CCP4i2DjangoDbHandler =
             workDirectory=str(the_job.directory), parent=parent, dbHandler=dbHandler
         )
     except Exception as err:
-        logger.error("Error in get_job_plugin %s", err)
-        traceback.print_exc()
+        logger.exception("Error in get_job_plugin", exc_info=err)
         return None
 
     defFile = the_job.directory / "params.xml"

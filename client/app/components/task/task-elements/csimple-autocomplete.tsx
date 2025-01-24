@@ -8,6 +8,8 @@ import {
 import {
   Autocomplete,
   AutocompleteChangeReason,
+  CircularProgress,
+  Stack,
   TextField,
 } from "@mui/material";
 import { useApi } from "../../../api";
@@ -24,6 +26,11 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     id: string;
     label: string;
   } | null>(null);
+  const [inFlight, setInFlight] = useState(false);
+
+  const { data: validation_report, mutate: mutateValidation } = api.get<Job>(
+    `jobs/${job.id}/validation_report`
+  );
 
   const options: { id: string; label: string }[] | undefined = useMemo(() => {
     const enumerators: string[] | null = qualifiers?.enumerators
@@ -88,25 +95,34 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
               : value.id,
         };
         console.log({ setParameterArg });
+        setInFlight(true);
         const result = await api.post<Job>(
           `jobs/${job.id}/set_parameter`,
           setParameterArg
         );
         console.log(result);
         mutate();
+        setInFlight(false);
       }
     },
     [type]
   );
 
   return (
-    <Autocomplete
-      disabled={job.status !== 1}
-      sx={sx}
-      value={value}
-      onChange={handleSelect}
-      options={options || []}
-      renderInput={(params) => <TextField {...params} label={guiLabel} />}
-    />
+    <Stack direction="row">
+      <Autocomplete
+        disabled={job.status !== 1}
+        sx={sx}
+        value={value}
+        onChange={handleSelect}
+        options={options || []}
+        renderInput={(params) => <TextField {...params} label={guiLabel} />}
+      />
+      <CircularProgress
+        sx={{ height: "2rem", width: "2rem", mt: "1.25rem" }}
+        variant={inFlight ? "indeterminate" : "determinate"}
+        value={100}
+      />
+    </Stack>
   );
 };

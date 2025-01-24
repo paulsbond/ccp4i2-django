@@ -11,7 +11,9 @@ from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Utils import openFileToEtree
 from ccp4i2.core.CCP4File import CI2XmlDataFile
 from ccp4i2.core.CCP4Container import CContainer
+from ccp4i2.core.CCP4ErrorHandling import CErrorReport
 from ..lib.job_utils.load_nested_xml import load_nested_xml
+from ..lib.job_utils.validate_container import validate_container
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -52,6 +54,7 @@ from ..lib.ccp4i2_report import make_old_report
 from ..lib.job_utils.clone_job import clone_job
 from ..lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ..lib.job_utils.set_parameter import set_parameter
+from ..lib.job_utils.get_job_container import get_job_container
 from django.http import JsonResponse
 
 logging.basicConfig(level=logging.ERROR)
@@ -441,6 +444,42 @@ class JobViewSet(ModelViewSet):
         except FileNotFoundError as err:
             logger.exception(
                 "Failed to find file %s" % (def_xml_path,),
+                exc_info=err,
+            )
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def validation_report(self, request, pk=None):
+        """
+        Retrieve the validation error_report in xml format.
+
+        Args:
+            request: The HTTP request object.
+            pk (int, optional): The primary key of the job.
+
+        Returns:
+            Response: A Response object containing the status and the validation error_report in xml format.
+        """
+
+        try:
+            the_job = models.Job.objects.get(id=pk)
+            container: CContainer = get_job_container(the_job)
+            error_etree: ET.Element = validate_container(container)
+            stack_elements = error_etree.findall(".//stack")
+            for stack_element in stack_elements:
+                stack_element.getroot()
+            ET.indent(error_etree, " ")
+            return Response(
+                {"status": "Success", "validation_report": ET.tostring(error_etree)}
+            )
+        except Exception as err:
+            logger.exception(
+                "Failed to validate plugin %s" % (the_job.task_name,),
                 exc_info=err,
             )
             return Response({"status": "Failed", "reason": str(err)})

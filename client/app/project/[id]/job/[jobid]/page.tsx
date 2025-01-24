@@ -28,6 +28,9 @@ export default function JobsPage({
   }, [jobid, jobs]);
   const { data: project } = api.get<Project>(`projects/${id}`);
   const { data: params_xml } = api.get<any>(`jobs/${jobid}/params_xml`);
+  const { data: validation_report } = api.get<any>(
+    `jobs/${jobid}/validation_report`
+  );
 
   const params_json = useMemo<any | null>(() => {
     if (params_xml) {
@@ -64,6 +67,7 @@ export default function JobsPage({
         <Tab value={2} label="Report" />
         <Tab value={3} label="Diagnostic xml" />
         <Tab value={6} label="Def xml" />
+        <Tab value={7} label="Validation report" />
       </Tabs>
       {tabValue == 0 && (
         <Editor
@@ -92,6 +96,13 @@ export default function JobsPage({
         <Editor
           height="calc(100vh - 15rem)"
           value={prettifyXml($.parseXML(def_xml.def_xml))}
+          language="xml"
+        />
+      )}
+      {tabValue == 7 && diagnostic_xml && (
+        <Editor
+          height="calc(100vh - 15rem)"
+          value={prettifyXml($.parseXML(validation_report.validation_report))}
           language="xml"
         />
       )}

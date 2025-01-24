@@ -4,8 +4,10 @@ from xml.etree import ElementTree as ET
 from django.test import TestCase, override_settings
 from django.conf import settings
 from core import CCP4PerformanceData
+from core import CCP4ErrorHandling
 from core import CCP4Data
 from ccp4i2.core import CCP4Container
+from ccp4i2.core.CCP4ErrorHandling import CErrorReport, CException
 from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
@@ -17,6 +19,8 @@ from ...lib.job_utils.remove_container_default_values import (
 )
 from ...lib.job_utils.find_objects import find_objects
 from ...lib.job_utils.load_nested_xml import load_nested_xml
+from ...lib.job_utils.validate_container import validate_container
+from ...lib.job_utils.clone_job import clone_job
 
 from ...db.ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
@@ -70,14 +74,44 @@ class CCP4i2TestCase(TestCase):
         for kpi in kpis:
             for kpi_param_name in kpi.dataOrder():
                 value = getattr(kpi, kpi_param_name)
-                print(kpi_param_name, value, isinstance(value, CCP4Data.CString))
-                print(kpi_param_name, value, isinstance(value, CCP4Data.CFloat))
+                self.assertTrue(isinstance(value, CCP4Data.CString))
+                self.assertTreu(isinstance(value, CCP4Data.CFloat))
 
     def test_load_nested_xml(self):
         startXML = ET.fromstring(prosmart_defmac_xml)
         result = load_nested_xml(startXML)
         ET.indent(result, " ")
-        print(ET.tostring(result).decode("utf-8"))
+        # print(ET.tostring(result).decode("utf-8"))
+
+    def test_validate_container(self):
+        job = Job.objects.get(pk=1)
+        the_job_plugin = get_job_plugin(job)
+        container: CCP4Container.CContainer = the_job_plugin.container
+        error_etree: ET.Element = validate_container(container)
+
+        self.assertEqual(len(error_etree.findall(".//errorReport")), 47)
+        ET.indent(error_etree, " ")
+
+    def test_validate_container_no_XYZIN(self):
+        job = Job.objects.get(project__name="refmac_gamma_test_0", number="1")
+        cloned_job = clone_job(job.uuid)
+        the_job_plugin = get_job_plugin(cloned_job)
+        container: CCP4Container.CContainer = the_job_plugin.container
+        XYZIN = container.find("XYZIN")
+        XYZIN.unSet()
+        error_etree: ET.Element = validate_container(container)
+        ET.indent(error_etree, " ")
+        print(ET.tostring(error_etree).decode("utf-8"))
+        self.assertEqual(len(error_etree.findall(".//errorReport")), 45)
+
+    def test_validate_container_NCYCLES_MINUS_1(self):
+        job = Job.objects.get(project__name="refmac_gamma_test_0", number="1")
+        cloned_job = clone_job(job.uuid)
+        the_job_plugin = get_job_plugin(cloned_job)
+        container: CCP4Container.CContainer = the_job_plugin.container
+        NCYCLES = container.find("NCYCLES")
+        with self.assertRaises(CCP4ErrorHandling.CException):
+            NCYCLES.set(-1)
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">
