@@ -18,7 +18,7 @@ def save_params_for_job(
     the_job_plugin: CCP4PluginScript.CPluginScript,
     the_job: models.Job,
     mode="JOB_INPUT",
-    exclude_unset=True,
+    exclude_unset=False,
 ):
     """
     Save parameters for a given job to an XML file.
@@ -32,7 +32,7 @@ def save_params_for_job(
         the_job_plugin (CCP4PluginScript.CPluginScript): The job plugin script instance.
         the_job (models.Job): The job instance containing job details.
         mode (str, optional): The mode for generating the file name. Defaults to "JOB_INPUT".
-        exclude_unset (bool, optional): Flag to exclude unset parameters. Defaults to True.
+        exclude_unset (bool, optional): Flag to exclude unset parameters. Defaults to False.
 
     Returns:
         None
@@ -55,5 +55,5 @@ def save_params_for_job(
     f.header.pluginName.set(the_job.task_name)
     f.header.userId.set(getpass.getuser())
     old_job_container: CCP4Container.CContainer = the_job_plugin.container
-    body_etree = old_job_container.getEtree()
+    body_etree = old_job_container.getEtree(excludeUnset=exclude_unset)
     f.saveFile(bodyEtree=body_etree)

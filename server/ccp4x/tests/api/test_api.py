@@ -115,3 +115,17 @@ class CCP4i2TestCase(TestCase):
                 "updated_item": "<XYZIN><dbFileId>AFILEID</dbFileId><subType>1</subType></XYZIN>",
             },
         )
+
+    def test_set_file_null(self):
+        response = self.client.post(
+            "/jobs/1/set_parameter/",
+            content_type="application/json; charset=utf-8",
+            data=json.dumps(
+                {
+                    "object_path": "prosmart_refmac.inputData.XYZIN",
+                    "value": None,
+                }
+            ),
+        )
+        result = response.json()
+        print(result)

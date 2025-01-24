@@ -31,7 +31,7 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
       await mutateReportXml();
       await mutateJob();
       if ([2, 3].includes(job.status)) {
-        doReload();
+        //doReload();
       }
     }, 5000);
   }, [job]);
