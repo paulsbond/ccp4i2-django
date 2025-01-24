@@ -12,7 +12,7 @@ export const classOfDefItem = (
 
 export const pathOfParamsItem = (item: HTMLElement): string => {
   const parentElements = $(item).parents().toArray();
-  console.log(parentElements);
+  //console.log(parentElements);
   if (parentElements.at(-1)?.nodeName === `ccp4:ccp4i2`) parentElements.pop();
   if (parentElements.at(-1)?.nodeName === `ccp4i2_body`) parentElements.pop();
   const pathElements = parentElements.map(
@@ -53,13 +53,13 @@ export const valueOfItemPath = (
     | JQuery<XMLDocument>
     | JQuery<HTMLElement>
     | undefined = paramsXML;
-  console.log({ itemPathElements }, paramsXMLElement);
+  //console.log({ itemPathElements }, paramsXMLElement);
   while (itemPathElements.length > 0) {
     const lastPathElement = itemPathElements.pop();
     if (lastPathElement && paramsXMLElement) {
-      console.log(lastPathElement);
+      //console.log(lastPathElement);
       paramsXMLElement = $(paramsXMLElement).find(`${lastPathElement}`).get(0);
-      console.log({ lastPathElement, paramsXMLElement });
+      //console.log({ lastPathElement, paramsXMLElement });
     }
   }
   if (paramsXMLElement) {

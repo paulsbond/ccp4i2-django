@@ -15,12 +15,18 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict]):
     the_job_plugin = get_job_plugin(job)
     the_container: CContainer = the_job_plugin.container
+
     object_elements = find_objects(
         the_container, lambda a: a.objectPath() == object_path, multiple=False
     )
     object_element = object_elements[0]
+    e = object_element.getEtree()
+    print(ET.tostring(e).decode("utf-8"))
+    print(object_elements, len(object_elements), value)
     object_element.unSet()
-    if hasattr(object_element, "update"):
+    if value is None:
+        object_element.unSet()
+    elif hasattr(object_element, "update"):
         object_element.update(value)
         logger.warning(
             "Updating parameter %s with dict %s"
@@ -38,5 +44,16 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
                 value,
             )
         )
+    print(object_element)
+
+    logger.warning(
+        "Parameter %s now has value %s"
+        % (
+            object_element.objectName(),
+            object_element,
+        )
+    )
+
     save_params_for_job(the_job_plugin=the_job_plugin, the_job=job)
+
     return ET.tostring(object_element.getEtree()).decode("utf-8")

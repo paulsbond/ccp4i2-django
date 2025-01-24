@@ -26,7 +26,10 @@ export class File {
     public name: string,
     public size: number,
     public job: number,
-    public annotation: string
+    public annotation: string,
+    public content: number,
+    public sub_type: number,
+    public directory: number
   ) {}
 }
 
