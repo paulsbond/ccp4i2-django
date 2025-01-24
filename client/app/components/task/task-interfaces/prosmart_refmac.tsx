@@ -23,7 +23,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       <CCP4i2TaskElement
         itemName="XYZIN"
         {...props}
-        sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
+        sx={{ m: 2, minWidth: "20rem", maxWidth: "80rem" }}
         qualifiers={{ guiLabel: "Coordinates" }}
       />
       <CCP4i2TaskElement

@@ -40,7 +40,11 @@ export const valueOfItem = (
 
 export const valueOfItemPath = (
   itemPath: string,
-  paramsXML: XMLDocument | JQuery<XMLDocument>
+  paramsXML:
+    | XMLDocument
+    | JQuery<XMLDocument>
+    | HTMLElement
+    | JQuery<HTMLElement>
 ): any | null => {
   const itemPathElements = itemPath.split(".").reverse();
   let paramsXMLElement:
@@ -49,11 +53,13 @@ export const valueOfItemPath = (
     | JQuery<XMLDocument>
     | JQuery<HTMLElement>
     | undefined = paramsXML;
-  console.log({ itemPathElements });
+  console.log({ itemPathElements }, paramsXMLElement);
   while (itemPathElements.length > 0) {
     const lastPathElement = itemPathElements.pop();
     if (lastPathElement && paramsXMLElement) {
+      console.log(lastPathElement);
       paramsXMLElement = $(paramsXMLElement).find(`${lastPathElement}`).get(0);
+      console.log({ lastPathElement, paramsXMLElement });
     }
   }
   if (paramsXMLElement) {

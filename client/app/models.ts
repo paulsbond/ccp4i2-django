@@ -20,6 +20,7 @@ export class ProjectTag {
 export class File {
   constructor(
     public id: number,
+    public uuid: string,
     public file: string,
     public type: string,
     public name: string,
