@@ -14,23 +14,24 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const { paramsXML, itemName, objectPath, job, mutate, type, qualifiers, sx } =
-    props;
+  const { job, type, sx, item } = props;
   const api = useApi();
+  const { mutate } = api.container<any>(`jobs/${job.id}/container`);
+
   const [value, setValue] = useState<number | string | null>(null);
 
   useEffect(() => {
-    if (paramsXML && itemName) {
-      const valueNode = $(paramsXML).find(itemName);
-      if (type === "int") {
-        setValue(parseInt(valueNode.text()));
-      } else if (type === "float") {
-        setValue(parseFloat(valueNode.text()));
-      } else if (type === "text") {
-        setValue(valueNode.text());
-      }
-    }
-  }, [props]);
+    setValue(item._value);
+  }, [item]);
+
+  const { objectPath, qualifiers } = useMemo<{
+    objectPath: string | null;
+    qualifiers: any | null;
+  }>(() => {
+    if (item)
+      return { objectPath: item._objectPath, qualifiers: item._qualifiers };
+    return { objectPath: null, qualifiers: null };
+  }, [item]);
 
   const handleChange: ChangeEventHandler<
     HTMLTextAreaElement | HTMLInputElement

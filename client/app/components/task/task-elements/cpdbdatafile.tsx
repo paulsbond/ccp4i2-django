@@ -21,8 +21,23 @@ import { valueOfItemPath } from "../task-utils";
 export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
+  const { job, sx, item } = props;
   const api = useApi();
-  const { sx, qualifiers, objectPath, job } = props;
+  const { mutate } = api.container<any>(`jobs/${job.id}/container`);
+  const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
+
+  useEffect(() => {
+    setValue(item._value);
+  }, [item]);
+
+  const { objectPath, qualifiers } = useMemo<{
+    objectPath: string | null;
+    qualifiers: any | null;
+  }>(() => {
+    if (item)
+      return { objectPath: item._objectPath, qualifiers: item._qualifiers };
+    return { objectPath: null, qualifiers: null };
+  }, [item]);
   const [inFlight, setInFlight] = useState(false);
   const [value, setValue] = useState<any | null>(null);
 
@@ -34,14 +49,6 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   );
   const { data: projects, mutate: mutateProjects } =
     api.get<Project[]>(`projects`);
-  const { data: params_xml, mutate: mutateParams } = api.get<{
-    status: string;
-    params_xml: string;
-  }>(`jobs/${props.job.id}/params_xml`);
-
-  const paramsXML = params_xml?.params_xml
-    ? $($.parseXML(params_xml?.params_xml))
-    : $();
 
   if (!project_files) return <LinearProgress />;
 
@@ -50,16 +57,21 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   );
 
   useEffect(() => {
-    if (objectPath && paramsXML && fileOptions) {
-      const result = valueOfItemPath(
-        objectPath.split(".").slice(1).join("."),
-        paramsXML
-      );
+    if (objectPath && fileOptions && item) {
+      const result = item._value;
       console.log(objectPath, result);
-      if (result && result.dbFileId && result.dbFileId.trim().length > 0) {
+      if (
+        result &&
+        result.dbFileId &&
+        result.dbFileId._value &&
+        result.dbFileId._value.trim().length > 0
+      ) {
         const chosenOption = fileOptions.find((file: File) => {
           const dehyphentatedUUID = file.uuid.replace(/-/g, "");
-          const dehyphentatedDbFileId = result.dbFileId.replace(/-/g, "");
+          const dehyphentatedDbFileId = result.dbFileId._value.replace(
+            /-/g,
+            ""
+          );
           return dehyphentatedUUID === dehyphentatedDbFileId;
         });
         console.log({ result, chosenOption });
@@ -68,7 +80,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       }
     }
     setValue(null);
-  }, [paramsXML, objectPath, fileOptions]);
+  }, [objectPath, fileOptions, item]);
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel
@@ -125,6 +137,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       }
       setInFlight(true);
       await api.post<Job>(`jobs/${job.id}/set_parameter`, setParameterArg);
+      await mutate();
       await mutateParams();
       setInFlight(false);
     },

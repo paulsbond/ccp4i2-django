@@ -19,38 +19,60 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const { paramsXML, itemName, objectPath, job, mutate, type, qualifiers, sx } =
-    props;
+  const { job, type, sx, item } = props;
   const api = useApi();
+  const { mutate } = api.container<any>(`jobs/${job.id}/container`);
+
   const [value, setValue] = useState<{
-    id: string;
+    id: string | number;
     label: string;
   } | null>(null);
   const [inFlight, setInFlight] = useState(false);
 
-  const { data: validation, mutate: mutateValidation } = api.get<Job>(
-    `jobs/${job.id}/validation`
-  );
+  useEffect(() => {
+    console.log({ value: item._value });
+    setValue(item._value);
+  }, [item]);
+
+  const { objectPath, qualifiers } = useMemo<{
+    objectPath: string | null;
+    qualifiers: any | null;
+  }>(() => {
+    if (item)
+      return { objectPath: item._objectPath, qualifiers: item._qualifiers };
+    return { objectPath: null, qualifiers: null };
+  }, [item]);
 
   const options: { id: string; label: string }[] | undefined = useMemo(() => {
-    const enumerators: string[] | null = qualifiers?.enumerators
-      ?.split(",")
-      .map((substring: string) => substring.trim());
-    const menuText: string[] | null = qualifiers?.menuText
-      ?.split(",")
-      .map((substring: string) => substring.trim());
-    const options = enumerators?.map(
-      (enumerator: string, iEnumerator: number) => {
-        return {
-          id: enumerator,
-          label:
-            menuText && menuText.length == enumerators.length
-              ? menuText[iEnumerator]
-              : enumerator,
-        };
+    if (qualifiers?.enumerators) {
+      const enumerators: string[] | null = qualifiers?.enumerators.map(
+        (substring: string) => substring.trim()
+      );
+      let menuText: string[] | null = enumerators;
+      if (
+        qualifiers?.menuText &&
+        qualifiers?.enumerators &&
+        qualifiers.menuText.length == qualifiers.enumerators.length
+      ) {
+        menuText = qualifiers?.menuText.map((substring: string) =>
+          substring.trim()
+        );
       }
-    );
-    return options;
+
+      const options = enumerators?.map(
+        (enumerator: string, iEnumerator: number) => {
+          return {
+            id: enumerator,
+            label:
+              menuText && menuText.length == enumerators.length
+                ? menuText[iEnumerator]
+                : enumerator,
+          };
+        }
+      );
+      return options;
+    }
+    return [];
   }, [qualifiers]);
 
   const guiLabel = useMemo<string>(() => {
@@ -60,39 +82,32 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   }, [objectPath, qualifiers]);
 
   useEffect(() => {
-    if (paramsXML && itemName) {
-      const valueNode = $(paramsXML).find(itemName);
-      const stringValue = valueNode.text().trim();
+    if (item && item._value) {
       const orderedLabels = options?.map(
         (option: { id: string; label: string }) => option.label
       );
       const orderedIds = options?.map(
         (option: { id: string; label: string }) => option.id
       );
-      let label: string | undefined = stringValue;
-      if (orderedIds?.includes(stringValue)) {
-        label = orderedLabels?.at(orderedIds.indexOf(stringValue));
+      let label: string | undefined = `${item._value}`;
+      if (orderedIds?.includes(item._value)) {
+        label = orderedLabels?.at(orderedIds.indexOf(item._value));
       }
-      setValue({ id: stringValue, label: label as string });
+      setValue({ id: item._value, label: label as string });
     }
   }, [props, options]);
 
   const handleSelect = useCallback(
     async (
       event: SyntheticEvent<Element, Event>,
-      value: { id: string; label: string } | null,
+      value: { id: string | number; label: string } | null,
       reason: AutocompleteChangeReason
     ) => {
       if (value) {
         setValue(value);
         const setParameterArg = {
           object_path: objectPath,
-          value:
-            type === "int"
-              ? parseInt(value.id)
-              : type === "float"
-              ? parseFloat(value.id)
-              : value.id,
+          value: value.id,
         };
         console.log({ setParameterArg });
         setInFlight(true);

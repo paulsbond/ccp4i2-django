@@ -18,8 +18,6 @@ export interface CCP4i2TaskElementProps {
   paramsXML: any;
   defXML: any;
   itemName: string;
-  qualifiers?: any;
-  objectPath?: string | null;
   sx?: SxProps<Theme>;
   mutate: () => void;
   pathOfItem?: (item: HTMLElement) => string;
@@ -34,21 +32,6 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     `jobs/${props.job.id}/container`
   );
 
-  const itemDefElement = useMemo<HTMLElement | null>(() => {
-    if (props.defXML && props.itemName) {
-      const $itemNode = props.defXML.find(`[id=${props.itemName}]`);
-      return $itemNode.get(0);
-    }
-    return null;
-  }, [props.defXML && props.itemName]);
-
-  const elementType = useMemo<string | null | undefined>(() => {
-    if (itemDefElement) {
-      return classOfDefItem(itemDefElement);
-    }
-    return null;
-  }, [itemDefElement]);
-
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
     if (typeof props.visibility === "function") {
@@ -56,49 +39,6 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     }
     return props.visibility;
   }, [props.visibility]);
-
-  const qualifiers = useMemo<any>(() => {
-    if (itemDefElement) {
-      try {
-        const qualifiersNode = $(itemDefElement).find("qualifiers").get(0);
-        const qualifiers: any = {};
-        qualifiersNode?.childNodes.forEach((childNode) => {
-          qualifiers[childNode.nodeName.trim()] = $(childNode).text().trim();
-        });
-        const overriddenQualifiers = props.qualifiers
-          ? { ...qualifiers, ...props.qualifiers }
-          : qualifiers;
-        return overriddenQualifiers;
-      } catch (err) {
-        console.log(`Error getting qualifiers on ${props.itemName}`);
-      }
-    }
-    return {};
-  }, [itemDefElement]);
-
-  const itemParamsElement = useMemo<HTMLElement | null | undefined>(() => {
-    if (props.paramsXML && props.itemName) {
-      const $itemNode = $(props.paramsXML).find(props.itemName);
-      return $itemNode.get(0);
-    }
-    return null;
-  }, [props.defXML && props.itemName]);
-
-  const taskName = useMemo(() => {
-    const pluginNameElement = $(props.paramsXML).find("pluginName").get(0);
-    if (pluginNameElement) {
-      return $(pluginNameElement).text().trim();
-    }
-    return "unknown";
-  }, []);
-
-  const objectPath = useMemo<string | null>(() => {
-    if (itemParamsElement) {
-      const objectPath = `${taskName}.${pathOfParamsItem(itemParamsElement)}`;
-      return objectPath;
-    }
-    return null;
-  }, [itemParamsElement, taskName]);
 
   const item = useMemo<any | null>(() => {
     if (container && props.itemName) {
@@ -112,45 +52,17 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const interfaceElement = useMemo(() => {
     switch (item?._class) {
       case "CInt":
-        return (
-          <CIntElement
-            {...props}
-            qualifiers={qualifiers}
-            objectPath={objectPath}
-            item={item}
-          />
-        );
+        return <CIntElement {...props} item={item} />;
       case "CFloat":
-        return (
-          <CFloatElement
-            {...props}
-            qualifiers={qualifiers}
-            objectPath={objectPath}
-            item={item}
-          />
-        );
+        return <CFloatElement {...props} item={item} />;
       case "CString":
-        return (
-          <CStringElement
-            {...props}
-            qualifiers={qualifiers}
-            objectPath={objectPath}
-            item={item}
-          />
-        );
+        return <CStringElement {...props} item={item} />;
       case "CPdbDataFile":
-        return (
-          <CPdbDataFileElement
-            {...props}
-            qualifiers={qualifiers}
-            objectPath={objectPath}
-            item={item}
-          />
-        );
+        return <CPdbDataFileElement {...props} item={item} />;
       default:
-        return <Typography>{elementType}</Typography>;
+        return <Typography>{item ? item._class : "No item"}</Typography>;
     }
-  }, [elementType]);
+  }, [item]);
 
   return inferredVisibility && <>{interfaceElement}</>;
 };

@@ -9,14 +9,11 @@ export interface CCP4i2CSimpleElementProps extends CCP4i2TaskElementProps {
 }
 
 export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
-  const { qualifiers } = props;
+  const { item } = props;
 
   const usingSelect = useMemo(() => {
-    if (qualifiers) {
-      return Object.keys(qualifiers).includes("onlyEnumerators");
-    }
-    return false;
-  }, [qualifiers]);
+    return item?._qualifiers?.onlyEnumerators;
+  }, [item]);
 
   return usingSelect ? (
     <CSimpleAutocompleteElement {...props} />
