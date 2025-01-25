@@ -19,7 +19,7 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const { job, type, sx, item } = props;
+  const { job, type, sx, item, qualifiers } = props;
   const api = useApi();
   const { mutate } = api.container<any>(`jobs/${job.id}/container`);
 
@@ -34,13 +34,11 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     setValue(item._value);
   }, [item]);
 
-  const { objectPath, qualifiers } = useMemo<{
+  const { objectPath } = useMemo<{
     objectPath: string | null;
-    qualifiers: any | null;
   }>(() => {
-    if (item)
-      return { objectPath: item._objectPath, qualifiers: item._qualifiers };
-    return { objectPath: null, qualifiers: null };
+    if (item) return { objectPath: item._objectPath };
+    return { objectPath: null };
   }, [item]);
 
   const options: { id: string; label: string }[] | undefined = useMemo(() => {

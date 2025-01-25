@@ -1,6 +1,7 @@
 import {
   Autocomplete,
   AutocompleteChangeReason,
+  Avatar,
   CircularProgress,
   LinearProgress,
   Stack,
@@ -145,7 +146,11 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   );
 
   return (
-    <Stack direction="row">
+    <Stack
+      direction="row"
+      sx={{ border: "1px solid black", borderRadius: "0.5rem", mx: 2 }}
+    >
+      <Avatar sx={{ mt: 3 }} src={`/qticons/${item._class.slice(1)}.png`} />
       <Autocomplete
         disabled={job.status !== 1}
         sx={sx}
@@ -159,7 +164,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       />
 
       <CircularProgress
-        sx={{ height: "2rem", width: "2rem", mt: "1.25rem" }}
+        sx={{ height: "2rem", width: "2rem", mt: "1.5rem" }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />

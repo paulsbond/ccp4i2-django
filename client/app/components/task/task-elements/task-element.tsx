@@ -22,6 +22,7 @@ export interface CCP4i2TaskElementProps {
   mutate: () => void;
   pathOfItem?: (item: HTMLElement) => string;
   visibility?: boolean | (() => boolean);
+  qualifiers?: any;
   item?: any;
 }
 
@@ -49,16 +50,34 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return null;
   }, [props.itemName, container]);
 
+  const qualifiers = useMemo<any>(() => {
+    if (item?._qualifiers) {
+      try {
+        const overriddenQualifiers = props.qualifiers
+          ? { ...item._qualifiers, ...props.qualifiers }
+          : item._qualifiers;
+        return overriddenQualifiers;
+      } catch (err) {
+        console.log(`Error getting qualifiers on ${props.itemName}`);
+      }
+    }
+    return props.qualifiers;
+  }, [item]);
+
   const interfaceElement = useMemo(() => {
     switch (item?._class) {
       case "CInt":
-        return <CIntElement {...props} item={item} />;
+        return <CIntElement {...props} item={item} qualifiers={qualifiers} />;
       case "CFloat":
-        return <CFloatElement {...props} item={item} />;
+        return <CFloatElement {...props} item={item} qualifiers={qualifiers} />;
       case "CString":
-        return <CStringElement {...props} item={item} />;
+        return (
+          <CStringElement {...props} item={item} qualifiers={qualifiers} />
+        );
       case "CPdbDataFile":
-        return <CPdbDataFileElement {...props} item={item} />;
+        return (
+          <CPdbDataFileElement {...props} item={item} qualifiers={qualifiers} />
+        );
       default:
         return <Typography>{item ? item._class : "No item"}</Typography>;
     }
