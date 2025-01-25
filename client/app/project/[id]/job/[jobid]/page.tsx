@@ -43,7 +43,7 @@ export default function JobsPage({
   const { data: report_xml } = api.get<any>(`jobs/${jobid}/report_xml`);
   const { data: diagnostic_xml } = api.get<any>(`jobs/${jobid}/diagnostic_xml`);
   const { data: def_xml } = api.get<any>(`jobs/${jobid}/def_xml`);
-  const { data: container } = api.get<any>(`jobs/${jobid}/container`);
+  const { data: container } = api.container<any>(`jobs/${jobid}/container`);
   const [tabValue, setTabValue] = useState<Number>(0);
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
@@ -111,7 +111,7 @@ export default function JobsPage({
       {tabValue == 8 && container && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={JSON.stringify(JSON.parse(container.container), null, 2)}
+          value={JSON.stringify(container, null, 2)}
           language="json"
         />
       )}

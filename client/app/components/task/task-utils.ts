@@ -67,3 +67,40 @@ export const valueOfItemPath = (
   }
   return null;
 };
+
+const findItems = (
+  name: string,
+  container: any,
+  multiple: boolean = true,
+  growingList?: any[]
+): any[] => {
+  const listToGrow = growingList ? growingList : [];
+  if (container._objectPath.endsWith(name)) {
+    listToGrow.push(container);
+    if (!multiple) return listToGrow;
+  } else if (container._baseClass === "CContainer") {
+    Object.keys(container._value).forEach((key: string) => {
+      const item = container._value[key];
+      if (item._objectPath.endsWith(name)) {
+        listToGrow.push(item);
+        if (!multiple) return listToGrow;
+      } else {
+        findItems(name, item, multiple, listToGrow);
+      }
+    });
+  } else if (container._baseClass === "CList") {
+    container._value.forEach((item: any) => {
+      if (item._objectPath.endsWith(name)) {
+        listToGrow.push(item);
+        if (!multiple) return listToGrow;
+      } else {
+        findItems(name, item, multiple, listToGrow);
+      }
+    });
+  }
+  return listToGrow;
+};
+export const itemsForName = (name: string, container: any) => {
+  const itemMatches = findItems(name, container, true);
+  return itemMatches;
+};

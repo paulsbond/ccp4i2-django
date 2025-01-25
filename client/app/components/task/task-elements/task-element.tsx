@@ -5,11 +5,13 @@ import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
 import {
   classOfDefItem,
+  itemsForName,
   pathOfParamsItem,
   valueOfItemPath as valueOfItemPathFunction,
 } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
+import { useApi } from "../../../api";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
@@ -22,9 +24,16 @@ export interface CCP4i2TaskElementProps {
   mutate: () => void;
   pathOfItem?: (item: HTMLElement) => string;
   visibility?: boolean | (() => boolean);
+  item?: any;
 }
 
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
+  const api = useApi();
+
+  const { data: container } = api.container<any>(
+    `jobs/${props.job.id}/container`
+  );
+
   const itemDefElement = useMemo<HTMLElement | null>(() => {
     if (props.defXML && props.itemName) {
       const $itemNode = props.defXML.find(`[id=${props.itemName}]`);
@@ -91,14 +100,24 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return null;
   }, [itemParamsElement, taskName]);
 
+  const item = useMemo<any | null>(() => {
+    if (container && props.itemName) {
+      const matches = itemsForName(props.itemName, container);
+      console.log(props.itemName, matches[0]);
+      return matches[0];
+    }
+    return null;
+  }, [props.itemName, container]);
+
   const interfaceElement = useMemo(() => {
-    switch (elementType) {
+    switch (item?._class) {
       case "CInt":
         return (
           <CIntElement
             {...props}
             qualifiers={qualifiers}
             objectPath={objectPath}
+            item={item}
           />
         );
       case "CFloat":
@@ -107,6 +126,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             {...props}
             qualifiers={qualifiers}
             objectPath={objectPath}
+            item={item}
           />
         );
       case "CString":
@@ -115,6 +135,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             {...props}
             qualifiers={qualifiers}
             objectPath={objectPath}
+            item={item}
           />
         );
       case "CPdbDataFile":
@@ -123,6 +144,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             {...props}
             qualifiers={qualifiers}
             objectPath={objectPath}
+            item={item}
           />
         );
       default:

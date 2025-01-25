@@ -3,7 +3,7 @@ import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { useMemo } from "react";
 import { useApi } from "../../../api";
-import { valueOfItemPath } from "../task-utils";
+import { itemsForName, valueOfItemPath } from "../task-utils";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -21,17 +21,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     <Paper>
       <Typography variant="h5">Refinement in mode {refinementMode}</Typography>
       <CCP4i2TaskElement
-        itemName="XYZIN"
-        {...props}
-        sx={{ m: 2, width: "80rem", maxWidth: "80rem" }}
-        qualifiers={{ guiLabel: "Coordinates" }}
-      />
-      <CCP4i2TaskElement
         itemName="NCYCRIGID"
         {...props}
         sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
         qualifiers={{ guiLabel: "Number of rigid  body cycles" }}
         visibility={() => refinementMode === "RIGID"}
+      />
+      <CCP4i2TaskElement
+        itemName="XYZIN"
+        {...props}
+        sx={{ m: 2, width: "80rem", maxWidth: "80rem" }}
+        qualifiers={{ guiLabel: "Coordinates" }}
       />
       <CCP4i2TaskElement
         itemName="NCYCLES"

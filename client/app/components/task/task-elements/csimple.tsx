@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { CSimpleTextFieldElement } from "./csimple-textfield";
 import { CSimpleAutocompleteElement } from "./csimple-autocomplete";
+import { Typography } from "@mui/material";
 
 export interface CCP4i2CSimpleElementProps extends CCP4i2TaskElementProps {
   type: "int" | "float" | "text";
