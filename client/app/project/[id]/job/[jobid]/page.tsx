@@ -26,11 +26,11 @@ export default function JobsPage({
   const job = useMemo<Job | undefined>(() => {
     return jobs?.find((item) => item.id === parseInt(jobid));
   }, [jobid, jobs]);
+  if (!job) return <LinearProgress />;
+
   const { data: project } = api.get<Project>(`projects/${id}`);
   const { data: params_xml } = api.get<any>(`jobs/${jobid}/params_xml`);
-  const { data: validation_report } = api.get<any>(
-    `jobs/${jobid}/validation_report`
-  );
+  const { data: validation } = api.get<any>(`jobs/${jobid}/validation`);
 
   const params_json = useMemo<any | null>(() => {
     if (params_xml) {
@@ -43,6 +43,7 @@ export default function JobsPage({
   const { data: report_xml } = api.get<any>(`jobs/${jobid}/report_xml`);
   const { data: diagnostic_xml } = api.get<any>(`jobs/${jobid}/diagnostic_xml`);
   const { data: def_xml } = api.get<any>(`jobs/${jobid}/def_xml`);
+  const { data: container } = api.get<any>(`jobs/${jobid}/container`);
   const [tabValue, setTabValue] = useState<Number>(0);
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
@@ -68,6 +69,7 @@ export default function JobsPage({
         <Tab value={3} label="Diagnostic xml" />
         <Tab value={6} label="Def xml" />
         <Tab value={7} label="Validation report" />
+        <Tab value={8} label="Job container" />
       </Tabs>
       {tabValue == 0 && (
         <Editor
@@ -102,8 +104,15 @@ export default function JobsPage({
       {tabValue == 7 && diagnostic_xml && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={prettifyXml($.parseXML(validation_report.validation_report))}
+          value={prettifyXml($.parseXML(validation.validation))}
           language="xml"
+        />
+      )}
+      {tabValue == 8 && container && (
+        <Editor
+          height="calc(100vh - 15rem)"
+          value={JSON.stringify(JSON.parse(container.container), null, 2)}
+          language="json"
         />
       )}
     </Container>

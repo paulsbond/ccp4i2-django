@@ -7,6 +7,7 @@ from core import CCP4PerformanceData
 from core import CCP4ErrorHandling
 from core import CCP4Data
 from ccp4i2.core import CCP4Container
+from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4ErrorHandling import CErrorReport, CException
 from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
@@ -21,6 +22,7 @@ from ...lib.job_utils.find_objects import find_objects
 from ...lib.job_utils.load_nested_xml import load_nested_xml
 from ...lib.job_utils.validate_container import validate_container
 from ...lib.job_utils.clone_job import clone_job
+from ...lib.job_utils.json_for_job_container import json_for_job_container
 
 from ...db.ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
@@ -81,7 +83,7 @@ class CCP4i2TestCase(TestCase):
         startXML = ET.fromstring(prosmart_defmac_xml)
         result = load_nested_xml(startXML)
         ET.indent(result, " ")
-        # print(ET.tostring(result).decode("utf-8"))
+        print(ET.tostring(result).decode("utf-8"))
 
     def test_validate_container(self):
         job = Job.objects.get(pk=1)
@@ -91,6 +93,7 @@ class CCP4i2TestCase(TestCase):
 
         self.assertEqual(len(error_etree.findall(".//errorReport")), 47)
         ET.indent(error_etree, " ")
+        # print(ET.tostring(err))
 
     def test_validate_container_no_XYZIN(self):
         job = Job.objects.get(project__name="refmac_gamma_test_0", number="1")
@@ -112,6 +115,21 @@ class CCP4i2TestCase(TestCase):
         NCYCLES = container.find("NCYCLES")
         with self.assertRaises(CCP4ErrorHandling.CException):
             NCYCLES.set(-1)
+
+    def test_def_xml_container(self):
+        taskManager: CCP4TaskManager.CTaskManager = CCP4TaskManager.CTaskManager()
+        defFile = taskManager.lookupDefFile(name="prosmart_refmac", version=None)
+        container: CCP4Container.CContainer = CCP4Container.CContainer(
+            definitionFile=defFile
+        )
+        def_etree = container.getEtree()
+        # ET.indent(def_etree, " ")
+        print(ET.tostring(def_etree).decode("utf-8"))
+
+    def test_json_for_container(self):
+        job = Job.objects.get(project__name="refmac_gamma_test_0", number="1")
+        result = json_for_job_container(job)
+        print(len(result))
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">

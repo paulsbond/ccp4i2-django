@@ -21,6 +21,7 @@ export const JobsGrid: React.FC<JobsGridProps> = ({
     <Grid2 container>
       {jobs &&
         jobs
+          .reverse()
           .filter((item) => item.parent === parent)
           .map((job: Job) => (
             <Grid2 key={job.number} size={{ xs: size }}>

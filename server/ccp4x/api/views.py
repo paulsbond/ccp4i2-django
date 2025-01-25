@@ -55,6 +55,7 @@ from ..lib.job_utils.clone_job import clone_job
 from ..lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ..lib.job_utils.set_parameter import set_parameter
 from ..lib.job_utils.get_job_container import get_job_container
+from ..lib.job_utils.json_for_job_container import json_for_job_container
 from django.http import JsonResponse
 
 logging.basicConfig(level=logging.ERROR)
@@ -262,8 +263,8 @@ class JobViewSet(ModelViewSet):
                 ) as params_xml_file:
                     params_xml = params_xml_file.read()
                     return Response({"status": "Success", "params_xml": params_xml})
-            except FileNotFoundError as err:
-                return Response({"status": "Failed", "reason": str(err)})
+            except FileNotFoundError as err1:
+                return Response({"status": "Failed", "reason": str(err1)})
 
     @action(
         detail=True,
@@ -379,6 +380,25 @@ class JobViewSet(ModelViewSet):
         permission_classes=[],
         serializer_class=serializers.JobSerializer,
     )
+    def container(self, request, pk=None):
+
+        the_job = models.Job.objects.get(id=pk)
+        try:
+            container = json_for_job_container(the_job)
+            return Response({"status": "Success", "container": container})
+        except FileNotFoundError as err:
+            logger.exception(
+                "Failed to find or encode json for job container",
+                exc_info=err,
+            )
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
     def diagnostic_xml(self, request, pk=None):
         """
         Retrieve the diagnostic XML file for a given job.
@@ -403,7 +423,8 @@ class JobViewSet(ModelViewSet):
             return Response({"status": "Success", "diagnostic_xml": diagnostic_xml})
         except FileNotFoundError as err:
             logger.exception(
-                "Failed to find file %s" % (the_job.directory / "diagnostic.xml",),
+                "Failed to find file %s",
+                str(the_job.directory / "diagnostic.xml"),
                 exc_info=err,
             )
             return Response({"status": "Failed", "reason": str(err)})
@@ -443,7 +464,8 @@ class JobViewSet(ModelViewSet):
                 )
         except FileNotFoundError as err:
             logger.exception(
-                "Failed to find file %s" % (def_xml_path,),
+                "Failed to find file %s",
+                def_xml_path,
                 exc_info=err,
             )
             return Response({"status": "Failed", "reason": str(err)})
@@ -454,7 +476,7 @@ class JobViewSet(ModelViewSet):
         permission_classes=[],
         serializer_class=serializers.JobSerializer,
     )
-    def validation_report(self, request, pk=None):
+    def validation(self, request, pk=None):
         """
         Retrieve the validation error_report in xml format.
 
@@ -475,11 +497,12 @@ class JobViewSet(ModelViewSet):
                 stack_element.getroot()
             ET.indent(error_etree, " ")
             return Response(
-                {"status": "Success", "validation_report": ET.tostring(error_etree)}
+                {"status": "Success", "validation": ET.tostring(error_etree)}
             )
         except Exception as err:
             logger.exception(
-                "Failed to validate plugin %s" % (the_job.task_name,),
+                "Failed to validate plugin %s",
+                the_job.task_name,
                 exc_info=err,
             )
             return Response({"status": "Failed", "reason": str(err)})

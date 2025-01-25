@@ -28,8 +28,8 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   } | null>(null);
   const [inFlight, setInFlight] = useState(false);
 
-  const { data: validation_report, mutate: mutateValidation } = api.get<Job>(
-    `jobs/${job.id}/validation_report`
+  const { data: validation, mutate: mutateValidation } = api.get<Job>(
+    `jobs/${job.id}/validation`
   );
 
   const options: { id: string; label: string }[] | undefined = useMemo(() => {

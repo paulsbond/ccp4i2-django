@@ -15,7 +15,7 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict]):
     the_job_plugin = get_job_plugin(job)
     the_container: CContainer = the_job_plugin.container
-
+    print("object_path", object_path)
     object_elements = find_objects(
         the_container, lambda a: a.objectPath() == object_path, multiple=False
     )
@@ -29,29 +29,23 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
     elif hasattr(object_element, "update"):
         object_element.update(value)
         logger.warning(
-            "Updating parameter %s with dict %s"
-            % (
-                object_element.objectName(),
-                value,
-            )
+            "Updating parameter %s with dict %s",
+            object_element.objectName(),
+            value,
         )
     else:
         object_element.set(value)
         logger.warning(
-            "Setting parameter %s to %s"
-            % (
-                object_element.objectName(),
-                value,
-            )
+            "Setting parameter %s to %s",
+            object_element.objectName(),
+            value,
         )
     print(object_element)
 
     logger.warning(
-        "Parameter %s now has value %s"
-        % (
-            object_element.objectName(),
-            object_element,
-        )
+        "Parameter %s now has value %s",
+        object_element.objectName(),
+        object_element,
     )
 
     save_params_for_job(the_job_plugin=the_job_plugin, the_job=job)
