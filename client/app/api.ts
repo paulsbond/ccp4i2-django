@@ -2,6 +2,11 @@ import useSWR from "swr";
 
 export function useApi() {
   const fetcher = (url: string) => fetch(url).then((r) => r.json());
+  const container_fetcher = (url: string) => {
+    return fetch(url)
+      .then((r) => r.json())
+      .then((r1) => Promise.resolve(JSON.parse(r1.container)));
+  };
 
   function fullUrl(endpoint: string): string {
     const url = new URL(endpoint, "http://127.0.0.1:8000");
@@ -13,6 +18,10 @@ export function useApi() {
   return {
     get: function <T>(endpoint: string) {
       return useSWR<T>(fullUrl(endpoint), fetcher);
+    },
+
+    container: function <T>(endpoint: string) {
+      return useSWR<T>(fullUrl(endpoint), container_fetcher);
     },
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {
