@@ -16,7 +16,6 @@ import { useApi } from "../../../api";
 export interface CCP4i2TaskElementProps {
   job: Job;
   paramsXML: any;
-  defXML: any;
   itemName: string;
   sx?: SxProps<Theme>;
   mutate: () => void;

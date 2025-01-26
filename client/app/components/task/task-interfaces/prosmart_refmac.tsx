@@ -10,11 +10,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { data: container } = api.container<any>(
     `jobs/${props.job.id}/container`
   );
-  if (!container) return <LinearProgress />;
-
   const refinementMode = useMemo(() => {
+    if (!container) return "UNKNOWN";
     return itemsForName("REFINEMENT_MODE", container)[0]._value;
   }, [container]);
+
+  if (!container) return <LinearProgress />;
 
   return (
     <Paper>
