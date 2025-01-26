@@ -13,7 +13,9 @@ import EditableTypography from "./editable-typography";
 export default function MenuBar() {
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
-  const { data: project } = api.get<Project>(`projects/${projectId}`);
+  const { data: project, mutate: mutateProject } = api.get<Project>(
+    `projects/${projectId}`
+  );
   const { data: job } = api.get<Job>(`jobs/${jobId}`);
   return (
     <AppBar position="static">
@@ -30,7 +32,9 @@ export default function MenuBar() {
             variant="h5"
             text={project.name}
             onDelay={(name) =>
-              api.patch(`projects/${project.id}`, { name: name })
+              api.patch(`projects/${project.id}`, { name: name }).then((_) => {
+                mutateProject();
+              })
             }
           />
         )}
