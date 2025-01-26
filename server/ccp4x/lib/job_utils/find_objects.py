@@ -29,15 +29,7 @@ def find_objects(within, func, multiple=False, growing_list=None):
     original_length = len(growing_list)
     search_domain = (
         within.CONTENTS
-        if isinstance(
-            within,
-            (
-                CCP4Container.CContainer,
-                CCP4File.CDataFile,
-                CCP4ModelData.CAtomSelection,
-                CContainer,
-            ),
-        )
+        if hasattr(within, "CONTENTS")
         else (
             within.__dict__["_value"]
             if isinstance(
@@ -50,20 +42,12 @@ def find_objects(within, func, multiple=False, growing_list=None):
             else within
         )
     )
-    for iChild, child_ref in enumerate(search_domain):
-        child = None
-        if isinstance(
-            within,
-            (
-                CContainer,
-                CCP4Container.CContainer,
-                CCP4File.CDataFile,
-                CCP4ModelData.CAtomSelection,
-            ),
-        ):
-            child = getattr(within, child_ref, None)
-        else:
-            child = child_ref
+    for _, child_ref in enumerate(search_domain):
+        child = (
+            getattr(within, child_ref, None)
+            if hasattr(within, "CONTENTS")
+            else child_ref
+        )
         if func(child):
             growing_list.append(child)
             if not multiple:
@@ -72,15 +56,11 @@ def find_objects(within, func, multiple=False, growing_list=None):
         elif isinstance(
             child,
             (
-                CCP4Container.CContainer,
-                CContainer,
                 CCP4Data.CList,
                 CList,
                 list,
-                CCP4File.CDataFile,
-                CCP4ModelData.CAtomSelection,
             ),
-        ):
+        ) or hasattr(within, "CONTENTS"):
             find_objects(child, func, multiple, growing_list)
             if (not multiple) and (len(growing_list) > original_length):
                 return growing_list
