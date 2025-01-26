@@ -92,7 +92,9 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
         {nFloatingChildren > 0 ? (
           <Grid2 container>
             {foldContent.map((iItem, item) => (
-              <Grid2 size={{ xs: 12 / nFloatingChildren }}>{item}</Grid2>
+              <Grid2 key={`iItem`} size={{ xs: 12 / nFloatingChildren }}>
+                {item}
+              </Grid2>
             ))}
           </Grid2>
         ) : (

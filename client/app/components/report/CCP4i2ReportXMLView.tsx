@@ -1,28 +1,30 @@
-import { ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import $ from "jquery";
 import { LinearProgress, Paper, Skeleton } from "@mui/material";
 import { Job } from "../../models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
 import { M_PLUS_1 } from "next/font/google";
+import { CCP4i2Context } from "../../app-context";
 
-interface CCP4i2ReportXMLViewProps {
-  jobId: string;
-}
-
-export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
-  jobId,
-}) => {
+export const CCP4i2ReportXMLView = () => {
   const api = useApi();
+  const { jobId } = useContext(CCP4i2Context);
   const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
-  if (!job) return <LinearProgress />;
-
   const { data: report_xml, mutate: mutateReportXml } = api.get<any>(
     `jobs/${jobId}/report_xml`
   );
   const reloadTimeout = useRef<any>(null);
 
   const doReload = useCallback(() => {
+    if (!job) return;
     if (reloadTimeout.current != null) {
       clearTimeout(reloadTimeout.current);
       reloadTimeout.current = null;
@@ -36,6 +38,7 @@ export const CCP4i2ReportXMLView: React.FC<CCP4i2ReportXMLViewProps> = ({
     }, 5000);
   }, [job]);
 
+  if (!job) return <LinearProgress />;
   useEffect(() => {
     if (reloadTimeout.current != null) {
       clearTimeout(reloadTimeout.current);
