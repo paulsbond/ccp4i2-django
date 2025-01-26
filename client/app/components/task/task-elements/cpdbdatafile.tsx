@@ -45,17 +45,22 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   const { data: project_files, mutate: mutateFiles } = api.get<File[]>(
     `projects/${job.project}/files`
   );
+
   const { data: project_jobs, mutate: mutateJobs } = api.get<Job[]>(
     `projects/${job.project}/jobs`
   );
   const { data: projects, mutate: mutateProjects } =
     api.get<Project[]>(`projects`);
 
-  if (!project_files) return <LinearProgress />;
+  if (!project_files || !project_jobs) return <LinearProgress />;
 
-  const fileOptions = project_files.filter(
-    (file: File) => file.type === "chemical/x-pdb"
-  );
+  const fileOptions = project_files.filter((file: File) => {
+    const fileJob: Job | undefined = project_jobs?.find(
+      (job: Job) => job.id == file.job
+    );
+    if (fileJob) return file.type === "chemical/x-pdb" && !fileJob.parent;
+    return file.type === "chemical/x-pdb";
+  });
 
   useEffect(() => {
     if (objectPath && fileOptions && item) {
@@ -145,6 +150,17 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     [job, objectPath, project_jobs, projects]
   );
 
+  const getOptionLabel = useCallback(
+    (option: File) => {
+      const fileJob: Job | undefined = project_jobs?.find(
+        (job: Job) => job.id == option.job
+      );
+      if (fileJob) return `${fileJob.number}: ${option.annotation}`;
+      return `${option.annotation}`;
+    },
+    [project_jobs]
+  );
+
   return (
     <Stack
       direction="row"
@@ -157,7 +173,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
         value={value}
         onChange={handleSelect}
         options={fileOptions || []}
-        getOptionLabel={(option) => `${option.annotation}`}
+        getOptionLabel={getOptionLabel}
         getOptionKey={(option) => `${option.uuid}`}
         renderInput={(params) => <TextField {...params} label={guiLabel} />}
         title={objectPath || "CPdbDataFile"}
