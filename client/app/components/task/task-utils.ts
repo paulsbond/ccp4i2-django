@@ -75,19 +75,10 @@ const findItems = (
   growingList?: any[]
 ): any[] => {
   const listToGrow = growingList ? growingList : [];
+  const originalLength = listToGrow.length;
   if (container._objectPath.endsWith(name)) {
     listToGrow.push(container);
     if (!multiple) return listToGrow;
-  } else if (container._baseClass === "CContainer") {
-    Object.keys(container._value).forEach((key: string) => {
-      const item = container._value[key];
-      if (item._objectPath.endsWith(name)) {
-        listToGrow.push(item);
-        if (!multiple) return listToGrow;
-      } else {
-        findItems(name, item, multiple, listToGrow);
-      }
-    });
   } else if (container._baseClass === "CList") {
     container._value.forEach((item: any) => {
       if (item._objectPath.endsWith(name)) {
@@ -95,12 +86,33 @@ const findItems = (
         if (!multiple) return listToGrow;
       } else {
         findItems(name, item, multiple, listToGrow);
+        if (!multiple && listToGrow.length > originalLength) return listToGrow;
       }
     });
+  } else if (container._value?.constructor == Object) {
+    try {
+      Object.keys(container._value).forEach((key: string) => {
+        const item = container._value[key];
+        if (item._objectPath.endsWith(name)) {
+          listToGrow.push(item);
+          if (!multiple) return listToGrow;
+        } else {
+          findItems(name, item, multiple, listToGrow);
+          if (!multiple && listToGrow.length > originalLength)
+            return listToGrow;
+        }
+      });
+    } catch (err) {
+      console.error(err);
+    }
   }
   return listToGrow;
 };
-export const itemsForName = (name: string, container: any) => {
-  const itemMatches = findItems(name, container, true);
+export const itemsForName = (
+  name: string,
+  container: any,
+  multiple: boolean = false
+) => {
+  const itemMatches = findItems(name, container, multiple);
   return itemMatches;
 };

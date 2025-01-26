@@ -1,0 +1,21 @@
+import { useContext } from "react";
+import { useApi } from "../api";
+import { CCP4i2Context } from "../app-context";
+import { prettifyXml } from "./report/CCP4i2ReportFlotWidget";
+import { Editor } from "@monaco-editor/react";
+import { LinearProgress } from "@mui/material";
+
+export const ValidationViewer = () => {
+  const api = useApi();
+  const { jobId } = useContext(CCP4i2Context);
+  const { data: validation } = api.validation(`jobs/${jobId}/validation`);
+  return validation && validation.validation ? (
+    <Editor
+      height="calc(100vh - 15rem)"
+      value={prettifyXml(validation.validation)}
+      language="xml"
+    />
+  ) : (
+    <LinearProgress />
+  );
+};

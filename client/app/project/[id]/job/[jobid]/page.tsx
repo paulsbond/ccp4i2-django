@@ -11,6 +11,7 @@ import $ from "jquery";
 import { CCP4i2Context } from "../../../../app-context";
 import { TaskContainer } from "../../../../components/task/task-container";
 import convert from "xml-js";
+import { ValidationViewer } from "../../../../components/validation-viewer";
 
 export default function JobPage({
   params,
@@ -93,13 +94,7 @@ export default function JobPage({
           language="xml"
         />
       )}
-      {tabValue == 6 && validation && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={prettifyXml($.parseXML(validation.validation))}
-          language="xml"
-        />
-      )}
+      {tabValue == 6 && validation && <ValidationViewer />}
       {tabValue == 7 && container && (
         <Editor
           height="calc(100vh - 15rem)"

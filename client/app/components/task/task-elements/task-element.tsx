@@ -12,6 +12,7 @@ import {
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import { useApi } from "../../../api";
+import $ from "jquery";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
@@ -83,4 +84,42 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   }, [item]);
 
   return inferredVisibility && <>{interfaceElement}</>;
+};
+
+export const errorInValidation = (
+  objectPath: string,
+  validation: { status: string; validation?: Document }
+):
+  | {
+      severity: string;
+      description: string;
+    }
+  | null
+  | undefined => {
+  if (validation && validation.validation) {
+    const objectPathNodes = $(validation.validation)
+      .find("objectpath")
+      .toArray();
+    const errorObjectNode = objectPathNodes.find((node: HTMLElement) => {
+      return node.textContent === objectPath;
+    });
+    if (!errorObjectNode) {
+      return null;
+    }
+    const errorNode = $(errorObjectNode).parent();
+    if (!errorObjectNode) {
+      return null;
+    }
+    if (errorNode) {
+      const result: { severity: string; description: string } = {
+        severity: "",
+        description: "",
+      };
+      const severity = $(errorNode).find("severity").get(0)?.textContent;
+      if (severity) result.severity = severity;
+      const description = $(errorNode).find("description").get(0)?.textContent;
+      if (description) result.description = description;
+      return result;
+    }
+  }
 };
