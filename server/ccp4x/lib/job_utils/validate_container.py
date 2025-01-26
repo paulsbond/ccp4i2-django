@@ -62,7 +62,6 @@ def validate_container(
         for stack_child in stack_children:
             error_report.remove(stack_child)
         description_children = error_report.findall("./description")
-        description_child: ET.Element
 
         for description_child in description_children:
             description_text = description_child.text
