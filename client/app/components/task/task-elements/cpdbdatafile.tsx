@@ -19,6 +19,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       </Typography>
       <CCP4i2TaskElement
         {...props}
+        sx={{ ...props.sx, maxWidth: "20rem" }}
         itemName={selectionItemName}
         qualifiers={{ ...props.qualifiers, guiLabel: "Selection string" }}
       />
