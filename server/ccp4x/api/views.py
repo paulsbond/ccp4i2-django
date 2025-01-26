@@ -217,9 +217,13 @@ class FileViewSet(ModelViewSet):
         serializer_class=serializers.FileSerializer,
     )
     def by_uuid(self, request, pk=None):
-        the_file = models.File.objects.get(uuid=pk)
-        serializer = serializers.FileSerializer(the_file, many=False)
-        return Response(serializer.data)
+        try:
+            the_file = models.File.objects.get(uuid=pk)
+            serializer = serializers.FileSerializer(the_file, many=False)
+            return Response(serializer.data)
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
 
 
 class JobViewSet(ModelViewSet):
@@ -248,13 +252,16 @@ class JobViewSet(ModelViewSet):
                       or an error message if the file is not found.
         """
 
-        the_job = models.Job.objects.get(id=pk)
         try:
+            the_job = models.Job.objects.get(id=pk)
             with open(
                 the_job.directory / "params.xml", "r", encoding="UTF-8"
             ) as params_xml_file:
                 params_xml = params_xml_file.read()
             return Response({"status": "Success", "params_xml": params_xml})
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
         except FileNotFoundError as err:
             logger.info(err)
             try:
@@ -284,13 +291,15 @@ class JobViewSet(ModelViewSet):
             FileNotFoundError: If the report file is not found.
             Exception: For any other exceptions that occur during report generation.
         """
-
-        the_job = models.Job.objects.get(id=pk)
         try:
+            the_job = models.Job.objects.get(id=pk)
             report_xml = make_old_report(the_job)
             ET.indent(report_xml, space="\t", level=0)
             report_xml = ET.tostring(make_old_report(the_job))
             return Response({"status": "Success", "report_xml": report_xml})
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
         except FileNotFoundError as err:
             return Response({"status": "Failed", "reason": str(err)})
         except Exception as err:
@@ -313,11 +322,14 @@ class JobViewSet(ModelViewSet):
         Returns:
             list: Serialized data of dependent jobs.
         """
-
-        the_job = models.Job.objects.get(id=pk)
-        dependent_jobs = find_dependent_jobs(the_job)
-        serializer = serializers.JobSerializer(dependent_jobs, many=True)
-        return Response(serializer.data)
+        try:
+            the_job = models.Job.objects.get(id=pk)
+            dependent_jobs = find_dependent_jobs(the_job)
+            serializer = serializers.JobSerializer(dependent_jobs, many=True)
+            return Response(serializer.data)
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
 
     @action(
         detail=True,
@@ -336,11 +348,14 @@ class JobViewSet(ModelViewSet):
         Returns:
             Response: A Response object containing the serialized data of the new job.
         """
-
-        old_job_id = models.Job.objects.get(id=pk).uuid
-        new_job = clone_job(old_job_id)
-        serializer = serializers.JobSerializer(new_job)
-        return Response(serializer.data)
+        try:
+            old_job_id = models.Job.objects.get(id=pk).uuid
+            new_job = clone_job(old_job_id)
+            serializer = serializers.JobSerializer(new_job)
+            return Response(serializer.data)
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
 
     @action(
         detail=True,
@@ -359,20 +374,23 @@ class JobViewSet(ModelViewSet):
         Returns:
             Response: A Response object containing the serialized job data.
         """
-
-        job = models.Job.objects.get(id=pk)
-        subprocess.Popen(
-            [
-                "ccp4-python",
-                "manage.py",
-                "run_job",
-                "-ju",
-                f"{str(job.uuid)}",
-            ],
-            start_new_session=True,
-        )
-        serializer = serializers.JobSerializer(job)
-        return Response(serializer.data)
+        try:
+            job = models.Job.objects.get(id=pk)
+            subprocess.Popen(
+                [
+                    "ccp4-python",
+                    "manage.py",
+                    "run_job",
+                    "-ju",
+                    f"{str(job.uuid)}",
+                ],
+                start_new_session=True,
+            )
+            serializer = serializers.JobSerializer(job)
+            return Response(serializer.data)
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
 
     @action(
         detail=True,
@@ -382,10 +400,13 @@ class JobViewSet(ModelViewSet):
     )
     def container(self, request, pk=None):
 
-        the_job = models.Job.objects.get(id=pk)
         try:
+            the_job = models.Job.objects.get(id=pk)
             container = json_for_job_container(the_job)
             return Response({"status": "Success", "container": container})
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
         except FileNotFoundError as err:
             logger.exception(
                 "Failed to find or encode json for job container",
@@ -414,13 +435,16 @@ class JobViewSet(ModelViewSet):
             FileNotFoundError: If the diagnostic XML file does not exist.
         """
 
-        the_job = models.Job.objects.get(id=pk)
         try:
+            the_job = models.Job.objects.get(id=pk)
             with open(
                 the_job.directory / "diagnostic.xml", "r", encoding="UTF-8"
             ) as diagnostic_xml_file:
                 diagnostic_xml = diagnostic_xml_file.read()
             return Response({"status": "Success", "diagnostic_xml": diagnostic_xml})
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
         except FileNotFoundError as err:
             logger.exception(
                 "Failed to find file %s",
@@ -450,11 +474,11 @@ class JobViewSet(ModelViewSet):
             FileNotFoundError: If the def XML file does not exist.
         """
 
-        the_job = models.Job.objects.get(id=pk)
-        def_xml_path = CCP4TaskManager.TASKMANAGER().lookupDefFile(
-            name=the_job.task_name, version=None
-        )
         try:
+            the_job = models.Job.objects.get(id=pk)
+            def_xml_path = CCP4TaskManager.TASKMANAGER().lookupDefFile(
+                name=the_job.task_name, version=None
+            )
             with open(def_xml_path, "r") as def_xml_file:
                 def_xml = def_xml_file.read()
                 packedXML = ET.fromstring(def_xml)
@@ -462,6 +486,9 @@ class JobViewSet(ModelViewSet):
                 return Response(
                     {"status": "Success", "def_xml": ET.tostring(unpackedXML)}
                 )
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
         except FileNotFoundError as err:
             logger.exception(
                 "Failed to find file %s",
@@ -499,6 +526,9 @@ class JobViewSet(ModelViewSet):
             return Response(
                 {"status": "Success", "validation": ET.tostring(error_etree)}
             )
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
         except Exception as err:
             logger.exception(
                 "Failed to validate plugin %s",
