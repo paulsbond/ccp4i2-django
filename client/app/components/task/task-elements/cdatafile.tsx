@@ -20,6 +20,18 @@ import {
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
 
+const fileTypeMapping: { [key: string]: string } = {
+  CObsDataFile: "application/CCP4-mtz-observed",
+  CFreeRDataFile: "application/CCP4-mtz-freerflag",
+  CMapCoeffsDataFile: "application/CCP4-mtz-map",
+  CPhsDataFile: "application/CCP4-mtz-phases",
+  CDictDataFile: "application/refmac-dictionary",
+  CCootHistoryDataFile: "application/coot-script",
+  CUnmergedDataFile: "application/CCP4-unmerged-experimental",
+  CPdbDataFile: "chemical/x-pdb",
+  CAsuDataFile: "application/CCP4-asu-content",
+};
+
 export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job, sx, item } = props;
   const api = useApi();
@@ -55,15 +67,24 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     `jobs/${props.job.id}/validation`
   );
 
+  const fileType = useMemo<string | null>(() => {
+    if (item?._class) {
+      return fileTypeMapping[item?._class];
+    }
+    return null;
+  }, [item]);
+
   if (!project_files || !project_jobs) return <LinearProgress />;
 
-  const fileOptions = project_files.filter((file: File) => {
-    const fileJob: Job | undefined = project_jobs?.find(
-      (job: Job) => job.id == file.job
-    );
-    if (fileJob) return file.type === "chemical/x-pdb" && !fileJob.parent;
-    return file.type === "chemical/x-pdb";
-  });
+  const fileOptions = useMemo<any | null>(() => {
+    return project_files.filter((file: File) => {
+      const fileJob: Job | undefined = project_jobs?.find(
+        (job: Job) => job.id == file.job
+      );
+      if (fileJob) return file.type === fileType && !fileJob.parent;
+      return file.type === fileType;
+    });
+  }, [project_files, project_jobs, fileType]);
 
   useEffect(() => {
     if (objectPath && fileOptions && item) {
@@ -191,7 +212,7 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         getOptionLabel={getOptionLabel}
         getOptionKey={(option) => `${option.uuid}`}
         renderInput={(params) => <TextField {...params} label={guiLabel} />}
-        title={objectPath || "CPdbDataFile"}
+        title={objectPath || item._className || "Title"}
       />
       {fieldError && <Typography>{fieldError.description}</Typography>}
       <CircularProgress

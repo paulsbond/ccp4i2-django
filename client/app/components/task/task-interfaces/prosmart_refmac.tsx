@@ -21,6 +21,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     <Paper>
       <Typography variant="h5">Refinement in mode {refinementMode}</Typography>
       <CCP4i2TaskElement
+        itemName="F_SIGF"
+        {...props}
+        sx={{ m: 2, width: "80rem", maxWidth: "80rem" }}
+        qualifiers={{ guiLabel: "Coordinates" }}
+      />
+      <CCP4i2TaskElement
         itemName="XYZIN"
         {...props}
         sx={{ m: 2, width: "80rem", maxWidth: "80rem" }}

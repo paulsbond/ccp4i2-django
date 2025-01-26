@@ -13,6 +13,7 @@ import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import { useApi } from "../../../api";
 import $ from "jquery";
+import { CObsDataFileElement } from "./cobsdatafile";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
@@ -77,6 +78,10 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CPdbDataFile":
         return (
           <CPdbDataFileElement {...props} item={item} qualifiers={qualifiers} />
+        );
+      case "CObsDataFile":
+        return (
+          <CObsDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );
       default:
         return <Typography>{item ? item._class : "No item"}</Typography>;
