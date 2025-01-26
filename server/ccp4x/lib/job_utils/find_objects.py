@@ -1,11 +1,17 @@
+import logging
 from xml.etree import ElementTree as ET
 from core import CCP4Container
+from core import CCP4ModelData
 from core import CCP4Data
+from core import CCP4File
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4Data import CList
 
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
-def find_objects(within, func, multiple=True, growing_list=None):
+
+def find_objects(within, func, multiple=False, growing_list=None):
     """
     Recursively searches for objects within a container or list that match a given condition.
 
@@ -27,6 +33,8 @@ def find_objects(within, func, multiple=True, growing_list=None):
             within,
             (
                 CCP4Container.CContainer,
+                CCP4File.CDataFile,
+                CCP4ModelData.CAtomSelection,
                 CContainer,
             ),
         )
@@ -47,8 +55,10 @@ def find_objects(within, func, multiple=True, growing_list=None):
         if isinstance(
             within,
             (
-                CCP4Container.CContainer,
                 CContainer,
+                CCP4Container.CContainer,
+                CCP4File.CDataFile,
+                CCP4ModelData.CAtomSelection,
             ),
         ):
             child = getattr(within, child_ref, None)
@@ -57,9 +67,19 @@ def find_objects(within, func, multiple=True, growing_list=None):
         if func(child):
             growing_list.append(child)
             if not multiple:
+                logger.warning("Match for %s", child.objectName())
                 return growing_list
         elif isinstance(
-            child, (CCP4Container.CContainer, CContainer, CCP4Data.CList, CList, list)
+            child,
+            (
+                CCP4Container.CContainer,
+                CContainer,
+                CCP4Data.CList,
+                CList,
+                list,
+                CCP4File.CDataFile,
+                CCP4ModelData.CAtomSelection,
+            ),
         ):
             find_objects(child, func, multiple, growing_list)
             if (not multiple) and (len(growing_list) > original_length):
