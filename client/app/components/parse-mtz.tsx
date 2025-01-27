@@ -1,3 +1,4 @@
+import { DialogContent } from "@mui/material";
 import SimpleDialog from "@mui/material/Dialog";
 import { useEffect } from "react";
 
@@ -6,6 +7,12 @@ interface ParseMtzProps {
   setFile: (file: File | null) => void;
 }
 export const ParseMtz = ({ file, setFile }) => {
-  useEffect(() => {}, [file]);
-  return <SimpleDialog open={file != null} onClose={}></SimpleDialog>;
+  useEffect(() => {
+    GemmiMtz;
+  }, [file]);
+  return (
+    <SimpleDialog open={file != null} onClose={setFile(null)}>
+      <DialogContent></DialogContent>
+    </SimpleDialog>
+  );
 };
