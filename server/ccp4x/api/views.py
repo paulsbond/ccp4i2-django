@@ -14,6 +14,7 @@ from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4ErrorHandling import CErrorReport
 from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
+from ..lib.job_utils.digest_file import digest_file
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -451,6 +452,23 @@ class JobViewSet(ModelViewSet):
                 str(the_job.directory / "diagnostic.xml"),
                 exc_info=err,
             )
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def digest(self, request, pk=None):
+
+        try:
+            the_job = models.Job.objects.get(id=pk)
+            response_dict = digest_file(the_job, request.GET.get("object_path"))
+            return Response({"status": "Success", "digest": response_dict})
+            return digest_job_param_file(job, self.kwargs.get("param_name"))
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
 
     @action(
