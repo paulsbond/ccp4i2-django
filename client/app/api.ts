@@ -17,6 +17,10 @@ const container_fetcher = (url: string) => {
     .then((r1) => Promise.resolve(JSON.parse(r1.container)));
 };
 
+const digest_fetcher = (url: string) => {
+  return fetch(url).then((r) => r.json());
+};
+
 export function useApi() {
   const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -34,6 +38,10 @@ export function useApi() {
 
     container: function <T>(endpoint: string) {
       return useSWR<T>(fullUrl(endpoint), container_fetcher);
+    },
+
+    digest: function <T>(endpoint: string) {
+      return useSWR<T>(fullUrl(endpoint), digest_fetcher);
     },
 
     validation: function <T>(endpoint: string) {
