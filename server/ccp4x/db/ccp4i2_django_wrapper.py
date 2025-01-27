@@ -43,7 +43,7 @@ def using_django_pm(func):
         finally:
             if oldPM is not None:
                 CCP4ProjectsManager.CProjectsManager.insts = oldPM
-            logger.warning("Something is happening after the function is called.")
+            logger.debug("Something is happening after the function is called.")
         return result
 
     return wrapper
