@@ -2,9 +2,12 @@ import {
   Autocomplete,
   AutocompleteChangeReason,
   Avatar,
+  Button,
   CircularProgress,
+  Input,
   LinearProgress,
   Stack,
+  styled,
   TextField,
   Typography,
 } from "@mui/material";
@@ -19,6 +22,8 @@ import {
   useState,
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
+import { CloudUpload } from "@mui/icons-material";
+import { ParseMtz } from "../../parse-mtz";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -32,11 +37,48 @@ const fileTypeMapping: { [key: string]: string } = {
   CAsuDataFile: "application/CCP4-asu-content",
 };
 
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
+  height: 1,
+  overflow: "hidden",
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  whiteSpace: "nowrap",
+  width: 1,
+});
+
+interface InputFileUploadProps {
+  handleFileChange: (files: FileList | null) => void;
+}
+export const InputFileUpload: React.FC<InputFileUploadProps> = ({
+  handleFileChange,
+}) => {
+  return (
+    <Button
+      component="label"
+      role={undefined}
+      variant="contained"
+      tabIndex={-1}
+      startIcon={<CloudUpload />}
+      sx={{ mr: 2 }}
+    >
+      <VisuallyHiddenInput
+        type="file"
+        onChange={(event) => handleFileChange(event.target.files)}
+        multiple
+      />
+    </Button>
+  );
+};
+
 export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job, sx, item } = props;
   const api = useApi();
   const { mutate } = api.container<any>(`jobs/${job.id}/container`);
   const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
+  const [file, setFile] = useState<any | null>(null);
 
   useEffect(() => {
     setValue(item._value);
@@ -170,8 +212,8 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       await api.post<Job>(`jobs/${job.id}/set_parameter`, setParameterArg);
       await mutate();
       await mutateParams();
-      await mutateValidation();
       await mutateContent();
+      await mutateValidation();
       setInFlight(false);
     },
     [job, objectPath, project_jobs, projects]
@@ -219,13 +261,18 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         title={objectPath || item._className || "Title"}
       />
       {fieldError && <Typography>{fieldError.description}</Typography>}
+      <InputFileUpload
+        handleFileChange={(fileList: FileList | null) =>
+          setFile(fileList ? Array.from(fileList)[0] : null)
+        }
+      />
       <CircularProgress
         sx={{ height: "2rem", width: "2rem", mt: "1.5rem" }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />
+      <ParseMtz file={file} setFile={setFile} />
     </Stack>
   );
-
   return;
 };
