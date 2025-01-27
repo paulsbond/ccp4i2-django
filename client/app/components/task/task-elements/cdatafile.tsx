@@ -66,6 +66,9 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { data: validation, mutate: mutateValidation } = api.container<any>(
     `jobs/${props.job.id}/validation`
   );
+  const { mutate: mutateContent } = api.digest<any>(
+    `jobs/${props.job.id}/digest?object_path=${objectPath}`
+  );
 
   const fileType = useMemo<string | null>(() => {
     if (item?._class) {
@@ -168,6 +171,7 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       await mutate();
       await mutateParams();
       await mutateValidation();
+      await mutateContent();
       setInFlight(false);
     },
     [job, objectPath, project_jobs, projects]
