@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { CCP4i2TaskElementProps, errorInValidation } from "./task-element";
-import { File, Job, Project } from "../../../models";
+import { File as CCP4i2File, Job, Project } from "../../../models";
 import {
   SyntheticEvent,
   useCallback,
@@ -73,7 +73,35 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
   );
 };
 
-export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
+export const readFilePromise = async (
+  file: File,
+  readAs: "Text" | "ArrayBuffer" | "File" = "Text"
+): Promise<string | ArrayBuffer | null | File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onabort = () => reject();
+    reader.onerror = () => reject();
+    reader.onloadend = () => {
+      // Do whatever you want with the file contents
+      const textOrBuffer = reader.result;
+      return resolve(textOrBuffer);
+    };
+    if (readAs === "Text") {
+      reader.readAsText(file);
+    } else if (readAs === "ArrayBuffer") {
+      reader.readAsArrayBuffer(file);
+    } else if (readAs === "File") {
+      return resolve(file);
+    }
+  });
+};
+
+export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
+  processForUpload?: <T>(fileContent: T) => Promise<T>;
+}
+export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
+  props
+) => {
   const { job, sx, item } = props;
   const api = useApi();
   const { mutate } = api.container<any>(`jobs/${job.id}/container`);
@@ -95,7 +123,7 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const [inFlight, setInFlight] = useState(false);
   const [value, setValue] = useState<any | null>(null);
 
-  const { data: project_files, mutate: mutateFiles } = api.get<File[]>(
+  const { data: project_files, mutate: mutateFiles } = api.get<CCP4i2File[]>(
     `projects/${job.project}/files`
   );
 
@@ -121,8 +149,8 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
 
   if (!project_files || !project_jobs) return <LinearProgress />;
 
-  const fileOptions = useMemo<any | null>(() => {
-    return project_files.filter((file: File) => {
+  const fileOptions = useMemo<CCP4i2File[] | null>(() => {
+    return project_files.filter((file: CCP4i2File) => {
       const fileJob: Job | undefined = project_jobs?.find(
         (job: Job) => job.id == file.job
       );
@@ -140,7 +168,7 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         result.dbFileId._value &&
         result.dbFileId._value.trim().length > 0
       ) {
-        const chosenOption = fileOptions.find((file: File) => {
+        const chosenOption = fileOptions.find((file: CCP4i2File) => {
           const dehyphentatedUUID = file.uuid.replace(/-/g, "");
           const dehyphentatedDbFileId = result.dbFileId._value.replace(
             /-/g,
@@ -164,7 +192,7 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const handleSelect = useCallback(
     async (
       event: SyntheticEvent<Element, Event>,
-      value: File | null,
+      value: CCP4i2File | null,
       reason: AutocompleteChangeReason
     ) => {
       const setParameterArg: any = {
@@ -220,7 +248,7 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   );
 
   const getOptionLabel = useCallback(
-    (option: File) => {
+    (option: CCP4i2File) => {
       const fileJob: Job | undefined = project_jobs?.find(
         (job: Job) => job.id == option.job
       );
@@ -262,16 +290,24 @@ export const CDataFileElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       />
       {fieldError && <Typography>{fieldError.description}</Typography>}
       <InputFileUpload
-        handleFileChange={(fileList: FileList | null) =>
-          setFile(fileList ? Array.from(fileList)[0] : null)
-        }
+        handleFileChange={async (fileList: FileList | null) => {
+          if (fileList) {
+            const topFile: any = Array.from(fileList)[0];
+            const fileContent = await readFilePromise(topFile, "ArrayBuffer");
+            console.log(fileContent);
+            if (props.processForUpload) {
+              await props.processForUpload<ArrayBuffer>(
+                fileContent as ArrayBuffer
+              );
+            }
+          }
+        }}
       />
       <CircularProgress
         sx={{ height: "2rem", width: "2rem", mt: "1.5rem" }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />
-      <ParseMtz file={file} setFile={setFile} />
     </Stack>
   );
   return;

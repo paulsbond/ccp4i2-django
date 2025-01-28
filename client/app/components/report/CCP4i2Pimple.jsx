@@ -1,7 +1,8 @@
 import $ from "jquery";
 import { decode } from "punycode";
 //import Plotly from "plotly.js-dist-min";
-const jQuery = (window.jQuery = window.$ = $);
+//const jQuery = (window.jQuery = window.$ = $);
+window.$ = $;
 
 export function reescape(s) {
   const h = [
@@ -1576,7 +1577,7 @@ CCP4GraphPlot.prototype.createTopDiv = function (
 };
 
 CCP4GraphPlot.prototype.adjustDataForBreaks = function (d, ib, length) {
-  const dRight = jQuery.extend(true, [], d);
+  const dRight = $.extend(true, [], d);
   for (let idata = 0; idata < dRight.length; idata++) {
     if (!dRight[idata]["yaxis"]) {
       if (ib == 0) {
