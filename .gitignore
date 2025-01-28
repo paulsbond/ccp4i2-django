@@ -3,4 +3,14 @@ __pycache__
 *.pyc
 build
 client/app/components/task/FORREFERENCE-TaskJavascripts
+client/public/baby-gru
 
+client/public/coot_env_web.js
+client/public/CootWorker.js
+client/public/CootWorker.ts
+client/public/manifest.json
+client/public/moorhen.js
+client/public/moorhen.wasm
+client/public/moorhen64.js
+client/public/moorhen64.wasm
+client/public/robots.txt
