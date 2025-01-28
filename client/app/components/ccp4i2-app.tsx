@@ -6,18 +6,18 @@ import MenuBar from "./menu-bar";
 
 const loadScript = async (src: string) => {
   //The semi magical ShaerdArrayBuffer line
-  const originScript = document.createElement("script");
-  originScript.text =
-    "if (!crossOriginIsolated) SharedArrayBuffer = ArrayBuffer;";
-  document.head.appendChild(originScript);
-  // and now the moorhen.js, redirecting from moorhen.wasm to /moorhen.wasm
-  const scriptString = await fetch(src, { credentials: "same-origin" }).then(
-    (response) => response.text()
-  );
-  const script = document.createElement("script");
-  script.text = scriptString.replace("moorhen.wasm", "/moorhen.wasm");
-  document.head.appendChild(script);
-  return Promise.resolve(src);
+  return new Promise((resolve, reject) => {
+    const originScript = document.createElement("script");
+    originScript.text =
+      "if (!crossOriginIsolated) SharedArrayBuffer = ArrayBuffer;";
+    document.head.appendChild(originScript);
+    // and now the moorhen.js, redirecting from moorhen.wasm to /moorhen.wasm
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(src);
+    script.onerror = () => reject(src);
+    document.head.appendChild(script);
+  });
 };
 
 const createArgs = {
@@ -26,6 +26,12 @@ const createArgs = {
   },
   printErr(t: string) {
     console.error(["output", t]);
+  },
+  locateFile(path: string, prefix: string) {
+    // if it's a mem init file, use a custom dir
+    if (path.endsWith("moorhen.wasm")) return "/moorhen.wasm";
+    // otherwise, use the default, the prefix (JS file's dir) + the path
+    return prefix + path;
   },
 };
 
@@ -61,7 +67,6 @@ export const CCP4i2App = (props: PropsWithChildren) => {
         new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 5, 3, 1, 4, 1])
       );
       loadMoorhen("/moorhen.js");
-      /*
       if (memory64) {
         try {
           loadMoorhen("/moorhen64.js");
@@ -71,7 +76,6 @@ export const CCP4i2App = (props: PropsWithChildren) => {
       } else {
         loadMoorhen("/moorhen.js");
       }
-        */
     };
     asyncFunc();
   }, []);
