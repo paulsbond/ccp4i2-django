@@ -59,9 +59,11 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
 }) => {
   return (
     <Button
+      component="label"
       role={undefined}
       variant="outlined"
-      startIcon={<Folder />}
+      tabIndex={-1}
+      startIcon={<CloudUpload />}
       sx={{ mr: 2, my: 2 }}
     >
       <VisuallyHiddenInput
@@ -97,7 +99,7 @@ export const readFilePromise = async (
 };
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
-  processForUpload?: <T>(fileContent: T) => Promise<T>;
+  setFileContent: (fileContent: ArrayBuffer | null | string | File) => void;
   infoContent?: ReactNode;
 }
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
@@ -298,11 +300,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
             const topFile: any = Array.from(fileList)[0];
             const fileContent = await readFilePromise(topFile, "ArrayBuffer");
             console.log(fileContent);
-            if (props.processForUpload) {
-              await props.processForUpload<ArrayBuffer>(
-                fileContent as ArrayBuffer
-              );
-            }
+            props.setFileContent(fileContent);
           }
         }}
       />
