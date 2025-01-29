@@ -67,6 +67,7 @@ export const CCP4i2App = (props: PropsWithChildren) => {
         new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 5, 3, 1, 4, 1])
       );
       loadMoorhen("/moorhen.js");
+      /*
       if (memory64) {
         try {
           loadMoorhen("/moorhen64.js");
@@ -76,6 +77,7 @@ export const CCP4i2App = (props: PropsWithChildren) => {
       } else {
         loadMoorhen("/moorhen.js");
       }
+        */
     };
     asyncFunc();
   }, []);

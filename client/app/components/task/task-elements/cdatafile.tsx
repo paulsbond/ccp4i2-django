@@ -6,6 +6,7 @@ import {
   CircularProgress,
   Input,
   LinearProgress,
+  Menu,
   Stack,
   styled,
   TextField,
@@ -15,6 +16,7 @@ import { useApi } from "../../../api";
 import { CCP4i2TaskElementProps, errorInValidation } from "./task-element";
 import { File as CCP4i2File, Job, Project } from "../../../models";
 import {
+  ReactNode,
   SyntheticEvent,
   useCallback,
   useEffect,
@@ -22,8 +24,8 @@ import {
   useState,
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
-import { CloudUpload } from "@mui/icons-material";
-import { ParseMtz } from "../../parse-mtz";
+import { CloudUpload, Folder, Info } from "@mui/icons-material";
+import { ParseMtz } from "./parse-mtz";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -57,12 +59,10 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
 }) => {
   return (
     <Button
-      component="label"
       role={undefined}
-      variant="contained"
-      tabIndex={-1}
-      startIcon={<CloudUpload />}
-      sx={{ mr: 2 }}
+      variant="outlined"
+      startIcon={<Folder />}
+      sx={{ mr: 2, my: 2 }}
     >
       <VisuallyHiddenInput
         type="file"
@@ -98,15 +98,18 @@ export const readFilePromise = async (
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
   processForUpload?: <T>(fileContent: T) => Promise<T>;
+  infoContent?: ReactNode;
 }
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   props
 ) => {
-  const { job, sx, item } = props;
+  const { job, sx, item, infoContent } = props;
   const api = useApi();
   const { mutate } = api.container<any>(`jobs/${job.id}/container`);
   const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
   const [file, setFile] = useState<any | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
   useEffect(() => {
     setValue(item._value);
@@ -303,11 +306,30 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           }
         }}
       />
+      <Button
+        role={undefined}
+        variant="outlined"
+        startIcon={<Info />}
+        sx={{ mr: 2, my: 2 }}
+        onMouseEnter={(ev) => {
+          ev.stopPropagation();
+          //ev.preventDefault();
+          setAnchorEl(ev.currentTarget);
+        }}
+        onMouseLeave={(ev) => {
+          ev.stopPropagation();
+          //ev.preventDefault();
+          setAnchorEl(null);
+        }}
+      />
       <CircularProgress
         sx={{ height: "2rem", width: "2rem", mt: "1.5rem" }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />
+      <Menu anchorEl={anchorEl} open={open}>
+        {infoContent}
+      </Menu>
     </Stack>
   );
   return;

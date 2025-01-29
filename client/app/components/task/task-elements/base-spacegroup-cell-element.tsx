@@ -7,8 +7,33 @@ import {
   TableRow,
 } from "@mui/material";
 
-export const BaseSpacegroupCellElement = (props: { [data: string]: any }) => {
-  return (
+interface CCell {
+  a: number;
+  b: number;
+  c: number;
+  alpha: number;
+  beta: number;
+  gamma: number;
+}
+
+interface CResolutionRange {
+  low: number;
+  high: number;
+}
+interface CObsData {
+  cell?: CCell;
+  spaceGroup?: string;
+  resolutionRange?: CResolutionRange;
+}
+
+interface BaseSpacegroupCellElementProps {
+  data?: CObsData;
+}
+
+export const BaseSpacegroupCellElement: React.FC<
+  BaseSpacegroupCellElementProps
+> = (props) => {
+  return props.data?.cell ? (
     <Stack direction="column">
       <Table>
         <TableBody>
@@ -30,7 +55,7 @@ export const BaseSpacegroupCellElement = (props: { [data: string]: any }) => {
             {Object.keys(props.data.cell).map((key: string) => (
               <TableCell variant="body" key={key}>
                 {key}=
-                {props.data?.cell[key]?.toPrecision
+                {props.data?.cell && props.data?.cell[key]?.toPrecision
                   ? props.data.cell[key].toPrecision(4)
                   : "?"}
               </TableCell>
@@ -52,5 +77,7 @@ export const BaseSpacegroupCellElement = (props: { [data: string]: any }) => {
         </TableBody>
       </Table>
     </Stack>
+  ) : (
+    <div></div>
   );
 };
