@@ -9,6 +9,24 @@ interface ParseMtzProps {
   setFileContent: (file: ArrayBuffer | null) => void;
 }
 
+import Script from "next/script";
+
+const createArgs = {
+  print(t: string) {
+    console.log(["output", t]);
+  },
+  printErr(t: string) {
+    console.error(["output", t]);
+  },
+  locateFile(path: string, prefix: string) {
+    // if it's moorhen.wasm, use a custom dir
+    if (path.endsWith("moorhen.wasm")) return "/moorhen.wasm";
+    if (path.endsWith("mtz.wasm")) return prefix + path;
+    // otherwise, use the default, the prefix (JS file's dir) + the path
+    return prefix + path;
+  },
+};
+
 export const ParseMtz: React.FC<ParseMtzProps> = ({
   fileContent,
   setFileContent,
@@ -23,21 +41,17 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
     null
   );
   const scriptLoaded = useRef<boolean>(false);
+  const [cootModule, setCootModule] = useState<any | null>(null);
 
   useEffect(() => {
+    console.log({ fileContent, cootModule });
     const asyncFunc = async () => {
-      if (fileContent && fileContent.byteLength) {
+      if (fileContent && fileContent.byteLength && cootModule) {
         const fileName = `File_`;
         const byteArray = new Uint8Array(fileContent);
-        window.CCP4Module.FS_createDataFile(
-          ".",
-          fileName,
-          byteArray,
-          true,
-          true
-        );
-        const header_info = window.CCP4Module.get_mtz_columns(fileName);
-        window.CCP4Module.FS_unlink(`./${fileName}`);
+        cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
+        const header_info = cootModule.get_mtz_columns(fileName);
+        cootModule.FS_unlink(`./${fileName}`);
         const newColumns: { [colType: string]: string } = {};
         for (let ih = 0; ih < header_info.size(); ih += 2) {
           newColumns[header_info.get(ih + 1)] = header_info.get(ih);
@@ -46,7 +60,8 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
       }
     };
     asyncFunc();
-  }, [fileContent]);
+    return () => {};
+  }, [fileContent, cootModule]);
 
   useEffect(() => {
     const sortedColumnNames: any = {};
@@ -97,14 +112,29 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   }, [allColumnNames]);
 
   return (
-    <SimpleDialog
-      open={fileContent != null}
-      onClose={() => {
-        setFileContent(null);
-      }}
-    >
-      <DialogTitle>{item?._objectPath}</DialogTitle>
-      <DialogContent>{JSON.stringify(columnOptions)}</DialogContent>
-    </SimpleDialog>
+    <>
+      <Script
+        src="/moorhen.js"
+        onLoad={async () => {
+          console.log("Hello");
+          //@ts-ignore
+          const cootModule = window
+            .createCootModule(createArgs)
+            .then((module) => {
+              setCootModule(module);
+              console.log({ cm: module });
+            });
+        }}
+      />
+      <SimpleDialog
+        open={fileContent != null}
+        onClose={() => {
+          setFileContent(null);
+        }}
+      >
+        <DialogTitle>{item?._objectPath}</DialogTitle>
+        <DialogContent>{JSON.stringify(columnOptions)}</DialogContent>
+      </SimpleDialog>
+    </>
   );
 };
