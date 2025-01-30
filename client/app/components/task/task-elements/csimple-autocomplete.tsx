@@ -9,6 +9,8 @@ import {
   Autocomplete,
   AutocompleteChangeReason,
   CircularProgress,
+  Menu,
+  MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
@@ -28,6 +30,10 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     label: string;
   } | null>(null);
   const [inFlight, setInFlight] = useState(false);
+  const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
+    null
+  );
+  const validationOpen = Boolean(validationAnchor);
 
   useEffect(() => {
     console.log({ value: item._value });
@@ -136,6 +142,9 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />
+      <Menu open={validationOpen} anchorEl={validationAnchor}>
+        <MenuItem> </MenuItem>
+      </Menu>
     </Stack>
   );
 };

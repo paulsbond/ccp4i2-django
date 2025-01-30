@@ -1,7 +1,23 @@
 "use client";
-import { DialogContent, DialogTitle } from "@mui/material";
+import {
+  Autocomplete,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import SimpleDialog from "@mui/material/Dialog";
 import { useContext, useEffect, useRef, useState } from "react";
+import { v4 as uuid4 } from "uuid";
+import { CCP4i2Context } from "../../../app-context";
+
+const signatureMap = {
+  KMKM: "Intensity Friedel pairs",
+  GLGL: "Structure factor Friedel pairs",
+  JQ: "Intensities",
+  FQ: "Structure factors",
+};
 
 interface ParseMtzProps {
   fileContent: ArrayBuffer;
@@ -9,15 +25,15 @@ interface ParseMtzProps {
   setFileContent: (file: ArrayBuffer | null) => void;
 }
 
-import { CCP4i2Context } from "../../../app-context";
-
 export const ParseMtz: React.FC<ParseMtzProps> = ({
   fileContent,
   setFileContent,
   item,
 }) => {
   const [columnData, setColumnData] = useState<string[] | null>(null);
-  const [columnOptions, setColumnOptions] = useState<any>({});
+  const [columnOptions, setColumnOptions] = useState<{
+    [signature: string]: [keySelectors: string[]];
+  }>({});
   const [allColumnNames, setAllColumnNames] = useState<{ [key: string]: any }>(
     []
   );
@@ -31,7 +47,7 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
     console.log({ fileContent, cootModule });
     const asyncFunc = async () => {
       if (fileContent && fileContent.byteLength && cootModule) {
-        const fileName = `File_`;
+        const fileName = `File_${uuid4()}`;
         const byteArray = new Uint8Array(fileContent);
         cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
         const header_info = cootModule.get_mtz_columns(fileName);
@@ -104,7 +120,31 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
         }}
       >
         <DialogTitle>{item?._objectPath}</DialogTitle>
-        <DialogContent>{JSON.stringify(columnOptions)}</DialogContent>
+        <DialogContent>
+          {Object.keys(columnOptions).map(
+            (signature: string) =>
+              columnOptions[signature].length > 0 && (
+                <Stack direction="row">
+                  <Typography variant="body1" sx={{ minWidth: "15rem", my: 3 }}>
+                    {Object.keys(signatureMap).includes(signature)
+                      ? //@ts-ignore
+                        signatureMap[signature]
+                      : signature}
+                  </Typography>
+                  <Autocomplete
+                    options={columnOptions[signature]}
+                    renderInput={(params) => (
+                      <TextField
+                        sx={{ my: 2, minWidth: "20rem" }}
+                        {...params}
+                        label="Columns"
+                      />
+                    )}
+                  />
+                </Stack>
+              )
+          )}
+        </DialogContent>
       </SimpleDialog>
     </>
   );

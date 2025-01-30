@@ -2,13 +2,15 @@ import {
   Autocomplete,
   AutocompleteChangeReason,
   Avatar,
+  Box,
   Button,
   CircularProgress,
-  Input,
+  ClickAwayListener,
   LinearProgress,
-  Menu,
+  Popper,
   Stack,
   styled,
+  SxProps,
   TextField,
   Typography,
 } from "@mui/material";
@@ -21,11 +23,11 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
-import { CloudUpload, Folder, Info } from "@mui/icons-material";
-import { ParseMtz } from "./parse-mtz";
+import { CloudUpload, Info } from "@mui/icons-material";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -53,23 +55,30 @@ const VisuallyHiddenInput = styled("input")({
 
 interface InputFileUploadProps {
   handleFileChange: (files: FileList | null) => void;
+  disabled: boolean;
+  sx?: SxProps;
 }
 export const InputFileUpload: React.FC<InputFileUploadProps> = ({
   handleFileChange,
+  disabled,
+  sx,
 }) => {
   return (
     <Button
+      disabled={disabled}
       component="label"
       role={undefined}
       variant="outlined"
       tabIndex={-1}
       startIcon={<CloudUpload />}
-      sx={{ mr: 2, my: 2 }}
+      sx={sx}
     >
       <VisuallyHiddenInput
+        disabled={disabled}
         type="file"
         onChange={(event) => handleFileChange(event.target.files)}
         multiple
+        sx={sx}
       />
     </Button>
   );
@@ -99,7 +108,7 @@ export const readFilePromise = async (
 };
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
-  setFileContent: (fileContent: ArrayBuffer | null | string | File) => void;
+  setFileContent?: (fileContent: ArrayBuffer | null | string | File) => void;
   infoContent?: ReactNode;
 }
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
@@ -112,7 +121,11 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const [file, setFile] = useState<any | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-
+  const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
+    null
+  );
+  const validationOpen = Boolean(validationAnchor);
+  const progressRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     setValue(item._value);
   }, [item]);
@@ -279,9 +292,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           : fieldError.severity.includes("WARNING")
           ? yellow[100]
           : red[100],
+        my: 2,
       }}
     >
-      <Avatar sx={{ mt: 3 }} src={`/qticons/${item._class.slice(1)}.png`} />
+      <Avatar src={`/qticons/${item._class.slice(1)}.png`} />
       <Autocomplete
         disabled={job.status !== 1}
         sx={sx}
@@ -293,10 +307,11 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         renderInput={(params) => <TextField {...params} label={guiLabel} />}
         title={objectPath || item._className || "Title"}
       />
-      {fieldError && <Typography>{fieldError.description}</Typography>}
       <InputFileUpload
+        sx={{ my: 2, mr: 2 }}
+        disabled={job.status !== 1}
         handleFileChange={async (fileList: FileList | null) => {
-          if (fileList) {
+          if (fileList && props.setFileContent) {
             const topFile: any = Array.from(fileList)[0];
             const fileContent = await readFilePromise(topFile, "ArrayBuffer");
             console.log(fileContent);
@@ -304,30 +319,39 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           }
         }}
       />
-      <Button
-        role={undefined}
-        variant="outlined"
-        startIcon={<Info />}
-        sx={{ mr: 2, my: 2 }}
-        onMouseEnter={(ev) => {
-          ev.stopPropagation();
-          //ev.preventDefault();
-          setAnchorEl(ev.currentTarget);
-        }}
-        onMouseLeave={(ev) => {
-          ev.stopPropagation();
-          //ev.preventDefault();
+      <ClickAwayListener
+        onClickAway={() => {
           setAnchorEl(null);
         }}
-      />
+      >
+        <Button
+          role={undefined}
+          variant="outlined"
+          startIcon={<Info />}
+          sx={{ my: 2, mr: 2 }}
+          onClick={(ev) => setAnchorEl(ev.currentTarget)}
+        />
+      </ClickAwayListener>
       <CircularProgress
-        sx={{ height: "2rem", width: "2rem", mt: "1.5rem" }}
+        ref={progressRef}
+        sx={{ height: "2rem", width: "2rem" }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />
-      <Menu anchorEl={anchorEl} open={open}>
-        {infoContent}
-      </Menu>
+      <Popper anchorEl={anchorEl} open={open}>
+        <Box sx={{ border: 1, p: 1, bgcolor: "background.paper" }}>
+          {infoContent}
+        </Box>
+      </Popper>
+      <Popper open={Boolean(fieldError)} anchorEl={progressRef.current}>
+        <Box sx={{ border: 1, p: 1, bgcolor: "background.paper" }}>
+          {fieldError && (
+            <Typography sx={{ textWrap: "wrap", maxWidth: "15rem" }}>
+              {fieldError.description}
+            </Typography>
+          )}
+        </Box>
+      </Popper>
     </Stack>
   );
   return;

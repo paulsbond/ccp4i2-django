@@ -1,7 +1,7 @@
 import { Stack } from "@mui/material";
 import { CDataFileElement } from "./cdatafile";
 import { CCP4i2TaskElementProps } from "./task-element";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ParseMtz } from "./parse-mtz";
 import { useApi } from "../../../api";
 import { BaseSpacegroupCellElement } from "./base-spacegroup-cell-element";
@@ -16,18 +16,22 @@ export const CObsDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   const cootModule = useRef<any | null>(null);
 
   const { data: fileDigest } = api.digest<any>(
-    `jobs/${props.job.id}/digest?${props.item.objectPath}`
+    `jobs/${props.job.id}/digest?object_path=${props.item._objectPath}`
   );
-  const returnPromise = useRef<Promise<ArrayBuffer> | null>(null);
+
+  const infoContent = useMemo(
+    () => <BaseSpacegroupCellElement data={fileDigest?.digest} />,
+    [fileDigest]
+  );
+
   return (
     <>
       <Stack direction="column">
         <CDataFileElement
           {...props}
-          infoContent={<BaseSpacegroupCellElement data={fileDigest?.digest} />}
+          infoContent={infoContent}
           setFileContent={setFileContent}
         />
-        <BaseSpacegroupCellElement data={fileDigest?.digest} />
       </Stack>
       {fileContent && (
         <ParseMtz

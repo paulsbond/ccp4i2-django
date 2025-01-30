@@ -14,7 +14,7 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const { job, type, sx, item } = props;
+  const { job, type, sx, item, qualifiers } = props;
   const api = useApi();
   const { mutate } = api.container<any>(`jobs/${job.id}/container`);
 
@@ -24,13 +24,11 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     setValue(item._value);
   }, [item]);
 
-  const { objectPath, qualifiers } = useMemo<{
+  const { objectPath } = useMemo<{
     objectPath: string | null;
-    qualifiers: any | null;
   }>(() => {
-    if (item)
-      return { objectPath: item._objectPath, qualifiers: item._qualifiers };
-    return { objectPath: null, qualifiers: null };
+    if (item) return { objectPath: item._objectPath };
+    return { objectPath: null };
   }, [item]);
 
   const handleChange: ChangeEventHandler<
@@ -64,18 +62,20 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     }
   };
 
+  const guiLabel = useMemo<string>(() => {
+    return qualifiers?.guiLabel
+      ? qualifiers.guiLabel
+      : objectPath?.split(".").at(-1);
+  }, [objectPath, qualifiers]);
+
   return (
     <TextField
       disabled={job.status !== 1}
       sx={sx}
       type={type}
       value={value || ""}
-      label={
-        qualifiers?.guiLabel
-          ? qualifiers.guiLabel
-          : objectPath?.split(".").at(-1)
-      }
-      title={qualifiers?.toolTip ? qualifiers?.toolTip : objectPath}
+      label={guiLabel}
+      title={qualifiers?.toolTip ? qualifiers.toolTip : objectPath}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
     />

@@ -74,7 +74,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
       {
         <Script
           src="/moorhen.js"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           id="moorhen-script-element"
           onLoad={async () => {
             console.log("Hello");
