@@ -9,6 +9,7 @@ import {
   Autocomplete,
   AutocompleteChangeReason,
   CircularProgress,
+  InputAdornment,
   Menu,
   MenuItem,
   Stack,
@@ -131,17 +132,18 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     <Stack direction="row">
       <Autocomplete
         disabled={job.status !== 1}
-        sx={{ minWidth: "20rem", ...sx }}
+        sx={{ minWidth: "20remrem", ...sx }}
         value={value}
         onChange={handleSelect}
         options={options || []}
         renderInput={(params) => <TextField {...params} label={guiLabel} />}
       />
       <CircularProgress
-        sx={{ height: "2rem", width: "2rem", mt: "1.25rem" }}
+        sx={{ height: "2rem", width: "2rem", mt: 3 }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />
+
       <Menu open={validationOpen} anchorEl={validationAnchor}>
         <MenuItem> </MenuItem>
       </Menu>
