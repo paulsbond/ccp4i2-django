@@ -15,6 +15,7 @@ import { useApi } from "../../../api";
 import $ from "jquery";
 import { CObsDataFileElement } from "./cobsdatafile";
 import { CDataFileElement } from "./cdatafile";
+import { CBooleanElement } from "./cboolean";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
@@ -75,6 +76,10 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CString":
         return (
           <CStringElement {...props} item={item} qualifiers={qualifiers} />
+        );
+      case "CBoolean":
+        return (
+          <CBooleanElement {...props} item={item} qualifiers={qualifiers} />
         );
       case "CPdbDataFile":
         return (

@@ -116,8 +116,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 ) => {
   const { job, sx, item, infoContent } = props;
   const api = useApi();
-  const { mutate } = api.container<any>(`jobs/${job.id}/container`);
-  const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
   const [file, setFile] = useState<any | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -140,6 +138,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   }, [item]);
   const [inFlight, setInFlight] = useState(false);
   const [value, setValue] = useState<any | null>(null);
+
+  const { mutate } = api.container<any>(`jobs/${job.id}/container`);
+
+  const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
 
   const { data: project_files, mutate: mutateFiles } = api.get<CCP4i2File[]>(
     `projects/${job.project}/files`
@@ -297,7 +299,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     >
       <Avatar src={`/qticons/${item._class.slice(1)}.png`} />
       <Autocomplete
-        disabled={job.status !== 1}
+        disabled={inFlight || job.status !== 1}
         sx={sx}
         value={value}
         onChange={handleSelect}
@@ -309,7 +311,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       />
       <InputFileUpload
         sx={{ my: 2, mr: 2 }}
-        disabled={job.status !== 1}
+        disabled={inFlight || job.status !== 1}
         handleFileChange={async (fileList: FileList | null) => {
           if (fileList && props.setFileContent) {
             const topFile: any = Array.from(fileList)[0];
@@ -326,6 +328,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       >
         <Button
           role={undefined}
+          disabled={inFlight}
           variant="outlined"
           startIcon={<Info />}
           sx={{ my: 2, mr: 2 }}
