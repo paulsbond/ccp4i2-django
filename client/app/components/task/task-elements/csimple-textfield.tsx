@@ -71,7 +71,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   return (
     <TextField
       disabled={job.status !== 1}
-      sx={sx}
+      sx={{ minWidth: "20rem", ...sx }}
       type={type}
       value={value || ""}
       label={guiLabel}

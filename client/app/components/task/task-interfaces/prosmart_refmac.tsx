@@ -1,11 +1,12 @@
-import { LinearProgress, Paper, Typography } from "@mui/material";
+import { Grid2, LinearProgress, Paper, Typography } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { useMemo } from "react";
 import { useApi } from "../../../api";
 import { itemsForName, valueOfItemPath } from "../task-utils";
 import { BaseSpacegroupCellElement } from "../task-elements/base-spacegroup-cell-element";
-import { CCP4i2Tab, CCP4i2TabPanel, CCP4i2Tabs } from "../task-elements/tabs";
+import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
+import { CCP4i2Container } from "../task-elements/container";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -76,6 +77,197 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
             qualifiers={{ guiLabel: "Refinement mode" }}
           />
+        </CCP4i2Tab>
+
+        {/*}
+        The parameterisation tab
+        */}
+
+        <CCP4i2Tab tab="Parameterisation" key="Parameterisation">
+          <CCP4i2Container
+            itemName=""
+            key="B-factors"
+            {...props}
+            qualifiers={{ guiLabel: "B-factors" }}
+            containerHint="BlockLevel"
+          >
+            <Grid2 container key="Row1">
+              <Grid2 size={{ xs: 12 }} key="solscale">
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="B_REFINEMENT_MODE"
+                  qualifiers={{ guiLabel: "B-factors" }}
+                />
+              </Grid2>
+            </Grid2>
+          </CCP4i2Container>
+
+          <CCP4i2Container
+            itemName=""
+            key="Scaling"
+            {...props}
+            qualifiers={{ guiLabel: "Scaling" }}
+            containerHint="BlockLevel"
+          >
+            <Grid2 container key="Row1">
+              <Grid2 size={{ xs: 6 }} key="solscale">
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="SCALE_TYPE"
+                  qualifiers={{ guiLabel: "Use" }}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 6 }} key="masktype">
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="SOLVENT_MASK_TYPE"
+                  qualifiers={{
+                    guiLabel: (
+                      <span style={{ marginLeft: "1rem", marginRight: "1rem" }}>
+                        solvent scaling, with mask type
+                      </span>
+                    ),
+                  }}
+                />
+              </Grid2>
+            </Grid2>
+            <CCP4i2TaskElement
+              {...props}
+              itemName="SOLVENT_ADVANCED"
+              qualifiers={{
+                guiLabel: "Use custom solvent mask parameters",
+              }}
+              key="SOLVENT_ADVANCED"
+              visibility={() => {
+                return (
+                  itemsForName("SOLVENT_MASK_TYPE", container)[0] === "EXPLICIT"
+                );
+              }}
+            />
+            <CCP4i2Container
+              itemName=""
+              {...props}
+              qualifiers={{ guiLabel: "Custom parameters" }}
+              containerHint="BlockLevel"
+              key="Custom parameters"
+              visibility={() => {
+                return (
+                  itemsForName("SOLVENT_MASK_TYPE", container)[0] ===
+                    "EXPLICIT" && itemsForName("SOLVENT_ADVANCED", container)[0]
+                );
+              }}
+            >
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SOLVENT_VDW_RADIUS"
+                key="SOLVENT_VDW_RADIUS"
+                qualifiers={{
+                  guiLabel: "Increase VDW Radius of non-ion atoms by ",
+                }}
+              />
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SOLVENT_IONIC_RADIUS"
+                key="SOLVENT_IONIC_RADIUS"
+                qualifiers={{
+                  guiLabel: "Increase VDW Radius of potential ion atoms by ",
+                }}
+              />
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SOLVENT_SHRINK"
+                key="SOLVENT_SHRINK"
+                qualifiers={{
+                  guiLabel: "Shrink the mask area by a factor of",
+                }}
+              />
+            </CCP4i2Container>
+          </CCP4i2Container>
+
+          <CCP4i2Container
+            itemName=""
+            key="Translation libration screw (TLS)"
+            {...props}
+            qualifiers={{ guiLabel: "Translation libration screw (TLS)" }}
+            containerHint="BlockLevel"
+          >
+            <Grid2 container key="row1">
+              <Grid2 size={{ xs: 12 }} key="col1">
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="TLSMODE"
+                  qualifiers={{
+                    guiLabel: "TLS parameters",
+                  }}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 12 }} key="col12">
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="NTLSCYCLES"
+                  qualifiers={{
+                    guiLabel: "Number of TLS cycles",
+                  }}
+                  visibility={() => {
+                    return itemsForName("TLSMODE", container)[0] !== "NONE";
+                  }}
+                />
+              </Grid2>
+            </Grid2>
+            <CCP4i2Container
+              itemName=""
+              key="Custom parameters"
+              {...props}
+              qualifiers={{ guiLabel: "Custom parameters" }}
+              containerHint="BlockLevel"
+              visibility={() => {
+                return itemsForName("TLSMODE", container)[0] !== "NONE";
+              }}
+            >
+              <CCP4i2TaskElement
+                {...props}
+                itemName="TLSIN"
+                key=""
+                qualifiers={{
+                  guiLabel: "TLS coefficients",
+                }}
+                visibility={() => {
+                  return itemsForName("TLSMODE", container)[0] === "FILE";
+                }}
+              />
+              <Grid2 container key="row1">
+                <Grid2 size={{ xs: 12 }} key="col1">
+                  <CCP4i2TaskElement
+                    {...props}
+                    itemName="BFACSETUSE"
+                    qualifiers={{
+                      guiLabel: "Reset all B-factors at start ",
+                    }}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 12 }} key="col2">
+                  <CCP4i2TaskElement
+                    {...props}
+                    itemName="BFACSET"
+                    qualifiers={{
+                      guiLabel: "...to a value of",
+                    }}
+                    visibility={() => {
+                      return itemsForName("BFACSETUSE", container)[0];
+                    }}
+                  />
+                </Grid2>
+              </Grid2>
+              <CCP4i2TaskElement
+                {...props}
+                itemName="TLSOUT_ADDU"
+                qualifiers={{
+                  guiLabel:
+                    "Add TLS contribution to output B-factors (only for analysis and deposition)",
+                }}
+              />
+            </CCP4i2Container>
+          </CCP4i2Container>
         </CCP4i2Tab>
       </CCP4i2Tabs>
     </Paper>

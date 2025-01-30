@@ -131,7 +131,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     <Stack direction="row">
       <Autocomplete
         disabled={job.status !== 1}
-        sx={sx}
+        sx={{ minWidth: "20rem", ...sx }}
         value={value}
         onChange={handleSelect}
         options={options || []}
