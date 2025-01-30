@@ -8,10 +8,18 @@ import Script from "next/script";
 export const CCP4i2App = (props: PropsWithChildren) => {
   const [projectId, setProjectId] = useState<Number | null>(null);
   const [jobId, setJobId] = useState<Number | null>(null);
+  const [cootModule, setCootModule] = useState<any | null>(null);
 
   return (
     <CCP4i2Context.Provider
-      value={{ projectId, setProjectId, jobId, setJobId }}
+      value={{
+        projectId,
+        setProjectId,
+        jobId,
+        setJobId,
+        cootModule,
+        setCootModule,
+      }}
     >
       <CssBaseline />
       <MenuBar />

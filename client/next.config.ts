@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  webpack: (config) => {
+    config.module.parser.javascript.importMeta = false;
+
+    return config;
+  },
   async headers() {
     return [
       {

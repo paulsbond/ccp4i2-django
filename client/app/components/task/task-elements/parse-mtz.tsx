@@ -1,7 +1,7 @@
 "use client";
 import { DialogContent, DialogTitle } from "@mui/material";
 import SimpleDialog from "@mui/material/Dialog";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 interface ParseMtzProps {
   fileContent: ArrayBuffer;
@@ -9,23 +9,7 @@ interface ParseMtzProps {
   setFileContent: (file: ArrayBuffer | null) => void;
 }
 
-import Script from "next/script";
-
-const createArgs = {
-  print(t: string) {
-    console.log(["output", t]);
-  },
-  printErr(t: string) {
-    console.error(["output", t]);
-  },
-  locateFile(path: string, prefix: string) {
-    // if it's moorhen.wasm, use a custom dir
-    if (path.endsWith("moorhen.wasm")) return "/moorhen.wasm";
-    if (path.endsWith("mtz.wasm")) return prefix + path;
-    // otherwise, use the default, the prefix (JS file's dir) + the path
-    return prefix + path;
-  },
-};
+import { CCP4i2Context } from "../../../app-context";
 
 export const ParseMtz: React.FC<ParseMtzProps> = ({
   fileContent,
@@ -41,7 +25,7 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
     null
   );
   const scriptLoaded = useRef<boolean>(false);
-  const [cootModule, setCootModule] = useState<any | null>(null);
+  const { cootModule } = useContext(CCP4i2Context);
 
   useEffect(() => {
     console.log({ fileContent, cootModule });
@@ -113,19 +97,6 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
 
   return (
     <>
-      <Script
-        src="/moorhen.js"
-        onLoad={async () => {
-          console.log("Hello");
-          //@ts-ignore
-          const cootModule = window
-            .createCootModule(createArgs)
-            .then((module) => {
-              setCootModule(module);
-              console.log({ cm: module });
-            });
-        }}
-      />
       <SimpleDialog
         open={fileContent != null}
         onClose={() => {
