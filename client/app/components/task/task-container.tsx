@@ -36,10 +36,7 @@ export const TaskContainer = () => {
   if (!params_xml?.params_xml) return <LinearProgress />;
 
   return (
-    <Paper>
-      <Toolbar>
-        <Typography variant="h5">{job.task_name}</Typography>
-      </Toolbar>
+    <Paper sx={{ maxHeight: "calc(100vh - 15rem)", overflowY: "auto" }}>
       {taskInterface}
     </Paper>
   );

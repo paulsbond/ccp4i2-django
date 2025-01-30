@@ -4,9 +4,10 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
-import { TextField } from "@mui/material";
+import { CircularProgress, InputAdornment, TextField } from "@mui/material";
 import { useApi } from "../../../api";
 import { Job } from "../../../models";
 import { CCP4i2CSimpleElementProps } from "./csimple";
@@ -16,12 +17,24 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
 ) => {
   const { job, type, sx, item, qualifiers } = props;
   const api = useApi();
+
+  const inputRef = useRef<HTMLElement | null>(null);
+  const [inFlight, setInFlight] = useState<boolean>(false);
+
+  const [value, setValue] = useState<number | string | boolean | null>(null);
+
   const { mutate } = api.container<any>(`jobs/${job.id}/container`);
 
-  const [value, setValue] = useState<number | string | null>(null);
+  const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
+
+  const { data: validation, mutate: mutateValidation } = api.container<any>(
+    `jobs/${props.job.id}/validation`
+  );
 
   useEffect(() => {
     setValue(item._value);
+    //@ts-ignore
+    //if (inputRef.current) inputRef.current.checked = item._value;
   }, [item]);
 
   const { objectPath } = useMemo<{
@@ -35,32 +48,51 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     HTMLTextAreaElement | HTMLInputElement
   > = useCallback(
     (ev) => {
+      console.log(ev);
       if (type === "int") {
         setValue(parseInt(ev.target.value));
       } else if (type === "float") {
         setValue(parseFloat(ev.target.value));
       } else if (type === "text") {
         setValue(ev.target.value);
+      } else if (type === "checkbox") {
+        //@ts-ignore
+        setValue(ev.target.checked);
+        //@ts-ignore
+        sendValue(ev.target.checked);
       }
     },
     [type]
   );
 
-  const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = async (ev) => {
-    if (ev.key === "Enter") {
+  const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = useCallback(
+    async (ev) => {
+      if (ev.key === "Enter") {
+        sendValue(value);
+      }
+    },
+    [value]
+  );
+
+  const sendValue = useCallback(
+    async (value: any) => {
+      setInFlight(true);
       const setParameterArg = {
         object_path: objectPath,
         value: value,
       };
-      console.log({ setParameterArg });
       const result = await api.post<Job>(
         `jobs/${job.id}/set_parameter`,
         setParameterArg
       );
       console.log(result);
       mutate();
-    }
-  };
+      await mutateParams();
+      await mutateValidation();
+      setInFlight(false);
+    },
+    [objectPath]
+  );
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel
@@ -70,8 +102,39 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   return (
     <TextField
+      inputRef={inputRef}
       disabled={job.status !== 1}
-      sx={{ minWidth: "20rem", ...sx }}
+      sx={{ minWidth: "20rem", ...sx, my: 2 }}
+      slotProps={
+        type === "checkbox"
+          ? {
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <CircularProgress
+                      sx={{ height: "2rem", width: "2rem" }}
+                      variant={inFlight ? "indeterminate" : "determinate"}
+                      value={100}
+                    />
+                  </InputAdornment>
+                ),
+              },
+              htmlInput: { checked: value, sx: { marginY: 2 } },
+            }
+          : {
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <CircularProgress
+                      sx={{ height: "2rem", width: "2rem" }}
+                      variant={inFlight ? "indeterminate" : "determinate"}
+                      value={100}
+                    />
+                  </InputAdornment>
+                ),
+              },
+            }
+      }
       type={type}
       value={value || ""}
       label={guiLabel}

@@ -5,7 +5,7 @@ import { CSimpleAutocompleteElement } from "./csimple-autocomplete";
 import { Typography } from "@mui/material";
 
 export interface CCP4i2CSimpleElementProps extends CCP4i2TaskElementProps {
-  type: "int" | "float" | "text";
+  type: "int" | "float" | "text" | "checkbox";
 }
 
 export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
