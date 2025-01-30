@@ -48,7 +48,6 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
   useEffect(() => {
     return () => {
       if (scriptElement.current) {
-        alert("Removing element");
         scriptElement.current.parentElement?.removeChild(scriptElement.current);
       }
     };
