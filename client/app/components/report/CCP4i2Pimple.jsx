@@ -2,7 +2,7 @@ import $ from "jquery";
 import { decode } from "punycode";
 //import Plotly from "plotly.js-dist-min";
 //const jQuery = (window.jQuery = window.$ = $);
-window.$ = $;
+window.$ = window.jQuery = $;
 
 export function reescape(s) {
   const h = [
