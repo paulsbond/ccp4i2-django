@@ -1,14 +1,9 @@
 import { Job } from "../../../models";
 import { CIntElement } from "./cint";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
-import {
-  classOfDefItem,
-  itemsForName,
-  pathOfParamsItem,
-  valueOfItemPath as valueOfItemPathFunction,
-} from "../task-utils";
+import { itemsForName } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import { useApi } from "../../../api";
@@ -86,6 +81,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           <CPdbDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );
       case "CFreeRDataFile":
+      case "CTLSDataFile":
         return (
           <CDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );

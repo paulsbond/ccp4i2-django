@@ -1,4 +1,5 @@
 import $ from "jquery";
+import { useMemo } from "react";
 
 export const classOfDefItem = (
   item: HTMLElement
@@ -115,4 +116,11 @@ export const itemsForName = (
 ) => {
   const itemMatches = findItems(name, container, multiple);
   return itemMatches;
+};
+
+export const useTaskContainer = (param_name: string, container: any) => {
+  return useMemo(() => {
+    if (container) return itemsForName(param_name, container)[0]._value;
+    return null;
+  }, [container]);
 };

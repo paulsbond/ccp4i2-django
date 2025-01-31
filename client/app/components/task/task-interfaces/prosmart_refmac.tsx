@@ -3,7 +3,7 @@ import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { useMemo } from "react";
 import { useApi } from "../../../api";
-import { itemsForName, valueOfItemPath } from "../task-utils";
+import { itemsForName, useTaskContainer, valueOfItemPath } from "../task-utils";
 import { BaseSpacegroupCellElement } from "../task-elements/base-spacegroup-cell-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2Container } from "../task-elements/container";
@@ -21,31 +21,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     `jobs/${props.job.id}/digest?object_path=prosmart_refmac.inputData.FREERFLAG`
   );
 
-  const refinementMode = useMemo(() => {
-    if (container) return itemsForName("REFINEMENT_MODE", container)[0]._value;
-    return null;
-  }, [container]);
-
-  const solventMaskType = useMemo(() => {
-    if (container)
-      return itemsForName("SOLVENT_MASK_TYPE", container)[0]._value;
-    return null;
-  }, [container]);
-
-  const solventAdvanced = useMemo(() => {
-    if (container) return itemsForName("SOLVENT_ADVANCED", container)[0]._value;
-    return null;
-  }, [container]);
-
-  const tlsMode = useMemo(() => {
-    if (container) return itemsForName("TLSMODE", container)[0]._value;
-    return null;
-  }, [container]);
-
-  const bfacSetUse = useMemo(() => {
-    if (container) return itemsForName("BFACSETUSE", container)[0]._value;
-    return null;
-  }, [container]);
+  const refinementMode = useTaskContainer("REFINEMENT_MODE", container);
+  const solventAdvanced = useTaskContainer("SOLVENT_ADVANCED", container);
+  const solventMaskType = useTaskContainer("SOLVENT_MASK_TYPE", container);
+  const tlsMode = useTaskContainer("TLSMODE", container);
+  const bfacSetUse = useTaskContainer("BFACSETUSE", container);
 
   if (!container) return <LinearProgress />;
 

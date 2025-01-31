@@ -27,7 +27,7 @@ import {
   useState,
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
-import { CloudUpload, Info } from "@mui/icons-material";
+import { Folder, Info } from "@mui/icons-material";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -71,7 +71,7 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
       variant="outlined"
       tabIndex={-1}
       size="small"
-      startIcon={<CloudUpload />}
+      startIcon={<Folder />}
       sx={sx}
     >
       <VisuallyHiddenInput
@@ -342,7 +342,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       </ClickAwayListener>
       <LinearProgress
         ref={progressRef}
-        sx={{ height: "2rem", width: "2rem", mt: 1.5 }}
+        sx={{ height: "2rem", width: "4rem", mt: 1.5 }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={0}
       />
@@ -352,7 +352,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         </Box>
       </Popper>
       <Popper open={Boolean(fieldError)} anchorEl={progressRef.current}>
-        <Box sx={{ border: 1, p: 1, bgcolor: "background.paper" }}>
+        <Box sx={{ border: 1, p: 1, bgcolor: "rgba(0.1, 0.1, 0.1, 0.15)" }}>
           {fieldError && (
             <Typography sx={{ textWrap: "wrap", maxWidth: "15rem" }}>
               {fieldError.description}
