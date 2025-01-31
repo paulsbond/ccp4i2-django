@@ -1,17 +1,13 @@
 import logging
 import datetime
-import pathlib
 import json
-from typing import Union
 from xml.etree import ElementTree as ET
 from pytz import timezone
-
-from django.shortcuts import get_object_or_404
+from django.http import Http404
+from rest_framework.response import Response
+from rest_framework import status
 from ccp4i2.core import CCP4TaskManager
-from ccp4i2.core.CCP4Utils import openFileToEtree
-from ccp4i2.core.CCP4File import CI2XmlDataFile
 from ccp4i2.core.CCP4Container import CContainer
-from ccp4i2.core.CCP4ErrorHandling import CErrorReport
 from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_file
@@ -54,6 +50,7 @@ from ..db import models
 from ..lib.ccp4i2_report import make_old_report
 from ..lib.job_utils.clone_job import clone_job
 from ..lib.job_utils.find_dependent_jobs import find_dependent_jobs
+from ..lib.job_utils.find_dependent_jobs import delete_job_and_dependents
 from ..lib.job_utils.set_parameter import set_parameter
 from ..lib.job_utils.get_job_container import get_job_container
 from ..lib.job_utils.json_for_job_container import json_for_job_container
@@ -232,6 +229,14 @@ class JobViewSet(ModelViewSet):
     serializer_class = serializers.JobSerializer
     parser_classes = [FormParser, MultiPartParser]
     filterset_fields = ["project"]
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            delete_job_and_dependents(instance)
+        except Http404:
+            pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,

@@ -3,7 +3,6 @@ import { PropsWithChildren, useEffect, useState } from "react";
 import { CCP4i2Context } from "../app-context";
 import { CssBaseline } from "@mui/material";
 import MenuBar from "./menu-bar";
-import Script from "next/script";
 
 export const CCP4i2App = (props: PropsWithChildren) => {
   const [projectId, setProjectId] = useState<Number | null>(null);

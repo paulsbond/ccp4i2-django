@@ -212,7 +212,8 @@ export const JobCard: React.FC<JobCardProps> = ({
       <MyCard
         key={job.number}
         variant="elevation"
-        onClick={() => {
+        onClick={(ev) => {
+          ev.stopPropagation();
           router.push(`/project/${job.project}/job/${job.id}`);
         }}
       >

@@ -1,22 +1,15 @@
-from pathlib import Path
 from typing import List
 import logging
-import uuid
-
-from ccp4i2.core import CCP4TaskManager
+import shutil
 
 from ...db import models
-from ...db.ccp4i2_django_wrapper import using_django_pm
-from .remove_container_default_values import remove_container_default_values
-from .save_params_for_job import save_params_for_job
-
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def find_dependent_jobs(
-    the_job: models.Job, growing_list: List[models.Job] = None
+    the_job: models.Job, growing_list: List[models.Job] = None, leaf_action=None
 ) -> List[models.Job]:
     assert isinstance(the_job, models.Job)
     if growing_list is None:
@@ -31,5 +24,47 @@ def find_dependent_jobs(
     for descendent_job in descendent_jobs:
         if descendent_job not in growing_list:
             growing_list.append(descendent_job)
+            original_length = len(growing_list)
             find_dependent_jobs(descendent_job, growing_list)
+            new_length = len(growing_list)
+            if original_length == new_length:
+                # Here if this is a leaf (i.e. descendent-free)
+                if leaf_action is not None:
+                    leaf_action(descendent_job)
     return growing_list
+
+
+def delete_job_and_dir(the_job: models.Job):
+    char_values_of_job = models.JobCharValue.objects.filter(job=the_job)
+    for char_value_of_job in char_values_of_job:
+        char_value_of_job.delete()
+    float_values_of_job = models.JobFloatValue.objects.filter(job=the_job)
+    for float_value_of_job in float_values_of_job:
+        float_value_of_job.delete()
+    files_of_job = models.File.objects.filter(job=the_job)
+    for job_file in files_of_job:
+        job_file_as_file: models.File = job_file
+        job_file_as_file.path.unlink()
+        job_file.delete()
+    shutil.rmtree(str(the_job.directory))
+    the_job.delete()
+
+
+def delete_job_and_dependents(the_job: models.Job):
+    jobs_before = models.Job.objects.count()
+    files_before = models.File.objects.count()
+    file_uses_before = models.FileUse.objects.count()
+    file_imports_before = models.FileImport.objects.count()
+    # Fix me: Note that this does not remove files that are located in CCP4_IMPORTED_FILES
+    find_dependent_jobs(
+        the_job, leaf_action=lambda sub_job: delete_job_and_dir(sub_job)
+    )
+    the_job.delete()
+    jobs_after = models.Job.objects.count()
+    files_after = models.File.objects.count()
+    file_uses_after = models.FileUse.objects.count()
+    file_imports_after = models.FileImport.objects.count()
+    logger.warning("Deleted %s jobs", jobs_after - jobs_before)
+    logger.warning("Deleted %s files", files_after - files_before)
+    logger.warning("Deleted %s file_uses", file_uses_after - file_uses_before)
+    logger.warning("Deleted %s jobs", file_imports_after - file_imports_before)

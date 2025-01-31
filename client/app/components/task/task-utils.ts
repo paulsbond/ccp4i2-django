@@ -122,7 +122,7 @@ export const useTaskContainer = (container: any) => {
   return useMemo(() => {
     if (container)
       return (param_name: string) =>
-        itemsForName(param_name, container)[0]._value;
+        itemsForName(param_name, container)[0]?._value;
     return () => {};
   }, [container]);
 };
