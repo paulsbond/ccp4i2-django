@@ -70,6 +70,7 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
       role={undefined}
       variant="outlined"
       tabIndex={-1}
+      size="small"
       startIcon={<CloudUpload />}
       sx={sx}
     >
@@ -294,23 +295,26 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           : fieldError.severity.includes("WARNING")
           ? yellow[100]
           : red[100],
-        my: 2,
+        my: 1,
       }}
     >
       <Avatar src={`/qticons/${item._class.slice(1)}.png`} />
       <Autocomplete
         disabled={inFlight || job.status !== 1}
-        sx={sx}
+        sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
+        size="small"
         value={value}
         onChange={handleSelect}
         options={fileOptions || []}
         getOptionLabel={getOptionLabel}
         getOptionKey={(option) => `${option.uuid}`}
-        renderInput={(params) => <TextField {...params} label={guiLabel} />}
+        renderInput={(params) => (
+          <TextField {...params} label={guiLabel} size="small" />
+        )}
         title={objectPath || item._className || "Title"}
       />
       <InputFileUpload
-        sx={{ my: 2, mr: 2 }}
+        sx={{ my: 1, mr: 2 }}
         disabled={inFlight || job.status !== 1}
         handleFileChange={async (fileList: FileList | null) => {
           if (fileList && props.setFileContent) {
@@ -331,15 +335,16 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           disabled={inFlight}
           variant="outlined"
           startIcon={<Info />}
-          sx={{ my: 2, mr: 2 }}
+          sx={{ my: 1, mr: 2 }}
+          size="small"
           onClick={(ev) => setAnchorEl(ev.currentTarget)}
         />
       </ClickAwayListener>
-      <CircularProgress
+      <LinearProgress
         ref={progressRef}
-        sx={{ height: "2rem", width: "2rem" }}
+        sx={{ height: "2rem", width: "2rem", mt: 1.5 }}
         variant={inFlight ? "indeterminate" : "determinate"}
-        value={100}
+        value={0}
       />
       <Popper anchorEl={anchorEl} open={open}>
         <Box sx={{ border: 1, p: 1, bgcolor: "background.paper" }}>

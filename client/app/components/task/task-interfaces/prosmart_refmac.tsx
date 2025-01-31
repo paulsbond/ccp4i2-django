@@ -22,8 +22,29 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   );
 
   const refinementMode = useMemo(() => {
-    if (!container) return "UNKNOWN";
-    return itemsForName("REFINEMENT_MODE", container)[0]._value;
+    if (container) return itemsForName("REFINEMENT_MODE", container)[0]._value;
+    return null;
+  }, [container]);
+
+  const solventMaskType = useMemo(() => {
+    if (container)
+      return itemsForName("SOLVENT_MASK_TYPE", container)[0]._value;
+    return null;
+  }, [container]);
+
+  const solventAdvanced = useMemo(() => {
+    if (container) return itemsForName("SOLVENT_ADVANCED", container)[0]._value;
+    return null;
+  }, [container]);
+
+  const tlsMode = useMemo(() => {
+    if (container) return itemsForName("TLSMODE", container)[0]._value;
+    return null;
+  }, [container]);
+
+  const bfacSetUse = useMemo(() => {
+    if (container) return itemsForName("BFACSETUSE", container)[0]._value;
+    return null;
   }, [container]);
 
   if (!container) return <LinearProgress />;
@@ -36,7 +57,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           <CCP4i2TaskElement
             itemName="F_SIGF"
             {...props}
-            sx={{ m: 2, width: "80rem", maxWidth: "80rem" }}
             qualifiers={{ guiLabel: "Reflection" }}
           />
           {false && F_SIGFDigest?.digest && (
@@ -45,7 +65,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           <CCP4i2TaskElement
             itemName="FREERFLAG"
             {...props}
-            sx={{ m: 2, width: "80rem", maxWidth: "80rem" }}
             qualifiers={{ guiLabel: "Free R flags" }}
           />
           {false && FREERFLAGDigest?.digest && (
@@ -54,27 +73,23 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           <CCP4i2TaskElement
             itemName="XYZIN"
             {...props}
-            sx={{ m: 2, width: "80rem", maxWidth: "80rem" }}
             qualifiers={{ guiLabel: "Coordinates" }}
           />
           <CCP4i2TaskElement
             itemName="NCYCRIGID"
             {...props}
-            sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
             qualifiers={{ guiLabel: "Number of rigid body cycles" }}
             visibility={() => refinementMode === "RIGID"}
           />
           <CCP4i2TaskElement
             itemName="NCYCLES"
             {...props}
-            sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
             qualifiers={{ guiLabel: "Number of cycles" }}
             visibility={() => refinementMode === "RESTR"}
           />
           <CCP4i2TaskElement
             itemName="REFINEMENT_MODE"
             {...props}
-            sx={{ m: 2, width: "20rem", maxWidth: "20rem" }}
             qualifiers={{ guiLabel: "Refinement mode" }}
           />
         </CCP4i2Tab>
@@ -139,9 +154,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               }}
               key="SOLVENT_ADVANCED"
               visibility={() => {
-                return (
-                  itemsForName("SOLVENT_MASK_TYPE", container)[0] === "EXPLICIT"
-                );
+                console.log("In visibility");
+                return solventMaskType === "EXPLICIT";
               }}
             />
             <CCP4i2Container
@@ -151,10 +165,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               containerHint="BlockLevel"
               key="Custom parameters"
               visibility={() => {
-                return (
-                  itemsForName("SOLVENT_MASK_TYPE", container)[0] ===
-                    "EXPLICIT" && itemsForName("SOLVENT_ADVANCED", container)[0]
-                );
+                return solventMaskType === "EXPLICIT" && solventAdvanced;
               }}
             >
               <CCP4i2TaskElement
@@ -208,9 +219,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                   qualifiers={{
                     guiLabel: "Number of TLS cycles",
                   }}
-                  visibility={() => {
-                    return itemsForName("TLSMODE", container)[0] !== "NONE";
-                  }}
+                  visibility={() => tlsMode !== "NONE"}
                 />
               </Grid2>
             </Grid2>
@@ -220,9 +229,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               {...props}
               qualifiers={{ guiLabel: "Custom parameters" }}
               containerHint="BlockLevel"
-              visibility={() => {
-                return itemsForName("TLSMODE", container)[0] !== "NONE";
-              }}
+              visibility={() => tlsMode !== "NONE"}
             >
               <CCP4i2TaskElement
                 {...props}
@@ -231,9 +238,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 qualifiers={{
                   guiLabel: "TLS coefficients",
                 }}
-                visibility={() => {
-                  return itemsForName("TLSMODE", container)[0] === "FILE";
-                }}
+                visibility={() => tlsMode === "FILE"}
               />
               <Grid2 container key="row1">
                 <Grid2 size={{ xs: 12 }} key="col1">
@@ -252,9 +257,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                     qualifiers={{
                       guiLabel: "...to a value of",
                     }}
-                    visibility={() => {
-                      return itemsForName("BFACSETUSE", container)[0];
-                    }}
+                    visibility={() => bfacSetUse}
                   />
                 </Grid2>
               </Grid2>

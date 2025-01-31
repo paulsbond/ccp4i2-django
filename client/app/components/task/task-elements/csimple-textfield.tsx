@@ -7,7 +7,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { CircularProgress, InputAdornment, TextField } from "@mui/material";
+import {
+  CircularProgress,
+  InputAdornment,
+  LinearProgress,
+  TextField,
+} from "@mui/material";
 import { useApi } from "../../../api";
 import { Job } from "../../../models";
 import { CCP4i2CSimpleElementProps } from "./csimple";
@@ -104,31 +109,38 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     <TextField
       inputRef={inputRef}
       disabled={job.status !== 1}
-      sx={{ minWidth: "20rem", ...sx, my: 2 }}
+      size="small"
+      sx={{ minWidth: "20rem", py: 2, my: 1, ...sx }}
       slotProps={
         type === "checkbox"
           ? {
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
-                    <CircularProgress
-                      sx={{ height: "2rem", width: "2rem" }}
+                    <LinearProgress
+                      sx={{
+                        height: "2rem",
+                        width: "2rem",
+                        mt: 2,
+                        mb: 2,
+                        py: 2,
+                      }}
                       variant={inFlight ? "indeterminate" : "determinate"}
-                      value={100}
+                      value={0}
                     />
                   </InputAdornment>
                 ),
               },
-              htmlInput: { checked: value, sx: { marginY: 2 } },
+              htmlInput: { checked: value, sx: { my: 1 } },
             }
           : {
               input: {
                 endAdornment: (
                   <InputAdornment position="end">
-                    <CircularProgress
+                    <LinearProgress
                       sx={{ height: "2rem", width: "2rem" }}
                       variant={inFlight ? "indeterminate" : "determinate"}
-                      value={100}
+                      value={0}
                     />
                   </InputAdornment>
                 ),

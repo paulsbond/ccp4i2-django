@@ -132,14 +132,34 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     <Stack direction="row">
       <Autocomplete
         disabled={job.status !== 1}
-        sx={{ minWidth: "20remrem", ...sx }}
+        sx={{ minWidth: "20rem", py: 0, mb: 1, ...sx }}
         value={value}
         onChange={handleSelect}
         options={options || []}
-        renderInput={(params) => <TextField {...params} label={guiLabel} />}
+        size="small"
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label={guiLabel}
+            size="small"
+            /*slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <CircularProgress
+                      sx={{ height: "1rem", width: "1rem" }}
+                      variant={inFlight ? "indeterminate" : "determinate"}
+                      value={100}
+                    />
+                  </InputAdornment>
+                ),
+              },
+            }}*/
+          />
+        )}
       />
       <CircularProgress
-        sx={{ height: "2rem", width: "2rem", mt: 3 }}
+        sx={{ height: "2rem", width: "2rem" }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={100}
       />
