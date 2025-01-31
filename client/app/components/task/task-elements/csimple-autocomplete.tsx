@@ -10,6 +10,7 @@ import {
   AutocompleteChangeReason,
   CircularProgress,
   InputAdornment,
+  LinearProgress,
   Menu,
   MenuItem,
   Stack,
@@ -158,10 +159,10 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
           />
         )}
       />
-      <CircularProgress
-        sx={{ height: "2rem", width: "2rem" }}
+      <LinearProgress
+        sx={{ height: "2rem", width: "2rem", mt: 0.5 }}
         variant={inFlight ? "indeterminate" : "determinate"}
-        value={100}
+        value={0}
       />
 
       <Menu open={validationOpen} anchorEl={validationAnchor}>

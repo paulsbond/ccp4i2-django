@@ -11,6 +11,7 @@ import $ from "jquery";
 import { CObsDataFileElement } from "./cobsdatafile";
 import { CDataFileElement } from "./cdatafile";
 import { CBooleanElement } from "./cboolean";
+import { CListElement } from "./list";
 
 export interface CCP4i2TaskElementProps {
   job: Job;
@@ -81,6 +82,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           <CPdbDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );
       case "CFreeRDataFile":
+      case "CDictDataFile":
       case "CTLSDataFile":
         return (
           <CDataFileElement {...props} item={item} qualifiers={qualifiers} />
@@ -89,6 +91,8 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         return (
           <CObsDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );
+      case "CList":
+        return <CListElement {...props} item={item} qualifiers={qualifiers} />;
       default:
         return <Typography>{item ? item._class : "No item"}</Typography>;
     }

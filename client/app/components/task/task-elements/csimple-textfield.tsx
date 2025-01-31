@@ -11,6 +11,7 @@ import {
   CircularProgress,
   InputAdornment,
   LinearProgress,
+  Stack,
   TextField,
 } from "@mui/material";
 import { useApi } from "../../../api";
@@ -27,8 +28,6 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const [inFlight, setInFlight] = useState<boolean>(false);
 
   const [value, setValue] = useState<number | string | boolean | null>(null);
-
-  const { mutate } = api.container<any>(`jobs/${job.id}/container`);
 
   const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
 
@@ -91,7 +90,6 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         setParameterArg
       );
       console.log(result);
-      mutate();
       await mutateParams();
       await mutateValidation();
       setInFlight(false);
@@ -106,53 +104,37 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   }, [objectPath, qualifiers]);
 
   return (
-    <TextField
-      inputRef={inputRef}
-      disabled={job.status !== 1}
-      size="small"
-      sx={{ minWidth: "20rem", py: 2, my: 1, ...sx }}
-      slotProps={
-        type === "checkbox"
-          ? {
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <LinearProgress
-                      sx={{
-                        height: "2rem",
-                        width: "2rem",
-                        mt: 2,
-                        mb: 2,
-                        py: 2,
-                      }}
-                      variant={inFlight ? "indeterminate" : "determinate"}
-                      value={0}
-                    />
-                  </InputAdornment>
-                ),
-              },
-              htmlInput: { checked: value, sx: { my: 1 } },
-            }
-          : {
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <LinearProgress
-                      sx={{ height: "2rem", width: "2rem" }}
-                      variant={inFlight ? "indeterminate" : "determinate"}
-                      value={0}
-                    />
-                  </InputAdornment>
-                ),
-              },
-            }
-      }
-      type={type}
-      value={value || ""}
-      label={guiLabel}
-      title={qualifiers?.toolTip ? qualifiers.toolTip : objectPath}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-    />
+    <Stack direction="row">
+      <TextField
+        inputRef={inputRef}
+        disabled={job.status !== 1}
+        size="small"
+        sx={{ minWidth: "20rem", py: 2, my: 1, ...sx }}
+        slotProps={
+          type === "checkbox"
+            ? {
+                htmlInput: { checked: value, sx: { my: 1 } },
+              }
+            : {}
+        }
+        type={type}
+        value={value || ""}
+        label={guiLabel}
+        title={qualifiers?.toolTip ? qualifiers.toolTip : objectPath}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+      />
+      <LinearProgress
+        sx={{
+          height: "2rem",
+          width: "2rem",
+          mt: 3.5,
+          mb: 2,
+          py: 2,
+        }}
+        variant={inFlight ? "indeterminate" : "determinate"}
+        value={0}
+      />
+    </Stack>
   );
 };

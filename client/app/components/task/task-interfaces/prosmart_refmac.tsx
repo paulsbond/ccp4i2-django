@@ -13,6 +13,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { data: container, mutate: mutateContainer } = api.container<any>(
     `jobs/${props.job.id}/container`
   );
+
   //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
   const { data: F_SIGFDigest } = api.digest<any>(
     `jobs/${props.job.id}/digest?object_path=prosmart_refmac.inputData.F_SIGF`
@@ -21,11 +22,13 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     `jobs/${props.job.id}/digest?object_path=prosmart_refmac.inputData.FREERFLAG`
   );
 
-  const refinementMode = useTaskContainer("REFINEMENT_MODE", container);
-  const solventAdvanced = useTaskContainer("SOLVENT_ADVANCED", container);
-  const solventMaskType = useTaskContainer("SOLVENT_MASK_TYPE", container);
-  const tlsMode = useTaskContainer("TLSMODE", container);
-  const bfacSetUse = useTaskContainer("BFACSETUSE", container);
+  //This magic means that the following variables will be kept up to date with the values of the associated parameters
+  const useTaskParam = useTaskContainer(container);
+  const refinementMode = useTaskParam("REFINEMENT_MODE");
+  const solventAdvanced = useTaskParam("SOLVENT_ADVANCED");
+  const solventMaskType = useTaskParam("SOLVENT_MASK_TYPE");
+  const tlsMode = useTaskParam("TLSMODE");
+  const bfacSetUse = useTaskParam("BFACSETUSE");
 
   if (!container) return <LinearProgress />;
 
@@ -54,6 +57,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="XYZIN"
             {...props}
             qualifiers={{ guiLabel: "Coordinates" }}
+          />
+          <CCP4i2TaskElement
+            itemName="DICT_LIST"
+            {...props}
+            qualifiers={{ guiLabel: "Dictionaries" }}
           />
           <CCP4i2TaskElement
             itemName="NCYCRIGID"

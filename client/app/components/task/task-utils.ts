@@ -118,9 +118,39 @@ export const itemsForName = (
   return itemMatches;
 };
 
-export const useTaskContainer = (param_name: string, container: any) => {
+export const useTaskContainer = (container: any) => {
   return useMemo(() => {
-    if (container) return itemsForName(param_name, container)[0]._value;
-    return null;
+    if (container)
+      return (param_name: string) =>
+        itemsForName(param_name, container)[0]._value;
+    return () => {};
   }, [container]);
+};
+
+export const valueForDispatch = (item: any): any => {
+  if (
+    !item ||
+    typeof item._value === "undefined" ||
+    item._value === undefined ||
+    item._value === null ||
+    typeof item._value === "string" ||
+    typeof item._value === "number" ||
+    typeof item._value === "boolean"
+  ) {
+    return item._value;
+  } else if (item._value.constructor == Object) {
+    const result: any = {};
+    Object.keys(item._value).forEach(
+      (key: string) => (result[key] = valueForDispatch(item._value[key]))
+    );
+    return result;
+  } else if (Array.isArray(item._value)) {
+    if (item._value.length == 0) return [];
+    const result: any[] = item._value.map((value: any) =>
+      valueForDispatch(value)
+    );
+    return result;
+  } else {
+    console.log("Unknown item", item._value);
+  }
 };
