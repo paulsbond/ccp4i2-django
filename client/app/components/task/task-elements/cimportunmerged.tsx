@@ -24,9 +24,10 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
   const api = useApi();
-  const { item, job } = props;
+  const { itemName, job } = props;
   const { data: container } = api.container<any>(`jobs/${job.id}/container`);
   const useItem = useTaskItem(container);
+  const item = useItem(itemName);
   const { getErrors } = useValidation(job.id);
 
   const fileObjectPath = useMemo<string | null>(() => {
@@ -75,18 +76,10 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
       />
       <CardContent>
         {fileObjectPath && (
-          <CDataFileElement
-            {...props}
-            item={fileItem}
-            itemName={fileObjectPath}
-          />
+          <CDataFileElement {...props} itemName={fileObjectPath} />
         )}
         {cellObjectPath && (
-          <CCellElement
-            {...props}
-            item={useItem(cellObjectPath || "")}
-            itemName={cellObjectPath}
-          />
+          <CCellElement {...props} itemName={cellObjectPath} />
         )}
         <Grid2 container rowSpacing={0} sx={{ mt: 2 }}>
           <Grid2 size={{ xs: 4 }}>
@@ -95,7 +88,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
               {...props}
               sx={{ my: 0, py: 0, minWidth: "10rem" }}
               itemName={`${crystalNameObjectPath}`}
-              item={useItem(crystalNameObjectPath || "")}
               qualifiers={{ ...props.qualifiers, guiLabel: "Crystal name" }}
             />
           </Grid2>
@@ -105,7 +97,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
               {...props}
               sx={{ my: 0, py: 0, minWidth: "10rem" }}
               itemName={`${datasetObjectPath}`}
-              item={useItem(datasetObjectPath || "")}
               qualifiers={{ ...props.qualifiers, guiLabel: "Dataset name" }}
             />
           </Grid2>
@@ -115,7 +106,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
               {...props}
               sx={{ my: 0, py: 0, minWidth: "10rem" }}
               itemName={`${wavelengthObjectPath}`}
-              item={useItem(wavelengthObjectPath || "")}
               qualifiers={{ ...props.qualifiers, guiLabel: "Wavelength" }}
             />
           </Grid2>

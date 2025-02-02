@@ -5,18 +5,23 @@ import { useMemo, useRef, useState } from "react";
 import { ParseMtz } from "./parse-mtz";
 import { useApi } from "../../../api";
 import { BaseSpacegroupCellElement } from "./base-spacegroup-cell-element";
+import { useTaskItem } from "../task-utils";
 
 export const CObsDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
+  const { job, itemName } = props;
   const api = useApi();
+  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
+  const useItem = useTaskItem(container);
+  const item = useItem(itemName);
   const [fileContent, setFileContent] = useState<
     ArrayBuffer | null | string | File
   >(null);
   const cootModule = useRef<any | null>(null);
 
   const { data: fileDigest } = api.digest<any>(
-    `jobs/${props.job.id}/digest?object_path=${props.item._objectPath}`
+    `jobs/${props.job.id}/digest?object_path=${item._objectPath}`
   );
 
   const infoContent = useMemo(
@@ -35,7 +40,7 @@ export const CObsDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       </Stack>
       {fileContent && (
         <ParseMtz
-          item={props.item}
+          item={item}
           fileContent={fileContent as ArrayBuffer}
           setFileContent={setFileContent}
         />

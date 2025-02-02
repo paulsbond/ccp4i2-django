@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@mui/material";
 import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
-import { itemsForName } from "../task-utils";
+import { itemsForName, useTaskItem } from "../task-utils";
 
 interface CContainerElementProps extends CCP4i2TaskElementProps {
   containerHint?: "FolderLevel" | "BlockLevel";
@@ -13,17 +13,17 @@ export const CContainerElement: React.FC<
   const api = useApi();
   const {
     job,
-    item: item_in,
     itemName,
     children,
     containerHint = "FolderLevel",
     visibility,
     qualifiers,
   } = props;
+  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
+  const useItem = useTaskItem(container);
+  const item = useItem(itemName);
   const [visibilityPrompt, setVisibilityPrompt] = useState<number>(0);
   const visibilityPromptRef = useRef<number>(0);
-
-  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
 
   const inferredVisibility = useMemo(() => {
     if (!visibility) return true;
@@ -32,17 +32,6 @@ export const CContainerElement: React.FC<
     }
     return visibility;
   }, [visibility]);
-
-  const item = useMemo<any | null>(() => {
-    if (container) {
-      if (item_in) return item_in;
-      else if (itemName) {
-        const matches = itemsForName(itemName, container);
-        return matches[0];
-      }
-    }
-    return null;
-  }, [item_in, itemName, container]);
 
   const childNames = useMemo(() => {
     if (item) {

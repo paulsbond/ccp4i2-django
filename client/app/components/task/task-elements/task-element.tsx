@@ -3,7 +3,7 @@ import { CIntElement } from "./cint";
 import { PropsWithChildren, useMemo } from "react";
 import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
-import { itemsForName, useTaskItem } from "../task-utils";
+import { useTaskItem } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import { useApi } from "../../../api";
@@ -25,7 +25,6 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
   pathOfItem?: (item: HTMLElement) => string;
   visibility?: boolean | (() => boolean);
   qualifiers?: any;
-  item?: any;
 }
 
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
@@ -62,33 +61,21 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const interfaceElement = useMemo(() => {
     switch (item?._class) {
       case "CInt":
-        return <CIntElement {...props} item={item} qualifiers={qualifiers} />;
+        return <CIntElement {...props} qualifiers={qualifiers} />;
       case "CFloat":
       case "CCellLength":
       case "CCellAngle":
       case "CWavelength":
-        return <CFloatElement {...props} item={item} qualifiers={qualifiers} />;
+        return <CFloatElement {...props} qualifiers={qualifiers} />;
       case "CString":
       case "COneWord":
-        return (
-          <CStringElement {...props} item={item} qualifiers={qualifiers} />
-        );
+        return <CStringElement {...props} qualifiers={qualifiers} />;
       case "CBoolean":
-        return (
-          <CBooleanElement {...props} item={item} qualifiers={qualifiers} />
-        );
+        return <CBooleanElement {...props} qualifiers={qualifiers} />;
       case "CPdbDataFile":
-        return (
-          <CPdbDataFileElement {...props} item={item} qualifiers={qualifiers} />
-        );
+        return <CPdbDataFileElement {...props} qualifiers={qualifiers} />;
       case "CImportUnmerged":
-        return (
-          <CImportUnmergedElement
-            {...props}
-            item={item}
-            qualifiers={qualifiers}
-          />
-        );
+        return <CImportUnmergedElement {...props} qualifiers={qualifiers} />;
       case "CFreeRDataFile":
       case "CDictDataFile":
       case "CTLSDataFile":
@@ -99,36 +86,23 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CAsuDataFile":
       case "CUnmergedDataFile":
       case "CMDLMolDataFile":
-        return (
-          <CDataFileElement {...props} item={item} qualifiers={qualifiers} />
-        );
+        return <CDataFileElement {...props} qualifiers={qualifiers} />;
       case "CObsDataFile":
-        return (
-          <CObsDataFileElement {...props} item={item} qualifiers={qualifiers} />
-        );
+        return <CObsDataFileElement {...props} qualifiers={qualifiers} />;
       case "CList":
       case "CImportUnmergedList":
       case "CAltSpaceGroupList":
       case "CEnsembleList":
-        return <CListElement {...props} item={item} qualifiers={qualifiers} />;
+        return <CListElement {...props} qualifiers={qualifiers} />;
       case "CEnsemble":
-        return (
-          <CEnsembleElement {...props} item={item} qualifiers={qualifiers} />
-        );
+        return <CEnsembleElement {...props} qualifiers={qualifiers} />;
+      case "CPdbEnsembleItem":
       case "CContainer":
-        return (
-          <CContainerElement {...props} item={item} qualifiers={qualifiers} />
-        );
+        return <CContainerElement {...props} qualifiers={qualifiers} />;
       case "CCell":
-        return <CCellElement {...props} item={item} qualifiers={qualifiers} />;
+        return <CCellElement {...props} qualifiers={qualifiers} />;
       case "CAltSpaceGroup":
-        return (
-          <CAltSpaceGroupElement
-            {...props}
-            item={item}
-            qualifiers={qualifiers}
-          />
-        );
+        return <CAltSpaceGroupElement {...props} qualifiers={qualifiers} />;
 
       default:
         return <Typography>{item ? item._class : "No item"}</Typography>;

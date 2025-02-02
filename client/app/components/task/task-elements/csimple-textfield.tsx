@@ -17,12 +17,16 @@ import {
 import { useApi } from "../../../api";
 import { Job } from "../../../models";
 import { CCP4i2CSimpleElementProps } from "./csimple";
+import { useTaskItem } from "../task-utils";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const { job, type, sx, item, qualifiers } = props;
   const api = useApi();
+  const { itemName, job, type, sx, qualifiers } = props;
+  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
+  const useItem = useTaskItem(container);
+  const item = useItem(itemName);
 
   const inputRef = useRef<HTMLElement | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);

@@ -1,7 +1,7 @@
 import { useCallback, useContext, useMemo, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
-import { itemsForName, valueForDispatch } from "../task-utils";
+import { itemsForName, useTaskItem, valueForDispatch } from "../task-utils";
 import {
   Button,
   Card,
@@ -23,7 +23,7 @@ interface CListElementProps extends CCP4i2TaskElementProps {
 }
 
 export const CListElement: React.FC<CListElementProps> = (props) => {
-  const { item, job, qualifiers } = props;
+  const { itemName, job, qualifiers } = props;
   const api = useApi();
   const { projectId } = useContext(CCP4i2Context);
   const { data: project } = api.get<Project>(`projects/${projectId}`);
@@ -31,6 +31,8 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
   const { data: container, mutate: mutateParams } = api.get<any>(
     `jobs/${job.id}/container`
   );
+  const useItem = useTaskItem(container);
+  const item = useItem(itemName);
   const { data: validation, mutate: mutateValidation } = api.container<any>(
     `jobs/${props.job.id}/validation`
   );

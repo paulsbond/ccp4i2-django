@@ -27,7 +27,7 @@ import {
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
 import { Folder, Info } from "@mui/icons-material";
-import { useValidation, validationColor } from "../task-utils";
+import { useTaskItem, useValidation, validationColor } from "../task-utils";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -115,8 +115,13 @@ export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   props
 ) => {
-  const { job, sx, item, infoContent } = props;
+  const { job, sx, infoContent, itemName } = props;
   const api = useApi();
+  const { data: container, mutate } = api.container<any>(
+    `jobs/${job.id}/container`
+  );
+  const useItem = useTaskItem(container);
+  const item = useItem(itemName);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
@@ -138,8 +143,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   }, [item]);
   const [inFlight, setInFlight] = useState(false);
   const [value, setValue] = useState<any | null>(null);
-
-  const { mutate } = api.container<any>(`jobs/${job.id}/container`);
 
   const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
 

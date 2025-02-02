@@ -6,9 +6,10 @@ import { Info } from "@mui/icons-material";
 
 export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
-  const { item, job } = props;
+  const { job, itemName } = props;
   const { data: container } = api.container<any>(`jobs/${job.id}/container`);
   const useItem = useTaskItem(container);
+  const item = useItem(itemName);
   const { getErrors } = useValidation(job.id);
 
   const fieldErrors = getErrors(item._objectPath);
@@ -36,7 +37,6 @@ export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
                   sx={{ my: 0, py: 0, minWidth: "10rem" }}
                   key={objectKey}
                   itemName={`${item._objectPath}.${objectKey}`}
-                  item={useItem(`${item._objectPath}.${objectKey}`)}
                   qualifiers={{ ...props.qualifiers, guiLabel: objectKey }}
                 />
               </Grid2>

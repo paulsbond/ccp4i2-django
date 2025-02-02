@@ -610,7 +610,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
   const api = useApi();
-  const { item, job } = props;
+  const { job, itemName } = props;
   const { data: container, mutate: mutateParams } = api.container<any>(
     `jobs/${job.id}/container`
   );
@@ -618,6 +618,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
     `jobs/${job.id}/validation`
   );
   const useItem = useTaskItem(container);
+  const item = useItem(itemName);
   const { getErrors } = useValidation(job.id);
   const [value, setValue] = useState<string>("P 1");
   const [inFlight, setInFlight] = useState(false);
