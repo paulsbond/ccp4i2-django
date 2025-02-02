@@ -6,7 +6,7 @@ import { useApi } from "../../../api";
 import { itemsForName, useTaskContainer, valueOfItemPath } from "../task-utils";
 import { BaseSpacegroupCellElement } from "../task-elements/base-spacegroup-cell-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
-import { CCP4i2Container } from "../task-elements/container";
+import { CContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -87,7 +87,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         */}
 
         <CCP4i2Tab tab="Parameterisation" key="Parameterisation">
-          <CCP4i2Container
+          <CContainerElement
             itemName=""
             key="B-factors"
             {...props}
@@ -103,9 +103,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 />
               </Grid2>
             </Grid2>
-          </CCP4i2Container>
+          </CContainerElement>
 
-          <CCP4i2Container
+          <CContainerElement
             itemName=""
             key="Scaling"
             {...props}
@@ -146,7 +146,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 return solventMaskType === "EXPLICIT";
               }}
             />
-            <CCP4i2Container
+            <CContainerElement
               itemName=""
               {...props}
               qualifiers={{ guiLabel: "Custom parameters" }}
@@ -180,10 +180,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                   guiLabel: "Shrink the mask area by a factor of",
                 }}
               />
-            </CCP4i2Container>
-          </CCP4i2Container>
+            </CContainerElement>
+          </CContainerElement>
 
-          <CCP4i2Container
+          <CContainerElement
             itemName=""
             key="Translation libration screw (TLS)"
             {...props}
@@ -211,7 +211,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 />
               </Grid2>
             </Grid2>
-            <CCP4i2Container
+            <CContainerElement
               itemName=""
               key="Custom parameters"
               {...props}
@@ -257,8 +257,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                     "Add TLS contribution to output B-factors (only for analysis and deposition)",
                 }}
               />
-            </CCP4i2Container>
-          </CCP4i2Container>
+            </CContainerElement>
+          </CContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>
     </Paper>

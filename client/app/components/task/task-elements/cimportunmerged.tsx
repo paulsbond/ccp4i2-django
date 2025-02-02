@@ -1,0 +1,126 @@
+import { useMemo } from "react";
+import { useApi } from "../../../api";
+import {
+  CCP4i2TaskElement,
+  CCP4i2TaskElementProps,
+  errorsInValidation,
+} from "./task-element";
+import { CDataFileElement } from "./cdatafile";
+import { useTaskItem, useValidation, validationColor } from "../task-utils";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Grid2,
+  Paper,
+} from "@mui/material";
+import { CContainerElement } from "./ccontainer";
+import { CCellElement } from "./ccell";
+import { Info } from "@mui/icons-material";
+
+export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
+  props
+) => {
+  const api = useApi();
+  const { item, job } = props;
+  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
+  const useItem = useTaskItem(container);
+  const { getErrors } = useValidation(job.id);
+
+  const fileObjectPath = useMemo<string | null>(() => {
+    if (item) return `${item._objectPath}.file`;
+    return null;
+  }, [item]);
+  const fileItem = useItem(fileObjectPath ? fileObjectPath : "__NO_FILE__");
+
+  const crystalNameObjectPath = useMemo<string | null>(() => {
+    if (item) return `${item._objectPath}.crystalName`;
+    return null;
+  }, [item]);
+
+  const datasetObjectPath = useMemo<string | null>(() => {
+    if (item) return `${item._objectPath}.dataset`;
+    return null;
+  }, [item]);
+
+  const wavelengthObjectPath = useMemo<string | null>(() => {
+    if (item) return `${item._objectPath}.wavelength`;
+    return null;
+  }, [item]);
+
+  const cellObjectPath = useMemo<string | null>(() => {
+    if (item) return `${item._objectPath}.cell`;
+    return null;
+  }, [item]);
+
+  const fieldErrors = getErrors(item._objectPath);
+
+  return (
+    <Card
+      sx={{
+        border: "3px solid",
+        borderColor: validationColor(fieldErrors),
+        borderRadius: "0.5rem",
+      }}
+    >
+      <CardHeader
+        title={item._qualifiers.guLabel}
+        action={
+          <Button>
+            <Info />
+          </Button>
+        }
+      />
+      <CardContent>
+        {fileObjectPath && (
+          <CDataFileElement
+            {...props}
+            item={fileItem}
+            itemName={fileObjectPath}
+          />
+        )}
+        {cellObjectPath && (
+          <CCellElement
+            {...props}
+            item={useItem(cellObjectPath || "")}
+            itemName={cellObjectPath}
+          />
+        )}
+        <Grid2 container rowSpacing={0} sx={{ mt: 2 }}>
+          <Grid2 size={{ xs: 4 }}>
+            <CCP4i2TaskElement
+              key="crystalName"
+              {...props}
+              sx={{ my: 0, py: 0, minWidth: "10rem" }}
+              itemName={`${crystalNameObjectPath}`}
+              item={useItem(crystalNameObjectPath || "")}
+              qualifiers={{ ...props.qualifiers, guiLabel: "Crystal name" }}
+            />
+          </Grid2>
+          <Grid2 size={{ xs: 4 }}>
+            <CCP4i2TaskElement
+              key="datasetName"
+              {...props}
+              sx={{ my: 0, py: 0, minWidth: "10rem" }}
+              itemName={`${datasetObjectPath}`}
+              item={useItem(datasetObjectPath || "")}
+              qualifiers={{ ...props.qualifiers, guiLabel: "Dataset name" }}
+            />
+          </Grid2>
+          <Grid2 size={{ xs: 4 }}>
+            <CCP4i2TaskElement
+              key="wavelength"
+              {...props}
+              sx={{ my: 0, py: 0, minWidth: "10rem" }}
+              itemName={`${wavelengthObjectPath}`}
+              item={useItem(wavelengthObjectPath || "")}
+              qualifiers={{ ...props.qualifiers, guiLabel: "Wavelength" }}
+            />
+          </Grid2>
+        </Grid2>
+      </CardContent>
+    </Card>
+  );
+};

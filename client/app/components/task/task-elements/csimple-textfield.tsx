@@ -123,6 +123,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         title={qualifiers?.toolTip ? qualifiers.toolTip : objectPath}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onFocusCapture={(ev) => console.log(ev)}
       />
       <LinearProgress
         sx={{

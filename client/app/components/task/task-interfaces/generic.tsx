@@ -1,0 +1,37 @@
+import { LinearProgress, Paper } from "@mui/material";
+import { CCP4i2TaskInterfaceProps } from "../task-container";
+import { CCP4i2TaskElement } from "../task-elements/task-element";
+import { useApi } from "../../../api";
+import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
+
+const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
+  const api = useApi();
+  const { data: container, mutate: mutateContainer } = api.container<any>(
+    `jobs/${props.job.id}/container`
+  );
+
+  if (!container) return <LinearProgress />;
+
+  return (
+    <Paper>
+      <CCP4i2Tabs>
+        <CCP4i2Tab tab="Input data">
+          <CCP4i2TaskElement
+            itemName="inputData"
+            {...props}
+            qualifiers={{ guiLabel: "Input data" }}
+          />
+        </CCP4i2Tab>
+        <CCP4i2Tab tab="Parameters">
+          <CCP4i2TaskElement
+            itemName="parameters"
+            {...props}
+            qualifiers={{ guiLabel: "Parameters" }}
+          />
+        </CCP4i2Tab>
+      </CCP4i2Tabs>
+    </Paper>
+  );
+};
+
+export default TaskInterface;

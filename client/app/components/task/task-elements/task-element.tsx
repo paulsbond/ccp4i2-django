@@ -1,9 +1,9 @@
 import { Job } from "../../../models";
 import { CIntElement } from "./cint";
-import { useMemo } from "react";
+import { PropsWithChildren, useMemo } from "react";
 import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
-import { itemsForName } from "../task-utils";
+import { itemsForName, useTaskItem } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import { useApi } from "../../../api";
@@ -12,13 +12,16 @@ import { CObsDataFileElement } from "./cobsdatafile";
 import { CDataFileElement } from "./cdatafile";
 import { CBooleanElement } from "./cboolean";
 import { CListElement } from "./list";
+import { CContainerElement } from "./ccontainer";
+import { CImportUnmergedElement } from "./cimportunmerged";
+import { CCellElement } from "./ccell";
+import { CEnsembleElement } from "./censemble";
+import { CAltSpaceGroupElement } from "./caltspacegroupelement";
 
-export interface CCP4i2TaskElementProps {
+export interface CCP4i2TaskElementProps extends PropsWithChildren {
   job: Job;
-  paramsXML: any;
   itemName: string;
   sx?: SxProps<Theme>;
-  mutate: () => void;
   pathOfItem?: (item: HTMLElement) => string;
   visibility?: boolean | (() => boolean);
   qualifiers?: any;
@@ -27,10 +30,10 @@ export interface CCP4i2TaskElementProps {
 
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
-
   const { data: container } = api.container<any>(
     `jobs/${props.job.id}/container`
   );
+  const useItem = useTaskItem(container);
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
@@ -40,14 +43,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  const item = useMemo<any | null>(() => {
-    if (container && props.itemName) {
-      const matches = itemsForName(props.itemName, container);
-      console.log(props.itemName, matches[0]);
-      return matches[0];
-    }
-    return null;
-  }, [props.itemName, container]);
+  const item = useItem(props.itemName);
 
   const qualifiers = useMemo<any>(() => {
     if (item?._qualifiers) {
@@ -68,8 +64,12 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CInt":
         return <CIntElement {...props} item={item} qualifiers={qualifiers} />;
       case "CFloat":
+      case "CCellLength":
+      case "CCellAngle":
+      case "CWavelength":
         return <CFloatElement {...props} item={item} qualifiers={qualifiers} />;
       case "CString":
+      case "COneWord":
         return (
           <CStringElement {...props} item={item} qualifiers={qualifiers} />
         );
@@ -81,9 +81,24 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         return (
           <CPdbDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );
+      case "CImportUnmerged":
+        return (
+          <CImportUnmergedElement
+            {...props}
+            item={item}
+            qualifiers={qualifiers}
+          />
+        );
       case "CFreeRDataFile":
       case "CDictDataFile":
       case "CTLSDataFile":
+      case "CMapCoeffsDataFile":
+      case "CPhsDataFile":
+      case "CPhaserSolDataFile":
+      case "CPhaserRFileDataFile":
+      case "CAsuDataFile":
+      case "CUnmergedDataFile":
+      case "CMDLMolDataFile":
         return (
           <CDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );
@@ -92,7 +107,29 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           <CObsDataFileElement {...props} item={item} qualifiers={qualifiers} />
         );
       case "CList":
+      case "CImportUnmergedList":
+      case "CAltSpaceGroupList":
+      case "CEnsembleList":
         return <CListElement {...props} item={item} qualifiers={qualifiers} />;
+      case "CEnsemble":
+        return (
+          <CEnsembleElement {...props} item={item} qualifiers={qualifiers} />
+        );
+      case "CContainer":
+        return (
+          <CContainerElement {...props} item={item} qualifiers={qualifiers} />
+        );
+      case "CCell":
+        return <CCellElement {...props} item={item} qualifiers={qualifiers} />;
+      case "CAltSpaceGroup":
+        return (
+          <CAltSpaceGroupElement
+            {...props}
+            item={item}
+            qualifiers={qualifiers}
+          />
+        );
+
       default:
         return <Typography>{item ? item._class : "No item"}</Typography>;
     }
@@ -101,40 +138,44 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   return inferredVisibility && <>{interfaceElement}</>;
 };
 
-export const errorInValidation = (
+export const errorsInValidation = (
   objectPath: string,
   validation: { status: string; validation?: Document }
-):
-  | {
-      severity: string;
-      description: string;
-    }
-  | null
-  | undefined => {
+): {
+  severity: string;
+  description: string;
+}[] => {
   if (validation && validation.validation) {
     const objectPathNodes = $(validation.validation)
       .find("objectpath")
       .toArray();
-    const errorObjectNode = objectPathNodes.find((node: HTMLElement) => {
-      return node.textContent === objectPath;
+    const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
+      return node.textContent?.includes(objectPath);
     });
-    if (!errorObjectNode) {
-      return null;
+    if (errorObjectNodes.length === 0) {
+      return [];
     }
-    const errorNode = $(errorObjectNode).parent();
-    if (!errorObjectNode) {
-      return null;
-    }
-    if (errorNode) {
-      const result: { severity: string; description: string } = {
-        severity: "",
-        description: "",
-      };
-      const severity = $(errorNode).find("severity").get(0)?.textContent;
-      if (severity) result.severity = severity;
-      const description = $(errorNode).find("description").get(0)?.textContent;
-      if (description) result.description = description;
-      return result;
-    }
+    const errors: {
+      severity: string;
+      description: string;
+    }[] = [];
+    errorObjectNodes.forEach((errorObjectNode: any) => {
+      const errorNode = $(errorObjectNode).parent();
+      if (errorNode) {
+        const result: { severity: string; description: string } = {
+          severity: "",
+          description: "",
+        };
+        const severity = $(errorNode).find("severity").get(0)?.textContent;
+        if (severity) result.severity = severity;
+        const description = $(errorNode)
+          .find("description")
+          .get(0)?.textContent;
+        if (description) result.description = description;
+        errors.push(result);
+      }
+    });
+    return errors;
   }
+  return [];
 };

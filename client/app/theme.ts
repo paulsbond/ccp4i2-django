@@ -55,6 +55,9 @@ const theme = createTheme({
       },
     },
   },
+  palette: {
+    success: { main: "rgb(64, 123, 67)", light: "rgb(112, 173, 114)" },
+  },
 });
 
 export default theme;

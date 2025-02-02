@@ -1,5 +1,7 @@
 import $ from "jquery";
 import { useMemo } from "react";
+import { useApi } from "../../api";
+import { errorsInValidation } from "./task-elements/task-element";
 
 export const classOfDefItem = (
   item: HTMLElement
@@ -127,6 +129,14 @@ export const useTaskContainer = (container: any) => {
   }, [container]);
 };
 
+export const useTaskItem = (container: any) => {
+  return useMemo(() => {
+    if (container)
+      return (param_name: string) => itemsForName(param_name, container)[0];
+    return () => {};
+  }, [container]);
+};
+
 export const valueForDispatch = (item: any): any => {
   if (
     !item ||
@@ -153,4 +163,32 @@ export const valueForDispatch = (item: any): any => {
   } else {
     console.log("Unknown item", item._value);
   }
+};
+
+export const useValidation = (jobId: number) => {
+  const api = useApi();
+  const { data: validation, mutate: mutateValidation } = api.container<any>(
+    `jobs/${jobId}/validation`
+  );
+  return useMemo(() => {
+    if (validation)
+      return {
+        getErrors: (param_name: string) =>
+          errorsInValidation(param_name, validation),
+        mutateValidation,
+      };
+    return {
+      getErrors: (param_name: string) => [],
+      mutateValidation: () => {},
+    };
+  }, [validation]);
+};
+
+export const validationColor = (fieldErrors: any[]): string => {
+  return fieldErrors && fieldErrors.length == 0
+    ? "success.light"
+    : fieldErrors &&
+      fieldErrors.some((fieldError) => fieldError.severity.includes("WARNING"))
+    ? "warning.light"
+    : "error.light";
 };

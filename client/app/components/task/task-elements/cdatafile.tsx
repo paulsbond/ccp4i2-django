@@ -4,7 +4,6 @@ import {
   Avatar,
   Box,
   Button,
-  CircularProgress,
   ClickAwayListener,
   LinearProgress,
   Popper,
@@ -15,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useApi } from "../../../api";
-import { CCP4i2TaskElementProps, errorInValidation } from "./task-element";
+import { CCP4i2TaskElementProps, errorsInValidation } from "./task-element";
 import { File as CCP4i2File, Job, Project } from "../../../models";
 import {
   ReactNode,
@@ -28,6 +27,7 @@ import {
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
 import { Folder, Info } from "@mui/icons-material";
+import { useValidation, validationColor } from "../task-utils";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -117,7 +117,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 ) => {
   const { job, sx, item, infoContent } = props;
   const api = useApi();
-  const [file, setFile] = useState<any | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
@@ -154,9 +153,8 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const { data: projects, mutate: mutateProjects } =
     api.get<Project[]>(`projects`);
 
-  const { data: validation, mutate: mutateValidation } = api.container<any>(
-    `jobs/${props.job.id}/validation`
-  );
+  const { getErrors, mutateValidation } = useValidation(props.job.id);
+
   const { mutate: mutateContent } = api.digest<any>(
     `jobs/${props.job.id}/digest?object_path=${objectPath}`
   );
@@ -279,22 +277,16 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     [project_jobs]
   );
 
-  const fieldError = useMemo(() => {
-    return errorInValidation(item._objectPath, validation);
-  }, [item, validation]);
+  const fieldErrors = getErrors(item._objectPath);
 
   return (
     <Stack
       direction="row"
       sx={{
-        border: "1px solid black",
+        border: "3px solid",
+        borderColor: validationColor(fieldErrors),
         borderRadius: "0.5rem",
         mx: 2,
-        backgroundColor: !fieldError
-          ? green[100]
-          : fieldError.severity.includes("WARNING")
-          ? yellow[100]
-          : red[100],
         my: 1,
       }}
     >
@@ -334,7 +326,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           role={undefined}
           disabled={inFlight}
           variant="outlined"
-          startIcon={<Info />}
+          startIcon={<Info sx={{ color: validationColor(fieldErrors) }} />}
           sx={{ my: 1, mr: 2 }}
           size="small"
           onClick={(ev) => setAnchorEl(ev.currentTarget)}
@@ -348,16 +340,13 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       />
       <Popper anchorEl={anchorEl} open={open}>
         <Box sx={{ border: 1, p: 1, bgcolor: "background.paper" }}>
+          {fieldErrors &&
+            fieldErrors.map((fieldError) => (
+              <Typography sx={{ textWrap: "wrap", maxWidth: "15rem" }}>
+                {fieldError.description}
+              </Typography>
+            ))}
           {infoContent}
-        </Box>
-      </Popper>
-      <Popper open={Boolean(fieldError)} anchorEl={progressRef.current}>
-        <Box sx={{ border: 1, p: 1, bgcolor: "rgba(0.1, 0.1, 0.1, 0.15)" }}>
-          {fieldError && (
-            <Typography sx={{ textWrap: "wrap", maxWidth: "15rem" }}>
-              {fieldError.description}
-            </Typography>
-          )}
         </Box>
       </Popper>
     </Stack>

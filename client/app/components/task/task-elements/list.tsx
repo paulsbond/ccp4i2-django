@@ -45,6 +45,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
 
   const extendListItem = useCallback(async () => {
     var taskElement = JSON.parse(JSON.stringify(item._subItem));
+    console.log("taskElement", taskElement);
     taskElement._objectPath = taskElement._objectPath.replace(
       "[?]",
       "[" + item._value.length + "]"
@@ -61,10 +62,16 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
     const listValue = Array.isArray(valueForDispatch(item))
       ? valueForDispatch(item)
       : [];
-    const newItemValue = valueForDispatch(taskElement);
-    if (newItemValue && project) {
-      newItemValue.project = project.uuid.replace(/\-/g, "");
-      newItemValue.baseName = "UNDEFINED";
+    let newItemValue = valueForDispatch(taskElement);
+    console.log({ newItemValue, project });
+    if (true) {
+      if (taskElement._baseClass === "CDataFile" && newItemValue && project) {
+        newItemValue.project = project.uuid.replace(/\-/g, "");
+        newItemValue.baseName = "UNDEFINED";
+      }
+      if (taskElement._class === "CAltSpaceGroup") {
+        newItemValue = "P1";
+      }
       listValue.push(newItemValue);
       console.log({
         op: taskElement._objectPath,
@@ -82,7 +89,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
       await mutateParams();
       await mutateValidation();
     }
-  }, [item, projectId, mutateParams, mutateValidation]);
+  }, [item, project, mutateParams, mutateValidation, job]);
 
   const deleteItem = useCallback(
     async (deletedItem: any) => {
