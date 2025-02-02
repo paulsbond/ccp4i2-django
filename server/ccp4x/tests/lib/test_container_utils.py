@@ -8,10 +8,8 @@ from core import CCP4ErrorHandling
 from core import CCP4Data
 from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4TaskManager
-from ccp4i2.core.CCP4ErrorHandling import CErrorReport, CException
 from ...db.models import Job
 from ...db.import_i2xml import import_ccp4_project_zip
-from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
 
 from ...lib.job_utils.get_job_plugin import get_job_plugin
 from ...lib.job_utils.unset_output_data import unset_output_data
@@ -23,8 +21,6 @@ from ...lib.job_utils.load_nested_xml import load_nested_xml
 from ...lib.job_utils.validate_container import validate_container
 from ...lib.job_utils.clone_job import clone_job
 from ...lib.job_utils.json_for_job_container import json_for_job_container
-
-from ...db.ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
 
 @override_settings(

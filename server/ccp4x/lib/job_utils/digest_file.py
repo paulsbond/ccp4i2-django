@@ -4,7 +4,7 @@ from core import CCP4File
 from core import CCP4ModelData
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4File import CDataFile
-from .find_objects import find_objects
+from .find_objects import find_objects, find_object_by_path
 from .get_job_container import get_job_container
 from .json_encoder import CCP4i2JsonEncoder
 from .value_dict_for_object import value_dict_for_object
@@ -15,11 +15,8 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 def digest_file(the_job, object_path):
     the_container: CContainer = get_job_container(the_job)
-    object_elements = find_objects(
-        the_container, lambda a: a.objectPath() == object_path, multiple=False
-    )
     try:
-        file_object: CDataFile = object_elements[0]
+        file_object: CDataFile = find_object_by_path(the_container, object_path)
     except IndexError as err:
         logger.exception("Error finding object with path %s", object_path, exc_info=err)
         return {"status": "Failed", "reason": str(err)}
