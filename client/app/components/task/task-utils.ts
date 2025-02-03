@@ -134,7 +134,7 @@ export const useTaskItem = (container: any) => {
   return useMemo(() => {
     if (container)
       return (param_name: string) => itemsForName(param_name, container)[0];
-    return () => {};
+    return (itemName: string) => {};
   }, [container]);
 };
 
@@ -144,7 +144,7 @@ export interface SetParameterArg {
 }
 export const useJob = (job: Job) => {
   const api = useApi();
-  const { mutate: mutateContainer } = api.container<any>(
+  const { data: container, mutate: mutateContainer } = api.container<any>(
     `jobs/${job.id}/container`
   );
   const { mutate: mutateValidation } = api.container<any>(
@@ -164,6 +164,9 @@ export const useJob = (job: Job) => {
       },
       [job, mutateContainer, mutateValidation]
     ),
+    getTaskItem: useMemo(() => {
+      return (param_name: string) => itemsForName(param_name, container)[0];
+    }, [container]),
   };
 };
 

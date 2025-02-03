@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@mui/material";
 import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
-import { itemsForName, useTaskItem } from "../task-utils";
+import { useJob } from "../task-utils";
 import { ErrorInfo } from "./error-info";
 
 interface CContainerElementProps extends CCP4i2TaskElementProps {
@@ -20,9 +20,8 @@ export const CContainerElement: React.FC<
     visibility,
     qualifiers,
   } = props;
-  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const { getTaskItem } = useJob(job);
+  const item = getTaskItem(itemName);
   const [visibilityPrompt, setVisibilityPrompt] = useState<number>(0);
   const visibilityPromptRef = useRef<number>(0);
 

@@ -29,7 +29,7 @@ import { green, red, yellow } from "@mui/material/colors";
 import { Folder, Info } from "@mui/icons-material";
 import {
   readFilePromise,
-  useTaskItem,
+  useJob,
   useValidation,
   validationColor,
 } from "../task-utils";
@@ -100,11 +100,8 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 ) => {
   const { job, sx, infoContent, itemName } = props;
   const api = useApi();
-  const { data: container, mutate } = api.container<any>(
-    `jobs/${job.id}/container`
-  );
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const { getTaskItem, setParameter } = useJob(job);
+  const item = getTaskItem(itemName);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
@@ -242,11 +239,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         }
       }
       setInFlight(true);
-      await api.post<Job>(`jobs/${job.id}/set_parameter`, setParameterArg);
-      await mutate();
-      await mutateParams();
-      await mutateContent();
-      await mutateValidation();
+      await setParameter(setParameterArg);
       setInFlight(false);
     },
     [job, objectPath, project_jobs, projects]

@@ -19,18 +19,16 @@ import {
 import { useApi } from "../../../api";
 import { Job } from "../../../models";
 import { CCP4i2CSimpleElementProps } from "./csimple";
-import { useJob, useTaskItem } from "../task-utils";
+import { useJob } from "../task-utils";
+import { ErrorInfo } from "./error-info";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const api = useApi();
   const { itemName, job, type, sx, qualifiers } = props;
-  const { data: container, mutate } = api.container<any>(
-    `jobs/${job.id}/container`
-  );
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const api = useApi();
+  const { getTaskItem } = useJob(job);
+  const item = getTaskItem(itemName);
 
   const [value, setValue] = useState<{
     id: string | number;
@@ -148,32 +146,17 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
         options={options || []}
         size="small"
         renderInput={(params) => (
-          <TextField
-            {...params}
-            label={guiLabel}
-            size="small"
-            /*slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <CircularProgress
-                      sx={{ height: "1rem", width: "1rem" }}
-                      variant={inFlight ? "indeterminate" : "determinate"}
-                      value={100}
-                    />
-                  </InputAdornment>
-                ),
-              },
-            }}*/
-          />
+          <TextField {...params} label={guiLabel} size="small" />
         )}
       />
-      <LinearProgress
-        sx={{ height: "2rem", width: "2rem", mt: 0.5 }}
-        variant={inFlight ? "indeterminate" : "determinate"}
-        value={0}
-      />
-
+      <Stack direction="column">
+        <ErrorInfo {...props} />
+        <LinearProgress
+          sx={{ height: "0.5rem", width: "2rem" }}
+          variant={inFlight ? "indeterminate" : "determinate"}
+          value={0}
+        />
+      </Stack>
       <Menu open={validationOpen} anchorEl={validationAnchor}>
         <MenuItem> </MenuItem>
       </Menu>

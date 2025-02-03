@@ -1,6 +1,6 @@
 import { useApi } from "../../../api";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useTaskItem, useValidation, validationColor } from "../task-utils";
+import { useJob, useValidation, validationColor } from "../task-utils";
 import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { Info } from "@mui/icons-material";
 import { ErrorInfo } from "./error-info";
@@ -8,9 +8,8 @@ import { ErrorInfo } from "./error-info";
 export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
   const { job, itemName } = props;
-  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const { getTaskItem } = useJob(job);
+  const item = getTaskItem(itemName);
   const { getErrors } = useValidation(job.id);
 
   const fieldErrors = getErrors(item._objectPath);
@@ -35,7 +34,8 @@ export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
                   key={objectKey}
                   itemName={`${item._objectPath}.${objectKey}`}
                   qualifiers={{
-                    ...useItem(`${item._objectPath}.${objectKey}`)._qualifiers,
+                    ...getTaskItem(`${item._objectPath}.${objectKey}`)
+                      ._qualifiers,
                     guiLabel: objectKey,
                   }}
                 />

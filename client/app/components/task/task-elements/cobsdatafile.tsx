@@ -5,16 +5,15 @@ import { useMemo, useRef, useState } from "react";
 import { ParseMtz } from "./parse-mtz";
 import { useApi } from "../../../api";
 import { BaseSpacegroupCellElement } from "./base-spacegroup-cell-element";
-import { useTaskItem } from "../task-utils";
+import { useJob } from "../task-utils";
 
 export const CObsDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
   const { job, itemName } = props;
   const api = useApi();
-  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const { getTaskItem } = useJob(job);
+  const item = getTaskItem(itemName);
   const [fileContent, setFileContent] = useState<
     ArrayBuffer | null | string | File
   >(null);

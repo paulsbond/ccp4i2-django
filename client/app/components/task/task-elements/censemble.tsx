@@ -1,6 +1,6 @@
 import { useApi } from "../../../api";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useTaskItem, useValidation, validationColor } from "../task-utils";
+import { useJob, useValidation, validationColor } from "../task-utils";
 import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { Info } from "@mui/icons-material";
 import { ErrorInfo } from "./error-info";
@@ -8,9 +8,8 @@ import { ErrorInfo } from "./error-info";
 export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
   const { job, itemName } = props;
-  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const { getTaskItem } = useJob(job);
+  const item = getTaskItem(itemName);
   const { getErrors } = useValidation(job.id);
 
   const fieldErrors = getErrors(item._objectPath);
@@ -33,7 +32,7 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
                 sx={{ my: 0, py: 0, minWidth: "10rem" }}
                 itemName={`${item._objectPath}.number`}
                 qualifiers={{
-                  ...useItem(`${item._objectPath}.number`)._qualifiers,
+                  ...getTaskItem(`${item._objectPath}.number`)._qualifiers,
                   guiLabel: "copies",
                 }}
               />
@@ -52,7 +51,7 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
                 sx={{ my: 0, py: 0, minWidth: "10rem" }}
                 itemName={`${item._objectPath}.use`}
                 qualifiers={{
-                  ...useItem(`${item._objectPath}.use`)._qualifiers,
+                  ...getTaskItem(`${item._objectPath}.use`)._qualifiers,
                   guiLabel: "use",
                 }}
               />
@@ -64,7 +63,7 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           sx={{ my: 0, py: 0, minWidth: "10rem" }}
           itemName={`${item._objectPath}.pdbItemList`}
           qualifiers={{
-            ...useItem(`${item._objectPath}.pdbItemList`)._qualifiers,
+            ...getTaskItem(`${item._objectPath}.pdbItemList`)._qualifiers,
             guiLabel: "pdbItemList",
           }}
         />

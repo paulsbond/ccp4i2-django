@@ -3,7 +3,7 @@ import { CIntElement } from "./cint";
 import { PropsWithChildren, useMemo } from "react";
 import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
-import { useTaskItem } from "../task-utils";
+import { useJob } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import { useApi } from "../../../api";
@@ -29,10 +29,8 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
 
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
-  const { data: container } = api.container<any>(
-    `jobs/${props.job.id}/container`
-  );
-  const useItem = useTaskItem(container);
+  const { job } = props;
+  const { getTaskItem } = useJob(job);
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
@@ -42,7 +40,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  const item = useItem(props.itemName);
+  const item = getTaskItem(props.itemName);
 
   const qualifiers = useMemo<any>(() => {
     if (item?._qualifiers) {

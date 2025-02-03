@@ -6,7 +6,7 @@ import {
   errorsInValidation,
 } from "./task-element";
 import { CDataFileElement } from "./cdatafile";
-import { useTaskItem, useValidation, validationColor } from "../task-utils";
+import { useJob, useValidation, validationColor } from "../task-utils";
 import {
   Box,
   Button,
@@ -29,15 +29,14 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const api = useApi();
   const { itemName, job } = props;
-  const { data: container } = api.container<any>(`jobs/${job.id}/container`);
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const { getTaskItem } = useJob(job);
+  const item = getTaskItem(itemName);
   const { getErrors } = useValidation(job.id);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;
     return null;
   }, [item]);
-  const fileItem = useItem(fileObjectPath ? fileObjectPath : "__NO_FILE__");
+  const fileItem = getTaskItem(fileObjectPath ? fileObjectPath : "__NO_FILE__");
 
   const crystalNameObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.crystalName`;

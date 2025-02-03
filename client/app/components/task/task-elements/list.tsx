@@ -1,7 +1,7 @@
 import { useCallback, useContext, useMemo, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
-import { itemsForName, useTaskItem, valueForDispatch } from "../task-utils";
+import { useJob, valueForDispatch } from "../task-utils";
 import {
   Button,
   Card,
@@ -25,14 +25,10 @@ interface CListElementProps extends CCP4i2TaskElementProps {
 export const CListElement: React.FC<CListElementProps> = (props) => {
   const { itemName, job, qualifiers } = props;
   const api = useApi();
+  const { getTaskItem, setParameter } = useJob(job);
   const { projectId } = useContext(CCP4i2Context);
   const { data: project } = api.get<Project>(`projects/${projectId}`);
-
-  const { data: container, mutate: mutateParams } = api.get<any>(
-    `jobs/${job.id}/container`
-  );
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const item = getTaskItem(itemName);
   const { data: validation, mutate: mutateValidation } = api.container<any>(
     `jobs/${props.job.id}/validation`
   );
@@ -86,14 +82,9 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
       object_path: item._objectPath,
       value: listValue,
     };
-    const result = await api.post<Job>(
-      `jobs/${job.id}/set_parameter`,
-      setParameterArg
-    );
+    const result = await setParameter(setParameterArg);
     console.log(result);
-    await mutateParams();
-    await mutateValidation();
-  }, [item, project, mutateParams, mutateValidation, job]);
+  }, [item, project, job]);
 
   const deleteItem = useCallback(
     async (deletedItem: any) => {
@@ -108,13 +99,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
           object_path: item._objectPath,
           value: valueForDispatch(item),
         };
-        console.log(setParameterArg);
-        const result = await api.post<Job>(
-          `jobs/${job.id}/set_parameter`,
-          setParameterArg
-        );
-        await mutateParams();
-        await mutateValidation();
+        const result = await setParameter(setParameterArg);
       }
     },
     [item]

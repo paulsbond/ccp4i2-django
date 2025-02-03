@@ -24,7 +24,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         </CCP4i2Tab>
         <CCP4i2Tab key="Parameters" tab="Parameters">
           <CCP4i2TaskElement
-            itemName="parameters"
+            itemName="controlParameters"
             {...props}
             qualifiers={{ guiLabel: "Parameters" }}
           />
