@@ -22,11 +22,13 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
         }}
       >
         <Button
+          size="small"
+          sx={{ px: 0, py: 0, mx: 0, my: 0, maxWidth: "1rem" }}
           onClick={(ev) => {
             setAnchorEl(ev.currentTarget);
           }}
         >
-          <Info sx={{ color: getValidationColor(itemName) }} />
+          <Info sx={{ width: 1, color: getValidationColor(itemName) }} />
         </Button>
       </ClickAwayListener>
       <Popper anchorEl={anchorEl} placement="auto-end" open={infoOpen}>

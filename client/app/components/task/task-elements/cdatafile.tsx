@@ -25,9 +25,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { green, red, yellow } from "@mui/material/colors";
-import { Folder, Info } from "@mui/icons-material";
-import { readFilePromise, useJob, useValidation } from "../task-utils";
+import { Folder } from "@mui/icons-material";
+import { readFilePromise, useJob } from "../task-utils";
 import { ErrorInfo } from "./error-info";
 
 const fileTypeMapping: { [key: string]: string } = {

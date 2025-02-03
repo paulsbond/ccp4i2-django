@@ -1,13 +1,11 @@
-import { useApi } from "../../../api";
-import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useJob, useValidation } from "../task-utils";
+import { CCP4i2TaskElementProps } from "./task-element";
+import { useJob } from "../task-utils";
 import {
   Autocomplete,
   Button,
   Card,
   CardContent,
   CardHeader,
-  Grid2,
   TextField,
 } from "@mui/material";
 import { Info } from "@mui/icons-material";

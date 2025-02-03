@@ -7,7 +7,7 @@ import { useJob } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import $ from "jquery";
-import { CObsDataFileElement } from "./cobsdatafile";
+import { CMiniMtzDataFile } from "./cminimtzdatafile";
 import { CDataFileElement } from "./cdatafile";
 import { CBooleanElement } from "./cboolean";
 import { CListElement } from "./list";
@@ -72,19 +72,19 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         return <CPdbDataFileElement {...props} qualifiers={qualifiers} />;
       case "CImportUnmerged":
         return <CImportUnmergedElement {...props} qualifiers={qualifiers} />;
-      case "CFreeRDataFile":
       case "CDictDataFile":
       case "CTLSDataFile":
-      case "CMapCoeffsDataFile":
-      case "CPhsDataFile":
       case "CPhaserSolDataFile":
       case "CPhaserRFileDataFile":
       case "CAsuDataFile":
       case "CUnmergedDataFile":
       case "CMDLMolDataFile":
         return <CDataFileElement {...props} qualifiers={qualifiers} />;
+      case "CFreeRDataFile":
       case "CObsDataFile":
-        return <CObsDataFileElement {...props} qualifiers={qualifiers} />;
+      case "CMapCoeffsDataFile":
+      case "CPhsDataFile":
+        return <CMiniMtzDataFile {...props} qualifiers={qualifiers} />;
       case "CList":
       case "CImportUnmergedList":
       case "CAltSpaceGroupList":

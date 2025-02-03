@@ -1,15 +1,13 @@
 import { Stack } from "@mui/material";
 import { CDataFileElement } from "./cdatafile";
 import { CCP4i2TaskElementProps } from "./task-element";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ParseMtz } from "./parse-mtz";
 import { useApi } from "../../../api";
 import { BaseSpacegroupCellElement } from "./base-spacegroup-cell-element";
 import { useJob } from "../task-utils";
 
-export const CObsDataFileElement: React.FC<CCP4i2TaskElementProps> = (
-  props
-) => {
+export const CMiniMtzDataFile: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job, itemName } = props;
   const api = useApi();
   const { getTaskItem } = useJob(job);
@@ -27,6 +25,15 @@ export const CObsDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     [fileDigest]
   );
 
+  const handleAccept = useCallback((signature: string) => {
+    alert(signature);
+    setFileContent(null);
+  }, []);
+
+  const handleCancel = () => {
+    setFileContent(null);
+  };
+
   return (
     <>
       <Stack direction="column">
@@ -41,6 +48,8 @@ export const CObsDataFileElement: React.FC<CCP4i2TaskElementProps> = (
           item={item}
           fileContent={fileContent as ArrayBuffer}
           setFileContent={setFileContent}
+          handleAccept={handleAccept}
+          handleCancel={handleCancel}
         />
       )}
     </>

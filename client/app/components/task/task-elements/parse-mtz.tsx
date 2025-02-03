@@ -1,6 +1,9 @@
 "use client";
 import {
   Autocomplete,
+  AutocompleteChangeReason,
+  Button,
+  DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
@@ -8,7 +11,14 @@ import {
   Typography,
 } from "@mui/material";
 import SimpleDialog from "@mui/material/Dialog";
-import { useContext, useEffect, useRef, useState } from "react";
+import {
+  SyntheticEvent,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { v4 as uuid4 } from "uuid";
 import { CCP4i2Context } from "../../../app-context";
 
@@ -23,19 +33,24 @@ interface ParseMtzProps {
   fileContent: ArrayBuffer;
   item: any;
   setFileContent: (file: ArrayBuffer | null) => void;
+  handleAccept?: (signature: string) => void;
+  handleCancel?: () => void;
 }
 
 export const ParseMtz: React.FC<ParseMtzProps> = ({
   fileContent,
   setFileContent,
   item,
+  handleAccept,
+  handleCancel,
 }) => {
   const [columnOptions, setColumnOptions] = useState<{
-    [signature: string]: [keySelectors: string[]];
+    [signature: string]: [keySelectors: string];
   }>({});
   const [allColumnNames, setAllColumnNames] = useState<{ [key: string]: any }>(
     []
   );
+  const [value, setValue] = useState<string>("");
   const { cootModule } = useContext(CCP4i2Context);
 
   useEffect(() => {
@@ -106,6 +121,10 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
     setColumnOptions(options);
   }, [allColumnNames]);
 
+  const onAcceptClicked = useCallback(() => {
+    if (handleAccept) handleAccept(value);
+  }, [value]);
+
   return (
     <>
       <SimpleDialog
@@ -128,6 +147,14 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
                   </Typography>
                   <Autocomplete
                     options={columnOptions[signature]}
+                    value={value}
+                    onChange={(
+                      event: SyntheticEvent<Element, Event>,
+                      value: any | null,
+                      reason: AutocompleteChangeReason
+                    ) => {
+                      setValue(value);
+                    }}
                     renderInput={(params) => (
                       <TextField
                         sx={{ my: 2, minWidth: "20rem" }}
@@ -140,6 +167,16 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
               )
           )}
         </DialogContent>
+        <DialogActions>
+          <Button onClick={onAcceptClicked}>OK</Button>
+          <Button
+            onClick={(ev) => {
+              if (handleCancel) handleCancel();
+            }}
+          >
+            Cancel
+          </Button>
+        </DialogActions>
       </SimpleDialog>
     </>
   );
