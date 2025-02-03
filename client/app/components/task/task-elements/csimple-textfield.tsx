@@ -113,7 +113,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         inputRef={inputRef}
         disabled={job.status !== 1}
         size="small"
-        sx={{ minWidth: "20rem", py: 2, my: 1, ...sx }}
+        sx={{ minWidth: "20rem", py: 0, my: 0, ...sx }}
         slotProps={
           type === "checkbox"
             ? {
@@ -133,9 +133,6 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         sx={{
           height: "2rem",
           width: "2rem",
-          mt: 3.5,
-          mb: 2,
-          py: 2,
         }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={0}
