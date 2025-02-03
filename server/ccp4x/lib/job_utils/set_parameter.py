@@ -40,9 +40,10 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
         print(object_element)
 
         logger.warning(
-            "Parameter %s now has value %s",
+            "Parameter %s now has value %s in job number %s",
             object_element.objectName(),
             object_element,
+            job.number,
         )
 
         save_params_for_job(the_job_plugin=the_job_plugin, the_job=job)
