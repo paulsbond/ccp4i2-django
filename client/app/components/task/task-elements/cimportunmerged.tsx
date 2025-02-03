@@ -1,42 +1,21 @@
-import { useMemo, useState } from "react";
-import { useApi } from "../../../api";
-import {
-  CCP4i2TaskElement,
-  CCP4i2TaskElementProps,
-  errorsInValidation,
-} from "./task-element";
+import { useMemo } from "react";
+import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { CDataFileElement } from "./cdatafile";
-import { useJob, useValidation } from "../task-utils";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  ClickAwayListener,
-  Grid2,
-  Paper,
-  Popper,
-  Typography,
-} from "@mui/material";
-import { CContainerElement } from "./ccontainer";
+import { useJob } from "../task-utils";
+import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { CCellElement } from "./ccell";
-import { Info } from "@mui/icons-material";
 import { ErrorInfo } from "./error-info";
 
 export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
-  const api = useApi();
   const { itemName, job } = props;
   const { getTaskItem, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);
-  const { getErrors } = useValidation(job.id);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;
     return null;
   }, [item]);
-  const fileItem = getTaskItem(fileObjectPath ? fileObjectPath : "__NO_FILE__");
 
   const crystalNameObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.crystalName`;
@@ -57,8 +36,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     if (item) return `${item._objectPath}.cell`;
     return null;
   }, [item]);
-
-  const fieldErrors = getErrors(item._objectPath);
 
   return (
     <Card

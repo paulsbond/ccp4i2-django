@@ -3,11 +3,9 @@ import { Box } from "@mui/system";
 import { useState } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { Info } from "@mui/icons-material";
-import { useApi } from "../../../api";
 import { useJob, useValidation } from "../task-utils";
 
 export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
-  const api = useApi();
   const { itemName, job } = props;
   const { getTaskItem, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);

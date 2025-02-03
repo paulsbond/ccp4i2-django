@@ -7,15 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import {
-  CircularProgress,
-  InputAdornment,
-  LinearProgress,
-  Stack,
-  TextField,
-} from "@mui/material";
-import { useApi } from "../../../api";
-import { Job } from "../../../models";
+import { LinearProgress, Stack, TextField } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../task-utils";
 import { ErrorInfo } from "./error-info";
@@ -23,7 +15,6 @@ import { ErrorInfo } from "./error-info";
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const api = useApi();
   const { itemName, job, type, sx, qualifiers } = props;
   const { getTaskItem } = useJob(job);
   const item = getTaskItem(itemName);
@@ -32,12 +23,6 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const [inFlight, setInFlight] = useState<boolean>(false);
 
   const [value, setValue] = useState<number | string | boolean | null>(null);
-
-  const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
-
-  const { data: validation, mutate: mutateValidation } = api.container<any>(
-    `jobs/${props.job.id}/validation`
-  );
 
   const { setParameter } = useJob(job);
 

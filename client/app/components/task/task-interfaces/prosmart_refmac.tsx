@@ -1,9 +1,8 @@
 import { Grid2, LinearProgress, Paper, Typography } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
-import { useMemo } from "react";
 import { useApi } from "../../../api";
-import { itemsForName, useTaskContainer, valueOfItemPath } from "../task-utils";
+import { useTaskContainer } from "../task-utils";
 import { BaseSpacegroupCellElement } from "../task-elements/base-spacegroup-cell-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CContainerElement } from "../task-elements/ccontainer";

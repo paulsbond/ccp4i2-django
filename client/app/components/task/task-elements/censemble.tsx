@@ -1,18 +1,12 @@
-import { useApi } from "../../../api";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useJob, useValidation } from "../task-utils";
-import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
-import { Info } from "@mui/icons-material";
+import { useJob } from "../task-utils";
+import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { ErrorInfo } from "./error-info";
 
 export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
-  const api = useApi();
   const { job, itemName } = props;
   const { getTaskItem, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);
-  const { getErrors } = useValidation(job.id);
-
-  const fieldErrors = getErrors(item._objectPath);
 
   return (
     <Card

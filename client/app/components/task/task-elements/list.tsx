@@ -16,7 +16,7 @@ import { Add, Delete } from "@mui/icons-material";
 import { MyExpandMore } from "../../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { CCP4i2Context } from "../../../app-context";
-import { Job, Project } from "../../../models";
+import { Project } from "../../../models";
 
 interface CListElementProps extends CCP4i2TaskElementProps {
   initiallyOpen?: boolean;
@@ -29,9 +29,6 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
   const { projectId } = useContext(CCP4i2Context);
   const { data: project } = api.get<Project>(`projects/${projectId}`);
   const item = getTaskItem(itemName);
-  const { data: validation, mutate: mutateValidation } = api.container<any>(
-    `jobs/${props.job.id}/validation`
-  );
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel

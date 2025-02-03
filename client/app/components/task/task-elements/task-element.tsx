@@ -6,7 +6,6 @@ import { CStringElement } from "./cstring";
 import { useJob } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
-import { useApi } from "../../../api";
 import $ from "jquery";
 import { CObsDataFileElement } from "./cobsdatafile";
 import { CDataFileElement } from "./cdatafile";
@@ -28,7 +27,6 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
 }
 
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
-  const api = useApi();
   const { job } = props;
   const { getTaskItem } = useJob(job);
 

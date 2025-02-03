@@ -131,12 +131,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const { data: projects, mutate: mutateProjects } =
     api.get<Project[]>(`projects`);
 
-  const { getErrors, mutateValidation } = useValidation(props.job.id);
-
-  const { mutate: mutateContent } = api.digest<any>(
-    `jobs/${props.job.id}/digest?object_path=${objectPath}`
-  );
-
   const fileType = useMemo<string | null>(() => {
     if (item?._class) {
       return fileTypeMapping[item?._class];
@@ -250,8 +244,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     },
     [project_jobs]
   );
-
-  const fieldErrors = getErrors(item._objectPath);
 
   return (
     <Stack

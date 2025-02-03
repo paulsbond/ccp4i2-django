@@ -30,17 +30,12 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   setFileContent,
   item,
 }) => {
-  const [columnData, setColumnData] = useState<string[] | null>(null);
   const [columnOptions, setColumnOptions] = useState<{
     [signature: string]: [keySelectors: string[]];
   }>({});
   const [allColumnNames, setAllColumnNames] = useState<{ [key: string]: any }>(
     []
   );
-  const [selectedColumnOption, setSelectedColumnOption] = useState<any | null>(
-    null
-  );
-  const scriptLoaded = useRef<boolean>(false);
   const { cootModule } = useContext(CCP4i2Context);
 
   useEffect(() => {

@@ -8,16 +8,12 @@ import {
 import {
   Autocomplete,
   AutocompleteChangeReason,
-  CircularProgress,
-  InputAdornment,
   LinearProgress,
   Menu,
   MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
-import { useApi } from "../../../api";
-import { Job } from "../../../models";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../task-utils";
 import { ErrorInfo } from "./error-info";
@@ -26,7 +22,6 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
   const { itemName, job, type, sx, qualifiers } = props;
-  const api = useApi();
   const { getTaskItem } = useJob(job);
   const item = getTaskItem(itemName);
 

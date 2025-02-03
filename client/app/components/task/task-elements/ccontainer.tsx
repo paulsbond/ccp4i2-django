@@ -11,7 +11,6 @@ interface CContainerElementProps extends CCP4i2TaskElementProps {
 export const CContainerElement: React.FC<
   PropsWithChildren<CContainerElementProps>
 > = (props) => {
-  const api = useApi();
   const {
     job,
     itemName,

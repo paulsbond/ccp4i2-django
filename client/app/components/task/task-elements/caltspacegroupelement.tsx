@@ -609,21 +609,11 @@ const hmLookup = {
 export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
-  const api = useApi();
   const { job, itemName } = props;
-
-  const { data: container, mutate: mutateParams } = api.container<any>(
-    `jobs/${job.id}/container`
-  );
-  const { data: validation, mutate: mutateValidation } = api.container<any>(
-    `jobs/${job.id}/validation`
-  );
   const { setParameter, getTaskItem, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);
-  const { getErrors } = useValidation(job.id);
   const [value, setValue] = useState<string>("P 1");
   const [inFlight, setInFlight] = useState(false);
-  const fieldErrors = getErrors(item._objectPath);
 
   const handleInputChanged = async (arg: any) => {
     setValue(arg);
