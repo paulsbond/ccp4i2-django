@@ -65,37 +65,34 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
       ? valueForDispatch(item)
       : [];
     let newItemValue = valueForDispatch(taskElement);
-    console.log({ newItemValue, project });
-    if (true) {
-      if (taskElement._baseClass === "CDataFile" && newItemValue && project) {
-        newItemValue.project = project.uuid.replace(/\-/g, "");
-        newItemValue.baseName = "UNDEFINED";
-      } else if (taskElement._class === "CAltSpaceGroup") {
-        newItemValue = "P1";
-      } else if (taskElement._baseClass === "CInt") {
-        newItemValue = 0;
-      } else if (taskElement._baseClass === "CFloat") {
-        newItemValue = 0;
-      } else if (taskElement._baseClass === "CString") {
-        newItemValue = 0;
-      }
-      listValue.push(newItemValue);
-      console.log({
-        op: taskElement._objectPath,
-        v4d: listValue,
-      });
-      const setParameterArg = {
-        object_path: item._objectPath,
-        value: listValue,
-      };
-      const result = await api.post<Job>(
-        `jobs/${job.id}/set_parameter`,
-        setParameterArg
-      );
-      console.log(result);
-      await mutateParams();
-      await mutateValidation();
+    if (taskElement._baseClass === "CDataFile" && newItemValue && project) {
+      newItemValue.project = project.uuid.replace(/\-/g, "");
+      newItemValue.baseName = "UNDEFINED";
+    } else if (taskElement._class === "CAltSpaceGroup") {
+      newItemValue = "P1";
+    } else if (taskElement._baseClass === "CInt") {
+      newItemValue = 0;
+    } else if (taskElement._baseClass === "CFloat") {
+      newItemValue = 0;
+    } else if (taskElement._baseClass === "CString") {
+      newItemValue = 0;
     }
+    listValue.push(newItemValue);
+    console.log({
+      op: taskElement._objectPath,
+      v4d: listValue,
+    });
+    const setParameterArg = {
+      object_path: item._objectPath,
+      value: listValue,
+    };
+    const result = await api.post<Job>(
+      `jobs/${job.id}/set_parameter`,
+      setParameterArg
+    );
+    console.log(result);
+    await mutateParams();
+    await mutateValidation();
   }, [item, project, mutateParams, mutateValidation, job]);
 
   const deleteItem = useCallback(
