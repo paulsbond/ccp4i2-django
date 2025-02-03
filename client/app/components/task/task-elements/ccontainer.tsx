@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader } from "@mui/material";
 import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useApi } from "../../../api";
 import { useJob } from "../task-utils";
 import { ErrorInfo } from "./error-info";
 

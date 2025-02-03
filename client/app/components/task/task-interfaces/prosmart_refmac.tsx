@@ -2,13 +2,14 @@ import { Grid2, LinearProgress, Paper, Typography } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { useApi } from "../../../api";
-import { useTaskContainer } from "../task-utils";
+import { useJob } from "../task-utils";
 import { BaseSpacegroupCellElement } from "../task-elements/base-spacegroup-cell-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
+  const { job } = props;
   const { data: container, mutate: mutateContainer } = api.container<any>(
     `jobs/${props.job.id}/container`
   );
@@ -17,17 +18,18 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { data: F_SIGFDigest } = api.digest<any>(
     `jobs/${props.job.id}/digest?object_path=prosmart_refmac.inputData.F_SIGF`
   );
+
   const { data: FREERFLAGDigest } = api.digest<any>(
     `jobs/${props.job.id}/digest?object_path=prosmart_refmac.inputData.FREERFLAG`
   );
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const useTaskParam = useTaskContainer(container);
-  const refinementMode = useTaskParam("REFINEMENT_MODE");
-  const solventAdvanced = useTaskParam("SOLVENT_ADVANCED");
-  const solventMaskType = useTaskParam("SOLVENT_MASK_TYPE");
-  const tlsMode = useTaskParam("TLSMODE");
-  const bfacSetUse = useTaskParam("BFACSETUSE");
+  const { getTaskValue } = useJob(job);
+  const refinementMode = getTaskValue("REFINEMENT_MODE");
+  const solventAdvanced = getTaskValue("SOLVENT_ADVANCED");
+  const solventMaskType = getTaskValue("SOLVENT_MASK_TYPE");
+  const tlsMode = getTaskValue("TLSMODE");
+  const bfacSetUse = getTaskValue("BFACSETUSE");
 
   if (!container) return <LinearProgress />;
 

@@ -12,6 +12,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   const api = useApi();
   const { getTaskItem } = useJob(job);
   const item = getTaskItem(itemName);
+
   const selectionItemName = useMemo(() => {
     const result = `${item._objectPath}.selection.text`;
     return result;

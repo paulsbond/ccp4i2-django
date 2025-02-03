@@ -112,6 +112,7 @@ const findItems = (
   }
   return listToGrow;
 };
+
 export const itemsForName = (
   name: string,
   container: any,
@@ -166,6 +167,12 @@ export const useJob = (job: Job) => {
     ),
     getTaskItem: useMemo(() => {
       return (param_name: string) => itemsForName(param_name, container)[0];
+    }, [container]),
+    getTaskValue: useMemo(() => {
+      return (param_name: string) => {
+        const item = itemsForName(param_name, container)[0];
+        return valueForDispatch(item);
+      };
     }, [container]),
     getValidationColor: useMemo(() => {
       return (param_name: string) => {

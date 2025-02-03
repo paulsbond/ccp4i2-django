@@ -120,7 +120,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
             >
               <ExpandMoreIcon />
             </MyExpandMore>
-            <Button onClick={extendListItem}>
+            <Button disabled={!(job.status == 1)} onClick={extendListItem}>
               <Add />
             </Button>
           </>
@@ -142,6 +142,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
                     <FormControl>
                       <FormLabel>Delete</FormLabel>
                       <Button
+                        disabled={!(job.status === 1)}
                         id="deleteButton"
                         onClick={() => {
                           deleteItem(content);
