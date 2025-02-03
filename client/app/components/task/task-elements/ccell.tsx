@@ -37,7 +37,10 @@ export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
                   sx={{ my: 0, py: 0, minWidth: "10rem" }}
                   key={objectKey}
                   itemName={`${item._objectPath}.${objectKey}`}
-                  qualifiers={{ ...props.qualifiers, guiLabel: objectKey }}
+                  qualifiers={{
+                    ...useItem(`${item._objectPath}.${objectKey}`)._qualifiers,
+                    guiLabel: objectKey,
+                  }}
                 />
               </Grid2>
             ))}

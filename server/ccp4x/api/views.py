@@ -8,9 +8,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Container import CContainer
+from core import CCP4ErrorHandling
 from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_file
+from ..lib.job_utils.value_dict_for_object import value_dict_for_object
+from ..lib.job_utils.validate_container import getEtree
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -577,6 +580,13 @@ class JobViewSet(ModelViewSet):
         job = models.Job.objects.get(id=pk)
         object_path = form_data["object_path"]
         value = form_data["value"]
-        result = set_parameter(job, object_path, value)
+        try:
+            result = set_parameter(job, object_path, value)
 
-        return JsonResponse({"status": "Success", "updated_item": result})
+            return JsonResponse({"status": "Success", "updated_item": result})
+        except CCP4ErrorHandling.CException as err:
+            error_tree = getEtree(err)
+            ET.indent(error_tree, " ")
+            return JsonResponse(
+                {"status": "Failed", "reason": ET.tostring(error_tree).decode("utf-8")}
+            )

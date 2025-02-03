@@ -1,7 +1,8 @@
 import $ from "jquery";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useApi } from "../../api";
 import { errorsInValidation } from "./task-elements/task-element";
+import { Job } from "../../models";
 
 export const classOfDefItem = (
   item: HTMLElement
@@ -135,6 +136,58 @@ export const useTaskItem = (container: any) => {
       return (param_name: string) => itemsForName(param_name, container)[0];
     return () => {};
   }, [container]);
+};
+
+export interface SetParameterArg {
+  object_path: string;
+  value: any;
+}
+export const useJob = (job: Job) => {
+  const api = useApi();
+  const { mutate: mutateContainer } = api.container<any>(
+    `jobs/${job.id}/container`
+  );
+  const { mutate: mutateValidation } = api.container<any>(
+    `jobs/${job.id}/validation`
+  );
+  return {
+    setParameter: useCallback(
+      async (setParameterArg: SetParameterArg) => {
+        const result = await api.post<Job>(
+          `jobs/${job.id}/set_parameter`,
+          setParameterArg
+        );
+        console.log(result);
+        await mutateContainer();
+        await mutateValidation();
+        return result;
+      },
+      [job, mutateContainer, mutateValidation]
+    ),
+  };
+};
+
+export const readFilePromise = async (
+  file: File,
+  readAs: "Text" | "ArrayBuffer" | "File" = "Text"
+): Promise<string | ArrayBuffer | null | File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onabort = () => reject();
+    reader.onerror = () => reject();
+    reader.onloadend = () => {
+      // Do whatever you want with the file contents
+      const textOrBuffer = reader.result;
+      return resolve(textOrBuffer);
+    };
+    if (readAs === "Text") {
+      reader.readAsText(file);
+    } else if (readAs === "ArrayBuffer") {
+      reader.readAsArrayBuffer(file);
+    } else if (readAs === "File") {
+      return resolve(file);
+    }
+  });
 };
 
 export const valueForDispatch = (item: any): any => {

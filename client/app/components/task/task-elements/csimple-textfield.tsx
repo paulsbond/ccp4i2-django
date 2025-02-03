@@ -17,7 +17,7 @@ import {
 import { useApi } from "../../../api";
 import { Job } from "../../../models";
 import { CCP4i2CSimpleElementProps } from "./csimple";
-import { useTaskItem } from "../task-utils";
+import { useJob, useTaskItem } from "../task-utils";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
@@ -39,6 +39,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     `jobs/${props.job.id}/validation`
   );
 
+  const { setParameter } = useJob(job);
+
   useEffect(() => {
     setValue(item._value);
     //@ts-ignore
@@ -56,7 +58,6 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     HTMLTextAreaElement | HTMLInputElement
   > = useCallback(
     (ev) => {
-      console.log(ev);
       if (type === "int") {
         setValue(parseInt(ev.target.value));
       } else if (type === "float") {
@@ -76,30 +77,28 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = useCallback(
     async (ev) => {
       if (ev.key === "Enter") {
-        sendValue(value);
+        sendValue();
       }
     },
     [value]
   );
 
-  const sendValue = useCallback(
-    async (value: any) => {
-      setInFlight(true);
-      const setParameterArg = {
-        object_path: objectPath,
-        value: value,
-      };
-      const result = await api.post<Job>(
-        `jobs/${job.id}/set_parameter`,
-        setParameterArg
-      );
-      console.log(result);
-      await mutateParams();
-      await mutateValidation();
-      setInFlight(false);
-    },
-    [objectPath]
-  );
+  const sendValue = useCallback(async () => {
+    setInFlight(true);
+    const setParameterArg = {
+      object_path: item._objectPath,
+      value: value,
+    };
+    try {
+      const result: any = await setParameter(setParameterArg);
+      if (result.status === "Failed") {
+        setValue(item._value);
+      }
+    } catch (err) {
+      console.log("Here's an", err);
+    }
+    setInFlight(false);
+  }, [objectPath, value]);
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel
@@ -108,7 +107,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   }, [objectPath, qualifiers]);
 
   return (
-    <Stack direction="row">
+    <Stack direction="row" sx={{ mb: 2 }}>
       <TextField
         inputRef={inputRef}
         disabled={job.status !== 1}
@@ -128,6 +127,9 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onFocusCapture={(ev) => console.log(ev)}
+        onBlur={(ev) => {
+          if (value !== item._value) sendValue();
+        }}
       />
       <LinearProgress
         sx={{

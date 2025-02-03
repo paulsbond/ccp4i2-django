@@ -1,6 +1,11 @@
 import { useApi } from "../../../api";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useTaskItem, useValidation, validationColor } from "../task-utils";
+import {
+  useJob,
+  useTaskItem,
+  useValidation,
+  validationColor,
+} from "../task-utils";
 import {
   Autocomplete,
   Button,
@@ -611,6 +616,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const api = useApi();
   const { job, itemName } = props;
+
   const { data: container, mutate: mutateParams } = api.container<any>(
     `jobs/${job.id}/container`
   );
@@ -624,6 +630,8 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   const [inFlight, setInFlight] = useState(false);
   const fieldErrors = getErrors(item._objectPath);
 
+  const { setParameter } = useJob(job);
+
   const handleInputChanged = async (arg: any) => {
     setValue(arg);
     setInFlight(true);
@@ -631,13 +639,11 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
       object_path: item._objectPath,
       value: value,
     };
-    const result = await api.post<Job>(
-      `jobs/${job.id}/set_parameter`,
-      setParameterArg
-    );
-    console.log(result);
-    await mutateParams();
-    await mutateValidation();
+    try {
+      setParameter(setParameterArg);
+    } catch (err) {
+      alert(err);
+    }
     setInFlight(false);
   };
   return (

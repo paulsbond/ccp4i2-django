@@ -19,7 +19,7 @@ import {
 import { useApi } from "../../../api";
 import { Job } from "../../../models";
 import { CCP4i2CSimpleElementProps } from "./csimple";
-import { useTaskItem } from "../task-utils";
+import { useJob, useTaskItem } from "../task-utils";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
@@ -53,6 +53,8 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     if (item) return { objectPath: item._objectPath };
     return { objectPath: null };
   }, [item]);
+
+  const { setParameter } = useJob(job);
 
   const options: { id: string; label: string }[] | undefined = useMemo(() => {
     if (qualifiers?.enumerators) {
@@ -117,17 +119,19 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
       if (value) {
         setValue(value);
         const setParameterArg = {
-          object_path: objectPath,
+          object_path: item._objectPath,
           value: value.id,
         };
         console.log({ setParameterArg });
         setInFlight(true);
-        const result = await api.post<Job>(
-          `jobs/${job.id}/set_parameter`,
-          setParameterArg
-        );
-        console.log(result);
-        mutate();
+        try {
+          const result: any = await setParameter(setParameterArg);
+          if (result.status === "Failed") {
+            setValue(item._value);
+          }
+        } catch (err) {
+          alert(err);
+        }
         setInFlight(false);
       }
     },
@@ -135,7 +139,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   );
 
   return (
-    <Stack direction="row">
+    <Stack direction="row" sx={{ mb: 2 }}>
       <Autocomplete
         disabled={job.status !== 1}
         sx={{ minWidth: "20rem", py: 0, mb: 1, ...sx }}
