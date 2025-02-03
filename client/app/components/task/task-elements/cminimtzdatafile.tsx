@@ -12,12 +12,10 @@ export const CMiniMtzDataFile: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
   const { getTaskItem } = useJob(job);
   const item = getTaskItem(itemName);
-  const [fileContent, setFileContent] = useState<
-    ArrayBuffer | null | string | File
-  >(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const { data: fileDigest } = api.digest<any>(
-    `jobs/${props.job.id}/digest?object_path=${item._objectPath}`
+    `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
 
   const infoContent = useMemo(
@@ -25,13 +23,20 @@ export const CMiniMtzDataFile: React.FC<CCP4i2TaskElementProps> = (props) => {
     [fileDigest]
   );
 
-  const handleAccept = useCallback((signature: string) => {
-    alert(signature);
-    setFileContent(null);
-  }, []);
+  const handleAccept = useCallback(
+    (signature: string) => {
+      const formData = new FormData();
+      formData.append("jobId", `${job.id}`);
+      formData.append("signature", signature);
+      formData.append("objectPath", item._objectPath);
+      formData.append("file", selectedFile as File);
+      setSelectedFile(null);
+    },
+    [job, item, selectedFile]
+  );
 
   const handleCancel = () => {
-    setFileContent(null);
+    setSelectedFile(null);
   };
 
   return (
@@ -40,14 +45,14 @@ export const CMiniMtzDataFile: React.FC<CCP4i2TaskElementProps> = (props) => {
         <CDataFileElement
           {...props}
           infoContent={infoContent}
-          setFileContent={setFileContent}
+          setFile={setSelectedFile}
         />
       </Stack>
-      {fileContent && (
+      {selectedFile && (
         <ParseMtz
           item={item}
-          fileContent={fileContent as ArrayBuffer}
-          setFileContent={setFileContent}
+          file={selectedFile}
+          setFile={setSelectedFile}
           handleAccept={handleAccept}
           handleCancel={handleCancel}
         />

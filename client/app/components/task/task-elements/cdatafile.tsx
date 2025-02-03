@@ -87,6 +87,7 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
   setFileContent?: (fileContent: ArrayBuffer | null | string | File) => void;
+  setFile?: (aFile: File) => void;
   infoContent?: ReactNode;
 }
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
@@ -117,8 +118,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   }, [item]);
   const [inFlight, setInFlight] = useState(false);
   const [value, setValue] = useState<any | null>(null);
-
-  const { mutate: mutateParams } = api.get<any>(`jobs/${job.id}/container`);
 
   const { data: project_files, mutate: mutateFiles } = api.get<CCP4i2File[]>(
     `projects/${job.project}/files`
@@ -274,11 +273,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         sx={{ my: 1, mr: 2 }}
         disabled={inFlight || job.status !== 1}
         handleFileChange={async (fileList: FileList | null) => {
-          if (fileList && props.setFileContent) {
+          if (fileList && props.setFile) {
             const topFile: any = Array.from(fileList)[0];
-            const fileContent = await readFilePromise(topFile, "ArrayBuffer");
-            console.log(fileContent);
-            props.setFileContent(fileContent);
+            props.setFile(topFile);
           }
         }}
       />

@@ -21,6 +21,7 @@ import {
 } from "react";
 import { v4 as uuid4 } from "uuid";
 import { CCP4i2Context } from "../../../app-context";
+import { readFilePromise } from "../task-utils";
 
 const signatureMap = {
   KMKM: "Intensity Friedel pairs",
@@ -30,16 +31,16 @@ const signatureMap = {
 };
 
 interface ParseMtzProps {
-  fileContent: ArrayBuffer;
+  file: File;
   item: any;
-  setFileContent: (file: ArrayBuffer | null) => void;
+  setFile: (file: File | null) => void;
   handleAccept?: (signature: string) => void;
   handleCancel?: () => void;
 }
 
 export const ParseMtz: React.FC<ParseMtzProps> = ({
-  fileContent,
-  setFileContent,
+  file,
+  setFile,
   item,
   handleAccept,
   handleCancel,
@@ -54,24 +55,26 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   const { cootModule } = useContext(CCP4i2Context);
 
   useEffect(() => {
-    console.log({ fileContent, cootModule });
     const asyncFunc = async () => {
-      if (fileContent && fileContent.byteLength && cootModule) {
-        const fileName = `File_${uuid4()}`;
-        const byteArray = new Uint8Array(fileContent);
-        cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
-        const header_info = cootModule.get_mtz_columns(fileName);
-        cootModule.FS_unlink(`./${fileName}`);
-        const newColumns: { [colType: string]: string } = {};
-        for (let ih = 0; ih < header_info.size(); ih += 2) {
-          newColumns[header_info.get(ih + 1)] = header_info.get(ih);
+      if (file && cootModule) {
+        const fileContent = await readFilePromise(file, "ArrayBuffer");
+        if (fileContent) {
+          const fileName = `File_${uuid4()}`;
+          const byteArray = new Uint8Array(fileContent as ArrayBuffer);
+          cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
+          const header_info = cootModule.get_mtz_columns(fileName);
+          cootModule.FS_unlink(`./${fileName}`);
+          const newColumns: { [colType: string]: string } = {};
+          for (let ih = 0; ih < header_info.size(); ih += 2) {
+            newColumns[header_info.get(ih + 1)] = header_info.get(ih);
+          }
+          setAllColumnNames(newColumns);
         }
-        setAllColumnNames(newColumns);
       }
     };
     asyncFunc();
     return () => {};
-  }, [fileContent, cootModule]);
+  }, [file, cootModule]);
 
   useEffect(() => {
     const sortedColumnNames: any = {};
@@ -128,9 +131,9 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   return (
     <>
       <SimpleDialog
-        open={fileContent != null}
+        open={file != null}
         onClose={() => {
-          setFileContent(null);
+          setFile(null);
         }}
       >
         <DialogTitle>{item?._objectPath}</DialogTitle>

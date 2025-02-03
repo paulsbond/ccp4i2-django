@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import { Info } from "@mui/icons-material";
 import { useState } from "react";
-import { Job } from "../../../models";
 
 const spacegroups = [
   "P1",
