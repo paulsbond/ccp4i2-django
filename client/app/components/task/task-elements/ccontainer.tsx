@@ -3,6 +3,7 @@ import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
 import { itemsForName, useTaskItem } from "../task-utils";
+import { ErrorInfo } from "./error-info";
 
 interface CContainerElementProps extends CCP4i2TaskElementProps {
   containerHint?: "FolderLevel" | "BlockLevel";
@@ -55,6 +56,7 @@ export const CContainerElement: React.FC<
               title={qualifiers.guiLabel}
               sx={{ my: 0 }}
               titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
+              action={<ErrorInfo {...props} />}
             />
           )}
           <CardContent>

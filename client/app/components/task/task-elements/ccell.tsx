@@ -3,6 +3,7 @@ import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useTaskItem, useValidation, validationColor } from "../task-utils";
 import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { Info } from "@mui/icons-material";
+import { ErrorInfo } from "./error-info";
 
 export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
@@ -21,11 +22,7 @@ export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       <CardHeader
         title={item._qualifiers.guiLabel}
         sx={{ backgroundColor: validationColor(fieldErrors) }}
-        action={
-          <Button>
-            <Info />
-          </Button>
-        }
+        action={<ErrorInfo {...props} />}
       />
       <CardContent sx={{ my: 0, py: 0 }}>
         {item && (

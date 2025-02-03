@@ -22,6 +22,7 @@ import {
 import { CContainerElement } from "./ccontainer";
 import { CCellElement } from "./ccell";
 import { Info } from "@mui/icons-material";
+import { ErrorInfo } from "./error-info";
 
 export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   props
@@ -32,8 +33,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   const useItem = useTaskItem(container);
   const item = useItem(itemName);
   const { getErrors } = useValidation(job.id);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const infoOpen = Boolean(anchorEl);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;
     return null;
@@ -72,21 +71,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     >
       <CardHeader
         title={item._qualifiers.guLabel}
-        action={
-          <ClickAwayListener
-            onClickAway={() => {
-              setAnchorEl(null);
-            }}
-          >
-            <Button
-              onClick={(ev) => {
-                setAnchorEl(ev.currentTarget);
-              }}
-            >
-              <Info sx={{ color: validationColor(fieldErrors) }} />
-            </Button>
-          </ClickAwayListener>
-        }
+        action={<ErrorInfo {...props} />}
       />
       <CardContent>
         {fileObjectPath && (
@@ -125,23 +110,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
           </Grid2>
         </Grid2>
       </CardContent>
-      <Popper anchorEl={anchorEl} placement="auto-end" open={infoOpen}>
-        <Box
-          sx={{
-            border: 1,
-            p: 1,
-            bgcolor: "background.paper",
-            textWrap: "pretty",
-          }}
-        >
-          {fieldErrors &&
-            fieldErrors.map((fieldError) => (
-              <Typography sx={{ textWrap: "wrap", maxWidth: "15rem" }}>
-                {fieldError.description}
-              </Typography>
-            ))}
-        </Box>
-      </Popper>
     </Card>
   );
 };

@@ -33,6 +33,7 @@ import {
   useValidation,
   validationColor,
 } from "../task-utils";
+import { ErrorInfo } from "./error-info";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -302,38 +303,13 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           }
         }}
       />
-      <ClickAwayListener
-        onClickAway={() => {
-          setAnchorEl(null);
-        }}
-      >
-        <Button
-          role={undefined}
-          disabled={inFlight}
-          variant="outlined"
-          startIcon={<Info sx={{ color: validationColor(fieldErrors) }} />}
-          sx={{ my: 1, mr: 2 }}
-          size="small"
-          onClick={(ev) => setAnchorEl(ev.currentTarget)}
-        />
-      </ClickAwayListener>
+      <ErrorInfo {...props}>{infoContent}</ErrorInfo>
       <LinearProgress
         ref={progressRef}
         sx={{ height: "2rem", width: "4rem", mt: 1.5 }}
         variant={inFlight ? "indeterminate" : "determinate"}
         value={0}
       />
-      <Popper anchorEl={anchorEl} open={open}>
-        <Box sx={{ border: 1, p: 1, bgcolor: "background.paper" }}>
-          {fieldErrors &&
-            fieldErrors.map((fieldError) => (
-              <Typography sx={{ textWrap: "wrap", maxWidth: "15rem" }}>
-                {fieldError.description}
-              </Typography>
-            ))}
-          {infoContent}
-        </Box>
-      </Popper>
     </Stack>
   );
   return;
