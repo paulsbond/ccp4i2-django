@@ -70,9 +70,14 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
       if (taskElement._baseClass === "CDataFile" && newItemValue && project) {
         newItemValue.project = project.uuid.replace(/\-/g, "");
         newItemValue.baseName = "UNDEFINED";
-      }
-      if (taskElement._class === "CAltSpaceGroup") {
+      } else if (taskElement._class === "CAltSpaceGroup") {
         newItemValue = "P1";
+      } else if (taskElement._baseClass === "CInt") {
+        newItemValue = 0;
+      } else if (taskElement._baseClass === "CFloat") {
+        newItemValue = 0;
+      } else if (taskElement._baseClass === "CString") {
+        newItemValue = 0;
       }
       listValue.push(newItemValue);
       console.log({
