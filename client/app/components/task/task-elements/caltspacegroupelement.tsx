@@ -1,11 +1,6 @@
 import { useApi } from "../../../api";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import {
-  useJob,
-  useTaskItem,
-  useValidation,
-  validationColor,
-} from "../task-utils";
+import { useJob, useValidation } from "../task-utils";
 import {
   Autocomplete,
   Button,
@@ -623,14 +618,12 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   const { data: validation, mutate: mutateValidation } = api.container<any>(
     `jobs/${job.id}/validation`
   );
-  const useItem = useTaskItem(container);
-  const item = useItem(itemName);
+  const { setParameter, getTaskItem, getValidationColor } = useJob(job);
+  const item = getTaskItem(itemName);
   const { getErrors } = useValidation(job.id);
   const [value, setValue] = useState<string>("P 1");
   const [inFlight, setInFlight] = useState(false);
   const fieldErrors = getErrors(item._objectPath);
-
-  const { setParameter } = useJob(job);
 
   const handleInputChanged = async (arg: any) => {
     setValue(arg);
@@ -648,11 +641,14 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   };
   return (
     <Card
-      sx={{ border: "3px solid", borderColor: validationColor(fieldErrors) }}
+      sx={{
+        border: "3px solid",
+        borderColor: getValidationColor(itemName),
+      }}
     >
       <CardHeader
         title={item._qualifiers.guiLabel}
-        sx={{ backgroundColor: validationColor(fieldErrors) }}
+        sx={{ backgroundColor: getValidationColor(itemName) }}
         action={
           <Button>
             <Info />

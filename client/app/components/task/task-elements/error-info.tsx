@@ -4,12 +4,12 @@ import { useState } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { Info } from "@mui/icons-material";
 import { useApi } from "../../../api";
-import { useJob, useValidation, validationColor } from "../task-utils";
+import { useJob, useValidation } from "../task-utils";
 
 export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
   const { itemName, job } = props;
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);
   const { getErrors } = useValidation(job.id);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -28,7 +28,7 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
             setAnchorEl(ev.currentTarget);
           }}
         >
-          <Info sx={{ color: validationColor(fieldErrors) }} />
+          <Info sx={{ color: getValidationColor(itemName) }} />
         </Button>
       </ClickAwayListener>
       <Popper anchorEl={anchorEl} placement="auto-end" open={infoOpen}>

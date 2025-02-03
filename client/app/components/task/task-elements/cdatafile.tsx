@@ -27,12 +27,7 @@ import {
 } from "react";
 import { green, red, yellow } from "@mui/material/colors";
 import { Folder, Info } from "@mui/icons-material";
-import {
-  readFilePromise,
-  useJob,
-  useValidation,
-  validationColor,
-} from "../task-utils";
+import { readFilePromise, useJob, useValidation } from "../task-utils";
 import { ErrorInfo } from "./error-info";
 
 const fileTypeMapping: { [key: string]: string } = {
@@ -100,7 +95,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 ) => {
   const { job, sx, infoContent, itemName } = props;
   const api = useApi();
-  const { getTaskItem, setParameter } = useJob(job);
+  const { getTaskItem, setParameter, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -263,7 +258,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       direction="row"
       sx={{
         border: "3px solid",
-        borderColor: validationColor(fieldErrors),
+        borderColor: getValidationColor(itemName),
         borderRadius: "0.5rem",
         mx: 2,
         my: 1,

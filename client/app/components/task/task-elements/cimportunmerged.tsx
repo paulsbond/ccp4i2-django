@@ -6,7 +6,7 @@ import {
   errorsInValidation,
 } from "./task-element";
 import { CDataFileElement } from "./cdatafile";
-import { useJob, useValidation, validationColor } from "../task-utils";
+import { useJob, useValidation } from "../task-utils";
 import {
   Box,
   Button,
@@ -29,7 +29,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const api = useApi();
   const { itemName, job } = props;
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);
   const { getErrors } = useValidation(job.id);
   const fileObjectPath = useMemo<string | null>(() => {
@@ -64,7 +64,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     <Card
       sx={{
         border: "3px solid",
-        borderColor: validationColor(fieldErrors),
+        borderColor: getValidationColor(itemName),
         borderRadius: "0.5rem",
       }}
     >

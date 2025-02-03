@@ -1,6 +1,6 @@
 import { useApi } from "../../../api";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useJob, useValidation, validationColor } from "../task-utils";
+import { useJob, useValidation } from "../task-utils";
 import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { Info } from "@mui/icons-material";
 import { ErrorInfo } from "./error-info";
@@ -8,7 +8,7 @@ import { ErrorInfo } from "./error-info";
 export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const api = useApi();
   const { job, itemName } = props;
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem, getValidationColor } = useJob(job);
   const item = getTaskItem(itemName);
   const { getErrors } = useValidation(job.id);
 
@@ -16,11 +16,11 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
 
   return (
     <Card
-      sx={{ border: "3px solid", borderColor: validationColor(fieldErrors) }}
+      sx={{ border: "3px solid", borderColor: getValidationColor(itemName) }}
     >
       <CardHeader
         title={item._qualifiers.guiLabel}
-        sx={{ backgroundColor: validationColor(fieldErrors) }}
+        sx={{ backgroundColor: getValidationColor(itemName) }}
         action={<ErrorInfo {...props} />}
       />
       <CardContent sx={{ my: 0, py: 0 }}>

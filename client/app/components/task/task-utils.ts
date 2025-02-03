@@ -147,7 +147,7 @@ export const useJob = (job: Job) => {
   const { data: container, mutate: mutateContainer } = api.container<any>(
     `jobs/${job.id}/container`
   );
-  const { mutate: mutateValidation } = api.container<any>(
+  const { data: validation, mutate: mutateValidation } = api.container<any>(
     `jobs/${job.id}/validation`
   );
   return {
@@ -167,6 +167,12 @@ export const useJob = (job: Job) => {
     getTaskItem: useMemo(() => {
       return (param_name: string) => itemsForName(param_name, container)[0];
     }, [container]),
+    getValidationColor: useMemo(() => {
+      return (param_name: string) => {
+        const fieldErrors = errorsInValidation(param_name, validation);
+        return validationColor(fieldErrors);
+      };
+    }, [validation]),
   };
 };
 
