@@ -39,10 +39,16 @@ def get_job_plugin(the_job: Job, parent=None, dbHandler: CCP4i2DjangoDbHandler =
         logger.exception("Error in get_job_plugin", exc_info=err)
         return None
 
-    defFile = the_job.directory / "params.xml"
+    params_path = the_job.directory / "params.xml"
+    fallback_params_path = the_job.directory / "input_params.xml"
+    if the_job.status in [Job.Status.UNKNOWN, Job.Status.PENDING]:
+        params_path = the_job.directory / "input_params.xml"
+        fallback_params_path = the_job.directory / "params.xml"
+
+    defFile = params_path
     if not defFile.exists():
         # logger.info('No params.xml at %s', defFile)
-        defFile1 = the_job.directory / "input_params.xml"
+        defFile1 = fallback_params_path
         if not defFile1.exists():
             # logger.info('No params.xml at %s', defFile1)
             raise Exception("no defFile found")

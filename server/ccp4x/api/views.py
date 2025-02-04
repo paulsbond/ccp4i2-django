@@ -6,6 +6,7 @@ from pytz import timezone
 from django.http import Http404
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Container import CContainer
 from core import CCP4ErrorHandling
@@ -55,6 +56,7 @@ from ..lib.job_utils.clone_job import clone_job
 from ..lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ..lib.job_utils.find_dependent_jobs import delete_job_and_dependents
 from ..lib.job_utils.set_parameter import set_parameter
+from ..lib.job_utils.upload_file_param import upload_file_param
 from ..lib.job_utils.get_job_container import get_job_container
 from ..lib.job_utils.json_for_job_container import json_for_job_container
 from django.http import JsonResponse
@@ -248,24 +250,14 @@ class JobViewSet(ModelViewSet):
         serializer_class=serializers.JobSerializer,
     )
     def params_xml(self, request, pk=None):
-        """
-        Retrieve the contents of the 'params.xml' file for a given job.
-        This method attempts to read the 'params.xml' file from the job's directory.
-        If the 'params.xml' file is not found, it attempts to read the 'input_params.xml' file instead.
-        If neither file is found, it returns a failure response.
-        Args:
-            request: The HTTP request object.
-            pk (int, optional): The primary key of the job.
-        Returns:
-            Response: A JSON response containing the status and the contents of the XML file,
-                      or an error message if the file is not found.
-        """
-
         try:
             the_job = models.Job.objects.get(id=pk)
-            with open(
-                the_job.directory / "params.xml", "r", encoding="UTF-8"
-            ) as params_xml_file:
+            params_path = the_job.directory / "params.xml"
+            fallback_params_path = the_job.directory / "input_params.xml"
+            if the_job.status in [models.Job.Status.UNKNOWN, models.Job.Status.PENDING]:
+                params_path = the_job.directory / "input_params.xml"
+                fallback_params_path = the_job.directory / "params.xml"
+            with open(params_path, "r", encoding="UTF-8") as params_xml_file:
                 params_xml = params_xml_file.read()
             return Response({"status": "Success", "params_xml": params_xml})
         except models.Job.DoesNotExist as err:
@@ -275,7 +267,7 @@ class JobViewSet(ModelViewSet):
             logger.info(err)
             try:
                 with open(
-                    the_job.directory / "input_params.xml", "r", encoding="UTF-8"
+                    fallback_params_path, "r", encoding="UTF-8"
                 ) as params_xml_file:
                     params_xml = params_xml_file.read()
                     return Response({"status": "Success", "params_xml": params_xml})
@@ -583,6 +575,30 @@ class JobViewSet(ModelViewSet):
         try:
             result = set_parameter(job, object_path, value)
 
+            return JsonResponse({"status": "Success", "updated_item": result})
+        except CCP4ErrorHandling.CException as err:
+            error_tree = getEtree(err)
+            ET.indent(error_tree, " ")
+            return JsonResponse(
+                {"status": "Failed", "reason": ET.tostring(error_tree).decode("utf-8")}
+            )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def upload_file_param(self, request, pk=None):
+        """
+        Set parameter in a job's input_params.xml
+
+        Args:
+            request. Unusually for a post, this will have the data JSON encoded
+        """
+        job = models.Job.objects.get(id=pk)
+        try:
+            result = upload_file_param(job, request)
             return JsonResponse({"status": "Success", "updated_item": result})
         except CCP4ErrorHandling.CException as err:
             error_tree = getEtree(err)

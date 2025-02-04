@@ -64,3 +64,10 @@ DATABASES = {
 TIME_ZONE = "UTC"
 USE_TZ = True
 CCP4I2_PROJECTS_DIR = Path.home().resolve() / "CCP4X_PROJECTS"
+
+REST_FRAMEWORK = {
+    "DEFAULT_PARSER_CLASSES": (
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    )
+}

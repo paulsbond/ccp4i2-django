@@ -31,8 +31,14 @@ def get_job_container(the_job: Job):
     # print 'CProjectDirToDb.globJobs defFile',defFile
     container = CCP4Container.CContainer()
     container.loadContentsFromXml(defFile, guiAdmin=True)
-    if (the_job.directory / "params.xml").exists():
-        container.loadDataFromXml(str(the_job.directory / "params.xml"))
+
+    params_path = the_job.directory / "params.xml"
+    fallback_params_path = the_job.directory / "input_params.xml"
+    if the_job.status in [Job.Status.UNKNOWN, Job.Status.PENDING]:
+        params_path = the_job.directory / "input_params.xml"
+        fallback_params_path = the_job.directory / "params.xml"
+    if (params_path).exists():
+        container.loadDataFromXml(str(params_path))
     else:
-        container.loadDataFromXml(str(the_job.directory / "input_params.xml"))
+        container.loadDataFromXml(str(fallback_params_path))
     return container
