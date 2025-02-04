@@ -77,7 +77,9 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
       <VisuallyHiddenInput
         disabled={disabled}
         type="file"
-        onChange={(event) => handleFileChange(event.target.files)}
+        onChange={(event) => {
+          handleFileChange(event.target.files);
+        }}
         multiple
         sx={sx}
       />
@@ -87,7 +89,7 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
   setFileContent?: (fileContent: ArrayBuffer | null | string | File) => void;
-  setFile?: (aFile: File) => void;
+  setFiles?: (files: FileList | null) => void;
   infoContent?: ReactNode;
 }
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
@@ -243,6 +245,8 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     [project_jobs]
   );
 
+  const defaultSetFile = (files: FileList | null) => {};
+
   return (
     <Stack
       direction="row"
@@ -272,12 +276,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       <InputFileUpload
         sx={{ my: 1, mr: 2 }}
         disabled={inFlight || job.status !== 1}
-        handleFileChange={async (fileList: FileList | null) => {
-          if (fileList && props.setFile) {
-            const topFile: any = Array.from(fileList)[0];
-            props.setFile(topFile);
-          }
-        }}
+        handleFileChange={props.setFiles || defaultSetFile}
       />
       <ErrorInfo {...props}>{infoContent}</ErrorInfo>
       <LinearProgress

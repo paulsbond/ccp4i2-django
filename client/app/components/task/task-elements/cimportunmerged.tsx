@@ -5,6 +5,7 @@ import { useJob } from "../task-utils";
 import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { CCellElement } from "./ccell";
 import { ErrorInfo } from "./error-info";
+import { CSimpleDataFileElement } from "./csimpledatafile";
 
 export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   props
@@ -51,7 +52,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
       />
       <CardContent>
         {fileObjectPath && (
-          <CDataFileElement {...props} itemName={fileObjectPath} />
+          <CSimpleDataFileElement {...props} itemName={fileObjectPath} />
         )}
         {cellObjectPath && (
           <CCellElement {...props} itemName={cellObjectPath} />

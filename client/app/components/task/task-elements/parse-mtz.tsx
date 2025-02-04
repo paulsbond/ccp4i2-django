@@ -33,14 +33,14 @@ const signatureMap = {
 interface ParseMtzProps {
   file: File;
   item: any;
-  setFile: (file: File | null) => void;
+  setFiles: (files: FileList | null) => void;
   handleAccept?: (signature: string) => void;
   handleCancel?: () => void;
 }
 
 export const ParseMtz: React.FC<ParseMtzProps> = ({
   file,
-  setFile,
+  setFiles,
   item,
   handleAccept,
   handleCancel,
@@ -126,14 +126,14 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
 
   const onAcceptClicked = useCallback(() => {
     if (handleAccept) handleAccept(value);
-  }, [value]);
+  }, [value, handleAccept]);
 
   return (
     <>
       <SimpleDialog
         open={file != null}
         onClose={() => {
-          setFile(null);
+          setFiles(null);
         }}
       >
         <DialogTitle>{item?._objectPath}</DialogTitle>

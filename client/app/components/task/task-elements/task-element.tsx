@@ -7,7 +7,7 @@ import { useJob } from "../task-utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import $ from "jquery";
-import { CMiniMtzDataFile } from "./cminimtzdatafile";
+import { CMiniMtzDataFileElement } from "./cminimtzdatafile";
 import { CDataFileElement } from "./cdatafile";
 import { CBooleanElement } from "./cboolean";
 import { CListElement } from "./list";
@@ -16,6 +16,7 @@ import { CImportUnmergedElement } from "./cimportunmerged";
 import { CCellElement } from "./ccell";
 import { CEnsembleElement } from "./censemble";
 import { CAltSpaceGroupElement } from "./caltspacegroupelement";
+import { CSimpleDataFileElement } from "./csimpledatafile";
 
 export interface CCP4i2TaskElementProps extends PropsWithChildren {
   job: Job;
@@ -79,12 +80,12 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CAsuDataFile":
       case "CUnmergedDataFile":
       case "CMDLMolDataFile":
-        return <CDataFileElement {...props} qualifiers={qualifiers} />;
+        return <CSimpleDataFileElement {...props} qualifiers={qualifiers} />;
       case "CFreeRDataFile":
       case "CObsDataFile":
       case "CMapCoeffsDataFile":
       case "CPhsDataFile":
-        return <CMiniMtzDataFile {...props} qualifiers={qualifiers} />;
+        return <CMiniMtzDataFileElement {...props} qualifiers={qualifiers} />;
       case "CList":
       case "CImportUnmergedList":
       case "CAltSpaceGroupList":

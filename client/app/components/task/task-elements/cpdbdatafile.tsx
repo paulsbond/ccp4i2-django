@@ -4,6 +4,7 @@ import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useMemo } from "react";
 import { useApi } from "../../../api";
 import { useJob } from "../task-utils";
+import { CSimpleDataFileElement } from "./csimpledatafile";
 
 export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   props
@@ -29,7 +30,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 
   return (
     <Stack direction="column">
-      <CDataFileElement {...props} infoContent={infoContent} />
+      <CSimpleDataFileElement {...props} />
       <CCP4i2TaskElement
         {...props}
         itemName={selectionItemName}

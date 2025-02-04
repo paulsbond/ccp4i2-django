@@ -50,10 +50,13 @@ export function useApi() {
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {
       const headers: HeadersInit = { Accept: "application/json" };
-      if (!(body instanceof FormData)) {
+      if (body instanceof FormData) {
+        //headers["Content-Type"] = "multipart/form-data";
+      } else {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify(body);
       }
+      console.log(headers);
       const response = await fetch(fullUrl(endpoint), {
         method: "POST",
         headers: headers,
