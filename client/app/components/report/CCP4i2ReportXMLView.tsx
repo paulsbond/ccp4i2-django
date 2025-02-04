@@ -17,34 +17,13 @@ import { CCP4i2Context } from "../../app-context";
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
   const { jobId } = useContext(CCP4i2Context);
-  const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
-  const { data: report_xml, mutate: mutateReportXml } = api.get<any>(
-    `jobs/${jobId}/report_xml`
-  );
-  const reloadTimeout = useRef<any>(null);
-
-  const doReload = useCallback(() => {
-    if (!job) return;
-    if (reloadTimeout.current != null) {
-      clearTimeout(reloadTimeout.current);
-      reloadTimeout.current = null;
-    }
-    setTimeout(async () => {
-      await mutateReportXml();
-      await mutateJob();
-      if ([2, 3].includes(job.status)) {
-        //doReload();
-      }
-    }, 5000);
-  }, [job]);
+  const { data: job, mutate: mutateJob } = api.follow<Job>(`jobs/${jobId}`);
+  const { data: report_xml, mutate: mutateReportXml } =
+    job?.status == 3
+      ? api.follow<any>(`jobs/${jobId}/report_xml`)
+      : api.get<any>(`jobs/${jobId}/report_xml`);
 
   if (!job) return <LinearProgress />;
-  useEffect(() => {
-    if (reloadTimeout.current != null) {
-      clearTimeout(reloadTimeout.current);
-    }
-    doReload();
-  }, [job]);
 
   const bodyNode = useMemo<JQuery<XMLDocument> | null>(() => {
     if (report_xml.report_xml) {

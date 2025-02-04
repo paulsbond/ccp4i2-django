@@ -80,7 +80,7 @@ const findItems = (
 ): any[] => {
   const listToGrow = growingList ? growingList : [];
   const originalLength = listToGrow.length;
-  if (container._objectPath.endsWith(name)) {
+  if (container?._objectPath?.endsWith(name)) {
     listToGrow.push(container);
     if (!multiple) return listToGrow;
   } else if (container._baseClass === "CList") {
@@ -211,8 +211,8 @@ export const readFilePromise = async (
 };
 
 export const valueForDispatch = (item: any): any => {
-  if (
-    !item ||
+  if (!item) return null;
+  else if (
     typeof item._value === "undefined" ||
     item._value === undefined ||
     item._value === null ||
