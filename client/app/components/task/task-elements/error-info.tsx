@@ -41,8 +41,11 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
           }}
         >
           {fieldErrors &&
-            fieldErrors.map((fieldError) => (
-              <Typography sx={{ textWrap: "wrap", maxWidth: "40rem" }}>
+            fieldErrors.map((fieldError: any, iError: number) => (
+              <Typography
+                key={`${iError}`}
+                sx={{ textWrap: "wrap", maxWidth: "40rem" }}
+              >
                 {fieldError.description}
               </Typography>
             ))}
