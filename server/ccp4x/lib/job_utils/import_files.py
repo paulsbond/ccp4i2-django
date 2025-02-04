@@ -113,7 +113,7 @@ def _process_input(
                 )
 
     if theFile is not None:
-        theRole = 1
+        theRole = models.FileUse.Role.IN
         createDict = {
             "file": theFile,
             "job": theJob,
