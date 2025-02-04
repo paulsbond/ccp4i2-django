@@ -8,7 +8,6 @@ import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import $ from "jquery";
 import { CMiniMtzDataFileElement } from "./cminimtzdatafile";
-import { CDataFileElement } from "./cdatafile";
 import { CBooleanElement } from "./cboolean";
 import { CListElement } from "./list";
 import { CContainerElement } from "./ccontainer";
@@ -77,6 +76,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CTLSDataFile":
       case "CPhaserSolDataFile":
       case "CPhaserRFileDataFile":
+      case "CRefmacRestraintsDataFile":
       case "CAsuDataFile":
       case "CUnmergedDataFile":
       case "CMDLMolDataFile":
