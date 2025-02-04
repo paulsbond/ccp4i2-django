@@ -166,7 +166,10 @@ export const useJob = (job: Job) => {
       [job, mutateContainer, mutateValidation]
     ),
     getTaskItem: useMemo(() => {
-      return (param_name: string) => itemsForName(param_name, container)[0];
+      return (param_name: string) => {
+        if (param_name?.length == 0) return null;
+        return itemsForName(param_name, container)[0];
+      };
     }, [container]),
     getTaskValue: useMemo(() => {
       return (param_name: string) => {

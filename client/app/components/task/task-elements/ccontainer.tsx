@@ -43,6 +43,7 @@ export const CContainerElement: React.FC<
       }
       return [];
     }
+    return [];
   }, [item]);
 
   return containerHint === "FolderLevel" || containerHint === "BlockLevel"
@@ -53,7 +54,7 @@ export const CContainerElement: React.FC<
               title={qualifiers.guiLabel}
               sx={{ my: 0 }}
               titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
-              action={<ErrorInfo {...props} />}
+              action={item && <ErrorInfo {...props} />}
             />
           )}
           <CardContent>
