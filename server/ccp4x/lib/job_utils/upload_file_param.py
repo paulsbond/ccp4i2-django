@@ -133,10 +133,12 @@ def upload_file_param(job: models.Job, request) -> dict:
     param_object.set(
         {
             "project": str(job.project.uuid).replace("-", ""),
-            "dbFileId": str(new_file.uuid).replace("-", ""),
             "baseName": new_file.name,
-            "contentFlag": new_file.content,
             "relPath": "CCP4_IMPORTED_FILES",
+            "annotation": new_file.annotation,
+            "dbFileId": str(new_file.uuid).replace("-", ""),
+            "subType": new_file.sub_type,
+            # "contentFlag": new_file.content,
         }
     )
 
