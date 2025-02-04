@@ -55,9 +55,6 @@ export const JobCard: React.FC<JobCardProps> = ({
   const projectId = useMemo(() => {
     return job.project;
   }, [job]);
-  const { data: dependentJobs, mutate: mutateDependentJobs } = api.get<Job[]>(
-    `jobs/${job.id}/dependent_jobs/`
-  );
   const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
     `/projects/${projectId}/jobs/`
   );
@@ -77,6 +74,16 @@ export const JobCard: React.FC<JobCardProps> = ({
   const jobFiles: any[] | undefined = useMemo(() => {
     return files?.filter((aFile) => aFile.job === job.id);
   }, [files, job]);
+
+  const dependentJobs = useMemo(() => {
+    if (jobs && job) {
+      return jobs.filter(
+        (possible_child: Job) => possible_child.parent == job.id,
+        []
+      );
+    }
+  }, [jobs]);
+
   const kpiContent = useMemo(() => {
     return (
       <>
