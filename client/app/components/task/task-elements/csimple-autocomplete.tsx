@@ -36,7 +36,6 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   const validationOpen = Boolean(validationAnchor);
 
   useEffect(() => {
-    console.log({ value: item._value });
     setValue(item._value);
   }, [item]);
 

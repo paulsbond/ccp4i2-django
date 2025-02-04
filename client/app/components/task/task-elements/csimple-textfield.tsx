@@ -28,8 +28,10 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   useEffect(() => {
     setValue(item._value);
-    //@ts-ignore
-    //if (inputRef.current) inputRef.current.checked = item._value;
+    console.log(item._objectPath, item._value);
+    if (type === "checkbox" && inputRef.current)
+      //@ts-ignore
+      inputRef.current.checked = item._value;
   }, [item]);
 
   const { objectPath } = useMemo<{
@@ -51,9 +53,10 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         setValue(ev.target.value);
       } else if (type === "checkbox") {
         //@ts-ignore
-        setValue(ev.target.checked);
-        //@ts-ignore
-        sendValue(ev.target.checked);
+        const newValue = ev.currentTarget.checked;
+        setValue(newValue);
+        console.log(`Sending ${newValue}`);
+        sendExplicitValue(newValue);
       }
     },
     [type]
@@ -69,21 +72,30 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   );
 
   const sendValue = useCallback(async () => {
-    setInFlight(true);
-    const setParameterArg = {
-      object_path: item._objectPath,
-      value: value,
-    };
-    try {
-      const result: any = await setParameter(setParameterArg);
-      if (result.status === "Failed") {
-        setValue(item._value);
-      }
-    } catch (err) {
-      console.log("Here's an", err);
-    }
-    setInFlight(false);
+    sendExplicitValue(value);
   }, [objectPath, value]);
+
+  const sendExplicitValue = useCallback(
+    async (explicitValue: any) => {
+      //This method to allow sending of state *and non-state* values.  For example, a
+      //checkbox willtry to update and send the value, so the state value might lag
+      setInFlight(true);
+      const setParameterArg = {
+        object_path: item._objectPath,
+        value: explicitValue,
+      };
+      try {
+        const result: any = await setParameter(setParameterArg);
+        if (result.status === "Failed") {
+          setValue(item._value);
+        }
+      } catch (err) {
+        console.log("Here's an", err);
+      }
+      setInFlight(false);
+    },
+    [objectPath, value]
+  );
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel
