@@ -36,6 +36,10 @@ export function useApi() {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
 
+    follow: function <T>(endpoint: string) {
+      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 5000 });
+    },
+
     container: function <T>(endpoint: string) {
       return useSWR<T>(fullUrl(endpoint), container_fetcher);
     },
