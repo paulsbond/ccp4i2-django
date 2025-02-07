@@ -1,5 +1,4 @@
 import uuid
-import subprocess
 from django.core.management.base import BaseCommand
 from ccp4x.db.models import Job, Project
 from ccp4x.lib.job_utils.clone_job import clone_job
@@ -7,7 +6,7 @@ from ccp4x.lib.job_utils.clone_job import clone_job
 
 class Command(BaseCommand):
     """
-    A Django management command to run a job.
+    A Django management command to clone a job.
 
     Attributes:
         help (str): Description of the command.
@@ -25,7 +24,7 @@ class Command(BaseCommand):
             Retrieves the job based on the provided options. Raises Job.DoesNotExist if no job is found.
     """
 
-    help = "Import a project"
+    help = "Clone a job"
     requires_system_checks = []
 
     def add_arguments(self, parser):

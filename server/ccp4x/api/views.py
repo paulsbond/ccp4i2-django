@@ -13,6 +13,7 @@ from core import CCP4ErrorHandling
 from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_file
+from ..lib.job_utils.list_project import list_project
 from ..lib.job_utils.value_dict_for_object import value_dict_for_object
 from ..lib.job_utils.validate_container import getEtree
 
@@ -201,6 +202,34 @@ class ProjectViewSet(ModelViewSet):
         project.last_access = datetime.datetime.now(tz=timezone("UTC"))
         project.save()
         return Response(project_tag_serializer.data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectSerializer,
+    )
+    def directory(self, request, pk=None):
+        """
+        Retrieve directory structure for a specific project.
+        Args:
+            request (Request): The HTTP request object.
+            pk (int, optional): The primary key of the project.
+        Returns:
+            Response: A Response object containing serialized project tags data.
+        """
+        the_project = models.Project.objects.get(pk=pk)
+        result = list_project(str(the_project.uuid))
+        try:
+            result_str = json.dumps(result, indent=2)
+            return JsonResponse(
+                json.loads(f'{{"status": "Success", "container": {result_str}}}')
+            )
+        except TypeError as err:
+            logger.exception("Failed encoding listing of %s", exc_info=err)
+            return JsonResponse(
+                {status: "Failed", "container": {"Reason": "TypeError"}}
+            )
 
 
 class ProjectTagViewSet(ModelViewSet):
