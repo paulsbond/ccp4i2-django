@@ -42,11 +42,10 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
       //Here if the file Digest has changed
       oldFileDigest.current = JSON.stringify(fileDigest);
       if (fileDigest?.digest?.cell) {
-        const setParameterArg: SetParameterArg = {
+        setParameter({
           object_path: `${item._objectPath}.cell`,
           value: fileDigest.digest.cell,
-        };
-        setParameter(setParameterArg);
+        });
       }
     }
   }, [fileDigest, item, setParameter, job]);

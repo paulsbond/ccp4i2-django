@@ -16,6 +16,7 @@ import { CCP4i2Context } from "../../app-context";
 import { useApi } from "../../api";
 import { Project } from "../../models";
 import Script from "next/script";
+import { CCP4i2DirectoryViewer } from "../../components/directory_viewer";
 
 const createArgs = {
   print(t: string) {
@@ -106,7 +107,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               <Tab value={1} label="Project directory" />
             </Tabs>
             {tabValue == 0 && <JobsGrid projectId={id} size={12} />}
-            {tabValue == 1 && <ProjectDirectory />}
+            {tabValue == 1 && <CCP4i2DirectoryViewer projectId={id} />}
           </Paper>
         </Panel>
         <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />
