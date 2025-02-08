@@ -1,9 +1,11 @@
 import logging
 import datetime
 import json
+import pathlib
 from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
+from django.http import FileResponse
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
@@ -211,13 +213,21 @@ class ProjectViewSet(ModelViewSet):
     )
     def directory(self, request, pk=None):
         """
-        Retrieve directory structure for a specific project.
+        Handles the request to retrieve the directory listing of a project.
+
         Args:
-            request (Request): The HTTP request object.
-            pk (int, optional): The primary key of the project.
+            request (HttpRequest): The HTTP request object.
+            pk (int, optional): The primary key of the project to retrieve the directory listing for.
+
         Returns:
-            Response: A Response object containing serialized project tags data.
+            JsonResponse: A JSON response containing the status and the directory listing of the project.
+                          If successful, the response contains the directory listing in the "container" field.
+                          If a TypeError occurs during JSON encoding, the response contains an error message.
+
+        Raises:
+            Project.DoesNotExist: If no project with the given primary key exists.
         """
+
         the_project = models.Project.objects.get(pk=pk)
         result = list_project(str(the_project.uuid))
         try:
@@ -230,6 +240,22 @@ class ProjectViewSet(ModelViewSet):
             return JsonResponse(
                 {status: "Failed", "container": {"Reason": "TypeError"}}
             )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectSerializer,
+    )
+    def project_file(self, request, pk=None):
+        the_project = models.Project.objects.get(pk=pk)
+        print(request)
+        file_path = request.GET.get("path")
+        composite_path: pathlib.Path = pathlib.Path(the_project.directory) / file_path
+        if pathlib.Path(the_project.directory) not in composite_path.resolve().parents:
+            raise Http404("Unacceptable file")
+
+        return FileResponse(open(composite_path, "rb"), filename=composite_path.name)
 
 
 class ProjectTagViewSet(ModelViewSet):
