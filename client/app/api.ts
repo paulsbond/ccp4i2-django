@@ -31,7 +31,14 @@ export function useApi() {
     return url.href;
   }
 
+  function noSlashUrl(endpoint: string): string {
+    const url = new URL(endpoint, "http://127.0.0.1:8000");
+    return url.href;
+  }
+
   return {
+    noSlashUrl,
+
     get: function <T>(endpoint: string) {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
@@ -88,3 +95,57 @@ export function useApi() {
     },
   };
 }
+
+export const doDownload = (
+  theURL: string,
+  targetName: string,
+  optionsIn?: any,
+  onProgress: (bytesRead: number) => void = (bytesRead) =>
+    console.log(bytesRead)
+) => {
+  const options = typeof optionsIn !== "undefined" ? optionsIn : {};
+  if (onProgress && onProgress !== null) {
+    return fetch(theURL, options).then(async (response) => {
+      const reader = response.body?.getReader();
+      if (reader) {
+        const chunks: Uint8Array[] = [];
+        let receivedLength = 0;
+        while (true) {
+          // done is true for the last chunk
+          // value is Uint8Array of the chunk bytes
+          const { done, value } = await reader.read();
+          if (value) chunks.push(value);
+          if (done) {
+            break;
+          }
+          receivedLength += value.length;
+          if (onProgress) onProgress(receivedLength);
+        }
+        let Uint8Chunks = new Uint8Array(receivedLength),
+          position = 0;
+        for (let chunk of chunks) {
+          Uint8Chunks.set(chunk, position);
+          position += chunk.length;
+        }
+
+        // ==> you may want to get the mimetype from the content-type header
+        const blob = new Blob([Uint8Chunks]);
+
+        // Create blob link to download
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", targetName);
+
+        // Append to html link element page
+        document.body.appendChild(link);
+
+        // Start download
+        link.click();
+
+        // Clean up and remove the link
+        link.parentNode?.removeChild(link);
+      }
+    });
+  }
+};

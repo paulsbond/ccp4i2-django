@@ -1,19 +1,32 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  SyntheticEvent,
+  useContext,
+  useCallback,
+} from "react";
 import {
+  Button,
   Collapse,
   List,
   ListItem,
   ListItemIcon,
   ListItemSecondaryAction,
   ListItemText,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
   Folder,
   InsertDriveFile,
   ExpandLess,
   ExpandMore,
+  Menu as MenuIcon,
 } from "@mui/icons-material";
+import { itemsForName } from "./task/task-utils";
+import { CCP4i2Context } from "../app-context";
+import { doDownload, useApi } from "../api";
 
 interface FileNode {
   id: string;
@@ -42,22 +55,35 @@ interface TreeNodeProps {
 
 const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const menuOpen = Boolean(anchorEl);
 
   const toggleOpen = () => {
     setIsOpen(!isOpen);
   };
 
+  const handleMenuOpen = (ev: any) => {
+    setAnchorEl(ev.currentTarget);
+    ev.stopPropagation();
+  };
   return (
     <>
       <ListItem
         dense
+        sx={{ ml: 0, px: 0 }}
         onClick={toggleOpen}
         secondaryAction={
-          node.type === "directory" &&
-          (isOpen ? <ExpandLess /> : <ExpandMore />)
+          node.type !== "directory" && (
+            <>
+              <Button onClick={handleMenuOpen}>
+                <MenuIcon />
+              </Button>
+              {isOpen ? <ExpandLess /> : <ExpandMore />}
+            </>
+          )
         }
       >
-        <ListItemIcon sx={{ ml: node.path.split("/").length }}>
+        <ListItemIcon sx={{ ml: node.path.split("/").length - 1, p: 0 }}>
           {node.type === "directory" ? (
             <Folder color="primary" />
           ) : (
@@ -74,6 +100,43 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
             ))}
           </List>
         </Collapse>
+      )}
+      <Menu open={menuOpen} anchorEl={anchorEl}>
+        <FileMenu
+          node={node}
+          closeMenu={() => {
+            setAnchorEl(null);
+          }}
+        />
+      </Menu>
+    </>
+  );
+};
+
+interface FileMenuProps {
+  node: FileNode;
+  closeMenu: () => void;
+}
+const FileMenu: React.FC<FileMenuProps> = ({ node, closeMenu }) => {
+  const { noSlashUrl } = useApi();
+  const { projectId } = useContext(CCP4i2Context);
+  const handleDownload = useCallback(
+    (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const composite_path = noSlashUrl(
+        `projects/${projectId}/project_file?path=${encodeURIComponent(
+          node.path
+        )}`
+      );
+      doDownload(composite_path, node.name);
+      closeMenu();
+    },
+    [projectId, node, noSlashUrl, closeMenu]
+  );
+  return (
+    <>
+      {node.type !== "directory" && (
+        <MenuItem onClick={handleDownload}>Download</MenuItem>
       )}
     </>
   );

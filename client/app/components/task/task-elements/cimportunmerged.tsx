@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { SetParameterArg, useJob } from "../task-utils";
+import { SetParameterArg, useJob, usePrevious } from "../task-utils";
 import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { CCellElement } from "./ccell";
 import { ErrorInfo } from "./error-info";
@@ -12,43 +12,52 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const api = useApi();
   const { itemName, job } = props;
-  const { getTaskItem, getValidationColor, setParameter, container } =
-    useJob(job);
+  const {
+    getTaskItem,
+    getValidationColor,
+    setParameter,
+    container,
+    useAsyncEffect,
+  } = useJob(job);
   const item = getTaskItem(itemName);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;
     return null;
   }, [item]);
-  const oldFileDigest = useRef<string>("");
 
   const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=${item._objectPath}.file`
   );
+  const oldFileDigest = usePrevious<any>(fileDigest);
 
   useEffect(() => {
     console.log("Container changed");
     mutateDigest();
   }, [container]);
 
-  useEffect(() => {
+  useAsyncEffect(async () => {
     if (
       fileDigest &&
-      JSON.stringify(fileDigest) !== oldFileDigest.current &&
-      item &&
-      job &&
-      job.status == 1 &&
-      setParameter
+      JSON.stringify(fileDigest) !== JSON.stringify(oldFileDigest) && // Only if change
+      item && //Only if item is known
+      setParameter //Only if setParameter hook in place
     ) {
+      console.log({ fileDigest });
       //Here if the file Digest has changed
-      oldFileDigest.current = JSON.stringify(fileDigest);
       if (fileDigest?.digest?.cell) {
-        setParameter({
+        await setParameter({
           object_path: `${item._objectPath}.cell`,
           value: fileDigest.digest.cell,
         });
       }
+      if (fileDigest?.digest?.wavelength) {
+        await setParameter({
+          object_path: `${item._objectPath}.wavelength`,
+          value: fileDigest.digest.wavelength,
+        });
+      }
     }
-  }, [fileDigest, item, setParameter, job]);
+  }, [fileDigest, item, setParameter]);
 
   const crystalNameObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.crystalName`;

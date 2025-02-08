@@ -152,16 +152,30 @@ export const useJob = (job: Job) => {
     `jobs/${job.id}/validation`
   );
   return {
+    useAsyncEffect: (effect: () => Promise<void>, dependencies: any[]) => {
+      useEffect(() => {
+        const executeEffect = async () => {
+          await effect();
+        };
+
+        executeEffect();
+      }, dependencies);
+    },
     setParameter: useCallback(
       async (setParameterArg: SetParameterArg) => {
-        const result = await api.post<Job>(
-          `jobs/${job.id}/set_parameter`,
-          setParameterArg
-        );
-        console.log(result);
-        await mutateContainer();
-        await mutateValidation();
-        return result;
+        if (job.status == 1) {
+          const result = await api.post<Job>(
+            `jobs/${job.id}/set_parameter`,
+            setParameterArg
+          );
+          console.log(result);
+          await mutateContainer();
+          await mutateValidation();
+          return result;
+        } else
+          console.log(
+            "Alert attempting to edit interface of task not in pending state"
+          );
       },
       [job, mutateContainer, mutateValidation]
     ),
@@ -264,4 +278,16 @@ export const validationColor = (fieldErrors: any[]): string => {
       fieldErrors.some((fieldError) => fieldError.severity.includes("WARNING"))
     ? "warning.light"
     : "error.light";
+};
+
+import { useEffect, useRef } from "react";
+
+export const usePrevious = <T>(value: T): T | undefined => {
+  const ref = useRef<T | undefined>();
+
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+
+  return ref.current;
 };
