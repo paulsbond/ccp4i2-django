@@ -248,6 +248,22 @@ class ProjectViewSet(ModelViewSet):
         serializer_class=serializers.ProjectSerializer,
     )
     def project_file(self, request, pk=None):
+        """
+        Retrieve a file from the specified project directory.
+        This view handles GET requests to retrieve a file from a project's directory.
+        It ensures that the requested file path is within the project's directory to
+        prevent directory traversal attacks.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing query parameters.
+            pk (int, optional): The primary key of the project.
+
+        Raises:
+            Http404: If the requested file path is not within the project's directory.
+
+        Returns:
+            FileResponse: A response object containing the requested file.
+        """
         the_project = models.Project.objects.get(pk=pk)
         print(request)
         file_path = request.GET.get("path")
