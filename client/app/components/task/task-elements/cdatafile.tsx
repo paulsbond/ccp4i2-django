@@ -106,6 +106,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   );
   const validationOpen = Boolean(validationAnchor);
   const progressRef = useRef<HTMLElement | null>(null);
+  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
+    `jobs/${job.id}/digest?object_path=${item._objectPath}`
+  );
+
   useEffect(() => {
     setValue(item._value);
   }, [item]);
@@ -229,6 +233,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       }
       setInFlight(true);
       await setParameter(setParameterArg);
+      mutateDigest();
       setInFlight(false);
     },
     [job, objectPath, project_jobs, projects]

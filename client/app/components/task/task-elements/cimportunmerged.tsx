@@ -14,6 +14,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   const { itemName, job } = props;
   const {
     getTaskItem,
+
     getValidationColor,
     setParameter,
     container,
@@ -29,11 +30,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     `jobs/${job.id}/digest?object_path=${item._objectPath}.file`
   );
   const oldFileDigest = usePrevious<any>(fileDigest);
-
-  useEffect(() => {
-    console.log("Container changed");
-    mutateDigest();
-  }, [container]);
 
   useAsyncEffect(async () => {
     if (
