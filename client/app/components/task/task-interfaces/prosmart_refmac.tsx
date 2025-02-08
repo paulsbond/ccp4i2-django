@@ -2,7 +2,7 @@ import { Grid2, LinearProgress, Paper, Typography } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { useApi } from "../../../api";
-import { useJob } from "../task-utils";
+import { useJob, usePrevious } from "../task-utils";
 import { BaseSpacegroupCellElement } from "../task-elements/base-spacegroup-cell-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CContainerElement } from "../task-elements/ccontainer";
@@ -24,14 +24,35 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   );
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskValue } = useJob(job);
+  const { getTaskValue, setParameter, useAsyncEffect, getTaskItem } =
+    useJob(job);
   const refinementMode = getTaskValue("REFINEMENT_MODE");
   const solventAdvanced = getTaskValue("SOLVENT_ADVANCED");
   const solventMaskType = getTaskValue("SOLVENT_MASK_TYPE");
   const tlsMode = getTaskValue("TLSMODE");
   const bfacSetUse = getTaskValue("BFACSETUSE");
+  const wavelengthItem = getTaskItem("WAVELENGTH");
+
+  const oldFileDigest = usePrevious<any>(F_SIGFDigest);
 
   if (!container) return <LinearProgress />;
+
+  useAsyncEffect(async () => {
+    if (
+      F_SIGFDigest &&
+      JSON.stringify(F_SIGFDigest) !== JSON.stringify(oldFileDigest) && // Only if change
+      setParameter //Only if setParameter hook in place
+    ) {
+      console.log(F_SIGFDigest);
+      //Here if the file Digest has changed
+      if (F_SIGFDigest?.digest?.wavelengths) {
+        await setParameter({
+          object_path: `${wavelengthItem._objectPath}`,
+          value: F_SIGFDigest.digest.wavelengths.at(-1),
+        });
+      }
+    }
+  }, [F_SIGFDigest, setParameter, getTaskItem, wavelengthItem]);
 
   return (
     <Paper>
@@ -43,9 +64,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             {...props}
             qualifiers={{ guiLabel: "Reflection" }}
           />
-          {false && F_SIGFDigest?.digest && (
-            <BaseSpacegroupCellElement data={F_SIGFDigest?.digest} />
-          )}
+          <CCP4i2TaskElement
+            itemName="WAVELENGTH"
+            {...props}
+            qualifiers={{ guiLabel: "Wavelength" }}
+          />
           <CCP4i2TaskElement
             itemName="FREERFLAG"
             {...props}
