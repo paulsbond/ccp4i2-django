@@ -9,12 +9,10 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const item = getTaskItem(itemName);
 
   return (
-    <Card
-      sx={{ border: "3px solid", borderColor: getValidationColor(itemName) }}
-    >
+    <Card sx={{ border: "3px solid", borderColor: getValidationColor(item) }}>
       <CardHeader
         title={item._qualifiers.guiLabel}
-        sx={{ backgroundColor: getValidationColor(itemName) }}
+        sx={{ backgroundColor: getValidationColor(item) }}
         action={<ErrorInfo {...props} />}
       />
       <CardContent sx={{ my: 0, py: 0 }}>

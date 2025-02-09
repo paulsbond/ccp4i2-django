@@ -1,7 +1,6 @@
 import $ from "jquery";
 import { useCallback, useMemo } from "react";
 import { useApi } from "../../api";
-import { errorsInValidation } from "./task-elements/task-element";
 import { Job } from "../../models";
 
 export const classOfDefItem = (
@@ -192,10 +191,13 @@ export const useJob = (job: Job) => {
       };
     }, [container]),
     getValidationColor: useMemo(() => {
-      return (param_name: string) => {
-        const fieldErrors = errorsInValidation(param_name, validation);
+      return (item: any) => {
+        const fieldErrors = errorsInValidation(item, validation);
         return validationColor(fieldErrors);
       };
+    }, [validation]),
+    getErrors: useMemo(() => {
+      return (item: any) => errorsInValidation(item, validation);
     }, [validation]),
     container,
   };
@@ -252,25 +254,6 @@ export const valueForDispatch = (item: any): any => {
   }
 };
 
-export const useValidation = (jobId: number) => {
-  const api = useApi();
-  const { data: validation, mutate: mutateValidation } = api.container<any>(
-    `jobs/${jobId}/validation`
-  );
-  return useMemo(() => {
-    if (validation)
-      return {
-        getErrors: (param_name: string) =>
-          errorsInValidation(param_name, validation),
-        mutateValidation,
-      };
-    return {
-      getErrors: (param_name: string) => [],
-      mutateValidation: () => {},
-    };
-  }, [validation]);
-};
-
 export const validationColor = (fieldErrors: any[]): string => {
   return fieldErrors && fieldErrors.length == 0
     ? "success.light"
@@ -290,4 +273,50 @@ export const usePrevious = <T>(value: T): T | undefined => {
   }, [value]);
 
   return ref.current;
+};
+
+const errorsInValidation = (
+  item: any,
+  validation: { status: string; validation?: Document }
+): {
+  severity: string;
+  description: string;
+}[] => {
+  if (validation && validation.validation) {
+    const objectPathNodes = $(validation.validation)
+      .find("objectpath")
+      .toArray();
+    const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
+      return (
+        node.textContent?.includes(item._objectPath) ||
+        (item._qualifiers?.guiLabel &&
+          node.textContent?.includes(item._qualifiers?.guiLabel)) //This because sameCellAs errors end up labelled with guiLabel instead of object path
+      );
+    });
+    if (errorObjectNodes.length === 0) {
+      return [];
+    }
+    const errors: {
+      severity: string;
+      description: string;
+    }[] = [];
+    errorObjectNodes.forEach((errorObjectNode: any) => {
+      const errorNode = $(errorObjectNode).parent();
+      if (errorNode) {
+        const result: { severity: string; description: string } = {
+          severity: "",
+          description: "",
+        };
+        const severity = $(errorNode).find("severity").get(0)?.textContent;
+        if (severity) result.severity = severity;
+        const description = $(errorNode)
+          .find("description")
+          .get(0)?.textContent;
+        if (description) result.description = description;
+        errors.push(result);
+      }
+    });
+    return errors;
+  }
+  return [];
 };

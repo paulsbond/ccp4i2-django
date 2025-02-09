@@ -111,7 +111,8 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
 
 export const errorsInValidation = (
   objectPath: string,
-  validation: { status: string; validation?: Document }
+  validation: { status: string; validation?: Document },
+  guiLabel?: string
 ): {
   severity: string;
   description: string;
@@ -121,7 +122,10 @@ export const errorsInValidation = (
       .find("objectpath")
       .toArray();
     const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
-      return node.textContent?.includes(objectPath);
+      return (
+        node.textContent?.includes(objectPath) ||
+        (guiLabel && node.textContent?.includes(guiLabel)) //This because sameCellAs errors end up labelled with guiLabel instead of object path
+      );
     });
     if (errorObjectNodes.length === 0) {
       return [];

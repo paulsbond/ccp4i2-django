@@ -79,7 +79,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     <Card
       sx={{
         border: "3px solid",
-        borderColor: getValidationColor(itemName),
+        borderColor: getValidationColor(item),
         borderRadius: "0.5rem",
       }}
     >

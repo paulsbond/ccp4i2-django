@@ -630,12 +630,12 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
     <Card
       sx={{
         border: "3px solid",
-        borderColor: getValidationColor(itemName),
+        borderColor: getValidationColor(item),
       }}
     >
       <CardHeader
         title={item._qualifiers.guiLabel}
-        sx={{ backgroundColor: getValidationColor(itemName) }}
+        sx={{ backgroundColor: getValidationColor(item) }}
         action={
           <Button>
             <Info />

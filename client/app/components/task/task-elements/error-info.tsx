@@ -3,16 +3,15 @@ import { Box } from "@mui/system";
 import { useState } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { Info } from "@mui/icons-material";
-import { useJob, useValidation } from "../task-utils";
+import { useJob } from "../task-utils";
 
 export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { itemName, job } = props;
-  const { getTaskItem, getValidationColor } = useJob(job);
+  const { getTaskItem, getValidationColor, getErrors } = useJob(job);
   const item = getTaskItem(itemName);
-  const { getErrors } = useValidation(job.id);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const infoOpen = Boolean(anchorEl);
-  const fieldErrors = getErrors(item?._objectPath);
+  const fieldErrors = getErrors(item);
 
   return (
     <>
@@ -28,7 +27,7 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
             setAnchorEl(ev.currentTarget);
           }}
         >
-          <Info sx={{ width: 1, color: getValidationColor(itemName) }} />
+          <Info sx={{ width: 1, color: getValidationColor(item) }} />
         </Button>
       </ClickAwayListener>
       <Popper anchorEl={anchorEl} placement="auto-end" open={infoOpen}>

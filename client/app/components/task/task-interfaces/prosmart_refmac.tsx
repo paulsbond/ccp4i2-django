@@ -69,14 +69,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             {...props}
             qualifiers={{ guiLabel: "Wavelength" }}
           />
-          <CCP4i2TaskElement
-            itemName="FREERFLAG"
-            {...props}
-            qualifiers={{ guiLabel: "Free R flags" }}
-          />
-          {false && FREERFLAGDigest?.digest && (
-            <BaseSpacegroupCellElement data={FREERFLAGDigest?.digest} />
-          )}
+          <CCP4i2TaskElement itemName="FREERFLAG" {...props} />
           <CCP4i2TaskElement
             itemName="XYZIN"
             {...props}

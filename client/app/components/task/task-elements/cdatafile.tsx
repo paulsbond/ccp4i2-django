@@ -259,7 +259,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       direction="row"
       sx={{
         border: "3px solid",
-        borderColor: getValidationColor(itemName),
+        borderColor: getValidationColor(item),
         borderRadius: "0.5rem",
         mx: 2,
         my: 1,
