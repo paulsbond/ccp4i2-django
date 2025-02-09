@@ -14,7 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useApi } from "../../../api";
-import { CCP4i2TaskElementProps, errorsInValidation } from "./task-element";
+import { CCP4i2TaskElementProps } from "./task-element";
 import { File as CCP4i2File, Job, Project } from "../../../models";
 import {
   ReactNode,
@@ -56,11 +56,13 @@ const VisuallyHiddenInput = styled("input")({
 interface InputFileUploadProps {
   handleFileChange: (files: FileList | null) => void;
   disabled: boolean;
+  accept: string;
   sx?: SxProps;
 }
 export const InputFileUpload: React.FC<InputFileUploadProps> = ({
   handleFileChange,
   disabled,
+  accept,
   sx,
 }) => {
   return (
@@ -80,7 +82,7 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
         onChange={(event) => {
           handleFileChange(event.target.files);
         }}
-        multiple
+        accept={accept}
         sx={sx}
       />
     </Button>
@@ -281,6 +283,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       <InputFileUpload
         sx={{ my: 1, mr: 2 }}
         disabled={inFlight || job.status !== 1}
+        accept={item._qualifiers.fileExtensions
+          .map((ext: string) => `.${ext}`)
+          .join(",")}
         handleFileChange={props.setFiles || defaultSetFile}
       />
       <ErrorInfo {...props}>{infoContent}</ErrorInfo>
