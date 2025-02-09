@@ -1,7 +1,7 @@
 import { useCallback, useContext, useMemo, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
-import { useJob, valueForDispatch } from "../task-utils";
+import { useJob, valueOfItem } from "../task-utils";
 import {
   Button,
   Card,
@@ -54,10 +54,8 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
         );
       }
     }
-    const listValue = Array.isArray(valueForDispatch(item))
-      ? valueForDispatch(item)
-      : [];
-    let newItemValue = valueForDispatch(taskElement);
+    const listValue = Array.isArray(valueOfItem(item)) ? valueOfItem(item) : [];
+    let newItemValue = valueOfItem(taskElement);
     if (taskElement._baseClass === "CDataFile" && newItemValue && project) {
       newItemValue.project = project.uuid.replace(/\-/g, "");
       newItemValue.baseName = "UNDEFINED";
@@ -91,10 +89,10 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
       if (index > -1) {
         // only splice array when item is found
         array.splice(index, 1); // 2nd parameter means remove one item only
-        console.log(array, valueForDispatch(item));
+        console.log(array, valueOfItem(item));
         const setParameterArg = {
           object_path: item._objectPath,
-          value: valueForDispatch(item),
+          value: valueOfItem(item),
         };
         const result = await setParameter(setParameterArg);
       }

@@ -26,6 +26,18 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
   qualifiers?: any;
 }
 
+/**
+ * CCP4i2TaskElement is a React functional component that renders different types of task elements
+ * based on the provided item properties. It uses various hooks and memoization to optimize performance.
+ *
+ * @param {CCP4i2TaskElementProps} props - The properties passed to the component.
+ * @param {Object} props.job - The job object associated with the task element.
+ * @param {string} props.itemName - The name of the item to be rendered.
+ * @param {boolean | (() => boolean)} [props.visibility] - The visibility of the task element, which can be a boolean or a function returning a boolean.
+ * @param {Object} [props.qualifiers] - Additional qualifiers to override the default qualifiers of the item.
+ *
+ * @returns {JSX.Element} The rendered task element based on the item class.
+ */
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job } = props;
   const { getTaskItem } = useJob(job);
@@ -62,6 +74,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CCellLength":
       case "CCellAngle":
       case "CWavelength":
+      case "CRangeSelection":
         return <CFloatElement {...props} qualifiers={qualifiers} />;
       case "CString":
       case "COneWord":
@@ -107,50 +120,4 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   }, [item]);
 
   return inferredVisibility && <>{interfaceElement}</>;
-};
-
-export const errorsInValidation = (
-  objectPath: string,
-  validation: { status: string; validation?: Document },
-  guiLabel?: string
-): {
-  severity: string;
-  description: string;
-}[] => {
-  if (validation && validation.validation) {
-    const objectPathNodes = $(validation.validation)
-      .find("objectpath")
-      .toArray();
-    const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
-      return (
-        node.textContent?.includes(objectPath) ||
-        (guiLabel && node.textContent?.includes(guiLabel)) //This because sameCellAs errors end up labelled with guiLabel instead of object path
-      );
-    });
-    if (errorObjectNodes.length === 0) {
-      return [];
-    }
-    const errors: {
-      severity: string;
-      description: string;
-    }[] = [];
-    errorObjectNodes.forEach((errorObjectNode: any) => {
-      const errorNode = $(errorObjectNode).parent();
-      if (errorNode) {
-        const result: { severity: string; description: string } = {
-          severity: "",
-          description: "",
-        };
-        const severity = $(errorNode).find("severity").get(0)?.textContent;
-        if (severity) result.severity = severity;
-        const description = $(errorNode)
-          .find("description")
-          .get(0)?.textContent;
-        if (description) result.description = description;
-        errors.push(result);
-      }
-    });
-    return errors;
-  }
-  return [];
 };

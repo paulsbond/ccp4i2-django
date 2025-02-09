@@ -1,10 +1,9 @@
 import { Grid2, LinearProgress, Paper, Typography } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
+import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../task-utils";
-import { BaseSpacegroupCellElement } from "../task-elements/base-spacegroup-cell-element";
-import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -26,6 +25,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
   const { getTaskValue, setParameter, useAsyncEffect, getTaskItem } =
     useJob(job);
+
   const refinementMode = getTaskValue("REFINEMENT_MODE");
   const solventAdvanced = getTaskValue("SOLVENT_ADVANCED");
   const solventMaskType = getTaskValue("SOLVENT_MASK_TYPE");
