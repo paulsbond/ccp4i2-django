@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { SetParameterArg, useJob, usePrevious } from "../task-utils";
-import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Grid2,
+  Typography,
+} from "@mui/material";
 import { CCellElement } from "./ccell";
 import { ErrorInfo } from "./error-info";
 import { CSimpleDataFileElement } from "./csimpledatafile";
@@ -120,6 +126,27 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
               sx={{ my: 0, py: 0, minWidth: "10rem" }}
               itemName={`${wavelengthObjectPath}`}
               qualifiers={{ ...props.qualifiers, guiLabel: "Wavelength" }}
+            />
+          </Grid2>
+          <Grid2 size={{ xs: 6 }}>
+            <Typography variant="body1">Batches in file</Typography>
+          </Grid2>
+          <Grid2 size={{ xs: 6 }}>
+            <Typography variant="body1">
+              {fileDigest && fileDigest?.digest?.batchs}
+            </Typography>
+          </Grid2>
+          <Grid2 size={{ xs: 4 }}>
+            <CCP4i2TaskElement
+              key="selected batch string"
+              {...props}
+              sx={{ my: 0, py: 0, minWidth: "30rem" }}
+              itemName={`${itemName}.excludeSelection`}
+              qualifiers={{
+                ...props.qualifiers,
+                guiLabel: "Batch range(s) to exclude",
+                multiLine: true,
+              }}
             />
           </Grid2>
         </Grid2>
