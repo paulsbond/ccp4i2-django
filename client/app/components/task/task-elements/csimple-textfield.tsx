@@ -103,9 +103,14 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
       : objectPath?.split(".").at(-1);
   }, [objectPath, qualifiers]);
 
+  const multiLine = useMemo<boolean>(() => {
+    return qualifiers.multiLine;
+  }, [qualifiers]);
+
   return (
     <Stack direction="row" sx={{ mb: 2 }}>
       <TextField
+        multiline={multiLine}
         inputRef={inputRef}
         disabled={job.status !== 1}
         size="small"
