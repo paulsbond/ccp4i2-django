@@ -4,6 +4,7 @@ import { useApi } from "../../api";
 import { Job } from "../../models";
 import { LinearProgress, Paper, Toolbar, Typography } from "@mui/material";
 import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
+import SubstituteLigandInterface from "./task-interfaces/SubStituteLigand";
 import GenericInterface from "./task-interfaces/generic";
 
 export interface CCP4i2TaskInterfaceProps {
@@ -23,6 +24,8 @@ export const TaskContainer = () => {
     switch (job.task_name) {
       case "prosmart_refmac":
         return <ProsmartRefmacInterface {...{ job }} />;
+      case "SubstituteLigand":
+        return <SubstituteLigandInterface {...{ job }} />;
       default:
         return <GenericInterface {...{ job }} />;
     }

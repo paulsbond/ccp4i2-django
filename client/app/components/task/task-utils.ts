@@ -1,76 +1,18 @@
 import $ from "jquery";
 import { useCallback, useMemo } from "react";
+import { useEffect, useRef } from "react";
 import { useApi } from "../../api";
 import { Job } from "../../models";
 
-export const classOfDefItem = (
-  item: HTMLElement
-): string | null | undefined => {
-  if (item) {
-    const $classNode = $(item).find("className");
-    return $classNode.get(0)?.textContent;
-  }
-  return null;
-};
-
-export const pathOfParamsItem = (item: HTMLElement): string => {
-  const parentElements = $(item).parents().toArray();
-  //console.log(parentElements);
-  if (parentElements.at(-1)?.nodeName === `ccp4:ccp4i2`) parentElements.pop();
-  if (parentElements.at(-1)?.nodeName === `ccp4i2_body`) parentElements.pop();
-  const pathElements = parentElements.map(
-    (element: HTMLElement) => element.nodeName
-  );
-  const reversedElements = pathElements.reverse();
-  reversedElements.push(item.nodeName);
-  return reversedElements.join(".");
-};
-
-export const valueOfItem = (
-  item: HTMLElement | XMLDocument | JQuery<HTMLElement> | JQuery<XMLDocument>
-): any => {
-  const childItems = $(item).children();
-  if (childItems.length > 0) {
-    const result: any = {};
-    childItems.toArray().forEach((element) => {
-      result[element.nodeName] = valueOfItem(element);
-    });
-    return result;
-  } else {
-    return $(item).text();
-  }
-};
-
-export const valueOfItemPath = (
-  itemPath: string,
-  paramsXML:
-    | XMLDocument
-    | JQuery<XMLDocument>
-    | HTMLElement
-    | JQuery<HTMLElement>
-): any | null => {
-  const itemPathElements = itemPath.split(".").reverse();
-  let paramsXMLElement:
-    | HTMLElement
-    | XMLDocument
-    | JQuery<XMLDocument>
-    | JQuery<HTMLElement>
-    | undefined = paramsXML;
-  //console.log({ itemPathElements }, paramsXMLElement);
-  while (itemPathElements.length > 0) {
-    const lastPathElement = itemPathElements.pop();
-    if (lastPathElement && paramsXMLElement) {
-      //console.log(lastPathElement);
-      paramsXMLElement = $(paramsXMLElement).find(`${lastPathElement}`).get(0);
-      //console.log({ lastPathElement, paramsXMLElement });
-    }
-  }
-  if (paramsXMLElement) {
-    return valueOfItem(paramsXMLElement);
-  }
-  return null;
-};
-
+/**
+ * Recursively searches for items within a container that match a specified name.
+ *
+ * @param name - The name to search for within the container's `_objectPath`.
+ * @param container - The container object to search within. This can be an object with nested items.
+ * @param multiple - A boolean indicating whether to find multiple items (default is true). If false, the search stops after finding the first match.
+ * @param growingList - An optional array to accumulate found items. If not provided, a new array is created.
+ * @returns An array of found items that match the specified name.
+ */
 const findItems = (
   name: string,
   container: any,
@@ -112,6 +54,14 @@ const findItems = (
   return listToGrow;
 };
 
+/**
+ * Retrieves items from a container that match the specified name.
+ *
+ * @param name - The name of the items to search for.
+ * @param container - The container in which to search for items.
+ * @param multiple - A boolean indicating whether to return multiple items. Defaults to `false`.
+ * @returns An array of items that match the specified name.
+ */
 export const itemsForName = (
   name: string,
   container: any,
@@ -121,27 +71,24 @@ export const itemsForName = (
   return itemMatches;
 };
 
-export const useTaskContainer = (container: any) => {
-  return useMemo(() => {
-    if (container)
-      return (param_name: string) =>
-        itemsForName(param_name, container)[0]?._value;
-    return () => {};
-  }, [container]);
-};
-
-export const useTaskItem = (container: any) => {
-  return useMemo(() => {
-    if (container)
-      return (param_name: string) => itemsForName(param_name, container)[0];
-    return (itemName: string) => {};
-  }, [container]);
-};
-
 export interface SetParameterArg {
   object_path: string;
   value: any;
 }
+
+/**
+ * Custom hook to manage job-related operations and state.
+ *
+ * @param {Job} job - The job object containing job details.
+ * @returns {Object} An object containing various utility functions and state related to the job.
+ * @property {Function} useAsyncEffect - A hook to run an asynchronous effect with dependencies.
+ * @property {Function} setParameter - A function to set a parameter for the job if it is in a pending state.
+ * @property {Function} getTaskItem - A function to get a task item by its parameter name.
+ * @property {Function} getTaskValue - A function to get the value of a task item by its parameter name.
+ * @property {Function} getValidationColor - A function to get the validation color for a task item.
+ * @property {Function} getErrors - A function to get validation errors for a task item.
+ * @property {any} container - The container data related to the job.
+ */
 export const useJob = (job: Job) => {
   const api = useApi();
   const { data: container, mutate: mutateContainer } = api.container<any>(
@@ -187,7 +134,7 @@ export const useJob = (job: Job) => {
     getTaskValue: useMemo(() => {
       return (param_name: string) => {
         const item = itemsForName(param_name, container)[0];
-        return valueForDispatch(item);
+        return valueOfItem(item);
       };
     }, [container]),
     getValidationColor: useMemo(() => {
@@ -203,6 +150,21 @@ export const useJob = (job: Job) => {
   };
 };
 
+/**
+ * Reads the contents of a file and returns a promise that resolves with the file's contents.
+ *
+ * @param file - The file to be read.
+ * @param readAs - The format in which to read the file. Can be "Text", "ArrayBuffer", or "File". Defaults to "Text".
+ * @returns A promise that resolves with the file's contents as a string, ArrayBuffer, or the File object itself.
+ *
+ * @example
+ * ```typescript
+ * const file = new File(["Hello, world!"], "hello.txt", { type: "text/plain" });
+ * readFilePromise(file, "Text").then((content) => {
+ *   console.log(content); // "Hello, world!"
+ * });
+ * ```
+ */
 export const readFilePromise = async (
   file: File,
   readAs: "Text" | "ArrayBuffer" | "File" = "Text"
@@ -226,7 +188,20 @@ export const readFilePromise = async (
   });
 };
 
-export const valueForDispatch = (item: any): any => {
+/**
+ * Extracts the value of an item, handling various data types including primitives, objects, and arrays.
+ *
+ * @param item - The item from which to extract the value. It can be of any type.
+ * @returns The extracted value, which can be of any type, or `null` if the item is falsy.
+ *
+ * The function handles the following cases:
+ * - If the item is falsy, it returns `null`.
+ * - If the item's `_value` is `undefined`, `null`, a string, a number, or a boolean, it returns `_value`.
+ * - If the item's `_value` is an object, it recursively extracts values for each key in the object.
+ * - If the item's `_value` is an array, it recursively extracts values for each element in the array.
+ * - If the item's `_value` is of an unknown type, it logs the item to the console.
+ */
+export const valueOfItem = (item: any): any => {
   if (!item) return null;
   else if (
     typeof item._value === "undefined" ||
@@ -240,20 +215,24 @@ export const valueForDispatch = (item: any): any => {
   } else if (item._value.constructor == Object) {
     const result: any = {};
     Object.keys(item._value).forEach(
-      (key: string) => (result[key] = valueForDispatch(item._value[key]))
+      (key: string) => (result[key] = valueOfItem(item._value[key]))
     );
     return result;
   } else if (Array.isArray(item._value)) {
     if (item._value.length == 0) return [];
-    const result: any[] = item._value.map((value: any) =>
-      valueForDispatch(value)
-    );
+    const result: any[] = item._value.map((value: any) => valueOfItem(value));
     return result;
   } else {
     console.log("Unknown item", item._value);
   }
 };
 
+/**
+ * Determines the appropriate validation color based on the presence and severity of field errors.
+ *
+ * @param {any[]} fieldErrors - An array of field error objects.
+ * @returns {string} - Returns "success.light" if there are no errors, "warning.light" if there are warnings, and "error.light" if there are errors.
+ */
 export const validationColor = (fieldErrors: any[]): string => {
   return fieldErrors && fieldErrors.length == 0
     ? "success.light"
@@ -263,8 +242,13 @@ export const validationColor = (fieldErrors: any[]): string => {
     : "error.light";
 };
 
-import { useEffect, useRef } from "react";
-
+/**
+ * Custom hook that returns the previous value of the given input.
+ *
+ * @template T - The type of the value.
+ * @param {T} value - The current value.
+ * @returns {T | undefined} - The previous value of the input, or undefined if there is no previous value.
+ */
 export const usePrevious = <T>(value: T): T | undefined => {
   const ref = useRef<T | undefined>();
 
@@ -275,6 +259,17 @@ export const usePrevious = <T>(value: T): T | undefined => {
   return ref.current;
 };
 
+/**
+ * Extracts validation errors for a given item based on the provided validation object.
+ *
+ * @param item - The item to check for validation errors. It can be of any type.
+ * @param validation - An object containing the validation status and an optional validation document.
+ * @param validation.status - The status of the validation.
+ * @param validation.validation - An optional XML Document containing validation details.
+ *
+ * @returns An array of objects, each containing the severity and description of a validation error.
+ *          If no errors are found, an empty array is returned.
+ */
 const errorsInValidation = (
   item: any,
   validation: { status: string; validation?: Document }
