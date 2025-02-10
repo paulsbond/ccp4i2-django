@@ -1,11 +1,27 @@
-import { Card, CardContent, CardHeader } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Grid2,
+  GridSize,
+  SxProps,
+} from "@mui/material";
 import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
 
+interface SizeProps {
+  xs?: Number;
+  sm?: Number;
+  md?: Number;
+  lg?: Number;
+  xl?: Number;
+}
 interface CContainerElementProps extends CCP4i2TaskElementProps {
+  size?: SizeProps;
   containerHint?: "FolderLevel" | "BlockLevel";
+  elementSx?: SxProps;
 }
 export const CContainerElement: React.FC<
   PropsWithChildren<CContainerElementProps>
@@ -17,6 +33,8 @@ export const CContainerElement: React.FC<
     containerHint = "FolderLevel",
     visibility,
     qualifiers,
+    size = { xs: 12 },
+    elementSx,
   } = props;
   const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
@@ -59,14 +77,19 @@ export const CContainerElement: React.FC<
           )}
           <CardContent>
             {children}
-            {childNames.map((childName: string) => (
-              <CCP4i2TaskElement
-                key={`${item._objectPath}.${childName}`}
-                {...props}
-                itemName={`${item._objectPath}.${childName}`}
-                qualifiers={{ ...props, guiLabel: childName }}
-              />
-            ))}
+            <Grid2 container>
+              {childNames.map((childName: string) => (
+                <Grid2 size={size}>
+                  <CCP4i2TaskElement
+                    key={`${item._objectPath}.${childName}`}
+                    {...props}
+                    sx={elementSx}
+                    itemName={`${item._objectPath}.${childName}`}
+                    qualifiers={{ ...props, guiLabel: childName }}
+                  />
+                </Grid2>
+              ))}
+            </Grid2>
           </CardContent>
         </Card>
       )

@@ -5,63 +5,13 @@ import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { ErrorInfo } from "./error-info";
 import { useMemo, useState } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import { CContainerElement } from "./ccontainer";
 
-export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
-  const { job, itemName, qualifiers } = props;
-  const { getTaskItem, getValidationColor } = useJob(job.id);
-  const item = getTaskItem(itemName);
-  const [expanded, setExpanded] = useState(false);
-
-  const inferredVisibility = useMemo(() => {
-    if (!props.visibility) return true;
-    if (typeof props.visibility === "function") {
-      return props.visibility();
-    }
-    return props.visibility;
-  }, [props.visibility]);
-
-  return (
-    inferredVisibility && (
-      <Card sx={{ border: "3px solid", borderColor: getValidationColor(item) }}>
-        <CardHeader
-          title={qualifiers?.guiLabel}
-          sx={{ backgroundColor: getValidationColor(item) }}
-          titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
-          action={
-            <>
-              <ErrorInfo {...props} />
-              <Button
-                onClick={() => {
-                  setExpanded(!expanded);
-                }}
-              >
-                {expanded ? <ExpandLess /> : <ExpandMore />}
-              </Button>
-            </>
-          }
-        />
-        <CardContent sx={{ my: 0, py: 0 }}>
-          {item && expanded && (
-            <Grid2 container rowSpacing={0} sx={{ my: 0, py: 0 }}>
-              {Object.keys(item._value).map((objectKey: string) => (
-                <Grid2 key={objectKey} size={{ xs: 4 }}>
-                  <CCP4i2TaskElement
-                    {...props}
-                    sx={{ my: 0, py: 0, minWidth: "5rem" }}
-                    key={objectKey}
-                    itemName={`${item._objectPath}.${objectKey}`}
-                    qualifiers={{
-                      ...getTaskItem(`${item._objectPath}.${objectKey}`)
-                        ._qualifiers,
-                      guiLabel: objectKey,
-                    }}
-                  />
-                </Grid2>
-              ))}
-            </Grid2>
-          )}
-        </CardContent>
-      </Card>
-    )
-  );
-};
+export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => (
+  <CContainerElement
+    {...props}
+    qualifiers={props.qualifiers}
+    size={{ xs: 4 }}
+    elementSx={{ my: 0, py: 0, minWidth: "5rem" }}
+  />
+);
