@@ -4,6 +4,7 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
+import { CAltSpaceGroupElement } from "../task-elements/caltspacegroupelement";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -26,10 +27,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     getFileDigest,
   } = useJob(job.id);
 
-  const chooseModeItemValue = getTaskValue("CHOOSE_MODE");
-  const modeItemValue = getTaskValue("MODE");
-  const aimlessRefItemValue = getTaskValue("REFERENCE_FOR_AIMLESS");
-  const reference_datasetItemValue = getTaskValue("REFERENCE_DATASET");
+  const chooseModeValue = getTaskValue("CHOOSE_MODE");
+  const modeValue = getTaskValue("MODE");
+  const aimlessRefValue = getTaskValue("REFERENCE_FOR_AIMLESS");
+  const reference_datasetValue = getTaskValue("REFERENCE_DATASET");
 
   return (
     <CCP4i2Tabs {...props}>
@@ -100,7 +101,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               containerHint: "BlockLevel",
             }}
             visibility={() => {
-              return modeItemValue === "CHOOSE";
+              return modeValue === "CHOOSE";
             }}
           >
             <CCP4i2TaskElement
@@ -108,7 +109,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="CHOOSE_MODE"
               qualifiers={{ guiLabel: "Symmetry choice mode" }}
               visibility={() => {
-                return modeItemValue === "CHOOSE";
+                return modeValue === "CHOOSE";
               }}
             />
             <CCP4i2TaskElement
@@ -116,17 +117,21 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="CHOOSE_SOLUTION_NO"
               qualifiers={{ guiLabel: "Solution no. to choose" }}
               visibility={() => {
-                return chooseModeItemValue === "SOLUTION_NO";
+                return modeValue === "SOLUTION_NO";
               }}
             />
-            <CCP4i2TaskElement
+            <CAltSpaceGroupElement
               {...props}
               itemName="CHOOSE_SPACEGROUP"
-              qualifiers={{ guiLabel: "Spacegroup to choose" }}
+              qualifiers={{
+                ...getTaskItem("CHOOSE_SPACEGROUP")._qualifiers,
+                guiLabel: "Spacegroup to choose",
+              }}
               visibility={() => {
                 return (
-                  chooseModeItemValue === "SPACEGROUP" ||
-                  chooseModeItemValue === "REINDEX_SPACE"
+                  modeValue === "CHOOSE" &&
+                  (chooseModeValue === "SPACEGROUP" ||
+                    chooseModeValue === "REINDEX_SPACE")
                 );
               }}
             />
@@ -135,7 +140,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="REINDEX_OPERATOR"
               qualifiers={{ guiLabel: "Reindexing operator" }}
               visibility={() => {
-                return chooseModeItemValue === "REINDEX_SPACE";
+                return (
+                  modeValue === "CHOOSE" && chooseModeValue === "REINDEX_SPACE"
+                );
               }}
             />
             <CCP4i2TaskElement
@@ -143,7 +150,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="CHOOSE_LAUEGROUP"
               qualifiers={{ guiLabel: "Lauegroup to choose" }}
               visibility={() => {
-                return chooseModeItemValue === "LAUEGROUP";
+                return chooseModeValue === "LAUEGROUP";
               }}
             />
           </CContainerElement>
@@ -155,7 +162,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               containerHint: "BlockLevel",
             }}
             visibility={() => {
-              return modeItemValue === "MATCH";
+              return modeValue === "MATCH";
             }}
           >
             <CCP4i2TaskElement
@@ -168,7 +175,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="REFERENCE_DATASET"
               qualifiers={{ guiLabel: "Reference type" }}
               visibility={() => {
-                return modeItemValue === "MATCH" && aimlessRefItemValue;
+                return modeValue === "MATCH" && aimlessRefValue;
               }}
             />
             <CCP4i2TaskElement
@@ -177,9 +184,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               qualifiers={{ guiLabel: "Reference reflections" }}
               visibility={() => {
                 return (
-                  modeItemValue === "MATCH" &&
-                  aimlessRefItemValue &&
-                  reference_datasetItemValue === "HKL"
+                  modeValue === "MATCH" &&
+                  aimlessRefValue &&
+                  reference_datasetValue === "HKL"
                 );
               }}
             />
@@ -189,9 +196,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               qualifiers={{ guiLabel: "Reference coordinates" }}
               visibility={() => {
                 return (
-                  modeItemValue === "MATCH" &&
-                  aimlessRefItemValue &&
-                  reference_datasetItemValue === "XYZ"
+                  modeValue === "MATCH" &&
+                  aimlessRefValue &&
+                  reference_datasetValue === "XYZ"
                 );
               }}
             />
