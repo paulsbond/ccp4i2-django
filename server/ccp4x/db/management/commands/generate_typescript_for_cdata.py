@@ -13,7 +13,7 @@ class Command(BaseCommand):
     help = "Generate start point for template bindings"
     requires_system_checks = []
 
-    def handle(self):
+    def handle(self, **kwargs):
         data_manager: CDataManager = CCP4DataManager.CDataManager()
         data_manager.buildClassLookup()
         skip_classes = [
