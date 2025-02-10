@@ -3,7 +3,7 @@ import { CDataFileElement } from "./cdatafile";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { useCallback, useEffect, useState } from "react";
 import { useApi } from "../../../api";
-import { readFilePromise, useJob } from "../task-utils";
+import { readFilePromise, useJob } from "../../../utils";
 import { Job } from "../../../models";
 
 export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
@@ -11,7 +11,7 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { job, itemName } = props;
   const api = useApi();
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 

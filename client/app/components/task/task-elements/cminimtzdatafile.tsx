@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ParseMtz } from "./parse-mtz";
 import { useApi } from "../../../api";
 import { BaseSpacegroupCellElement } from "./base-spacegroup-cell-element";
-import { readFilePromise, useJob } from "../task-utils";
+import { readFilePromise, useJob } from "../../../utils";
 import { Job } from "../../../models";
 
 export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
@@ -13,7 +13,7 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { job, itemName } = props;
   const api = useApi();
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 

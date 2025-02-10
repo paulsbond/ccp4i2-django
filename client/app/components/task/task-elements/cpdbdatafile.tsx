@@ -3,7 +3,7 @@ import { CDataFileElement } from "./cdatafile";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useMemo } from "react";
 import { useApi } from "../../../api";
-import { useJob } from "../task-utils";
+import { useJob } from "../../../utils";
 import { CSimpleDataFileElement } from "./csimpledatafile";
 
 export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
@@ -11,7 +11,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { job, itemName } = props;
   const api = useApi();
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
 
   const selectionItemName = useMemo(() => {

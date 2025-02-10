@@ -4,6 +4,7 @@ import { CircularProgress, Skeleton, Stack } from "@mui/material";
 import { useApi } from "../../api";
 import { Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
+import { useProject } from "../../utils";
 
 export default function DashboardPage({
   params,
@@ -12,6 +13,6 @@ export default function DashboardPage({
 }) {
   const api = useApi();
   const { id } = use(params);
-  const { data: project } = api.get<Project>(`projects/${id}`);
+  const { project } = useProject(parseInt(id));
   return project ? <Skeleton /> : <CircularProgress variant="indeterminate" />;
 }

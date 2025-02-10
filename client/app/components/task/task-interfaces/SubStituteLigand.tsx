@@ -3,13 +3,13 @@ import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
-import { useJob, usePrevious, valueOfItem } from "../task-utils";
+import { useJob, usePrevious, valueOfItem } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskValue } = useJob(job);
+  const { getTaskValue } = useJob(job.id);
   const { data: container, mutate: mutateContainer } = api.container<any>(
     `jobs/${props.job.id}/container`
   );

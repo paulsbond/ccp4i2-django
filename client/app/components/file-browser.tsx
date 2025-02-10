@@ -25,7 +25,7 @@ import {
   ExpandMore,
   Menu as MenuIcon,
 } from "@mui/icons-material";
-import { itemsForName } from "./task/task-utils";
+import { itemsForName } from "../utils";
 import { CCP4i2Context } from "../app-context";
 import { doDownload, useApi } from "../api";
 

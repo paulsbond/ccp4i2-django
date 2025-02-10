@@ -1,7 +1,7 @@
 "use client";
 import { use, useContext, useEffect, useMemo, useState } from "react";
 import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
-import { Job, Project } from "../../../../models";
+import { Job } from "../../../../models";
 import { useApi } from "../../../../api";
 import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../components/job-header";
@@ -10,8 +10,8 @@ import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidge
 import $ from "jquery";
 import { CCP4i2Context } from "../../../../app-context";
 import { TaskContainer } from "../../../../components/task/task-container";
-import convert from "xml-js";
 import { ValidationViewer } from "../../../../components/validation-viewer";
+import { useJob, useProject } from "../../../../utils";
 
 export default function JobPage({
   params,
@@ -20,20 +20,21 @@ export default function JobPage({
 }) {
   const api = useApi();
   const { id, jobid } = use(params);
+  const { project, jobs, mutateJobs } = useProject(parseInt(id));
+
   const { setJobId } = useContext(CCP4i2Context);
-  const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
-    `/projects/${id}/jobs/`
-  );
-  const job = useMemo<Job | undefined>(() => {
-    return jobs?.find((item) => item.id === parseInt(jobid));
-  }, [jobid, jobs]);
-  const { data: project } = api.get<Project>(`projects/${id}`);
-  const { data: params_xml } = api.get<any>(`jobs/${jobid}/params_xml`);
-  const { data: validation } = api.get<any>(`jobs/${jobid}/validation`);
-  const { data: report_xml } = api.get<any>(`jobs/${jobid}/report_xml`);
-  const { data: diagnostic_xml } = api.get<any>(`jobs/${jobid}/diagnostic_xml`);
-  const { data: def_xml } = api.get<any>(`jobs/${jobid}/def_xml`);
-  const { data: container } = api.container<any>(`jobs/${jobid}/container`);
+
+  const { job } = useJob(parseInt(jobid));
+
+  const {
+    params_xml,
+    validation,
+    report_xml,
+    diagnostic_xml,
+    def_xml,
+    container,
+  } = useJob(job?.id);
+
   const [tabValue, setTabValue] = useState<Number>(0);
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);

@@ -35,6 +35,7 @@ import { useRouter } from "next/navigation";
 import { JobHeader } from "./job-header";
 import { useDeleteDialog } from "./delete-dialog";
 import { CCP4i2JobAvatar } from "./job-avatar";
+import { useProject } from "../utils";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -55,18 +56,15 @@ export const JobCard: React.FC<JobCardProps> = ({
   const projectId = useMemo(() => {
     return job.project;
   }, [job]);
-  const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
-    `/projects/${projectId}/jobs/`
-  );
-  const { data: files, mutate: mutateFiles } = api.get<File[]>(
-    `/projects/${projectId}/files/`
-  );
-  const { data: jobFloatValues } = api.get<JobFloatValue[]>(
-    `/projects/${projectId}/job_float_values/`
-  );
-  const { data: jobCharValues } = api.get<JobCharValue[]>(
-    `/projects/${projectId}/job_char_values/`
-  );
+  const {
+    jobs,
+    mutateJobs,
+    files,
+    jobCharValues,
+    jobFloatValues,
+    mutateFiles,
+  } = useProject(job.project);
+
   const subJobs: any[] | undefined = useMemo(() => {
     return jobs?.filter((aJob) => aJob.parent === job.id);
   }, [jobs, job]);

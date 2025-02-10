@@ -3,7 +3,7 @@ import { CIntElement } from "./cint";
 import { PropsWithChildren, useMemo } from "react";
 import { SxProps, Theme, Typography } from "@mui/material";
 import { CStringElement } from "./cstring";
-import { useJob } from "../task-utils";
+import { useJob } from "../../../utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import $ from "jquery";
@@ -40,7 +40,7 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
  */
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job } = props;
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem } = useJob(job.id);
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;

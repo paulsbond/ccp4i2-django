@@ -3,29 +3,33 @@ import { CCP4i2TaskInterfaceProps } from "../task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
-import { useJob, usePrevious } from "../task-utils";
+import { useJob, usePrevious } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const { data: container, mutate: mutateContainer } = api.container<any>(
-    `jobs/${props.job.id}/container`
+    `jobs/${job.id}/container`
   );
 
   //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
-  const { data: F_SIGFDigest } = api.digest<any>(
-    `jobs/${props.job.id}/digest?object_path=prosmart_refmac.inputData.F_SIGF`
-  );
-
-  const { data: FREERFLAGDigest } = api.digest<any>(
-    `jobs/${props.job.id}/digest?object_path=prosmart_refmac.inputData.FREERFLAG`
-  );
+  //const { data: F_SIGFDigest } = api.digest<any>(
+  //  `jobs/${job.id}/digest?object_path=prosmart_refmac.inputData.F_SIGF`
+  //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskValue, setParameter, useAsyncEffect, getTaskItem } =
-    useJob(job);
+  const {
+    getTaskValue,
+    setParameter,
+    useAsyncEffect,
+    getTaskItem,
+    getFileDigest,
+  } = useJob(job.id);
 
+  const { data: F_SIGFDigest } = getFileDigest(
+    "prosmart_refmac.inputData.F_SIGF"
+  );
   const refinementMode = getTaskValue("REFINEMENT_MODE");
   const solventAdvanced = getTaskValue("SOLVENT_ADVANCED");
   const solventMaskType = getTaskValue("SOLVENT_MASK_TYPE");

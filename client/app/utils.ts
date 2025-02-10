@@ -1,8 +1,14 @@
 import $ from "jquery";
 import { useCallback, useMemo } from "react";
 import { useEffect, useRef } from "react";
-import { useApi } from "../../api";
-import { Job } from "../../models";
+import { useApi } from "./api";
+import {
+  Job,
+  JobCharValue,
+  JobFloatValue,
+  Project,
+  File as DjangoFile,
+} from "./models";
 
 /**
  * Recursively searches for items within a container that match a specified name.
@@ -77,26 +83,106 @@ export interface SetParameterArg {
 }
 
 /**
- * Custom hook to manage job-related operations and state.
+ * Custom hook to fetch and manage project-related data.
  *
- * @param {Job} job - The job object containing job details.
- * @returns {Object} An object containing various utility functions and state related to the job.
- * @property {Function} useAsyncEffect - A hook to run an asynchronous effect with dependencies.
- * @property {Function} setParameter - A function to set a parameter for the job if it is in a pending state.
- * @property {Function} getTaskItem - A function to get a task item by its parameter name.
- * @property {Function} getTaskValue - A function to get the value of a task item by its parameter name.
- * @property {Function} getValidationColor - A function to get the validation color for a task item.
- * @property {Function} getErrors - A function to get validation errors for a task item.
- * @property {any} container - The container data related to the job.
+ * @param {number} projectId - The ID of the project to fetch data for.
+ * @returns {object} An object containing project data and mutate functions:
+ * - `project`: The project data.
+ * - `mutateProject`: Function to mutate the project data.
+ * - `directory`: The directory data of the project.
+ * - `mutateDirectory`: Function to mutate the directory data.
+ * - `jobs`: The jobs associated with the project.
+ * - `mutateJobs`: Function to mutate the jobs data.
+ * - `files`: The files associated with the project.
+ * - `mutateFiles`: Function to mutate the files data.
+ * - `jobFloatValues`: The float values of the jobs.
+ * - `mutateJobFloatValues`: Function to mutate the job float values data.
+ * - `jobCharValues`: The char values of the jobs.
+ * - `mutateJobCharValues`: Function to mutate the job char values data.
  */
-export const useJob = (job: Job) => {
+export const useProject = (projectId: number) => {
   const api = useApi();
+  const { data: project, mutate: mutateProject } = api.get<Project>(
+    `projects/${projectId}`
+  );
+  const { data: directory, mutate: mutateDirectory } = api.get<any>(
+    `projects/${projectId}/directory`
+  );
+  const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
+    `/projects/${projectId}/jobs/`
+  );
+  const { data: files, mutate: mutateFiles } = api.get<DjangoFile[]>(
+    `/projects/${projectId}/files/`
+  );
+  const { data: jobFloatValues, mutate: mutateJobFloatValues } = api.get<
+    JobFloatValue[]
+  >(`/projects/${projectId}/job_float_values/`);
+  const { data: jobCharValues, mutate: mutateJobCharValues } = api.get<
+    JobCharValue[]
+  >(`/projects/${projectId}/job_char_values/`);
+  return {
+    project,
+    mutateProject,
+    directory,
+    mutateDirectory,
+    jobs,
+    mutateJobs,
+    files,
+    mutateFiles,
+    jobCharValues,
+    mutateJobCharValues,
+    jobFloatValues,
+    mutateJobFloatValues,
+  };
+};
+
+/**
+ * Custom hook to manage job-related data and actions.
+ *
+ * @param job - The job object containing job details.
+ * @returns An object containing various utilities and data related to the job.
+ *
+ * @property useAsyncEffect - A function to run an asynchronous effect with dependencies.
+ * @property setParameter - A function to set a parameter for the job if it is in a pending state.
+ * @property getTaskItem - A function to get a task item by its parameter name.
+ * @property getTaskValue - A function to get the value of a task item by its parameter name.
+ * @property getValidationColor - A function to get the validation color for a given item.
+ * @property getErrors - A function to get validation errors for a given item.
+ * @property container - The container data for the job.
+ * @property mutateContainer - A function to mutate the container data.
+ * @property params_xml - The parameters XML data for the job.
+ * @property mutateParams_xml - A function to mutate the parameters XML data.
+ * @property validation - The validation data for the job.
+ * @property mutateValidation - A function to mutate the validation data.
+ * @property report_xml - The report XML data for the job.
+ * @property mutateReport_xml - A function to mutate the report XML data.
+ * @property diagnostic_xml - The diagnostic XML data for the job.
+ * @property mutateDiagnosticXml - A function to mutate the diagnostic XML data.
+ * @property def_xml - The definition XML data for the job.
+ * @property mutateDef_xml - A function to mutate the definition XML data.
+ */
+export const useJob = (jobId: number | undefined) => {
+  const api = useApi();
+  const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
   const { data: container, mutate: mutateContainer } = api.container<any>(
-    `jobs/${job.id}/container`
+    `jobs/${jobId}/container`
   );
-  const { data: validation, mutate: mutateValidation } = api.container<any>(
-    `jobs/${job.id}/validation`
+  const { data: params_xml, mutate: mutateParams_xml } = api.get<any>(
+    `jobs/${jobId}/params_xml`
   );
+  const { data: validation, mutate: mutateValidation } = api.get<any>(
+    `jobs/${jobId}/validation`
+  );
+  const { data: report_xml, mutate: mutateReport_xml } = api.get<any>(
+    `jobs/${jobId}/report_xml`
+  );
+  const { data: diagnostic_xml, mutate: mutateDiagnosticXml } = api.get<any>(
+    `jobs/${jobId}/diagnostic_xml`
+  );
+  const { data: def_xml, mutate: mutateDef_xml } = api.get<any>(
+    `jobs/${jobId}/def_xml`
+  );
+
   return {
     useAsyncEffect: (effect: () => Promise<void>, dependencies: any[]) => {
       useEffect(() => {
@@ -109,7 +195,7 @@ export const useJob = (job: Job) => {
     },
     setParameter: useCallback(
       async (setParameterArg: SetParameterArg) => {
-        if (job.status == 1) {
+        if (job?.status == 1) {
           const result = await api.post<Job>(
             `jobs/${job.id}/set_parameter`,
             setParameterArg
@@ -146,7 +232,27 @@ export const useJob = (job: Job) => {
     getErrors: useMemo(() => {
       return (item: any) => errorsInValidation(item, validation);
     }, [validation]),
+    getFileDigest: useMemo(() => {
+      return (objectPath: string) => {
+        return api.digest<any>(
+          `jobs/${job?.id}/digest?object_path=${objectPath}`
+        );
+      };
+    }, [job]),
+    job,
+    mutateJob,
     container,
+    mutateContainer,
+    params_xml,
+    mutateParams_xml,
+    validation,
+    mutateValidation,
+    report_xml,
+    mutateReport_xml,
+    diagnostic_xml,
+    mutateDiagnosticXml,
+    def_xml,
+    mutateDef_xml,
   };
 };
 

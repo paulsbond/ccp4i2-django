@@ -26,7 +26,7 @@ import {
   useState,
 } from "react";
 import { Folder } from "@mui/icons-material";
-import { readFilePromise, useJob } from "../task-utils";
+import { readFilePromise, useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
 
 const fileTypeMapping: { [key: string]: string } = {
@@ -99,7 +99,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 ) => {
   const { job, sx, infoContent, itemName } = props;
   const api = useApi();
-  const { getTaskItem, setParameter, getValidationColor } = useJob(job);
+  const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -108,7 +108,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   );
   const validationOpen = Boolean(validationAnchor);
   const progressRef = useRef<HTMLElement | null>(null);
-  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
+  const { mutate: mutateDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
 

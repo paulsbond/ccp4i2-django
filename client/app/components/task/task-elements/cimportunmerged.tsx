@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { SetParameterArg, useJob, usePrevious } from "../task-utils";
+import { SetParameterArg, useJob, usePrevious } from "../../../utils";
 import {
   Card,
   CardContent,
@@ -25,14 +25,14 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     setParameter,
     container,
     useAsyncEffect,
-  } = useJob(job);
+  } = useJob(job.id);
   const item = getTaskItem(itemName);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;
     return null;
   }, [item]);
 
-  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
+  const { data: fileDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=${item._objectPath}.file`
   );
   const oldFileDigest = usePrevious<any>(fileDigest);

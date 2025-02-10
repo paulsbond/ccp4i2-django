@@ -1,5 +1,5 @@
 import { CCP4i2TaskElementProps } from "./task-element";
-import { useJob } from "../task-utils";
+import { useJob } from "../../../utils";
 import {
   Autocomplete,
   Button,
@@ -607,7 +607,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
   const { job, itemName } = props;
-  const { setParameter, getTaskItem, getValidationColor } = useJob(job);
+  const { setParameter, getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [value, setValue] = useState<string>("P 1");
   const [inFlight, setInFlight] = useState(false);

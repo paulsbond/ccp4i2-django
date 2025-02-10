@@ -77,6 +77,7 @@ export default function FileMenu() {
             const dateB = new Date(b.last_access);
             return dateB.getTime() - dateA.getTime();
           })
+          .slice(-10)
           .map((project: Project) => (
             <MenuItem
               key={project.id}

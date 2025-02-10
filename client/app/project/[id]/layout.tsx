@@ -17,6 +17,7 @@ import { useApi } from "../../api";
 import { Project } from "../../models";
 import Script from "next/script";
 import { CCP4i2DirectoryViewer } from "../../components/directory_viewer";
+import { useProject } from "../../utils";
 
 const createArgs = {
   print(t: string) {
@@ -43,7 +44,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
   const api = useApi();
   const [tabValue, setTabValue] = useState(0);
   const { id } = use(props.params);
-  const { data: project } = api.get<Project>(`projects/${id}`);
+  const { project } = useProject(id);
   const scriptElement = useRef<HTMLElement | null | undefined>(null);
 
   useEffect(() => {

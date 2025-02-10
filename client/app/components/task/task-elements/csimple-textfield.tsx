@@ -9,14 +9,14 @@ import {
 } from "react";
 import { LinearProgress, Stack, TextField } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
-import { useJob } from "../task-utils";
+import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
   const { itemName, job, type, sx, qualifiers } = props;
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
 
   const inputRef = useRef<HTMLElement | null>(null);
@@ -24,7 +24,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   const [value, setValue] = useState<number | string | boolean | null>(null);
 
-  const { setParameter } = useJob(job);
+  const { setParameter } = useJob(job.id);
 
   useEffect(() => {
     setValue(item._value);

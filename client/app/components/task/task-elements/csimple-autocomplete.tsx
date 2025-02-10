@@ -15,14 +15,14 @@ import {
   TextField,
 } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
-import { useJob } from "../task-utils";
+import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
   const { itemName, job, type, sx, qualifiers } = props;
-  const { getTaskItem } = useJob(job);
+  const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
 
   const [value, setValue] = useState<{
@@ -46,7 +46,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     return { objectPath: null };
   }, [item]);
 
-  const { setParameter } = useJob(job);
+  const { setParameter } = useJob(job.id);
 
   const options: { id: string; label: string }[] | undefined = useMemo(() => {
     if (qualifiers?.enumerators) {

@@ -1,6 +1,6 @@
 import { useApi } from "../../../api";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useJob } from "../task-utils";
+import { useJob } from "../../../utils";
 import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { ErrorInfo } from "./error-info";
 import { useState } from "react";
@@ -8,7 +8,7 @@ import { ExpandLess, ExpandMore } from "@mui/icons-material";
 
 export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job, itemName } = props;
-  const { getTaskItem, getValidationColor } = useJob(job);
+  const { getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [expanded, setExpanded] = useState(false);
 

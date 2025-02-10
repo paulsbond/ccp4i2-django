@@ -21,7 +21,7 @@ import {
 } from "react";
 import { v4 as uuid4 } from "uuid";
 import { CCP4i2Context } from "../../../app-context";
-import { readFilePromise } from "../task-utils";
+import { readFilePromise } from "../../../utils";
 
 const signatureMap = {
   KMKM: "Intensity Friedel pairs",

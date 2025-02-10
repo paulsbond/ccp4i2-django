@@ -3,11 +3,11 @@ import { Box } from "@mui/system";
 import { useState } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { Info } from "@mui/icons-material";
-import { useJob } from "../task-utils";
+import { useJob } from "../../../utils";
 
 export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { itemName, job } = props;
-  const { getTaskItem, getValidationColor, getErrors } = useJob(job);
+  const { getTaskItem, getValidationColor, getErrors } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const infoOpen = Boolean(anchorEl);
