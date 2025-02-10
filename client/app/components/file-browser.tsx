@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import {
   Button,
+  ClickAwayListener,
   Collapse,
   List,
   ListItem,
@@ -66,6 +67,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
     setAnchorEl(ev.currentTarget);
     ev.stopPropagation();
   };
+  const handleMenuClose = (ev: any) => {
+    setAnchorEl(null);
+  };
   return (
     <>
       <ListItem
@@ -75,9 +79,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
         secondaryAction={
           node.type !== "directory" && (
             <>
-              <Button onClick={handleMenuOpen}>
-                <MenuIcon />
-              </Button>
+              <ClickAwayListener onClickAway={handleMenuClose}>
+                <Button onClick={handleMenuOpen}>
+                  <MenuIcon />
+                </Button>
+              </ClickAwayListener>
               {isOpen ? <ExpandLess /> : <ExpandMore />}
             </>
           )
