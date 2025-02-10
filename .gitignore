@@ -4,7 +4,7 @@ __pycache__
 build
 client/app/components/task/FORREFERENCE-TaskJavascripts
 client/public/baby-gru
-
+client/out
 client/public/coot_env_web.js
 client/public/CootWorker.js
 client/public/CootWorker.ts
