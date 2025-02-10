@@ -100,62 +100,72 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
     [item]
   );
 
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
+
   return (
-    <Card sx={{ mb: 1 }}>
-      <CardHeader
-        titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
-        title={<>{guiLabel}</>}
-        action={
-          <>
-            <MyExpandMore
-              expand={expanded}
-              onClick={(ev) => {
-                ev.stopPropagation();
-                setExpanded(!expanded);
-              }}
-              aria-expanded={expanded}
-              aria-label="show more"
-            >
-              <ExpandMoreIcon />
-            </MyExpandMore>
-            <Button disabled={!(job.status == 1)} onClick={extendListItem}>
-              <Add />
-            </Button>
-          </>
-        }
-      />
-      <CardContent>
-        <Collapse in={expanded} timeout="auto" unmountOnExit>
-          {item?._value &&
-            item._value.map((content: any) => {
-              return (
-                <Grid2 key={content._objectPath} container>
-                  <Grid2 key="Element" size={{ xs: 11 }}>
-                    <CCP4i2TaskElement
-                      {...props}
-                      itemName={content._objectPath}
-                    />
+    inferredVisibility && (
+      <Card sx={{ mb: 1 }}>
+        <CardHeader
+          titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
+          title={<>{guiLabel}</>}
+          action={
+            <>
+              <MyExpandMore
+                expand={expanded}
+                onClick={(ev) => {
+                  ev.stopPropagation();
+                  setExpanded(!expanded);
+                }}
+                aria-expanded={expanded}
+                aria-label="show more"
+              >
+                <ExpandMoreIcon />
+              </MyExpandMore>
+              <Button disabled={!(job.status == 1)} onClick={extendListItem}>
+                <Add />
+              </Button>
+            </>
+          }
+        />
+        <CardContent>
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            {item?._value &&
+              item._value.map((content: any) => {
+                return (
+                  <Grid2 key={content._objectPath} container>
+                    <Grid2 key="Element" size={{ xs: 11 }}>
+                      <CCP4i2TaskElement
+                        {...props}
+                        itemName={content._objectPath}
+                      />
+                    </Grid2>
+                    <Grid2 key="deleteButton" size={{ xs: 1 }}>
+                      <FormControl>
+                        <FormLabel>Delete</FormLabel>
+                        <Button
+                          disabled={!(job.status === 1)}
+                          id="deleteButton"
+                          onClick={() => {
+                            deleteItem(content);
+                          }}
+                        >
+                          {" "}
+                          <Delete />
+                        </Button>
+                      </FormControl>
+                    </Grid2>
                   </Grid2>
-                  <Grid2 key="deleteButton" size={{ xs: 1 }}>
-                    <FormControl>
-                      <FormLabel>Delete</FormLabel>
-                      <Button
-                        disabled={!(job.status === 1)}
-                        id="deleteButton"
-                        onClick={() => {
-                          deleteItem(content);
-                        }}
-                      >
-                        {" "}
-                        <Delete />
-                      </Button>
-                    </FormControl>
-                  </Grid2>
-                </Grid2>
-              );
-            })}
-        </Collapse>
-      </CardContent>
-    </Card>
+                );
+              })}
+          </Collapse>
+        </CardContent>
+      </Card>
+    )
   );
 };

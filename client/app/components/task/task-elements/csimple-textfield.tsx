@@ -107,40 +107,50 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     return qualifiers.multiLine;
   }, [qualifiers]);
 
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
+
   return (
-    <Stack direction="row" sx={{ mb: 2 }}>
-      <TextField
-        multiline={multiLine}
-        inputRef={inputRef}
-        disabled={job.status !== 1}
-        size="small"
-        sx={{ minWidth: "20rem", py: 0, my: 0, ...sx }}
-        slotProps={
-          type === "checkbox"
-            ? {
-                htmlInput: { checked: value, sx: { my: 1 } },
-              }
-            : {}
-        }
-        type={type}
-        value={value || ""}
-        label={guiLabel}
-        title={qualifiers?.toolTip ? qualifiers.toolTip : objectPath}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onFocusCapture={(ev) => console.log(ev)}
-        onBlur={(ev) => {
-          if (value !== item._value) sendValue();
-        }}
-      />
-      <Stack direction="column">
-        <ErrorInfo {...props} />
-        <LinearProgress
-          sx={{ height: "0.5rem", width: "2rem" }}
-          variant={inFlight ? "indeterminate" : "determinate"}
-          value={0}
+    inferredVisibility && (
+      <Stack direction="row" sx={{ mb: 2 }}>
+        <TextField
+          multiline={multiLine}
+          inputRef={inputRef}
+          disabled={job.status !== 1}
+          size="small"
+          sx={{ minWidth: "20rem", py: 0, my: 0, ...sx }}
+          slotProps={
+            type === "checkbox"
+              ? {
+                  htmlInput: { checked: value, sx: { my: 1 } },
+                }
+              : {}
+          }
+          type={type}
+          value={value || ""}
+          label={guiLabel}
+          title={qualifiers?.toolTip ? qualifiers.toolTip : objectPath}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocusCapture={(ev) => console.log(ev)}
+          onBlur={(ev) => {
+            if (value !== item._value) sendValue();
+          }}
         />
+        <Stack direction="column">
+          <ErrorInfo {...props} />
+          <LinearProgress
+            sx={{ height: "0.5rem", width: "2rem" }}
+            variant={inFlight ? "indeterminate" : "determinate"}
+            value={0}
+          />
+        </Stack>
       </Stack>
-    </Stack>
+    )
   );
 };

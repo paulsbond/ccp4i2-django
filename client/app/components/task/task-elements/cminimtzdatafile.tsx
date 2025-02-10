@@ -76,24 +76,34 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     setSelectedFiles(null);
   };
 
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
+
   return (
-    <>
-      <Stack direction="column">
-        <CDataFileElement
-          {...props}
-          infoContent={infoContent}
-          setFiles={setSelectedFiles}
-        />
-      </Stack>
-      {selectedFiles && (
-        <ParseMtz
-          item={item}
-          file={selectedFiles[0]}
-          setFiles={setSelectedFiles}
-          handleAccept={handleAccept}
-          handleCancel={handleCancel}
-        />
-      )}
-    </>
+    inferredVisibility && (
+      <>
+        <Stack direction="column">
+          <CDataFileElement
+            {...props}
+            infoContent={infoContent}
+            setFiles={setSelectedFiles}
+          />
+        </Stack>
+        {selectedFiles && (
+          <ParseMtz
+            item={item}
+            file={selectedFiles[0]}
+            setFiles={setSelectedFiles}
+            handleAccept={handleAccept}
+            handleCancel={handleCancel}
+          />
+        )}
+      </>
+    )
   );
 };

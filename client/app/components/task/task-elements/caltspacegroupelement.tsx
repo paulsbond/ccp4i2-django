@@ -9,7 +9,7 @@ import {
   TextField,
 } from "@mui/material";
 import { Info } from "@mui/icons-material";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const spacegroups = [
   "P1",
@@ -612,6 +612,14 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   const [value, setValue] = useState<string>("P 1");
   const [inFlight, setInFlight] = useState(false);
 
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props?.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
+
   const handleInputChanged = async (arg: any) => {
     setValue(arg);
     setInFlight(true);
@@ -627,48 +635,50 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
     setInFlight(false);
   };
   return (
-    <Card
-      sx={{
-        border: "3px solid",
-        borderColor: getValidationColor(item),
-      }}
-    >
-      <CardHeader
-        title={qualifiers?.guiLabel}
-        sx={{ backgroundColor: getValidationColor(item) }}
-        titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
-        action={
-          <Button>
-            <Info />
-          </Button>
-        }
-      />
-      <CardContent sx={{ my: 0, py: 0 }}>
-        {item && (
-          <Autocomplete
-            sx={{
-              mt: 1,
-              backgroundColor: inFlight ? "#ffeebe" : "palette.common.white",
-            }}
-            id="autocomplete-spacegroup"
-            multiple={false}
-            options={spacegroups}
-            value={value}
-            style={{ minWidth: "15rem" }}
-            onChange={(
-              event: React.SyntheticEvent<Element, Event>,
-              value: string | null
-            ) => {
-              if (value) {
-                handleInputChanged(value);
-              }
-            }}
-            renderInput={(params: any) => (
-              <TextField {...params} label="Space groups" />
-            )}
-          />
-        )}
-      </CardContent>
-    </Card>
+    inferredVisibility && (
+      <Card
+        sx={{
+          border: "3px solid",
+          borderColor: getValidationColor(item),
+        }}
+      >
+        <CardHeader
+          title={qualifiers?.guiLabel}
+          sx={{ backgroundColor: getValidationColor(item) }}
+          titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
+          action={
+            <Button>
+              <Info />
+            </Button>
+          }
+        />
+        <CardContent sx={{ my: 0, py: 0 }}>
+          {item && (
+            <Autocomplete
+              sx={{
+                mt: 1,
+                backgroundColor: inFlight ? "#ffeebe" : "palette.common.white",
+              }}
+              id="autocomplete-spacegroup"
+              multiple={false}
+              options={spacegroups}
+              value={value}
+              style={{ minWidth: "15rem" }}
+              onChange={(
+                event: React.SyntheticEvent<Element, Event>,
+                value: string | null
+              ) => {
+                if (value) {
+                  handleInputChanged(value);
+                }
+              }}
+              renderInput={(params: any) => (
+                <TextField {...params} label="Space groups" />
+              )}
+            />
+          )}
+        </CardContent>
+      </Card>
+    )
   );
 };

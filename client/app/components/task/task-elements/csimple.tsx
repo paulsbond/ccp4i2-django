@@ -17,9 +17,15 @@ export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
     return item?._qualifiers?.onlyEnumerators;
   }, [item]);
 
-  return usingSelect ? (
-    <CSimpleAutocompleteElement {...props} />
-  ) : (
-    <CSimpleTextFieldElement {...props} />
-  );
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
+
+  return usingSelect
+    ? inferredVisibility && <CSimpleAutocompleteElement {...props} />
+    : inferredVisibility && <CSimpleTextFieldElement {...props} />;
 };

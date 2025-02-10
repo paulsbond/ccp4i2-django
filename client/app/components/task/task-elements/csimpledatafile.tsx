@@ -1,7 +1,7 @@
 import { Stack } from "@mui/material";
 import { CDataFileElement } from "./cdatafile";
 import { CCP4i2TaskElementProps } from "./task-element";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApi } from "../../../api";
 import { readFilePromise, useJob } from "../../../utils";
 import { Job } from "../../../models";
@@ -68,11 +68,21 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     setSelectedFiles(null);
   };
 
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
+
   return (
-    <>
-      <Stack direction="column">
-        <CDataFileElement {...props} setFiles={setSelectedFiles} />
-      </Stack>
-    </>
+    inferredVisibility && (
+      <>
+        <Stack direction="column">
+          <CDataFileElement {...props} setFiles={setSelectedFiles} />
+        </Stack>
+      </>
+    )
   );
 };

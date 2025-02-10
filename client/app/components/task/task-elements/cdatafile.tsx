@@ -261,50 +261,60 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     [project_jobs]
   );
 
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
+
   const defaultSetFile = (files: FileList | null) => {};
 
   return (
-    <Stack
-      direction="row"
-      sx={{
-        border: "3px solid",
-        borderColor: getValidationColor(item),
-        borderRadius: "0.5rem",
-        mx: 2,
-        my: 1,
-      }}
-    >
-      <Avatar src={`/qticons/${item._class.slice(1)}.png`} />
-      <Autocomplete
-        disabled={inFlight || job.status !== 1}
-        sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
-        size="small"
-        value={value}
-        onChange={handleSelect}
-        options={fileOptions || []}
-        getOptionLabel={getOptionLabel}
-        getOptionKey={(option) => `${option.uuid}`}
-        renderInput={(params) => (
-          <TextField {...params} label={guiLabel} size="small" />
-        )}
-        title={objectPath || item._className || "Title"}
-      />
-      <InputFileUpload
-        sx={{ my: 1, mr: 2 }}
-        disabled={inFlight || job.status !== 1}
-        accept={item._qualifiers.fileExtensions
-          .map((ext: string) => `.${ext}`)
-          .join(",")}
-        handleFileChange={props.setFiles || defaultSetFile}
-      />
-      <ErrorInfo {...props}>{infoContent}</ErrorInfo>
-      <LinearProgress
-        ref={progressRef}
-        sx={{ height: "2rem", width: "4rem", mt: 1.5 }}
-        variant={inFlight ? "indeterminate" : "determinate"}
-        value={0}
-      />
-    </Stack>
+    inferredVisibility && (
+      <Stack
+        direction="row"
+        sx={{
+          border: "3px solid",
+          borderColor: getValidationColor(item),
+          borderRadius: "0.5rem",
+          mx: 2,
+          my: 1,
+        }}
+      >
+        <Avatar src={`/qticons/${item._class.slice(1)}.png`} />
+        <Autocomplete
+          disabled={inFlight || job.status !== 1}
+          sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
+          size="small"
+          value={value}
+          onChange={handleSelect}
+          options={fileOptions || []}
+          getOptionLabel={getOptionLabel}
+          getOptionKey={(option) => `${option.uuid}`}
+          renderInput={(params) => (
+            <TextField {...params} label={guiLabel} size="small" />
+          )}
+          title={objectPath || item._className || "Title"}
+        />
+        <InputFileUpload
+          sx={{ my: 1, mr: 2 }}
+          disabled={inFlight || job.status !== 1}
+          accept={item._qualifiers.fileExtensions
+            .map((ext: string) => `.${ext}`)
+            .join(",")}
+          handleFileChange={props.setFiles || defaultSetFile}
+        />
+        <ErrorInfo {...props}>{infoContent}</ErrorInfo>
+        <LinearProgress
+          ref={progressRef}
+          sx={{ height: "2rem", width: "4rem", mt: 1.5 }}
+          variant={inFlight ? "indeterminate" : "determinate"}
+          value={0}
+        />
+      </Stack>
+    )
   );
   return;
 };

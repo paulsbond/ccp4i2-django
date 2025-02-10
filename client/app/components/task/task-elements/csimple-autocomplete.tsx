@@ -129,31 +129,40 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     },
     [type]
   );
+  const inferredVisibility = useMemo(() => {
+    if (!props.visibility) return true;
+    if (typeof props.visibility === "function") {
+      return props.visibility();
+    }
+    return props.visibility;
+  }, [props.visibility]);
 
   return (
-    <Stack direction="row" sx={{ mb: 2 }}>
-      <Autocomplete
-        disabled={job.status !== 1}
-        sx={{ minWidth: "20rem", py: 0, mb: 1, ...sx }}
-        value={value}
-        onChange={handleSelect}
-        options={options || []}
-        size="small"
-        renderInput={(params) => (
-          <TextField {...params} label={guiLabel} size="small" />
-        )}
-      />
-      <Stack direction="column">
-        <ErrorInfo {...props} />
-        <LinearProgress
-          sx={{ height: "0.5rem", width: "2rem" }}
-          variant={inFlight ? "indeterminate" : "determinate"}
-          value={0}
+    inferredVisibility && (
+      <Stack direction="row" sx={{ mb: 2 }}>
+        <Autocomplete
+          disabled={job.status !== 1}
+          sx={{ minWidth: "20rem", py: 0, mb: 1, ...sx }}
+          value={value}
+          onChange={handleSelect}
+          options={options || []}
+          size="small"
+          renderInput={(params) => (
+            <TextField {...params} label={guiLabel} size="small" />
+          )}
         />
+        <Stack direction="column">
+          <ErrorInfo {...props} />
+          <LinearProgress
+            sx={{ height: "0.5rem", width: "2rem" }}
+            variant={inFlight ? "indeterminate" : "determinate"}
+            value={0}
+          />
+        </Stack>
+        <Menu open={validationOpen} anchorEl={validationAnchor}>
+          <MenuItem> </MenuItem>
+        </Menu>
       </Stack>
-      <Menu open={validationOpen} anchorEl={validationAnchor}>
-        <MenuItem> </MenuItem>
-      </Menu>
-    </Stack>
+    )
   );
 };
