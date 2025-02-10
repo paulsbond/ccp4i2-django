@@ -1,0 +1,205 @@
+import { CCP4i2TaskInterfaceProps } from "../task-container";
+import { CCP4i2TaskElement } from "../task-elements/task-element";
+import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
+import { useApi } from "../../../api";
+import { useJob, usePrevious } from "../../../utils";
+import { CContainerElement } from "../task-elements/ccontainer";
+
+const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
+  const api = useApi();
+  const { job } = props;
+  const { data: container, mutate: mutateContainer } = api.container<any>(
+    `jobs/${job.id}/container`
+  );
+
+  //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
+  //const { data: F_SIGFDigest } = api.digest<any>(
+  //  `jobs/${job.id}/digest?object_path=prosmart_refmac.inputData.F_SIGF`
+  //);
+
+  //This magic means that the following variables will be kept up to date with the values of the associated parameters
+  const {
+    getTaskValue,
+    setParameter,
+    useAsyncEffect,
+    getTaskItem,
+    getFileDigest,
+  } = useJob(job.id);
+
+  const chooseModeItemValue = getTaskValue("CHOOSE_MODE");
+  const modeItemValue = getTaskValue("MODE");
+  const aimlessRefItemValue = getTaskValue("REFERENCE_FOR_AIMLESS");
+  const reference_datasetItemValue = getTaskValue("REFERENCE_DATASET");
+
+  return (
+    <CCP4i2Tabs {...props}>
+      <CCP4i2Tab tab="Main inputs" key="1">
+        <CContainerElement
+          key="Files"
+          itemName=""
+          {...props}
+          qualifiers={{ containerHint: "FolderLevel", initiallyOpen: true }}
+        >
+          <CCP4i2TaskElement
+            {...props}
+            itemName="UNMERGEDFILES"
+            qualifiers={{ guiLabel: "Unmerged files" }}
+          />
+          <CCP4i2TaskElement
+            {...props}
+            itemName="FREERFLAG"
+            qualifiers={{ guiLabel: "Free R set to use/extend" }}
+          />
+        </CContainerElement>
+        <CContainerElement
+          {...props}
+          itemName=""
+          key="Parameters"
+          qualifiers={{
+            guiLabel: "Parameters",
+            containerHint: "FolderLevel",
+            initiallyOpen: true,
+          }}
+        >
+          <CCP4i2TaskElement
+            {...props}
+            itemName="AUTOCUTOFF"
+            qualifiers={{ guiLabel: "Apply auto. data cutoff" }}
+          />
+          <CCP4i2TaskElement
+            {...props}
+            itemName="RESOLUTION_RANGE"
+            qualifiers={{ guiLabel: "Resolution" }}
+          />
+          <CCP4i2TaskElement
+            {...props}
+            key="OVERRIDE_CELL_DIFFERENCE"
+            qualifiers={{ guiLabel: "Override cell difference" }}
+            itemName="OVERRIDE_CELL_DIFFERENCE"
+          />
+        </CContainerElement>
+        <CContainerElement
+          {...props}
+          itemName=""
+          qualifiers={{
+            guiLabel: "Choosing spacegroup",
+            containerHint: "FolderLevel",
+            initiallyOpen: true,
+          }}
+        >
+          <CCP4i2TaskElement
+            {...props}
+            itemName="MODE"
+            qualifiers={{ guiLabel: "Pipeline mode" }}
+          />
+          <CContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Choice options",
+              containerHint: "BlockLevel",
+            }}
+            visibility={() => {
+              return modeItemValue === "CHOOSE";
+            }}
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="CHOOSE_MODE"
+              qualifiers={{ guiLabel: "Symmetry choice mode" }}
+              visibility={() => {
+                return modeItemValue === "CHOOSE";
+              }}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              itemName="CHOOSE_SOLUTION_NO"
+              qualifiers={{ guiLabel: "Solution no. to choose" }}
+              visibility={() => {
+                return chooseModeItemValue === "SOLUTION_NO";
+              }}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              itemName="CHOOSE_SPACEGROUP"
+              qualifiers={{ guiLabel: "Spacegroup to choose" }}
+              visibility={() => {
+                return (
+                  chooseModeItemValue === "SPACEGROUP" ||
+                  chooseModeItemValue === "REINDEX_SPACE"
+                );
+              }}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              itemName="REINDEX_OPERATOR"
+              qualifiers={{ guiLabel: "Reindexing operator" }}
+              visibility={() => {
+                return chooseModeItemValue === "REINDEX_SPACE";
+              }}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              itemName="CHOOSE_LAUEGROUP"
+              qualifiers={{ guiLabel: "Lauegroup to choose" }}
+              visibility={() => {
+                return chooseModeItemValue === "LAUEGROUP";
+              }}
+            />
+          </CContainerElement>
+          <CContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Specify reference",
+              containerHint: "BlockLevel",
+            }}
+            visibility={() => {
+              return modeItemValue === "MATCH";
+            }}
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="REFERENCE_FOR_AIMLESS"
+              qualifiers={{ guiLabel: "Reference" }}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              itemName="REFERENCE_DATASET"
+              qualifiers={{ guiLabel: "Reference type" }}
+              visibility={() => {
+                return modeItemValue === "MATCH" && aimlessRefItemValue;
+              }}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              itemName="HKLIN_REF"
+              qualifiers={{ guiLabel: "Reference reflections" }}
+              visibility={() => {
+                return (
+                  modeItemValue === "MATCH" &&
+                  aimlessRefItemValue &&
+                  reference_datasetItemValue === "HKL"
+                );
+              }}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              itemName="XYZIN_REF"
+              qualifiers={{ guiLabel: "Reference coordinates" }}
+              visibility={() => {
+                return (
+                  modeItemValue === "MATCH" &&
+                  aimlessRefItemValue &&
+                  reference_datasetItemValue === "XYZ"
+                );
+              }}
+            />
+          </CContainerElement>
+        </CContainerElement>
+      </CCP4i2Tab>
+    </CCP4i2Tabs>
+  );
+};
+
+export default TaskInterface;

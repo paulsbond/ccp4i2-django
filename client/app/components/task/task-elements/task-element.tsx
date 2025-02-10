@@ -107,6 +107,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CEnsemble":
         return <CEnsembleElement {...props} qualifiers={qualifiers} />;
       case "CPdbEnsembleItem":
+      case "CFloatRange":
       case "CContainer":
         return <CContainerElement {...props} qualifiers={qualifiers} />;
       case "CCell":
