@@ -13,19 +13,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     `jobs/${job.id}/container`
   );
 
-  //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
-  //const { data: F_SIGFDigest } = api.digest<any>(
-  //  `jobs/${job.id}/digest?object_path=prosmart_refmac.inputData.F_SIGF`
-  //);
-
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const {
-    getTaskValue,
-    setParameter,
-    useAsyncEffect,
-    getTaskItem,
-    getFileDigest,
-  } = useJob(job.id);
+  const { getTaskValue, getTaskItem } = useJob(job.id);
 
   const chooseModeValue = getTaskValue("CHOOSE_MODE");
   const modeValue = getTaskValue("MODE");
@@ -117,7 +106,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="CHOOSE_SOLUTION_NO"
               qualifiers={{ guiLabel: "Solution no. to choose" }}
               visibility={() => {
-                return modeValue === "SOLUTION_NO";
+                return (
+                  modeValue === "CHOOSE" && chooseModeValue === "SOLUTION_NO"
+                );
               }}
             />
             <CAltSpaceGroupElement
@@ -128,6 +119,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 guiLabel: "Spacegroup to choose",
               }}
               visibility={() => {
+                //console.log({ modeValue, chooseModeValue });
                 return (
                   modeValue === "CHOOSE" &&
                   (chooseModeValue === "SPACEGROUP" ||
@@ -150,7 +142,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="CHOOSE_LAUEGROUP"
               qualifiers={{ guiLabel: "Lauegroup to choose" }}
               visibility={() => {
-                return chooseModeValue === "LAUEGROUP";
+                return (
+                  modeValue === "CHOOSE" && chooseModeValue === "LAUEGROUP"
+                );
               }}
             />
           </CContainerElement>
