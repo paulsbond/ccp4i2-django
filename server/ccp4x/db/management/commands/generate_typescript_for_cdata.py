@@ -22,7 +22,8 @@ class Command(BaseCommand):
             "CBoolean",
             "CString",
             "CDict",
-            "CList" "CCollection",
+            "CList",
+            "CCollection",
         ]
         skip_fields = [
             "project",
