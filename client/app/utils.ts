@@ -10,6 +10,12 @@ import {
   File as DjangoFile,
 } from "./models";
 
+const pathMatch = (path: string | null | undefined, name: string) => {
+  if (!path) return false;
+  const dottedName = `.${name}`.replace("..", ".");
+  const dottedPath = `.${path}`.replace("..", ".");
+  return dottedPath.endsWith(dottedName);
+};
 /**
  * Recursively searches for items within a container that match a specified name.
  *
@@ -27,12 +33,12 @@ const findItems = (
 ): any[] => {
   const listToGrow = growingList ? growingList : [];
   const originalLength = listToGrow.length;
-  if (container?._objectPath?.endsWith(name)) {
+  if (pathMatch(container?._objectPath, name)) {
     listToGrow.push(container);
     if (!multiple) return listToGrow;
   } else if (container._baseClass === "CList") {
     container._value.forEach((item: any) => {
-      if (item._objectPath.endsWith(name)) {
+      if (pathMatch(item?._objectPath, name)) {
         listToGrow.push(item);
         if (!multiple) return listToGrow;
       } else {
@@ -44,7 +50,7 @@ const findItems = (
     try {
       Object.keys(container._value).forEach((key: string) => {
         const item = container._value[key];
-        if (item._objectPath.endsWith(name)) {
+        if (pathMatch(item?._objectPath, name)) {
           listToGrow.push(item);
           if (!multiple) return listToGrow;
         } else {
