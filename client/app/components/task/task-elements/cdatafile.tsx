@@ -2,7 +2,6 @@ import {
   Autocomplete,
   AutocompleteChangeReason,
   Avatar,
-  Box,
   Button,
   ClickAwayListener,
   LinearProgress,
@@ -16,6 +15,7 @@ import {
 import { useApi } from "../../../api";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { File as CCP4i2File, Job, Project } from "../../../models";
+import { CDataFile } from "../../../cdata_types";
 import {
   ReactNode,
   SyntheticEvent,
@@ -199,6 +199,15 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         setParameterArg.value = null;
       } else if (value) {
         setValue(value);
+        const newFile: CDataFile = {
+          dbFileId: value.uuid.replace(/-/g, ""),
+          subType: value.sub_type,
+          contentFlag: value.content,
+          annotation: value.annotation,
+          baseName: value.name,
+          relPath: "",
+          project: 0,
+        };
         setParameterArg.value = {
           dbFileId: value.uuid.replace(/-/g, ""),
           subType: value.sub_type,
