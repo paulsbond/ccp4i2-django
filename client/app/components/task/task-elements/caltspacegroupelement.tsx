@@ -606,7 +606,7 @@ const hmLookup = {
 export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
-  const { job, itemName } = props;
+  const { job, itemName, qualifiers } = props;
   const { setParameter, getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [value, setValue] = useState<string>("P 1");
@@ -634,8 +634,9 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
       }}
     >
       <CardHeader
-        title={item._qualifiers.guiLabel}
+        title={qualifiers?.guiLabel}
         sx={{ backgroundColor: getValidationColor(item) }}
+        titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
         action={
           <Button>
             <Info />

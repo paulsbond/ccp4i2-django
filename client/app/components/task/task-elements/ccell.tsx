@@ -7,7 +7,7 @@ import { useState } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 
 export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
-  const { job, itemName } = props;
+  const { job, itemName, qualifiers } = props;
   const { getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [expanded, setExpanded] = useState(false);
@@ -15,8 +15,9 @@ export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   return (
     <Card sx={{ border: "3px solid", borderColor: getValidationColor(item) }}>
       <CardHeader
-        title={item?._qualifiers?.guiLabel}
+        title={qualifiers?.guiLabel}
         sx={{ backgroundColor: getValidationColor(item) }}
+        titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
         action={
           <>
             <ErrorInfo {...props} />

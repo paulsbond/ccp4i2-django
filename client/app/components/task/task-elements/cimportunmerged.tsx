@@ -96,7 +96,11 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
           <CSimpleDataFileElement {...props} itemName={fileObjectPath} />
         )}
         {cellObjectPath && item._value["cell"] && (
-          <CCellElement {...props} itemName={cellObjectPath} />
+          <CCP4i2TaskElement
+            {...props}
+            itemName={cellObjectPath}
+            qualifiers={{ guiLabel: "Cell" }}
+          />
         )}
         {true && (
           <Grid2 container rowSpacing={0} sx={{ mt: 2 }}>

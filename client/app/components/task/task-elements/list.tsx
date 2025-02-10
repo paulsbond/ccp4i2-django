@@ -103,7 +103,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
   return (
     <Card sx={{ mb: 1 }}>
       <CardHeader
-        titleTypographyProps={{ variant: "body1", my: 0, py: 0 }}
+        titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
         title={<>{guiLabel}</>}
         action={
           <>
