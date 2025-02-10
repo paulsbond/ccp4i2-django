@@ -10,6 +10,13 @@ import {
   File as DjangoFile,
 } from "./models";
 
+/**
+ * Checks if the given path ends with the specified name, considering dot notation.
+ *
+ * @param path - The path to check, which can be a string, null, or undefined.
+ * @param name - The name to match at the end of the path.
+ * @returns A boolean indicating whether the path ends with the specified name.
+ */
 const pathMatch = (path: string | null | undefined, name: string) => {
   if (!path) return false;
   const dottedName = `.${name}`.replace("..", ".");
@@ -208,6 +215,7 @@ export const useJob = (jobId: number | undefined) => {
           );
           console.log(result);
           await mutateContainer();
+          await mutateParams_xml();
           await mutateValidation();
           return result;
         } else
@@ -215,7 +223,7 @@ export const useJob = (jobId: number | undefined) => {
             "Alert attempting to edit interface of task not in pending state"
           );
       },
-      [job, mutateContainer, mutateValidation]
+      [job, mutateContainer, mutateValidation, mutateParams_xml]
     ),
     getTaskItem: useMemo(() => {
       return (param_name: string) => {
