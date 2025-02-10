@@ -16,6 +16,7 @@ import { CCellElement } from "./ccell";
 import { CEnsembleElement } from "./censemble";
 import { CAltSpaceGroupElement } from "./caltspacegroupelement";
 import { CSimpleDataFileElement } from "./csimpledatafile";
+import { CReindexOperatorElement } from "./creindexoperator";
 
 export interface CCP4i2TaskElementProps extends PropsWithChildren {
   job: Job;
@@ -110,6 +111,8 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CFloatRange":
       case "CContainer":
         return <CContainerElement {...props} qualifiers={qualifiers} />;
+      case "CReindexOperator":
+        return <CReindexOperatorElement {...props} qualifiers={qualifiers} />;
       case "CCell":
         return <CCellElement {...props} qualifiers={qualifiers} />;
       case "CAltSpaceGroup":
