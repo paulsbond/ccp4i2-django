@@ -79,7 +79,7 @@ export const CContainerElement: React.FC<
             {children}
             <Grid2 container>
               {childNames.map((childName: string) => (
-                <Grid2 size={size}>
+                <Grid2 key={`${item._objectPath}.${childName}`} size={size}>
                   <CCP4i2TaskElement
                     key={`${item._objectPath}.${childName}`}
                     {...props}
