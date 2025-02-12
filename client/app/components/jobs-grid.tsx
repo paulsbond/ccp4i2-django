@@ -1,11 +1,18 @@
 import { useApi } from "../api";
-import { Grid2 } from "@mui/material";
+import { Grid2, GridSize } from "@mui/material";
 import { Job } from "../models";
 import { JobCard } from "./job-card";
 
+interface SizeProps {
+  xs?: GridSize | null;
+  sm?: GridSize | null;
+  md?: GridSize | null;
+  lg?: GridSize | null;
+  xl?: GridSize | null;
+}
 interface JobsGridProps {
   projectId: number;
-  size: number;
+  size: SizeProps;
   parent?: number;
   withSubtitles?: boolean;
 }
@@ -24,7 +31,7 @@ export const JobsGrid: React.FC<JobsGridProps> = ({
           .reverse()
           .filter((item) => item.parent === parent)
           .map((job: Job) => (
-            <Grid2 key={job.number} size={{ xs: size }}>
+            <Grid2 key={job.number} size={size}>
               <JobCard key={job.id} job={job} withSubtitle={withSubtitles} />
             </Grid2>
           ))}

@@ -273,7 +273,7 @@ export const JobCard: React.FC<JobCardProps> = ({
             {subJobs?.length && subJobs.length > 0 && (
               <JobsGrid
                 projectId={projectId}
-                size={12}
+                size={{ xs: 12 }}
                 parent={job.id}
                 withSubtitles={false}
               />

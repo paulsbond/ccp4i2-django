@@ -107,7 +107,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               <Tab value={0} label="Job list" />
               <Tab value={1} label="Project directory" />
             </Tabs>
-            {tabValue == 0 && <JobsGrid projectId={id} size={12} />}
+            {tabValue == 0 && <JobsGrid projectId={id} size={{ xs: 12 }} />}
             {tabValue == 1 && <CCP4i2DirectoryViewer projectId={id} />}
           </Paper>
         </Panel>
