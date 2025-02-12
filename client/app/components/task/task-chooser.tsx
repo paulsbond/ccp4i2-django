@@ -61,7 +61,8 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
       }}
     >
       <Toolbar>
-        {`Tasks (Currently numbering ${Object.keys(taskTree?.lookup).length})`}
+        {taskTree?.lookup &&
+          `Tasks (Currently numbering ${Object.keys(taskTree?.lookup).length})`}
         <ElaborateSearch
           searchValue={searchText}
           setSearchValue={setSearchText}
