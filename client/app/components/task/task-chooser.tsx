@@ -103,11 +103,15 @@ const CCP4i2TaskTreeFolder: React.FC<CCP4i2TaskTreeFolderProps> = ({
       const lastVersion = taskTree.lookup[taskName][versions[0]];
       if (!lastVersion) return false;
       return (
-        lastVersion.TASKTITLE.toUpperCase().includes(
+        lastVersion?.TASKTITLE?.toUpperCase().includes(
           searchText.toUpperCase()
         ) ||
-        lastVersion.taskName.toUpperCase().includes(searchText.toUpperCase()) ||
-        lastVersion.DESCRIPTION.toUpperCase().includes(searchText.toUpperCase())
+        lastVersion?.taskName
+          ?.toUpperCase()
+          .includes(searchText.toUpperCase()) ||
+        lastVersion?.DESCRIPTION?.toUpperCase().includes(
+          searchText.toUpperCase()
+        )
       );
     },
     [taskTree, searchText]
