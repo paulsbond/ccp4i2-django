@@ -1,11 +1,12 @@
 "use client";
-import { use } from "react";
+import { use, useCallback } from "react";
 import { CircularProgress, Skeleton, Stack } from "@mui/material";
 import { useApi } from "../../api";
-import { Project } from "../../models";
+import { Job, Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
 import { useProject } from "../../utils";
 import { CCP4i2TaskTree } from "../../components/task/task-chooser";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage({
   params,
@@ -14,9 +15,27 @@ export default function DashboardPage({
 }) {
   const api = useApi();
   const { id } = use(params);
-  const { project } = useProject(parseInt(id));
+  const { project, jobs, mutateJobs } = useProject(parseInt(id));
+  const router = useRouter();
+  const handleTaskSelect = useCallback(
+    async (task_name: string) => {
+      const created_job_result: any = await api.post(
+        `projects/${id}/create_task/`,
+        {
+          task_name,
+        }
+      );
+      if (created_job_result?.status === "Success") {
+        const created_job: Job = created_job_result.new_job;
+        mutateJobs();
+        router.push(`/project/${id}/job/${created_job.id}`);
+      }
+    },
+    [id, mutateJobs]
+  );
+
   return project ? (
-    <CCP4i2TaskTree />
+    <CCP4i2TaskTree onTaskSelect={handleTaskSelect} />
   ) : (
     <CircularProgress variant="indeterminate" />
   );
