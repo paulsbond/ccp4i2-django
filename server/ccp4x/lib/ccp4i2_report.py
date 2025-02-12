@@ -39,8 +39,7 @@ def get_report_job_info(job_id=None):
 
 
 def _get_basic_job_info(job: Job):
-    return {
-        "finishtime": job.finish_time.timestamp(),
+    result = {
         "status": Job.Status(job.status).label,
         "taskname": job.task_name,
         "taskversion": "1.0",
@@ -53,6 +52,9 @@ def _get_basic_job_info(job: Job):
         "tasktitle": job.task_name,
         "jobid": str(job.uuid),
     }
+    if job.finish_time is not None:
+        result["finishtime"] = job.finish_time.timestamp()
+    return result
 
 
 def _input_files(job: Job):

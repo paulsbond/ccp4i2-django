@@ -64,7 +64,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   return (
     <Paper>
-      <Typography variant="h5">Refinement in mode {refinementMode}</Typography>
       <CCP4i2Tabs>
         <CCP4i2Tab tab="Input data">
           <CCP4i2TaskElement

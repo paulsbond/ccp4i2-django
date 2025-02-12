@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Typography,
 } from "@mui/material";
 
 interface DeleteDialogState {
@@ -56,9 +57,8 @@ export function DeleteDialogProvider(props: DeleteDialogProviderProps) {
       <Dialog open={state.open}>
         <DialogTitle>{`Delete ${state.what}?`}</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            This action cannot be undone.{state.children}
-          </DialogContentText>
+          <DialogContentText>This action cannot be undone.</DialogContentText>
+          {state.children && state.children.map((child: any) => child)}
         </DialogContent>
         <DialogActions>
           <Button key="Close" autoFocus onClick={handleCancel}>
