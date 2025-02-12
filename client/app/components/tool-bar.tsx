@@ -53,7 +53,13 @@ export default function ToolBar() {
       useFlexGap
       sx={{ flexWrap: "wrap", justifyContent: "center", px: 2 }}
     >
-      <Button variant="outlined" startIcon={<Menu />}>
+      <Button
+        variant="outlined"
+        startIcon={<Menu />}
+        onClick={() => {
+          router.push(`/project/${projectId}`);
+        }}
+      >
         Task menu
       </Button>
       <Button
