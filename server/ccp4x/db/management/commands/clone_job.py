@@ -34,7 +34,6 @@ class Command(BaseCommand):
         parser.add_argument("-pi", "--projectid", help="Integer project id", type=int)
         parser.add_argument("-pu", "--projectuuid", help="Project uuid", type=str)
         parser.add_argument("-jn", "--jobnumber", help="Job number", type=str)
-        parser.add_argument("-d", "--detach", help="Detach job", action="store_true")
 
     def handle(self, *args, **options):
         try:
