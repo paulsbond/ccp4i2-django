@@ -157,14 +157,20 @@ const CCP4i2TaskTreeFolder: React.FC<CCP4i2TaskTreeFolderProps> = ({
               timeout="auto"
               unmountOnExit
             >
-              <Grid2 container>
+              <Grid2
+                container
+                columnGap={0}
+                rowGap={0}
+                columnSpacing={0}
+                rowSpacing={0}
+              >
                 {filteredTasks.map(
                   (taskName: string) =>
                     Object.keys(taskTree.lookup).includes(taskName) && (
                       <Grid2
                         key={JSON.stringify(taskTree.lookup[taskName])}
                         size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2 }}
-                        sx={{ m: 2 }}
+                        sx={{ m: 1 }}
                       >
                         <CCP4i2TaskCard
                           task={taskTree.lookup[taskName]}
