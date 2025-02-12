@@ -12,11 +12,11 @@ import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
 
 interface SizeProps {
-  xs?: Number;
-  sm?: Number;
-  md?: Number;
-  lg?: Number;
-  xl?: Number;
+  xs?: GridSize | null;
+  sm?: GridSize | null;
+  md?: GridSize | null;
+  lg?: GridSize | null;
+  xl?: GridSize | null;
 }
 interface CContainerElementProps extends CCP4i2TaskElementProps {
   size?: SizeProps;

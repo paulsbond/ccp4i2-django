@@ -5,6 +5,7 @@ import { useApi } from "../../api";
 import { Project } from "../../models";
 import EditableTypography from "../../components/editable-typography";
 import { useProject } from "../../utils";
+import { CCP4i2TaskTree } from "../../components/task/task-chooser";
 
 export default function DashboardPage({
   params,
@@ -14,5 +15,9 @@ export default function DashboardPage({
   const api = useApi();
   const { id } = use(params);
   const { project } = useProject(parseInt(id));
-  return project ? <Skeleton /> : <CircularProgress variant="indeterminate" />;
+  return project ? (
+    <CCP4i2TaskTree />
+  ) : (
+    <CircularProgress variant="indeterminate" />
+  );
 }
