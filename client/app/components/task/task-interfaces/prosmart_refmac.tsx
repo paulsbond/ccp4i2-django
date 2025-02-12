@@ -49,7 +49,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     ) {
       console.log(F_SIGFDigest);
       //Here if the file Digest has changed
-      if (F_SIGFDigest?.digest?.wavelengths) {
+      if (
+        F_SIGFDigest?.digest?.wavelengths &&
+        F_SIGFDigest?.digest?.wavelengths.at(-1) &&
+        F_SIGFDigest?.digest?.wavelengths.at(-1) < 9
+      ) {
         await setParameter({
           object_path: `${wavelengthItem._objectPath}`,
           value: F_SIGFDigest.digest.wavelengths.at(-1),
