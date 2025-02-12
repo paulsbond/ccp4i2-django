@@ -149,3 +149,14 @@ export const doDownload = (
     });
   }
 };
+
+export const doRetrieve = async (
+  theURL: string,
+  targetName: string,
+  optionsIn?: any
+) => {
+  const options = typeof optionsIn !== "undefined" ? optionsIn : {};
+  const response = await fetch(theURL, options);
+  const contents = await response.arrayBuffer();
+  return contents;
+};
