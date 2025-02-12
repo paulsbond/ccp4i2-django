@@ -402,11 +402,7 @@ const errorsInValidation = (
       .find("objectpath")
       .toArray();
     const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
-      return (
-        node.textContent?.includes(item._objectPath) ||
-        (item._qualifiers?.guiLabel &&
-          node.textContent?.includes(item._qualifiers?.guiLabel)) //This because sameCellAs errors end up labelled with guiLabel instead of object path
-      );
+      return node.textContent?.includes(item._objectPath);
     });
     if (errorObjectNodes.length === 0) {
       return [];
