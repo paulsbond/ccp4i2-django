@@ -39,15 +39,25 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
             textWrap: "pretty",
           }}
         >
-          {fieldErrors &&
-            fieldErrors.map((fieldError: any, iError: number) => (
-              <Typography
-                key={`${iError}`}
-                sx={{ textWrap: "wrap", maxWidth: "40rem" }}
-              >
-                {fieldError.description}
+          {fieldErrors && fieldErrors.length > 0 ? (
+            <>
+              <Typography variant="subtitle1">
+                Errors in {item._objectPath}
               </Typography>
-            ))}
+              {fieldErrors.map((fieldError: any, iError: number) => (
+                <Typography
+                  key={`${iError}`}
+                  sx={{ textWrap: "wrap", maxWidth: "40rem" }}
+                >
+                  {fieldError.description}
+                </Typography>
+              ))}
+            </>
+          ) : (
+            <Typography variant="subtitle1">
+              No errors for {item._objectPath}
+            </Typography>
+          )}
         </Box>
         {props.children}
       </Popper>
