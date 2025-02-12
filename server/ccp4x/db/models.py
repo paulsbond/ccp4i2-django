@@ -111,8 +111,10 @@ class Job(Model):
 
     @property
     def rel_path(self) -> str:
-        path_elements = [f"job_{element}" for element in self.number.split(".")]
-        return ".".join(path_elements)
+        path_elements = ["CCP4_JOBS"] + [
+            f"job_{element}" for element in self.number.split(".")
+        ]
+        return "/".join(path_elements)
 
     @property
     def directory(self):
