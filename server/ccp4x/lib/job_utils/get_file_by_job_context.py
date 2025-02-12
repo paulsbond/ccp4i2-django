@@ -31,7 +31,7 @@ def get_file_by_job_context(
         for project_job in project_jobs
         if int(project_job.number) <= int(context_job_in.number)
     ]
-    search_jobs_list.reverse()
+    search_jobs_list = sorted(search_jobs_list, key=lambda a: int(a.number))
 
     while len(search_jobs_list) > 0:
         context_job = search_jobs_list.pop()
