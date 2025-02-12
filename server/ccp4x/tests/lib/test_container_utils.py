@@ -21,6 +21,7 @@ from ...lib.job_utils.load_nested_xml import load_nested_xml
 from ...lib.job_utils.validate_container import validate_container
 from ...lib.job_utils.clone_job import clone_job
 from ...lib.job_utils.json_for_job_container import json_for_job_container
+from ...lib.job_utils.get_task_tree import get_task_tree
 
 
 @override_settings(
@@ -126,6 +127,11 @@ class CCP4i2TestCase(TestCase):
         job = Job.objects.get(project__name="refmac_gamma_test_0", number="1")
         result = json_for_job_container(job)
         print(len(result))
+
+    def test_get_task_tree(self):
+        result = get_task_tree()
+        self.assertEqual(len(result["lookup"].items()), 135)
+        self.assertEqual(len(result["tree"]), 17)
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">

@@ -18,6 +18,7 @@ from ..lib.job_utils.digest_file import digest_file
 from ..lib.job_utils.list_project import list_project
 from ..lib.job_utils.value_dict_for_object import value_dict_for_object
 from ..lib.job_utils.validate_container import getEtree
+from ..lib.job_utils.get_task_tree import get_task_tree
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -272,6 +273,17 @@ class ProjectViewSet(ModelViewSet):
             raise Http404("Unacceptable file")
 
         return FileResponse(open(composite_path, "rb"), filename=composite_path.name)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectSerializer,
+    )
+    def task_tree(self, request, pk=None):
+        # Not clear to me this should be a view exposed through the project api
+        task_tree = get_task_tree()
+        return JsonResponse({"status": "Success", "task_tree": task_tree})
 
 
 class ProjectTagViewSet(ModelViewSet):
