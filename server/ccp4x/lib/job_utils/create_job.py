@@ -46,60 +46,62 @@ def create_job(
     """
     logger.debug("%s, %s", projectName, projectId)
     if parentJobId is not None and projectId is None:
-        parentJob = models.Job.objects.get(uuid=parentJobId)
-        theProject = parentJob.project
+        parent_job = models.Job.objects.get(uuid=parentJobId)
+        the_project = parent_job.project
     elif projectId is None and projectName is not None:
-        parentJob = None
-        theProject = models.Project.objects.get(name=projectName)
-        projectId = theProject.uuid
+        parent_job = None
+        the_project = models.Project.objects.get(name=projectName)
+        projectId = the_project.uuid
     else:
-        parentJob = None
-        theProject = models.Project.objects.get(uuid=projectId)
+        parent_job = None
+        the_project = models.Project.objects.get(uuid=projectId)
 
     if jobNumber is None:
         project_jobs = models.Job.objects.filter(project__uuid=projectId).filter(
             parent__isnull=True
         )
         if len(project_jobs) == 0:
-            lastJobNumber = 0
+            last_job_number = 0
         else:
-            lastJobNumber = sorted([int(a.number) for a in project_jobs])[-1]
-        lastJobNumber = str(lastJobNumber)
+            last_job_number = sorted([int(a.number) for a in project_jobs])[-1]
+        last_job_number = str(last_job_number)
     else:
-        jobNumberElements = jobNumber.split(".")
-        jobNumberElements[-1] = str(int(jobNumberElements[-1]) - 1)
-        lastJobNumber = ".".join(jobNumberElements)
+        job_number_elements = jobNumber.split(".")
+        job_number_elements[-1] = str(int(job_number_elements[-1]) - 1)
+        last_job_number = ".".join(job_number_elements)
 
-    jobNumberElements = lastJobNumber.split(".")
-    jobNumberElements[-1] = str(int(jobNumberElements[-1]) + 1)
-    nextJobNumber = ".".join(jobNumberElements)
+    job_number_elements = last_job_number.split(".")
+    job_number_elements[-1] = str(int(job_number_elements[-1]) + 1)
+    next_job_number = ".".join(job_number_elements)
 
-    new_jobDir = Path(theProject.directory).joinpath(
-        *(["CCP4_JOBS"] + [f"job_{jNo}" for jNo in nextJobNumber.split(".")])
+    new_job_dir = Path(the_project.directory).joinpath(
+        *(["CCP4_JOBS"] + [f"job_{j_no}" for j_no in next_job_number.split(".")])
     )
 
     if jobId is None:
-        new_jobId = uuid.uuid4()
-    elif "-" not in new_jobId:
-        new_jobId = uuid.UUID(new_jobId)
+        new_job_id = uuid.uuid4()
+    elif "-" not in jobId:
+        new_job_id = uuid.UUID(jobId)
+    else:
+        new_job_id = jobId
 
-    taskManager = CCP4TaskManager.CTaskManager()
-    pluginClass = taskManager.getPluginScriptClass(taskName)
+    task_manager = CCP4TaskManager.CTaskManager()
+    plugin_class = task_manager.getPluginScriptClass(taskName)
     if saveParams:
-        new_jobDir.mkdir(exist_ok=True, parents=True)
-    the_job_plugin = pluginClass(workDirectory=str(new_jobDir))
+        new_job_dir.mkdir(exist_ok=True, parents=True)
+    the_job_plugin = plugin_class(workDirectory=str(new_job_dir))
 
     if title is None:
-        title = taskManager.getTitle(taskName)
+        title = task_manager.getTitle(taskName)
     arg_dict = dict(
-        uuid=new_jobId,
-        number=str(nextJobNumber),
-        status=1,
+        uuid=new_job_id,
+        number=str(next_job_number),
+        status=models.Job.Status.PENDING,
         evaluation=0,
         title=title,
-        project=theProject,
+        project=the_project,
         task_name=taskName,
-        parent=parentJob,
+        parent=parent_job,
     )
     logger.info("arg_dict %s", arg_dict)
     new_job = models.Job(**arg_dict)
