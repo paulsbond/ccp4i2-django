@@ -77,5 +77,7 @@ def set_input_by_context_job(job_id: str = None, context_job_id: str = None):
                     "subType": the_file.sub_type,
                 }
             )
+            dobj.loadFile()
+            dobj.setContentFlag(reset=True)
 
     save_params_for_job(the_job_plugin, the_job=the_job)
