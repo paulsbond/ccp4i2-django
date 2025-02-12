@@ -19,6 +19,7 @@ from ..lib.job_utils.list_project import list_project
 from ..lib.job_utils.value_dict_for_object import value_dict_for_object
 from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.get_task_tree import get_task_tree
+from ..lib.job_utils.create_task import create_task
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -284,6 +285,18 @@ class ProjectViewSet(ModelViewSet):
         # Not clear to me this should be a view exposed through the project api
         task_tree = get_task_tree()
         return JsonResponse({"status": "Success", "task_tree": task_tree})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectSerializer,
+    )
+    def create_task(self, request, pk=None):
+        the_project = models.Project.objects.get(pk=pk)
+        new_job = create_task(the_project, json.loads(request.body.decode("utf-8")))
+        serializer = serializers.JobSerializer(new_job)
+        return JsonResponse({"status": "Success", "new_job": serializer.data})
 
 
 class ProjectTagViewSet(ModelViewSet):
