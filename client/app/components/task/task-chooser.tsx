@@ -56,9 +56,8 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
   return (
     <Paper
       sx={{
-        maxHeight: "calc(100vh - 8rem)",
+        maxHeight: "calc(100vh - 10rem)",
         overflowY: "auto",
-        border: "5px solid green",
       }}
     >
       <Toolbar>
