@@ -67,7 +67,7 @@ def _get_job_files(
     fileType: str,
     subType: int,
     contentFlag: int,
-    project_uuid: str,
+    project_uuid: uuid.UUID,
 ):
     filter_dict = {"type__name": fileType}
     if isinstance(subType, list) and 0 not in subType and subType is not None:
@@ -103,7 +103,7 @@ def _get_file_uses(
     fileType: str,
     subType: int,
     contentFlag: int,
-    project_uuid: str,
+    project_uuid: uuid.UUID,
 ):
     filter_dict = {"file__type__name": fileType}
     if isinstance(subType, list) and 0 not in subType and subType is not None:
@@ -116,7 +116,7 @@ def _get_file_uses(
         else:
             filter_dict["file__content__in"] = contentFlag
     if project_uuid is not None:
-        filter_dict["job__project__uuid"] = uuid.UUID(project_uuid)
+        filter_dict["job__project__uuid"] = project_uuid
 
     fileuse_qs = models.FileUse.objects.filter(**filter_dict)
     jobfileuse_qs = fileuse_qs.filter(job=context_job)
