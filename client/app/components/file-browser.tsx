@@ -49,20 +49,41 @@ interface FileTreeProps {
 interface ContextProps {
   previewNode: FileNode | null;
   setPreviewNode: (node: FileNode | null) => void;
+  anchorEl: HTMLElement | null;
+  setAnchorEl: (element: HTMLElement | null) => void;
+  menuNode: FileNode | null;
+  setMenuNode: (node: FileNode | null) => void;
 }
 const FileBrowserContext = createContext<ContextProps>({
   previewNode: null,
   setPreviewNode: () => {},
+  anchorEl: null,
+  setAnchorEl: () => {},
+  menuNode: null,
+  setMenuNode: () => {},
 });
+
 export const FileTree: React.FC<FileTreeProps> = ({ data }) => {
   const [previewNode, setPreviewNode] = useState<FileNode | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [menuNode, setMenuNode] = useState<FileNode | null>(null);
   return (
-    <FileBrowserContext.Provider value={{ previewNode, setPreviewNode }}>
+    <FileBrowserContext.Provider
+      value={{
+        previewNode,
+        setPreviewNode,
+        anchorEl,
+        setAnchorEl,
+        menuNode,
+        setMenuNode,
+      }}
+    >
       <List>
         {Array.isArray(data) &&
           data.map((item) => <TreeNode key={item.name} node={item} />)}
       </List>
       <FilePreviewDialog />
+      <FileMenu />
     </FileBrowserContext.Provider>
   );
 };
@@ -73,7 +94,8 @@ interface TreeNodeProps {
 
 const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
+    useContext(FileBrowserContext);
   const menuOpen = Boolean(anchorEl);
 
   const toggleOpen = () => {
@@ -81,9 +103,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
   };
 
   const handleMenuOpen = (ev: any) => {
+    console.log("opening menu");
     setAnchorEl(ev.currentTarget);
+    setMenuNode(node);
     ev.stopPropagation();
   };
+
   const handleMenuClose = (ev: any) => {
     setAnchorEl(null);
   };
@@ -94,15 +119,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
         sx={{ ml: 0, px: 0 }}
         onClick={toggleOpen}
         secondaryAction={
-          node.type !== "directory" && (
-            <>
-              <ClickAwayListener onClickAway={handleMenuClose}>
-                <Button onClick={handleMenuOpen}>
-                  <MenuIcon />
-                </Button>
-              </ClickAwayListener>
-              {isOpen ? <ExpandLess /> : <ExpandMore />}
-            </>
+          node.type !== "directory" ? (
+            <Button onClick={handleMenuOpen}>
+              <MenuIcon />
+            </Button>
+          ) : isOpen ? (
+            <ExpandLess />
+          ) : (
+            <ExpandMore />
           )
         }
       >
@@ -124,61 +148,58 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
           </List>
         </Collapse>
       )}
-      <Menu open={menuOpen} anchorEl={anchorEl}>
-        <FileMenu
-          node={node}
-          closeMenu={() => {
-            setAnchorEl(null);
-          }}
-        />
-      </Menu>
     </>
   );
 };
 
-interface FileMenuProps {
-  node: FileNode;
-  closeMenu: () => void;
-}
-const FileMenu: React.FC<FileMenuProps> = ({ node, closeMenu }) => {
-  const { previewNode, setPreviewNode } = useContext(FileBrowserContext);
+const FileMenu: React.FC = () => {
+  const {
+    previewNode,
+    setPreviewNode,
+    anchorEl,
+    setAnchorEl,
+    menuNode,
+    setMenuNode,
+  } = useContext(FileBrowserContext);
+
   const { noSlashUrl } = useApi();
   const { projectId } = useContext(CCP4i2Context);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewContent, setPreviewContent] = useState("");
+  const isMenuOpen = Boolean(anchorEl);
   const handleDownload = useCallback(
     (ev: SyntheticEvent) => {
-      ev.stopPropagation();
-      const composite_path = noSlashUrl(
-        `projects/${projectId}/project_file?path=${encodeURIComponent(
-          node.path
-        )}`
-      );
-      doDownload(composite_path, node.name);
-      closeMenu();
+      if (menuNode) {
+        ev.stopPropagation();
+        const composite_path = noSlashUrl(
+          `projects/${projectId}/project_file?path=${encodeURIComponent(
+            menuNode.path
+          )}`
+        );
+        doDownload(composite_path, menuNode.name);
+        setAnchorEl(null);
+      }
     },
-    [projectId, node, noSlashUrl, closeMenu]
+    [projectId, menuNode, noSlashUrl]
   );
   const handlePreview = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
-      setPreviewNode(node);
-      closeMenu();
+      setPreviewNode(menuNode);
+      setAnchorEl(null);
     },
-    [projectId, node, noSlashUrl, closeMenu]
+    [projectId, menuNode, noSlashUrl]
   );
 
   return (
-    <>
-      {node.type !== "directory" && (
+    <Menu anchorEl={anchorEl} open={isMenuOpen}>
+      {menuNode?.type !== "directory" && (
         <MenuItem onClick={handleDownload}>Download</MenuItem>
       )}
-      {node?.name &&
+      {menuNode?.name &&
         ["log", "xml", "json", "txt", "mmcif", "cif"].includes(
-          node.name?.split(".").at(-1)
+          menuNode?.name?.split(".").at(-1)
         ) && <MenuItem onClick={handlePreview}>Preview</MenuItem>}
       ;
-    </>
+    </Menu>
   );
 };
 
