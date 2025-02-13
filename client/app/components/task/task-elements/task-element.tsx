@@ -18,6 +18,7 @@ import { CAltSpaceGroupElement } from "./caltspacegroupelement";
 import { CSimpleDataFileElement } from "./csimpledatafile";
 import { CReindexOperatorElement } from "./creindexoperator";
 import { CFloatRangeElement } from "./cfloatrange";
+import { v4 as uuid4 } from "uuid";
 
 export interface CCP4i2TaskElementProps extends PropsWithChildren {
   job: Job;
@@ -71,22 +72,40 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const interfaceElement = useMemo(() => {
     switch (item?._class) {
       case "CInt":
-        return <CIntElement {...props} qualifiers={qualifiers} />;
+        return <CIntElement key={uuid4()} {...props} qualifiers={qualifiers} />;
       case "CFloat":
       case "CCellLength":
       case "CCellAngle":
       case "CWavelength":
       case "CRangeSelection":
-        return <CFloatElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CFloatElement key={uuid4()} {...props} qualifiers={qualifiers} />
+        );
       case "CString":
       case "COneWord":
-        return <CStringElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CStringElement key={uuid4()} {...props} qualifiers={qualifiers} />
+        );
       case "CBoolean":
-        return <CBooleanElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CBooleanElement key={uuid4()} {...props} qualifiers={qualifiers} />
+        );
       case "CPdbDataFile":
-        return <CPdbDataFileElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CPdbDataFileElement
+            key={uuid4()}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       case "CImportUnmerged":
-        return <CImportUnmergedElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CImportUnmergedElement
+            key={uuid4()}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       case "CDictDataFile":
       case "CTLSDataFile":
       case "CPhaserSolDataFile":
@@ -95,32 +114,74 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CAsuDataFile":
       case "CUnmergedDataFile":
       case "CMDLMolDataFile":
-        return <CSimpleDataFileElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CSimpleDataFileElement
+            key={uuid4()}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       case "CFreeRDataFile":
       case "CObsDataFile":
       case "CMapCoeffsDataFile":
       case "CPhsDataFile":
-        return <CMiniMtzDataFileElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CMiniMtzDataFileElement
+            key={uuid4()}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       case "CList":
       case "CImportUnmergedList":
       case "CAltSpaceGroupList":
       case "CEnsembleList":
-        return <CListElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CListElement key={uuid4()} {...props} qualifiers={qualifiers} />
+        );
       case "CEnsemble":
-        return <CEnsembleElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CEnsembleElement key={uuid4()} {...props} qualifiers={qualifiers} />
+        );
       case "CFloatRange":
-        return <CFloatRangeElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CFloatRangeElement
+            key={uuid4()}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       case "CPdbEnsembleItem":
       case "CContainer":
-        return <CContainerElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CContainerElement key={uuid4()} {...props} qualifiers={qualifiers} />
+        );
       case "CReindexOperator":
-        return <CReindexOperatorElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CReindexOperatorElement
+            key={uuid4()}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       case "CCell":
-        return <CCellElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CCellElement key={uuid4()} {...props} qualifiers={qualifiers} />
+        );
       case "CAltSpaceGroup":
-        return <CAltSpaceGroupElement {...props} qualifiers={qualifiers} />;
+        return (
+          <CAltSpaceGroupElement
+            key={uuid4()}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       default:
-        return <Typography>{item ? item._class : "No item"}</Typography>;
+        return (
+          <Typography key={uuid4()}>
+            {item ? item._class : "No item"}
+          </Typography>
+        );
     }
   }, [item]);
 

@@ -32,11 +32,13 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         >
           <CCP4i2TaskElement
             {...props}
+            key="UNMERGEDFILES"
             itemName="UNMERGEDFILES"
             qualifiers={{ guiLabel: "Unmerged files" }}
           />
           <CCP4i2TaskElement
             {...props}
+            key="FREERFLAG"
             itemName="FREERFLAG"
             qualifiers={{ guiLabel: "Free R set to use/extend" }}
           />
@@ -53,11 +55,13 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         >
           <CCP4i2TaskElement
             {...props}
+            key="AUTOCUTOFF"
             itemName="AUTOCUTOFF"
             qualifiers={{ guiLabel: "Apply auto. data cutoff" }}
           />
           <CCP4i2TaskElement
             {...props}
+            key="RESOLUTION_RANGE"
             itemName="RESOLUTION_RANGE"
             qualifiers={{ guiLabel: "Resolution" }}
           />
@@ -70,6 +74,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         </CContainerElement>
         <CContainerElement
           {...props}
+          key="ChoosingSpace"
           itemName=""
           qualifiers={{
             guiLabel: "Choosing spacegroup",
@@ -79,11 +84,13 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         >
           <CCP4i2TaskElement
             {...props}
+            key="MODE"
             itemName="MODE"
             qualifiers={{ guiLabel: "Pipeline mode" }}
           />
           <CContainerElement
             {...props}
+            key="ChoiceOptions"
             itemName=""
             qualifiers={{
               guiLabel: "Choice options",
@@ -95,6 +102,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           >
             <CCP4i2TaskElement
               {...props}
+              key="CHOOSE_MODE"
               itemName="CHOOSE_MODE"
               qualifiers={{ guiLabel: "Symmetry choice mode" }}
               visibility={() => {
@@ -103,6 +111,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             />
             <CCP4i2TaskElement
               {...props}
+              key="CHOOSE_SOLUTION_NO"
               itemName="CHOOSE_SOLUTION_NO"
               qualifiers={{ guiLabel: "Solution no. to choose" }}
               visibility={() => {
@@ -113,6 +122,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             />
             <CAltSpaceGroupElement
               {...props}
+              key="CHOOSE_SPACEGROUP"
               itemName="CHOOSE_SPACEGROUP"
               qualifiers={{
                 ...getTaskItem("CHOOSE_SPACEGROUP")._qualifiers,
@@ -129,6 +139,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             />
             <CCP4i2TaskElement
               {...props}
+              key="REINDEX_OPERATOR"
               itemName="REINDEX_OPERATOR"
               qualifiers={{ guiLabel: "Reindexing operator" }}
               visibility={() => {
@@ -139,6 +150,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             />
             <CCP4i2TaskElement
               {...props}
+              key="CHOOSE_LAUEGROUP"
               itemName="CHOOSE_LAUEGROUP"
               qualifiers={{ guiLabel: "Lauegroup to choose" }}
               visibility={() => {
