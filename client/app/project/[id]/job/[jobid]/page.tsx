@@ -69,14 +69,14 @@ export default function JobPage({
       {tabValue == 1 && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={prettifyXml($.parseXML(params_xml.params_xml))}
+          value={params_xml}
           language="xml"
         />
       )}
       {tabValue == 2 && report_xml && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={prettifyXml($.parseXML(report_xml.report_xml))}
+          value={prettifyXml(report_xml)}
           language="xml"
         />
       )}
@@ -84,16 +84,12 @@ export default function JobPage({
       {tabValue == 4 && diagnostic_xml && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={prettifyXml($.parseXML(diagnostic_xml.diagnostic_xml))}
+          value={diagnostic_xml}
           language="xml"
         />
       )}
       {tabValue == 5 && def_xml && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={prettifyXml($.parseXML(def_xml.def_xml))}
-          language="xml"
-        />
+        <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
       )}
       {tabValue == 6 && validation && <ValidationViewer />}
       {tabValue == 7 && container && (

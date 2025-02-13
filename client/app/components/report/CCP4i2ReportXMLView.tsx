@@ -20,21 +20,27 @@ export const CCP4i2ReportXMLView = () => {
   const { data: job, mutate: mutateJob } = api.follow<Job>(`jobs/${jobId}`);
   const { data: report_xml, mutate: mutateReportXml } =
     job?.status == 3
-      ? api.follow<any>(`jobs/${jobId}/report_xml`)
-      : api.get<any>(`jobs/${jobId}/report_xml`);
+      ? api.follow_xml(`jobs/${jobId}/report_xml`)
+      : api.get_xml(`jobs/${jobId}/report_xml`);
 
   if (!job) return <LinearProgress />;
 
   const bodyNode = useMemo<JQuery<XMLDocument> | null>(() => {
-    if (report_xml.report_xml) {
-      const reportXMLDocument = $.parseXML(report_xml.report_xml);
+    if (report_xml) {
+      //return $(report_xml);
+      const reportXMLDocument = report_xml;
       const $reportXMLDocument = $(reportXMLDocument);
-      const iterator = reportXMLDocument.evaluate(
-        "//CCP4i2ReportGeneric/br",
-        reportXMLDocument,
-        null,
-        XPathResult.ORDERED_NODE_ITERATOR_TYPE
-      );
+      let iterator: any;
+      try {
+        iterator = reportXMLDocument.evaluate(
+          "//CCP4i2ReportGeneric/br",
+          reportXMLDocument,
+          null,
+          XPathResult.ORDERED_NODE_ITERATOR_TYPE
+        );
+      } catch (err) {
+        console.log(err, reportXMLDocument);
+      }
       try {
         const matchingNodes = [];
         let thisNode = iterator.iterateNext();
@@ -54,8 +60,9 @@ export const CCP4i2ReportXMLView = () => {
       const modifiedXmlString = new XMLSerializer().serializeToString(
         reportXMLDocument
       );
-      const reportXMLDocument1 = $.parseXML(report_xml.report_xml);
+      const reportXMLDocument1 = $.parseXML(modifiedXmlString);
       const $reportXMLDocument1 = $(reportXMLDocument1);
+
       return $reportXMLDocument;
     }
     return null;

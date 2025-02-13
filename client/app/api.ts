@@ -1,16 +1,24 @@
 import useSWR from "swr";
 import $ from "jquery";
+import { prettifyXml } from "./components/report/CCP4i2ReportFlotWidget";
 
-const validation_fetcher = (url: string) => {
+const xml_fetcher = (url: string) => {
+  return fetch(url)
+    .then((r) => r.json())
+    .then((r1) =>
+      Promise.resolve(r1?.status === "Success" ? $.parseXML(r1.xml) : null)
+    );
+};
+
+const pretty_xml_fetcher = (url: string) => {
   return fetch(url)
     .then((r) => r.json())
     .then((r1) =>
       Promise.resolve(
-        r1?.status === "Success" ? $.parseXML(r1.validation) : null
+        r1?.status === "Success" ? prettifyXml($.parseXML(r1.xml)) : null
       )
     );
 };
-
 const container_fetcher = (url: string) => {
   return fetch(url)
     .then((r) => r.json())
@@ -43,6 +51,18 @@ export function useApi() {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
 
+    get_xml: function (endpoint: string) {
+      return useSWR(fullUrl(endpoint), xml_fetcher);
+    },
+
+    follow_xml: function (endpoint: string) {
+      return useSWR(fullUrl(endpoint), xml_fetcher, { refreshInterval: 5000 });
+    },
+
+    get_pretty_xml: function (endpoint: string) {
+      return useSWR(fullUrl(endpoint), pretty_xml_fetcher);
+    },
+
     follow: function <T>(endpoint: string) {
       return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 5000 });
     },
@@ -56,7 +76,7 @@ export function useApi() {
     },
 
     validation: function <T>(endpoint: string) {
-      return useSWR<any>(fullUrl(endpoint), validation_fetcher);
+      return useSWR<any>(fullUrl(endpoint), xml_fetcher);
     },
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {

@@ -180,19 +180,23 @@ export const useJob = (jobId: number | undefined) => {
   const { data: container, mutate: mutateContainer } = api.container<any>(
     `jobs/${jobId}/container`
   );
-  const { data: params_xml, mutate: mutateParams_xml } = api.get<any>(
+
+  const { data: params_xml, mutate: mutateParams_xml } = api.get_pretty_xml(
     `jobs/${jobId}/params_xml`
   );
-  const { data: validation, mutate: mutateValidation } = api.get<any>(
+
+  const { data: validation, mutate: mutateValidation } = api.get_xml(
     `jobs/${jobId}/validation`
   );
-  const { data: report_xml, mutate: mutateReport_xml } = api.get<any>(
+
+  const { data: report_xml, mutate: mutateReport_xml } = api.get_xml(
     `jobs/${jobId}/report_xml`
   );
-  const { data: diagnostic_xml, mutate: mutateDiagnosticXml } = api.get<any>(
-    `jobs/${jobId}/diagnostic_xml`
-  );
-  const { data: def_xml, mutate: mutateDef_xml } = api.get<any>(
+
+  const { data: diagnostic_xml, mutate: mutateDiagnosticXml } =
+    api.get_pretty_xml(`jobs/${jobId}/diagnostic_xml`);
+
+  const { data: def_xml, mutate: mutateDef_xml } = api.get_pretty_xml(
     `jobs/${jobId}/def_xml`
   );
 
@@ -383,24 +387,20 @@ export const usePrevious = <T>(value: T): T | undefined => {
  * Extracts validation errors for a given item based on the provided validation object.
  *
  * @param item - The item to check for validation errors. It can be of any type.
- * @param validation - An object containing the validation status and an optional validation document.
- * @param validation.status - The status of the validation.
- * @param validation.validation - An optional XML Document containing validation details.
+ * @param validation - An XML Document containing validation details.
  *
  * @returns An array of objects, each containing the severity and description of a validation error.
  *          If no errors are found, an empty array is returned.
  */
 const errorsInValidation = (
   item: any,
-  validation: { status: string; validation?: Document }
+  validation: XMLDocument
 ): {
   severity: string;
   description: string;
 }[] => {
-  if (validation && validation.validation) {
-    const objectPathNodes = $(validation.validation)
-      .find("objectpath")
-      .toArray();
+  if (validation) {
+    const objectPathNodes = $(validation).find("objectpath").toArray();
     const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
       return node.textContent?.includes(item._objectPath);
     });

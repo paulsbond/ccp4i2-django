@@ -355,7 +355,7 @@ class JobViewSet(ModelViewSet):
                 fallback_params_path = the_job.directory / "params.xml"
             with open(params_path, "r", encoding="UTF-8") as params_xml_file:
                 params_xml = params_xml_file.read()
-            return Response({"status": "Success", "params_xml": params_xml})
+            return Response({"status": "Success", "xml": params_xml})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
@@ -366,7 +366,7 @@ class JobViewSet(ModelViewSet):
                     fallback_params_path, "r", encoding="UTF-8"
                 ) as params_xml_file:
                     params_xml = params_xml_file.read()
-                    return Response({"status": "Success", "params_xml": params_xml})
+                    return Response({"status": "Success", "xml": params_xml})
             except FileNotFoundError as err1:
                 return Response({"status": "Failed", "reason": str(err1)})
 
@@ -392,8 +392,7 @@ class JobViewSet(ModelViewSet):
             the_job = models.Job.objects.get(id=pk)
             report_xml = make_old_report(the_job)
             ET.indent(report_xml, space="\t", level=0)
-            report_xml = ET.tostring(make_old_report(the_job))
-            return Response({"status": "Success", "report_xml": report_xml})
+            return Response({"status": "Success", "xml": ET.tostring(report_xml)})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
@@ -538,7 +537,7 @@ class JobViewSet(ModelViewSet):
                 the_job.directory / "diagnostic.xml", "r", encoding="UTF-8"
             ) as diagnostic_xml_file:
                 diagnostic_xml = diagnostic_xml_file.read()
-            return Response({"status": "Success", "diagnostic_xml": diagnostic_xml})
+            return Response({"status": "Success", "xml": diagnostic_xml})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
@@ -596,9 +595,8 @@ class JobViewSet(ModelViewSet):
                 def_xml = def_xml_file.read()
                 packedXML = ET.fromstring(def_xml)
                 unpackedXML = load_nested_xml(packedXML)
-                return Response(
-                    {"status": "Success", "def_xml": ET.tostring(unpackedXML)}
-                )
+                ET.indent(unpackedXML, " ")
+                return Response({"status": "Success", "xml": ET.tostring(unpackedXML)})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
@@ -636,9 +634,7 @@ class JobViewSet(ModelViewSet):
             for stack_element in stack_elements:
                 stack_element.getroot()
             ET.indent(error_etree, " ")
-            return Response(
-                {"status": "Success", "validation": ET.tostring(error_etree)}
-            )
+            return Response({"status": "Success", "xml": ET.tostring(error_etree)})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})

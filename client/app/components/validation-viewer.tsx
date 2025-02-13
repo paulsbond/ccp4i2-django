@@ -9,10 +9,10 @@ export const ValidationViewer = () => {
   const api = useApi();
   const { jobId } = useContext(CCP4i2Context);
   const { data: validation } = api.validation(`jobs/${jobId}/validation`);
-  return validation && validation.validation ? (
+  return validation ? (
     <Editor
       height="calc(100vh - 15rem)"
-      value={prettifyXml(validation.validation)}
+      value={prettifyXml(validation)}
       language="xml"
     />
   ) : (
