@@ -2,10 +2,10 @@ import { createContext } from "react";
 import { Job, Project } from "./models";
 
 interface CCP4i2Context {
-  projectId?: Number | null;
-  setProjectId?: (projectId: Number) => void | null;
-  jobId?: Number | null;
-  setJobId?: (jobId: Number) => void | null;
+  projectId?: number | null;
+  setProjectId?: (projectId: number) => void | null;
+  jobId?: number | null;
+  setJobId?: (jobId: number) => void | null;
   cootModule?: any | null;
   setCootModule?: (module: any | null) => void;
 }
