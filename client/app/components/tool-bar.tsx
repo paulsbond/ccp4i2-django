@@ -18,11 +18,6 @@ import { useRouter } from "next/navigation";
 export default function ToolBar() {
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
-  const { data: project } = api.get_endpoint<Project>({
-    type: "projects",
-    id: projectId,
-    endpoint: "",
-  });
   const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
     type: "jobs",
     id: jobId,

@@ -28,7 +28,6 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   useEffect(() => {
     setValue(item._value);
-    console.log(item._objectPath, item._value);
     if (type === "checkbox" && inputRef.current)
       //@ts-ignore
       inputRef.current.checked = item._value;
