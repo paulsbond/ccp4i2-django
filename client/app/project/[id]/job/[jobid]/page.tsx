@@ -48,9 +48,7 @@ export default function JobPage({
     };
     asyncFunc();
   }, [job, setJobId]);
-  if (!project || !params_xml || !jobs || !job) return <LinearProgress />;
-
-  if (!job) return <LinearProgress />;
+  if (!project || !jobs || !job) return <LinearProgress />;
 
   return (
     <Container>
@@ -66,7 +64,7 @@ export default function JobPage({
         <Tab value={7} label="Job container" />
       </Tabs>
       {tabValue == 0 && <TaskContainer />}
-      {tabValue == 1 && (
+      {tabValue == 1 && params_xml && (
         <Editor
           height="calc(100vh - 15rem)"
           value={params_xml}
