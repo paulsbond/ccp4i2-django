@@ -15,7 +15,7 @@ interface EndpointFetch {
 }
 
 const endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
-  if (!endpointFetch.id) return Promise.resolve(null);
+  if (!endpointFetch.id) return Promise.reject();
   const url = fullUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
@@ -27,7 +27,7 @@ const endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
 };
 
 const pretty_endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
-  if (!endpointFetch.id) return Promise.resolve("");
+  if (!endpointFetch.id) return Promise.reject();
   const url = fullUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
@@ -50,6 +50,14 @@ const endpoint_wrapped_json_fetcher = (endpointFetch: EndpointFetch) => {
     .then((r) => JSON.parse(r.result));
 };
 
+const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
+  if (!endpointFetch.id) return Promise.reject();
+  const url = fullUrl(
+    `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
+  );
+  return fetch(url).then((r) => r.json());
+};
+
 const digest_fetcher = (url: string) => {
   return fetch(url).then((r) => r.json());
 };
@@ -67,6 +75,10 @@ export function useApi() {
 
     get: function <T>(endpoint: string) {
       return useSWR<T>(fullUrl(endpoint), fetcher);
+    },
+
+    get_endpoint: function <T>(endpointFetch: EndpointFetch) {
+      return useSWR<T>(endpointFetch, { fetcher: endpoint_fetcher });
     },
 
     get_endpoint_xml: function <XMLDocument>(endpointFetch: EndpointFetch) {

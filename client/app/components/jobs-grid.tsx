@@ -23,7 +23,11 @@ export const JobsGrid: React.FC<JobsGridProps> = ({
   withSubtitles = false,
 }) => {
   const api = useApi();
-  const { data: jobs } = api.get<Job[]>(`/projects/${projectId}/jobs/`);
+  const { data: jobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: projectId,
+    endpoint: "jobs",
+  });
   return (
     <Grid2 container>
       {jobs &&

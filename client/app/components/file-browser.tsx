@@ -190,7 +190,13 @@ const FileMenu: React.FC = () => {
   );
 
   return (
-    <Menu anchorEl={anchorEl} open={isMenuOpen}>
+    <Menu
+      anchorEl={anchorEl}
+      open={isMenuOpen}
+      onClose={() => {
+        setAnchorEl(null);
+      }}
+    >
       {menuNode?.type !== "directory" && (
         <MenuItem onClick={handleDownload}>Download</MenuItem>
       )}
@@ -198,7 +204,6 @@ const FileMenu: React.FC = () => {
         ["log", "xml", "json", "txt", "mmcif", "cif"].includes(
           menuNode?.name?.split(".").at(-1)
         ) && <MenuItem onClick={handlePreview}>Preview</MenuItem>}
-      ;
     </Menu>
   );
 };

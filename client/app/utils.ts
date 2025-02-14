@@ -115,24 +115,35 @@ export interface SetParameterArg {
  */
 export const useProject = (projectId: number) => {
   const api = useApi();
-  const { data: project, mutate: mutateProject } = api.get<Project>(
-    `projects/${projectId}`
-  );
-  const { data: directory, mutate: mutateDirectory } = api.get<any>(
-    `projects/${projectId}/directory`
-  );
-  const { data: jobs, mutate: mutateJobs } = api.get<Job[]>(
-    `/projects/${projectId}/jobs/`
-  );
-  const { data: files, mutate: mutateFiles } = api.get<DjangoFile[]>(
-    `/projects/${projectId}/files/`
-  );
-  const { data: jobFloatValues, mutate: mutateJobFloatValues } = api.get<
-    JobFloatValue[]
-  >(`/projects/${projectId}/job_float_values/`);
-  const { data: jobCharValues, mutate: mutateJobCharValues } = api.get<
+  const { data: project, mutate: mutateProject } = api.get_endpoint<Project>({
+    type: "projects",
+    id: projectId,
+    endpoint: "",
+  });
+  const { data: directory, mutate: mutateDirectory } = api.get_endpoint<any>({
+    type: "projects",
+    id: projectId,
+    endpoint: "directory",
+  });
+  const { data: jobs, mutate: mutateJobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: projectId,
+    endpoint: "jobs",
+  });
+  const { data: files, mutate: mutateFiles } = api.get_endpoint<DjangoFile[]>({
+    type: "projects",
+    id: projectId,
+    endpoint: "files",
+  });
+  const { data: jobFloatValues, mutate: mutateJobFloatValues } =
+    api.get_endpoint<JobFloatValue[]>({
+      type: "projects",
+      id: projectId,
+      endpoint: "job_float_values",
+    });
+  const { data: jobCharValues, mutate: mutateJobCharValues } = api.get_endpoint<
     JobCharValue[]
-  >(`/projects/${projectId}/job_char_values/`);
+  >({ type: "projects", id: projectId, endpoint: "job_char_values" });
   return {
     project,
     mutateProject,
@@ -177,7 +188,11 @@ export const useProject = (projectId: number) => {
 export const useJob = (jobId: number | null | undefined) => {
   const api = useApi();
 
-  const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
+  const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
+    type: "jobs",
+    id: jobId,
+    endpoint: "",
+  });
 
   const { data: container, mutate: mutateContainer } =
     api.get_wrapped_endpoint_json<any>({

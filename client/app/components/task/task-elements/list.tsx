@@ -1,7 +1,7 @@
 import { useCallback, useContext, useMemo, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
-import { useJob, valueOfItem } from "../../../utils";
+import { useJob, useProject, valueOfItem } from "../../../utils";
 import {
   Button,
   Card,
@@ -27,7 +27,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
   const api = useApi();
   const { getTaskItem, setParameter } = useJob(job.id);
   const { projectId } = useContext(CCP4i2Context);
-  const { data: project } = api.get<Project>(`projects/${projectId}`);
+  const { project } = projectId ? useProject(projectId) : {};
   const item = getTaskItem(itemName);
 
   const guiLabel = useMemo<string>(() => {

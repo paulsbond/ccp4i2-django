@@ -120,15 +120,17 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   }, [item]);
   const [inFlight, setInFlight] = useState(false);
 
-  const { data: project_files, mutate: mutateFiles } = api.get<CCP4i2File[]>(
-    `projects/${job.project}/files`
-  );
+  const { data: project_files, mutate: mutateFiles } = api.get_endpoint<
+    CCP4i2File[]
+  >({ type: "projects", id: job.project, endpoint: "files" });
 
-  const { data: project_jobs, mutate: mutateJobs } = api.get<Job[]>(
-    `projects/${job.project}/jobs`
-  );
+  const { data: project_jobs, mutate: mutateJobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: job.project,
+    endpoint: "jobs",
+  });
   const { data: projects, mutate: mutateProjects } =
-    api.get<Project[]>(`projects`);
+    api.get<Project[]>("projects");
 
   const fileType = useMemo<string | null>(() => {
     if (item?._class) {

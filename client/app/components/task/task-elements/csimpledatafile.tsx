@@ -19,7 +19,11 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
 
-  const { mutate: mutateJobs } = api.get<Job[]>(`projects/${job.project}/jobs`);
+  const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: job.project,
+    endpoint: "jobs",
+  });
 
   const { mutate: mutateContainer } = api.get_wrapped_endpoint_json<any>({
     type: "jobs",

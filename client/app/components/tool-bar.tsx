@@ -18,9 +18,21 @@ import { useRouter } from "next/navigation";
 export default function ToolBar() {
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
-  const { data: project } = api.get<Project>(`projects/${projectId}`);
-  const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
-  const { mutate: mutateJobs } = api.get<Job[]>(`/projects/${projectId}/jobs/`);
+  const { data: project } = api.get_endpoint<Project>({
+    type: "projects",
+    id: projectId,
+    endpoint: "",
+  });
+  const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
+    type: "jobs",
+    id: jobId,
+    endpoint: "",
+  });
+  const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: projectId,
+    endpoint: "jobs",
+  });
   const router = useRouter();
   const handleClone = async () => {
     if (job) {
