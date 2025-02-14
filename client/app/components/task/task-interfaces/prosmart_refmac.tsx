@@ -35,6 +35,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const wavelengthItem = getTaskItem("WAVELENGTH");
 
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
+  const oldWavelengthItem = usePrevious<any>(wavelengthItem);
 
   useAsyncEffect(async () => {
     if (
@@ -47,7 +48,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       if (
         F_SIGFDigest?.digest?.wavelengths &&
         F_SIGFDigest?.digest?.wavelengths.at(-1) &&
-        F_SIGFDigest?.digest?.wavelengths.at(-1) < 9
+        F_SIGFDigest?.digest?.wavelengths.at(-1) < 9 &&
+        !oldWavelengthItem?._value
       ) {
         await setParameter({
           object_path: `${wavelengthItem._objectPath}`,
