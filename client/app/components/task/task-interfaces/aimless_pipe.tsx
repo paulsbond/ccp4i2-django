@@ -163,6 +163,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           <CContainerElement
             {...props}
             itemName=""
+            key="Specify refrence"
             qualifiers={{
               guiLabel: "Specify reference",
               containerHint: "BlockLevel",
@@ -173,6 +174,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           >
             <CCP4i2TaskElement
               {...props}
+              key="REFERENCE_FOR_AIMLESS"
               itemName="REFERENCE_FOR_AIMLESS"
               qualifiers={{ guiLabel: "Reference" }}
             />

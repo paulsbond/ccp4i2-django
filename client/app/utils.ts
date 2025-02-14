@@ -394,7 +394,7 @@ export const usePrevious = <T>(value: T): T | undefined => {
  */
 const errorsInValidation = (
   item: any,
-  validation: XMLDocument
+  validation: XMLDocument | undefined | null
 ): {
   severity: string;
   description: string;
