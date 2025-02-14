@@ -174,7 +174,7 @@ export const useProject = (projectId: number) => {
  * @property def_xml - The definition XML data for the job.
  * @property mutateDef_xml - A function to mutate the definition XML data.
  */
-export const useJob = (jobId: number | undefined) => {
+export const useJob = (jobId: number | null | undefined) => {
   const api = useApi();
   const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
   const { data: container, mutate: mutateContainer } = api.container<any>(

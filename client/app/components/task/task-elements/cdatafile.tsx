@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { CCP4i2TaskElementProps } from "./task-element";
-import { File as CCP4i2File, Job, Project } from "../../../models";
+import { File as CCP4i2File, Job, nullFile, Project } from "../../../models";
 import { CDataFile } from "../../../cdata_types";
 import {
   ReactNode,
@@ -111,6 +111,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const { mutate: mutateDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
+  const [value, setValue] = useState<CCP4i2File>(nullFile);
 
   useEffect(() => {
     setValue(item._value);
@@ -125,7 +126,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     return { objectPath: null, qualifiers: null };
   }, [item]);
   const [inFlight, setInFlight] = useState(false);
-  const [value, setValue] = useState<any | null>(null);
 
   const { data: project_files, mutate: mutateFiles } = api.get<CCP4i2File[]>(
     `projects/${job.project}/files`
@@ -173,11 +173,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           );
           return dehyphentatedUUID === dehyphentatedDbFileId;
         });
-        setValue(chosenOption);
+        if (chosenOption) setValue(chosenOption);
         return;
       }
     }
-    setValue(null);
   }, [objectPath, fileOptions, item]);
 
   const guiLabel = useMemo<string>(() => {

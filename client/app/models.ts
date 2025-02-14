@@ -32,6 +32,19 @@ export class File {
     public directory: number
   ) {}
 }
+export const nullFile = {
+  id: -1,
+  uuid: "",
+  file: "",
+  type: "",
+  name: "",
+  size: -1,
+  job: -1,
+  annotation: "",
+  content: -1,
+  sub_type: -1,
+  directory: -1,
+};
 
 export class Job {
   constructor(
