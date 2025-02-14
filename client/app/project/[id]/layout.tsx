@@ -84,6 +84,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               //@ts-ignore
               .createCootModule(createArgs)
               .then((module: any) => {
+                //@ts-ignore
                 setCootModule(module);
                 scriptElement.current = Array.from(
                   document.getElementsByTagName("script")

@@ -40,7 +40,7 @@ export const nullFile = {
   name: "",
   size: -1,
   job: -1,
-  annotation: "",
+  annotation: "No file selected",
   content: -1,
   sub_type: -1,
   directory: -1,

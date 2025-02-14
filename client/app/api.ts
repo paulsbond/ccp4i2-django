@@ -2,7 +2,23 @@ import useSWR from "swr";
 import $ from "jquery";
 import { prettifyXml } from "./components/report/CCP4i2ReportFlotWidget";
 
-const xml_fetcher = (url: string) => {
+function fullUrl(endpoint: string): string {
+  const url = new URL(endpoint, "http://127.0.0.1:8000");
+  if (url.pathname.charAt(url.pathname.length - 1) !== "/") url.pathname += "/";
+  return url.href;
+}
+
+interface EndpointFetch {
+  type: string;
+  id: number | null | undefined;
+  endpoint: string;
+}
+
+const endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
+  if (!endpointFetch.id) return Promise.resolve(null);
+  const url = fullUrl(
+    `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
+  );
   return fetch(url)
     .then((r) => r.json())
     .then((r1) =>
@@ -10,7 +26,11 @@ const xml_fetcher = (url: string) => {
     );
 };
 
-const pretty_xml_fetcher = (url: string) => {
+const pretty_endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
+  if (!endpointFetch.id) return Promise.resolve("");
+  const url = fullUrl(
+    `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
+  );
   return fetch(url)
     .then((r) => r.json())
     .then((r1) =>
@@ -19,6 +39,7 @@ const pretty_xml_fetcher = (url: string) => {
       )
     );
 };
+
 const container_fetcher = (url: string) => {
   return fetch(url)
     .then((r) => r.json())
@@ -32,13 +53,6 @@ const digest_fetcher = (url: string) => {
 export function useApi() {
   const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-  function fullUrl(endpoint: string): string {
-    const url = new URL(endpoint, "http://127.0.0.1:8000");
-    if (url.pathname.charAt(url.pathname.length - 1) !== "/")
-      url.pathname += "/";
-    return url.href;
-  }
-
   function noSlashUrl(endpoint: string): string {
     const url = new URL(endpoint, "http://127.0.0.1:8000");
     return url.href;
@@ -51,16 +65,18 @@ export function useApi() {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
 
-    get_xml: function (endpoint: string) {
-      return useSWR(fullUrl(endpoint), xml_fetcher);
+    get_endpoint_xml: function (endpointFetch: EndpointFetch) {
+      return useSWR(endpointFetch, endpoint_xml_fetcher);
     },
 
-    follow_xml: function (endpoint: string) {
-      return useSWR(fullUrl(endpoint), xml_fetcher, { refreshInterval: 5000 });
+    follow_endpoint_xml: function (endpointFetch: EndpointFetch) {
+      return useSWR(endpointFetch, endpoint_xml_fetcher, {
+        refreshInterval: 5000,
+      });
     },
 
-    get_pretty_xml: function (endpoint: string) {
-      return useSWR(fullUrl(endpoint), pretty_xml_fetcher);
+    get_pretty_endpoint_xml: function (endpointFetch: EndpointFetch) {
+      return useSWR(endpointFetch, pretty_endpoint_xml_fetcher);
     },
 
     follow: function <T>(endpoint: string) {
@@ -73,10 +89,6 @@ export function useApi() {
 
     digest: function <T>(endpoint: string) {
       return useSWR<T>(fullUrl(endpoint), digest_fetcher);
-    },
-
-    validation: function <T>(endpoint: string) {
-      return useSWR<any>(fullUrl(endpoint), xml_fetcher);
     },
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {

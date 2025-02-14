@@ -20,8 +20,16 @@ export const CCP4i2ReportXMLView = () => {
   const { data: job, mutate: mutateJob } = api.follow<Job>(`jobs/${jobId}`);
   const { data: report_xml, mutate: mutateReportXml } =
     job?.status == 3
-      ? api.follow_xml(`jobs/${jobId}/report_xml`)
-      : api.get_xml(`jobs/${jobId}/report_xml`);
+      ? api.follow_endpoint_xml({
+          type: "jobs",
+          id: jobId,
+          endpoint: "report_xml",
+        })
+      : api.get_endpoint_xml({
+          type: "jobs",
+          id: jobId,
+          endpoint: "report_xml",
+        });
 
   if (!job) return <LinearProgress />;
 

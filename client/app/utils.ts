@@ -181,24 +181,37 @@ export const useJob = (jobId: number | null | undefined) => {
     `jobs/${jobId}/container`
   );
 
-  const { data: params_xml, mutate: mutateParams_xml } = api.get_pretty_xml(
-    `jobs/${jobId}/params_xml`
-  );
+  const { data: params_xml, mutate: mutateParams_xml } =
+    api.get_pretty_endpoint_xml({
+      type: "jobs",
+      id: jobId,
+      endpoint: "params_xml",
+    });
 
-  const { data: validation, mutate: mutateValidation } = api.get_xml(
-    `jobs/${jobId}/validation`
-  );
+  const { data: validation, mutate: mutateValidation } = api.get_endpoint_xml({
+    type: "jobs",
+    id: jobId,
+    endpoint: "validation",
+  });
 
-  const { data: report_xml, mutate: mutateReport_xml } = api.get_xml(
-    `jobs/${jobId}/report_xml`
-  );
+  const { data: report_xml, mutate: mutateReport_xml } = api.get_endpoint_xml({
+    type: "jobs",
+    id: jobId,
+    endpoint: "report_xml",
+  });
 
   const { data: diagnostic_xml, mutate: mutateDiagnosticXml } =
-    api.get_pretty_xml(`jobs/${jobId}/diagnostic_xml`);
+    api.get_pretty_endpoint_xml({
+      type: "jobs",
+      id: jobId,
+      endpoint: "diagnostic_xml",
+    });
 
-  const { data: def_xml, mutate: mutateDef_xml } = api.get_pretty_xml(
-    `jobs/${jobId}/def_xml`
-  );
+  const { data: def_xml, mutate: mutateDef_xml } = api.get_pretty_endpoint_xml({
+    type: "jobs",
+    id: jobId,
+    endpoint: "def_xml",
+  });
 
   return {
     useAsyncEffect: (effect: () => Promise<void>, dependencies: any[]) => {

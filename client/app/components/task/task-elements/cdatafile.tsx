@@ -3,14 +3,11 @@ import {
   AutocompleteChangeReason,
   Avatar,
   Button,
-  ClickAwayListener,
   LinearProgress,
-  Popper,
   Stack,
   styled,
   SxProps,
   TextField,
-  Typography,
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { CCP4i2TaskElementProps } from "./task-element";
@@ -26,7 +23,7 @@ import {
   useState,
 } from "react";
 import { Folder } from "@mui/icons-material";
-import { readFilePromise, useJob } from "../../../utils";
+import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
 
 const fileTypeMapping: { [key: string]: string } = {
@@ -113,10 +110,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   );
   const [value, setValue] = useState<CCP4i2File>(nullFile);
 
-  useEffect(() => {
-    setValue(item._value);
-  }, [item]);
-
   const { objectPath, qualifiers } = useMemo<{
     objectPath: string | null;
     qualifiers: any | null;
@@ -174,8 +167,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           return dehyphentatedUUID === dehyphentatedDbFileId;
         });
         if (chosenOption) setValue(chosenOption);
-        return;
+        else setValue(nullFile);
       }
+      //Here if no dbFileId.  In principle, I think this should not happen
+      else setValue(nullFile);
     }
   }, [objectPath, fileOptions, item]);
 
@@ -194,7 +189,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       const setParameterArg: any = {
         object_path: objectPath,
       };
-      if (reason === "clear") {
+      if (reason === "clear" || value === nullFile) {
         setParameterArg.value = null;
       } else if (value) {
         setValue(value);
@@ -289,7 +284,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           size="small"
           value={value}
           onChange={handleSelect}
-          options={fileOptions || []}
+          options={fileOptions?.concat([nullFile]) || []}
           getOptionLabel={getOptionLabel}
           getOptionKey={(option) => `${option.uuid}`}
           renderInput={(params) => (
@@ -305,7 +300,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
             .join(",")}
           handleFileChange={props.setFiles || defaultSetFile}
         />
-        <ErrorInfo {...props}>{infoContent}</ErrorInfo>
+        <ErrorInfo {...props}>
+          {infoContent}
+          {JSON.stringify(value)}
+        </ErrorInfo>
         <LinearProgress
           ref={progressRef}
           sx={{ height: "2rem", width: "4rem", mt: 1.5 }}
