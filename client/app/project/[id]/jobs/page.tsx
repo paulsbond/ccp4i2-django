@@ -4,6 +4,7 @@ import { Container, LinearProgress } from "@mui/material";
 import { JobsGrid } from "../../../components/jobs-grid";
 import { Project } from "../../../models";
 import { useApi } from "../../../api";
+import { useProject } from "../../../utils";
 
 export default function JobsPage({
   params,
@@ -11,8 +12,7 @@ export default function JobsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const api = useApi();
-  const { data: project } = api.get<Project>(`projects/${id}`);
+  const { project } = useProject(parseInt(id));
   if (!project) return <LinearProgress />;
   return (
     <Container>

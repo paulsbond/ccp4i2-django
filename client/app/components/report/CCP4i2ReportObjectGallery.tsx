@@ -80,6 +80,7 @@ export const CCP4i2ReportObjectGallery: React.FC<CCP4i2ReportElementProps> = (
                     <CCP4i2ReportElement
                       key={`${iItem}`}
                       {...props}
+                      iItem={iItem}
                       item={childItem}
                     />
                   )

@@ -6,9 +6,12 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
-  const { data: container, mutate: mutateContainer } = api.container<any>(
-    `jobs/${props.job.id}/container`
-  );
+  const { data: container, mutate: mutateContainer } =
+    api.get_wrapped_endpoint_json<any>({
+      type: "jobs",
+      id: props.job.id,
+      endpoint: "container",
+    });
 
   if (!container) return <LinearProgress />;
 

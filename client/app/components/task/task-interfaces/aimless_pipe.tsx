@@ -9,9 +9,6 @@ import { CAltSpaceGroupElement } from "../task-elements/caltspacegroupelement";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { data: container, mutate: mutateContainer } = api.container<any>(
-    `jobs/${job.id}/container`
-  );
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
   const { getTaskValue, getTaskItem } = useJob(job.id);

@@ -10,9 +10,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const { getTaskValue } = useJob(job.id);
-  const { data: container, mutate: mutateContainer } = api.container<any>(
-    `jobs/${props.job.id}/container`
-  );
+  const { data: container, mutate: mutateContainer } =
+    api.get_wrapped_endpoint_json<any>({
+      type: "jobs",
+      id: props.job.id,
+      endpoint: "container",
+    });
 
   const ligandAs = getTaskValue("LIGANDAS");
   const obsAs = getTaskValue("OBSAS");

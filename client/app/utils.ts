@@ -176,10 +176,15 @@ export const useProject = (projectId: number) => {
  */
 export const useJob = (jobId: number | null | undefined) => {
   const api = useApi();
+
   const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`);
-  const { data: container, mutate: mutateContainer } = api.container<any>(
-    `jobs/${jobId}/container`
-  );
+
+  const { data: container, mutate: mutateContainer } =
+    api.get_wrapped_endpoint_json<any>({
+      type: "jobs",
+      id: jobId,
+      endpoint: "container",
+    });
 
   const { data: params_xml, mutate: mutateParams_xml } =
     api.get_pretty_endpoint_xml({
@@ -223,6 +228,7 @@ export const useJob = (jobId: number | null | undefined) => {
         executeEffect();
       }, dependencies);
     },
+
     setParameter: useCallback(
       async (setParameterArg: SetParameterArg) => {
         if (job?.status == 1) {
@@ -230,7 +236,6 @@ export const useJob = (jobId: number | null | undefined) => {
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
-          console.log(result);
           await mutateContainer();
           await mutateParams_xml();
           await mutateValidation();
@@ -242,24 +247,28 @@ export const useJob = (jobId: number | null | undefined) => {
       },
       [job, mutateContainer, mutateValidation, mutateParams_xml]
     ),
+
     getTaskItem: useMemo(() => {
       return (param_name: string) => {
         if (param_name?.length == 0) return null;
         return itemsForName(param_name, container)[0];
       };
     }, [container]),
+
     getTaskValue: useMemo(() => {
       return (param_name: string) => {
         const item = itemsForName(param_name, container)[0];
         return valueOfItem(item);
       };
     }, [container]),
+
     getValidationColor: useMemo(() => {
       return (item: any) => {
         const fieldErrors = errorsInValidation(item, validation);
         return validationColor(fieldErrors);
       };
     }, [validation]),
+
     getErrors: useMemo(() => {
       return (item: any) => errorsInValidation(item, validation);
     }, [validation]),
@@ -407,13 +416,13 @@ export const usePrevious = <T>(value: T): T | undefined => {
  */
 const errorsInValidation = (
   item: any,
-  validation: XMLDocument | undefined | null
+  validation: Document | undefined | null
 ): {
   severity: string;
   description: string;
 }[] => {
   if (validation) {
-    const objectPathNodes = $(validation).find("objectpath").toArray();
+    const objectPathNodes = $(validation).find("objectPath").toArray();
     const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
       return node.textContent?.includes(item._objectPath);
     });

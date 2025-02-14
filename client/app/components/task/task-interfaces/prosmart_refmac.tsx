@@ -9,9 +9,6 @@ import { CContainerElement } from "../task-elements/ccontainer";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { data: container, mutate: mutateContainer } = api.container<any>(
-    `jobs/${job.id}/container`
-  );
 
   //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
   //const { data: F_SIGFDigest } = api.digest<any>(
@@ -38,8 +35,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const wavelengthItem = getTaskItem("WAVELENGTH");
 
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
-
-  if (!container) return <LinearProgress />;
 
   useAsyncEffect(async () => {
     if (

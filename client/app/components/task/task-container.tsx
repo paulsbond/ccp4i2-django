@@ -7,6 +7,7 @@ import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
 import SubstituteLigandInterface from "./task-interfaces/SubStituteLigand";
 import AimlessPipeInterface from "./task-interfaces/aimless_pipe";
 import GenericInterface from "./task-interfaces/generic";
+import { useJob } from "../../utils";
 
 export interface CCP4i2TaskInterfaceProps {
   job: Job;
@@ -15,11 +16,7 @@ export interface CCP4i2TaskInterfaceProps {
 export const TaskContainer = () => {
   const api = useApi();
   const { jobId } = useContext(CCP4i2Context);
-  const { data: job } = api.get<Job>(`jobs/${jobId}`);
-  const { data: container, mutate: mutateParams } = api.get<any>(
-    `jobs/${jobId}/container`
-  );
-
+  const { job, container } = useJob(jobId);
   const taskInterface = useMemo(() => {
     if (!job || !container) return <LinearProgress />;
     switch (job.task_name) {

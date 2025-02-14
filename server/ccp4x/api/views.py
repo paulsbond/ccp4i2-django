@@ -499,7 +499,7 @@ class JobViewSet(ModelViewSet):
         try:
             the_job = models.Job.objects.get(id=pk)
             container = json_for_job_container(the_job)
-            return Response({"status": "Success", "container": container})
+            return Response({"status": "Success", "result": container})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})

@@ -23,13 +23,17 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 
   const { mutate: mutateJobs } = api.get<Job[]>(`projects/${job.project}/jobs`);
 
-  const { mutate: mutateContainer } = api.container<any>(
-    `jobs/${props.job.id}/container`
-  );
+  const { mutate: mutateContainer } = api.get_wrapped_endpoint_json<any>({
+    type: "jobs",
+    id: job.id,
+    endpoint: "container",
+  });
 
-  const { mutate: mutateValidation } = api.container<any>(
-    `jobs/${props.job.id}/validation`
-  );
+  const { mutate: mutateValidation } = api.get_endpoint_xml({
+    type: "jobs",
+    id: job.id,
+    endpoint: "validation",
+  });
 
   const { mutate: mutateFiles } = api.get<File[]>(
     `projects/${job.project}/files`

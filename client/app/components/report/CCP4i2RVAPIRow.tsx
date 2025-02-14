@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import $ from "jquery";
-import { Grid } from "@mui/material";
+import { Grid, Grid2 } from "@mui/material";
 import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 
@@ -15,7 +15,7 @@ export const CCP4i2RVAPIRow: React.FC<CCP4i2ReportElementProps> = (props) => {
       .map((iCol, col) => {
         if ($(col).find("div[data-renderer]").length > 0) {
           return (
-            <Grid item key={iCol}>
+            <Grid2 size={{ xs: 6 }} key={iCol}>
               <CCP4i2ReportFlotWidget
                 //Might the following line be because col is found bysearching from dt element
                 //@ts-ignore
@@ -23,12 +23,12 @@ export const CCP4i2RVAPIRow: React.FC<CCP4i2ReportElementProps> = (props) => {
                 iItem={iCol}
                 uniqueId={$(col).find("div[data-renderer]").data("data")}
               />
-            </Grid>
+            </Grid2>
           );
         } else {
           return (
-            <Grid
-              item
+            <Grid2
+              size={{ xs: 6 }}
               key={iCol}
               dangerouslySetInnerHTML={{ __html: col.innerHTML }}
             />
@@ -38,5 +38,5 @@ export const CCP4i2RVAPIRow: React.FC<CCP4i2ReportElementProps> = (props) => {
     setContent(newContent);
   }, [props.job, props.item]);
 
-  return <Grid container>{content}</Grid>;
+  return <Grid2 container>{content}</Grid2>;
 };

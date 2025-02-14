@@ -40,10 +40,14 @@ const pretty_endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
     );
 };
 
-const container_fetcher = (url: string) => {
+const endpoint_wrapped_json_fetcher = (endpointFetch: EndpointFetch) => {
+  if (!endpointFetch.id) return Promise.reject();
+  const url = fullUrl(
+    `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
+  );
   return fetch(url)
     .then((r) => r.json())
-    .then((r1) => Promise.resolve(JSON.parse(r1.container)));
+    .then((r) => JSON.parse(r.result));
 };
 
 const digest_fetcher = (url: string) => {
@@ -65,7 +69,7 @@ export function useApi() {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
 
-    get_endpoint_xml: function (endpointFetch: EndpointFetch) {
+    get_endpoint_xml: function <XMLDocument>(endpointFetch: EndpointFetch) {
       return useSWR(endpointFetch, endpoint_xml_fetcher);
     },
 
@@ -79,12 +83,12 @@ export function useApi() {
       return useSWR(endpointFetch, pretty_endpoint_xml_fetcher);
     },
 
-    follow: function <T>(endpoint: string) {
-      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 5000 });
+    get_wrapped_endpoint_json: function <T>(endpointFetch: EndpointFetch) {
+      return useSWR<T>(endpointFetch, endpoint_wrapped_json_fetcher, {});
     },
 
-    container: function <T>(endpoint: string) {
-      return useSWR<T>(fullUrl(endpoint), container_fetcher);
+    follow: function <T>(endpoint: string) {
+      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 5000 });
     },
 
     digest: function <T>(endpoint: string) {
