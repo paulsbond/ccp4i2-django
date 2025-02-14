@@ -50,8 +50,12 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   const options: { id: string; label: string }[] | undefined = useMemo(() => {
     if (qualifiers?.enumerators) {
-      const enumerators: string[] | null = qualifiers?.enumerators.map(
-        (substring: string) => substring.trim()
+      const enumerators: string[] | null = qualifiers?.enumerators?.map(
+        (element: any) => {
+          if (typeof element === "string" || element instanceof String)
+            return element.trim();
+          return element;
+        }
       );
       let menuText: string[] | null = enumerators;
       if (
