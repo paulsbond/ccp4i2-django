@@ -5,6 +5,7 @@ import {
   Grid2,
   GridSize,
   SxProps,
+  Typography,
 } from "@mui/material";
 import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
@@ -52,7 +53,7 @@ export const CContainerElement: React.FC<
   const childNames = useMemo(() => {
     if (item) {
       if (
-        Array.isArray(item?._CONTENT_ORDER) &&
+        Array.isArray(item?._CONTENTS_ORDER) &&
         item._CONTENTS_ORDER.length > 0
       ) {
         return item._CONTENTS_ORDER;
@@ -63,6 +64,20 @@ export const CContainerElement: React.FC<
     }
     return [];
   }, [item]);
+
+  const calculatedContent = useMemo(() => {
+    return childNames.map((childName: string) => (
+      <Grid2 key={`${item._objectPath}.${childName}`} size={size}>
+        <CCP4i2TaskElement
+          key={`${item._objectPath}.${childName}`}
+          {...props}
+          sx={elementSx}
+          itemName={`${item._objectPath}.${childName}`}
+          qualifiers={{ ...props, guiLabel: childName }}
+        />
+      </Grid2>
+    ));
+  }, [item, elementSx, childNames]);
 
   return containerHint === "FolderLevel" || containerHint === "BlockLevel"
     ? inferredVisibility && (
@@ -77,19 +92,7 @@ export const CContainerElement: React.FC<
           )}
           <CardContent>
             {children}
-            <Grid2 container>
-              {childNames.map((childName: string) => (
-                <Grid2 key={`${item._objectPath}.${childName}`} size={size}>
-                  <CCP4i2TaskElement
-                    key={`${item._objectPath}.${childName}`}
-                    {...props}
-                    sx={elementSx}
-                    itemName={`${item._objectPath}.${childName}`}
-                    qualifiers={{ ...props, guiLabel: childName }}
-                  />
-                </Grid2>
-              ))}
-            </Grid2>
+            <Grid2 container>{calculatedContent}</Grid2>
           </CardContent>
         </Card>
       )
