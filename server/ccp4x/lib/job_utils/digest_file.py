@@ -22,6 +22,8 @@ def digest_file(the_job, object_path):
         return {"status": "Failed", "reason": str(err)}
     content_dict = {}
     if isinstance(file_object, CCP4File.CDataFile):
+        if not file_object.isSet():
+            return content_dict
         try:
             file_object.loadFile()
             file_object.setContentFlag(reset=True)
