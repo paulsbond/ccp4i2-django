@@ -208,7 +208,7 @@ export const useJob = (jobId: number | null | undefined) => {
       endpoint: "params_xml",
     });
 
-  const { data: validation, mutate: mutateValidation } = api.get_endpoint_xml({
+  const { data: validation, mutate: mutateValidation } = api.get_validation({
     type: "jobs",
     id: jobId,
     endpoint: "validation",
@@ -287,6 +287,7 @@ export const useJob = (jobId: number | null | undefined) => {
     getErrors: useMemo(() => {
       return (item: any) => errorsInValidation(item, validation);
     }, [validation]),
+
     getFileDigest: useMemo(() => {
       return (objectPath: string) => {
         return api.digest<any>(
@@ -394,11 +395,12 @@ export const valueOfItem = (item: any): any => {
  * @param {any[]} fieldErrors - An array of field error objects.
  * @returns {string} - Returns "success.light" if there are no errors, "warning.light" if there are warnings, and "error.light" if there are errors.
  */
-export const validationColor = (fieldErrors: any[]): string => {
-  return fieldErrors && fieldErrors.length == 0
+export const validationColor = (fieldErrors: any): string => {
+  return !fieldErrors
     ? "success.light"
-    : fieldErrors &&
-      fieldErrors.some((fieldError) => fieldError.severity.includes("WARNING"))
+    : fieldErrors.maxSeverity == 0
+    ? "success.light"
+    : fieldErrors && fieldErrors.maxSeverity == 1
     ? "warning.light"
     : "error.light";
 };
@@ -429,42 +431,9 @@ export const usePrevious = <T>(value: T): T | undefined => {
  * @returns An array of objects, each containing the severity and description of a validation error.
  *          If no errors are found, an empty array is returned.
  */
-const errorsInValidation = (
-  item: any,
-  validation: Document | undefined | null
-): {
-  severity: string;
-  description: string;
-}[] => {
+const errorsInValidation = (item: any, validation: any): any | null => {
   if (validation) {
-    const objectPathNodes = $(validation).find("objectPath").toArray();
-    const errorObjectNodes = objectPathNodes.filter((node: HTMLElement) => {
-      return node.textContent?.includes(item._objectPath);
-    });
-    if (errorObjectNodes.length === 0) {
-      return [];
-    }
-    const errors: {
-      severity: string;
-      description: string;
-    }[] = [];
-    errorObjectNodes.forEach((errorObjectNode: any) => {
-      const errorNode = $(errorObjectNode).parent();
-      if (errorNode) {
-        const result: { severity: string; description: string } = {
-          severity: "",
-          description: "",
-        };
-        const severity = $(errorNode).find("severity").get(0)?.textContent;
-        if (severity) result.severity = severity;
-        const description = $(errorNode)
-          .find("description")
-          .get(0)?.textContent;
-        if (description) result.description = description;
-        errors.push(result);
-      }
-    });
-    return errors;
+    return validation[item._objectPath];
   }
-  return [];
+  return null;
 };

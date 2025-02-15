@@ -26,6 +26,45 @@ const endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
     );
 };
 
+const endpoint_validation_fetcher = (endpointFetch: EndpointFetch) => {
+  if (!endpointFetch.id) return Promise.reject();
+  const url = fullUrl(
+    `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
+  );
+  return fetch(url)
+    .then((r) => r.json())
+    .then((r1) => {
+      const validationXml = $.parseXML(r1.xml);
+      const objectPaths = $(validationXml).find("objectPath").toArray();
+      const results: any = {};
+      objectPaths.forEach((errorObjectNode: HTMLElement) => {
+        const objectPath = errorObjectNode.textContent?.trim();
+        console.log(objectPath);
+        if (objectPath && objectPath.length > 0) {
+          let objectErrors: { messages: string[]; maxSeverity: number };
+          if (!Object.keys(results).includes(objectPath)) {
+            results[objectPath] = { messages: [], maxSeverity: 0 };
+          }
+          objectErrors = results[objectPath];
+          const errorNode = $(errorObjectNode).parent();
+          if (errorNode) {
+            const severity = $(errorNode).find("severity").get(0)?.textContent;
+            if (severity?.includes("WARNING") && objectErrors.maxSeverity < 1)
+              objectErrors.maxSeverity = 1;
+            if (severity?.includes("ERROR") && objectErrors.maxSeverity < 2)
+              objectErrors.maxSeverity = 2;
+            const description = $(errorNode)
+              .find("description")
+              .get(0)?.textContent;
+            if (description) objectErrors.messages.push(description);
+          }
+        }
+      });
+      console.log(results);
+      return Promise.resolve(results);
+    });
+};
+
 const pretty_endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
   const url = fullUrl(
@@ -97,6 +136,10 @@ export function useApi() {
 
     get_wrapped_endpoint_json: function <T>(endpointFetch: EndpointFetch) {
       return useSWR<T>(endpointFetch, endpoint_wrapped_json_fetcher, {});
+    },
+
+    get_validation: function (endpointFetch: EndpointFetch) {
+      return useSWR(endpointFetch, endpoint_validation_fetcher, {});
     },
 
     follow: function <T>(endpoint: string) {

@@ -1,16 +1,13 @@
 "use client";
-import { use, useContext, useEffect, useMemo, useState } from "react";
+import { use, useContext, useEffect, useState } from "react";
 import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
-import { Job } from "../../../../models";
 import { useApi } from "../../../../api";
 import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../components/job-header";
 import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportXMLView";
 import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidget";
-import $ from "jquery";
 import { CCP4i2Context } from "../../../../app-context";
 import { TaskContainer } from "../../../../components/task/task-container";
-import { ValidationViewer } from "../../../../components/validation-viewer";
 import { useJob, useProject } from "../../../../utils";
 
 export default function JobPage({
@@ -21,6 +18,11 @@ export default function JobPage({
   const api = useApi();
   const { id, jobid } = use(params);
   const { project, jobs, mutateJobs } = useProject(parseInt(id));
+  const { data: validationJson } = api.get_validation({
+    type: "jobs",
+    id: parseInt(jobid),
+    endpoint: "validation",
+  });
 
   const { setJobId } = useContext(CCP4i2Context);
 
@@ -89,7 +91,13 @@ export default function JobPage({
       {tabValue == 5 && def_xml && (
         <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
       )}
-      {tabValue == 6 && validation && <ValidationViewer />}
+      {tabValue == 6 && validation && (
+        <Editor
+          height="calc(100vh - 15rem)"
+          value={JSON.stringify(validation, null, 2)}
+          language="json"
+        />
+      )}
       {tabValue == 7 && container && (
         <Editor
           height="calc(100vh - 15rem)"
