@@ -35,7 +35,7 @@ const pathMatch = (path: string | null | undefined, name: string) => {
 const findItems = (
   name: string,
   container: any,
-  multiple: boolean = true,
+  multiple: boolean = false,
   growingList?: any[]
 ): any[] => {
   const listToGrow = growingList ? growingList : [];
@@ -266,13 +266,13 @@ export const useJob = (jobId: number | null | undefined) => {
     getTaskItem: useMemo(() => {
       return (param_name: string) => {
         if (param_name?.length == 0) return null;
-        return itemsForName(param_name, container)[0];
+        return itemsForName(param_name, container, false)[0];
       };
     }, [container]),
 
     getTaskValue: useMemo(() => {
       return (param_name: string) => {
-        const item = itemsForName(param_name, container)[0];
+        const item = itemsForName(param_name, container, false)[0];
         return valueOfItem(item);
       };
     }, [container]),
