@@ -107,7 +107,7 @@ export class File {
     public uuid: string,
     public name: string,
     public directory: number,
-    public type: number,
+    public type: string,
     public sub_type: number,
     public content: number,
     public annotation: string,
@@ -151,15 +151,17 @@ export class XData {
 }
 
 export const nullFile = {
+  exports: [],
+  fileimport: -1,
+  file_uses: [],
   id: -1,
   uuid: "",
-  file: "",
-  type: "",
   name: "",
-  size: -1,
-  job: -1,
-  annotation: "No file selected",
-  content: -1,
-  sub_type: -1,
   directory: -1,
+  type: "",
+  sub_type: -1,
+  content: -1,
+  annotation: "",
+  job: -1,
+  job_param_name: "",
 };
