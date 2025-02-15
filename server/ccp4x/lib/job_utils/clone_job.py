@@ -46,7 +46,6 @@ def clone_job(jobId: str = None):
 
     next_job_number = str(last_job_number + 1)
     new_job_dir = Path(the_project.directory) / "CCP4_JOBS" / f"job_{next_job_number}"
-    new_jobId = uuid.uuid4()
 
     task_manager = CCP4TaskManager.CTaskManager()
     plugin_class = task_manager.getPluginScriptClass(task_name)
@@ -60,11 +59,10 @@ def clone_job(jobId: str = None):
     # unset_output_data(the_job_plugin)
 
     new_job = models.Job(
-        uuid=new_jobId,
         number=str(next_job_number),
         finish_time=datetime.datetime.fromtimestamp(0, tz=timezone("UTC")),
-        status=1,
-        evaluation=0,
+        status=models.Job.Status.PENDING,
+        evaluation=models.Job.Evaluation.UNKNOWN,
         title=task_manager.getTitle(task_name),
         project=the_project,
         task_name=task_name,

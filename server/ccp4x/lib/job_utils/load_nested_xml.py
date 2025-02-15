@@ -51,7 +51,7 @@ def load_nested_xml(
             embedded_xml = ET.fromstring(embedded_xml_string)
             src_input_data = embedded_xml.find(".//container[@id='inputData']")
             dest_input_data = dest_node.find(".//container[@id='inputData']")
-            print(src_input_data)
+            # print(src_input_data)
             for child_element in src_input_data:
                 load_nested_xml(child_element, dest_input_data)
             continue

@@ -108,7 +108,6 @@ class CCP4i2TestCase(TestCase):
             ),
         )
         result = response.json()
-        print(result)
         self.assertDictEqual(
             result,
             {

@@ -267,7 +267,6 @@ class ProjectViewSet(ModelViewSet):
             FileResponse: A response object containing the requested file.
         """
         the_project = models.Project.objects.get(pk=pk)
-        print(request)
         file_path = request.GET.get("path")
         composite_path: pathlib.Path = pathlib.Path(the_project.directory) / file_path
         if pathlib.Path(the_project.directory) not in composite_path.resolve().parents:

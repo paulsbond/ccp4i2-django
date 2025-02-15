@@ -15,11 +15,11 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict]):
     the_job_plugin = get_job_plugin(job)
     the_container: CContainer = the_job_plugin.container
-    print("object_path", object_path)
+    # print("object_path", object_path)
     try:
         object_element = find_object_by_path(the_container, object_path)
         e = object_element.getEtree()
-        print(ET.tostring(e).decode("utf-8"))
+        # print(ET.tostring(e).decode("utf-8"))
         object_element.unSet()
         if value is None:
             object_element.unSet()
@@ -37,7 +37,7 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
                 object_element.objectName(),
                 value,
             )
-        print(object_element)
+        # print(object_element)
 
         logger.warning(
             "Parameter %s now has value %s in job number %s",

@@ -93,7 +93,7 @@ def retrievePlugin(
         return the_plugin
     except Exception as err:
         logger.exception(f"Err getting job {str(err)}", exc_info=err)
-        new_job.status = 5
+        new_job.status = models.Job.Status.FAILED
         new_job.save()
         raise err
 
@@ -105,7 +105,7 @@ def _save_params_for_job(
         save_params_for_job(the_plugin, new_job)
     except Exception as err:
         logger.exception("Exception setting filenames", exc_info=err)
-        new_job.status = 5
+        new_job.status = models.Job.Status.FAILED
         raise err
     logger.info("Retrieved setOutputFileNames")
 
@@ -144,7 +144,7 @@ def setup_plugin(
         logger.info("Set singleshot quit timer")
 
     the_plugin.finished.connect(closeApp)
-    new_job.status = 3  # Running
+    new_job.status = models.Job.Status.RUNNING
     new_job.save()
     logger.info("Status running set")
 
@@ -154,7 +154,7 @@ def _import_files(new_job: models.Job, the_plugin: CCP4PluginScript.CPluginScrip
         import_files(new_job, the_plugin)
     except Exception as err:
         logger.exception("Failed importing files", exc_info=err)
-        new_job.status = 5
+        new_job.status = models.Job.Status.FAILED
         new_job.save()
         raise err
     logger.info("Files imported")
@@ -169,7 +169,7 @@ def executePlugin(
         rv = the_plugin.process()
     except Exception as err:
         logger.exception(f"Failed to execute plugin {new_job.task_name}", exc_info=err)
-        new_job.status = 5
+        new_job.status = models.Job.Status.FAILED
         new_job.save()
         raise err
     logger.warning(f"Result from the_plugin.process is {str(rv)}")
@@ -180,7 +180,7 @@ def executePlugin(
         return result
     except Exception as err:
         logger.exception(f"Failed to execute plugin {new_job.task_name}", exc_info=err)
-        new_job.status = 5
+        new_job.status = models.Job.Status.FAILED
         new_job.save()
         # backupProjectDb(new_job.projectid)
         raise err

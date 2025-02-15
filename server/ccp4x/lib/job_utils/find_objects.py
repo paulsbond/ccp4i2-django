@@ -63,10 +63,10 @@ def find_objects(within, func, multiple=False, growing_list=None, growing_name=N
             (list),
         ):
             growing_name = f"{growing_name}[{ichild}]"
-            print("Searching list", within.objectName())
+            # print("Searching list", within.objectName())
         else:
             growing_name = f"{growing_name}.{child.objectName()}"
-        print(growing_name)
+        # print(growing_name)
         if func(child):
             growing_list.append(child)
             if not multiple:

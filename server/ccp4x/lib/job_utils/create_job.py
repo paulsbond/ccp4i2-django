@@ -97,7 +97,7 @@ def create_job(
         uuid=new_job_id,
         number=str(next_job_number),
         status=models.Job.Status.PENDING,
-        evaluation=0,
+        evaluation=models.Job.Evaluation.UNKNOWN,
         title=title,
         project=the_project,
         task_name=taskName,
