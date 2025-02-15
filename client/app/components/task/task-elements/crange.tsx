@@ -1,7 +1,7 @@
 import { CCP4i2TaskElementProps } from "./task-element";
 import { CContainerElement } from "./ccontainer";
 
-export const CFloatRangeElement: React.FC<CCP4i2TaskElementProps> = (props) => (
+export const CRangeElement: React.FC<CCP4i2TaskElementProps> = (props) => (
   <CContainerElement
     {...props}
     qualifiers={props.qualifiers}

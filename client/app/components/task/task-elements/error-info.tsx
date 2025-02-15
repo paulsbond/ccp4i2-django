@@ -12,7 +12,6 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const infoOpen = Boolean(anchorEl);
   const fieldErrors = getErrors(item);
-
   return (
     <>
       <ClickAwayListener

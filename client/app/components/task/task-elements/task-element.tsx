@@ -6,7 +6,6 @@ import { CStringElement } from "./cstring";
 import { useJob } from "../../../utils";
 import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
-import $ from "jquery";
 import { CMiniMtzDataFileElement } from "./cminimtzdatafile";
 import { CBooleanElement } from "./cboolean";
 import { CListElement } from "./list";
@@ -17,7 +16,7 @@ import { CEnsembleElement } from "./censemble";
 import { CAltSpaceGroupElement } from "./caltspacegroupelement";
 import { CSimpleDataFileElement } from "./csimpledatafile";
 import { CReindexOperatorElement } from "./creindexoperator";
-import { CFloatRangeElement } from "./cfloatrange";
+import { CRangeElement } from "./crange";
 import { v4 as uuid4 } from "uuid";
 
 export interface CCP4i2TaskElementProps extends PropsWithChildren {
@@ -54,6 +53,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   }, [props.visibility]);
 
   const item = getTaskItem(props.itemName);
+  const the_uuid = uuid4();
 
   const qualifiers = useMemo<any>(() => {
     if (item?._qualifiers) {
@@ -72,28 +72,29 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const interfaceElement = useMemo(() => {
     switch (item?._class) {
       case "CInt":
-        return <CIntElement key={uuid4()} {...props} qualifiers={qualifiers} />;
+        return (
+          <CIntElement key={the_uuid} {...props} qualifiers={qualifiers} />
+        );
       case "CFloat":
       case "CCellLength":
       case "CCellAngle":
       case "CWavelength":
-      case "CRangeSelection":
         return (
-          <CFloatElement key={uuid4()} {...props} qualifiers={qualifiers} />
+          <CFloatElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
       case "CString":
       case "COneWord":
         return (
-          <CStringElement key={uuid4()} {...props} qualifiers={qualifiers} />
+          <CStringElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
       case "CBoolean":
         return (
-          <CBooleanElement key={uuid4()} {...props} qualifiers={qualifiers} />
+          <CBooleanElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
       case "CPdbDataFile":
         return (
           <CPdbDataFileElement
-            key={uuid4()}
+            key={the_uuid}
             {...props}
             qualifiers={qualifiers}
           />
@@ -101,7 +102,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CImportUnmerged":
         return (
           <CImportUnmergedElement
-            key={uuid4()}
+            key={the_uuid}
             {...props}
             qualifiers={qualifiers}
           />
@@ -116,7 +117,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CMDLMolDataFile":
         return (
           <CSimpleDataFileElement
-            key={uuid4()}
+            key={the_uuid}
             {...props}
             qualifiers={qualifiers}
           />
@@ -127,7 +128,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CPhsDataFile":
         return (
           <CMiniMtzDataFileElement
-            key={uuid4()}
+            key={the_uuid}
             {...props}
             qualifiers={qualifiers}
           />
@@ -137,48 +138,49 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CAltSpaceGroupList":
       case "CEnsembleList":
         return (
-          <CListElement key={uuid4()} {...props} qualifiers={qualifiers} />
+          <CListElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
       case "CEnsemble":
         return (
-          <CEnsembleElement key={uuid4()} {...props} qualifiers={qualifiers} />
+          <CEnsembleElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
+      case "CRangeSelection":
       case "CFloatRange":
         return (
-          <CFloatRangeElement
-            key={uuid4()}
-            {...props}
-            qualifiers={qualifiers}
-          />
+          <CRangeElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
       case "CPdbEnsembleItem":
       case "CContainer":
         return (
-          <CContainerElement key={uuid4()} {...props} qualifiers={qualifiers} />
+          <CContainerElement
+            key={the_uuid}
+            {...props}
+            qualifiers={qualifiers}
+          />
         );
       case "CReindexOperator":
         return (
           <CReindexOperatorElement
-            key={uuid4()}
+            key={the_uuid}
             {...props}
             qualifiers={qualifiers}
           />
         );
       case "CCell":
         return (
-          <CCellElement key={uuid4()} {...props} qualifiers={qualifiers} />
+          <CCellElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
       case "CAltSpaceGroup":
         return (
           <CAltSpaceGroupElement
-            key={uuid4()}
+            key={the_uuid}
             {...props}
             qualifiers={qualifiers}
           />
         );
       default:
         return (
-          <Typography key={uuid4()}>
+          <Typography key={the_uuid}>
             {item ? item._class : "No item"}
           </Typography>
         );

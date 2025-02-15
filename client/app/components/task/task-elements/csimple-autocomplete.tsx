@@ -1,16 +1,8 @@
-import {
-  SyntheticEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { SyntheticEvent, useCallback, useMemo, useState } from "react";
 import {
   Autocomplete,
   AutocompleteChangeReason,
   LinearProgress,
-  Menu,
-  MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
@@ -25,19 +17,13 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
 
-  const [value, setValue] = useState<{
-    id: string | number;
-    label: string;
-  } | null>(null);
+  const [value, setValue] = useState<string | number>(item._value);
+
   const [inFlight, setInFlight] = useState(false);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
     null
   );
   const validationOpen = Boolean(validationAnchor);
-
-  useEffect(() => {
-    setValue(item._value);
-  }, [item]);
 
   const { objectPath } = useMemo<{
     objectPath: string | null;
@@ -48,41 +34,30 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   const { setParameter } = useJob(job.id);
 
-  const options: { id: string; label: string }[] | undefined = useMemo(() => {
-    if (qualifiers?.enumerators) {
-      const enumerators: string[] | null = qualifiers?.enumerators?.map(
-        (element: any) => {
-          if (typeof element === "string" || element instanceof String)
-            return element.trim();
-          return element;
-        }
-      );
-      let menuText: string[] | null = enumerators;
-      if (
-        qualifiers?.menuText &&
-        qualifiers?.enumerators &&
-        qualifiers.menuText.length == qualifiers.enumerators.length
-      ) {
-        menuText = qualifiers?.menuText.map((substring: string) =>
-          substring.trim()
-        );
-      }
-
-      const options = enumerators?.map(
-        (enumerator: string, iEnumerator: number) => {
-          return {
-            id: enumerator,
-            label:
-              menuText && menuText.length == enumerators.length
-                ? menuText[iEnumerator]
-                : enumerator,
-          };
-        }
-      );
-      return options;
+  const enumerators = useMemo<(string | number)[]>(() => {
+    const result = qualifiers?.enumerators?.map((element: any) => {
+      if (typeof element === "string" || element instanceof String)
+        return element.trim();
+      return element;
+    });
+    if (item?.value && result && !result.includes(item.value)) {
+      result.push(item._value);
     }
-    return [];
-  }, [qualifiers]);
+    return result ? result : [];
+  }, [item, qualifiers]);
+
+  const labels = useMemo<string[]>(() => {
+    let menuText: string[] = enumerators.map((item) => `${item}`);
+    if (
+      qualifiers?.menuText &&
+      qualifiers.menuText.length == enumerators.length
+    ) {
+      menuText = qualifiers?.menuText.map((substring: string) =>
+        substring.trim()
+      );
+    }
+    return menuText;
+  }, [qualifiers, enumerators]);
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel
@@ -90,33 +65,17 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
       : objectPath?.split(".").at(-1);
   }, [objectPath, qualifiers]);
 
-  useEffect(() => {
-    if (item && item._value) {
-      const orderedLabels = options?.map(
-        (option: { id: string; label: string }) => option.label
-      );
-      const orderedIds = options?.map(
-        (option: { id: string; label: string }) => option.id
-      );
-      let label: string | undefined = `${item._value}`;
-      if (orderedIds?.includes(item._value)) {
-        label = orderedLabels?.at(orderedIds.indexOf(item._value));
-      }
-      setValue({ id: item._value, label: label as string });
-    }
-  }, [props, options]);
-
   const handleSelect = useCallback(
     async (
       event: SyntheticEvent<Element, Event>,
-      value: { id: string | number; label: string } | null,
+      value: number | string | null,
       reason: AutocompleteChangeReason
     ) => {
       if (value) {
         setValue(value);
         const setParameterArg = {
           object_path: item._objectPath,
-          value: value.id,
+          value: value,
         };
         console.log({ setParameterArg });
         setInFlight(true);
@@ -133,6 +92,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     },
     [type]
   );
+
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
     if (typeof props.visibility === "function") {
@@ -141,15 +101,33 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
+  const isDisabled = useMemo(() => job.status !== 1, [job]);
+
+  const calculatedSx = useMemo(() => {
+    return { minWidth: "20rem", py: 0, mb: 1, ...sx };
+  }, [sx]);
+
+  const getOptionLabel = useCallback(
+    (option: string | number) => {
+      const result = labels[enumerators.indexOf(option)];
+      if (!result) console.log("Failed finding label", item);
+      return labels[enumerators.indexOf(option)];
+    },
+    [enumerators, labels]
+  );
+
   return (
-    inferredVisibility && (
+    inferredVisibility &&
+    enumerators &&
+    labels && (
       <Stack direction="row" sx={{ mb: 2 }}>
         <Autocomplete
-          disabled={job.status !== 1}
-          sx={{ minWidth: "20rem", py: 0, mb: 1, ...sx }}
+          disabled={isDisabled}
+          sx={calculatedSx}
           value={value}
           onChange={handleSelect}
-          options={options || []}
+          getOptionLabel={getOptionLabel}
+          options={enumerators}
           size="small"
           renderInput={(params) => (
             <TextField {...params} label={guiLabel} size="small" />
@@ -163,9 +141,6 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
             value={0}
           />
         </Stack>
-        <Menu open={validationOpen} anchorEl={validationAnchor}>
-          <MenuItem> </MenuItem>
-        </Menu>
       </Stack>
     )
   );

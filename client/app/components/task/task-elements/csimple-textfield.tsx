@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { LinearProgress, Stack, TextField } from "@mui/material";
+import { LinearProgress, Stack, TextField, Typography } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
@@ -22,7 +22,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const inputRef = useRef<HTMLElement | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);
 
-  const [value, setValue] = useState<number | string | boolean | null>(null);
+  const [value, setValue] = useState<number | string | boolean>(item._value);
 
   const { setParameter } = useJob(job.id);
 
@@ -70,6 +70,10 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     [value]
   );
 
+  const handleBlur = useCallback(() => {
+    if (value !== item._value) sendValue();
+  }, [item, value]);
+
   const sendValue = useCallback(async () => {
     sendExplicitValue(value);
   }, [objectPath, value]);
@@ -114,32 +118,44 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
+  const compositedSx = useMemo(() => {
+    return { minWidth: "20rem", py: 0, my: 0, ...sx };
+  }, [sx]);
+
+  const calculatedTitle = useMemo(
+    () => (qualifiers?.toolTip ? qualifiers.toolTip : objectPath),
+    [qualifiers, objectPath]
+  );
+
+  const calculatedSlotProps = useMemo(
+    () =>
+      type === "checkbox"
+        ? {
+            htmlInput: { checked: value, sx: { my: 1 } },
+          }
+        : {},
+    [type, value]
+  );
+
+  const isDisabled = useMemo(() => job.status !== 1, [job]);
+
   return (
     inferredVisibility && (
       <Stack direction="row" sx={{ mb: 2 }}>
         <TextField
           multiline={multiLine}
           inputRef={inputRef}
-          disabled={job.status !== 1}
+          disabled={isDisabled}
           size="small"
-          sx={{ minWidth: "20rem", py: 0, my: 0, ...sx }}
-          slotProps={
-            type === "checkbox"
-              ? {
-                  htmlInput: { checked: value, sx: { my: 1 } },
-                }
-              : {}
-          }
+          sx={compositedSx}
+          slotProps={calculatedSlotProps}
           type={type}
-          value={value || ""}
+          value={value}
           label={guiLabel}
-          title={qualifiers?.toolTip ? qualifiers.toolTip : objectPath}
+          title={calculatedTitle}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onFocusCapture={(ev) => console.log(ev)}
-          onBlur={(ev) => {
-            if (value !== item._value) sendValue();
-          }}
+          onBlur={handleBlur}
         />
         <Stack direction="column">
           <ErrorInfo {...props} />
