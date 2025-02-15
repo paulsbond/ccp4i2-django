@@ -75,9 +75,10 @@ export default function FileMenu() {
           ?.sort((a: Project, b: Project) => {
             const dateA = new Date(a.last_access);
             const dateB = new Date(b.last_access);
-            return dateB.getTime() - dateA.getTime();
+            return dateA.getTime() - dateB.getTime();
           })
           .slice(-10)
+          .reverse()
           .map((project: Project) => (
             <MenuItem
               key={project.id}
