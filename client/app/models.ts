@@ -36,7 +36,7 @@ export class ProjectImport {
 }
 export class Job {
   constructor(
-    public children: number[],
+    //public children: number[],
     public serverjob: number,
     public float_values: number[],
     public char_values: number[],

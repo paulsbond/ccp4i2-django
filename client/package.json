@@ -11,6 +11,7 @@
     "@mui/icons-material": "^6.1.6",
     "@mui/material": "^6.1.6",
     "@mui/material-nextjs": "^6.1.6",
+    "@mui/x-tree-view": "^7.26.0",
     "fs": "^0.0.1-security",
     "jquery": "^3.7.1",
     "jquery.flot": "^0.8.3",

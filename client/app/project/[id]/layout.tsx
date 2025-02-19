@@ -16,6 +16,7 @@ import { useApi } from "../../api";
 import Script from "next/script";
 import { CCP4i2DirectoryViewer } from "../../components/directory_viewer";
 import { useProject } from "../../utils";
+import { ClassicJobList } from "../../components/classic-jobs-list";
 
 const createArgs = {
   print(t: string) {
@@ -104,10 +105,12 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               variant="fullWidth"
             >
               <Tab value={0} label="Job list" />
-              <Tab value={1} label="Project directory" />
+              <Tab value={1} label="Job grid" />
+              <Tab value={2} label="Project directory" />
             </Tabs>
-            {tabValue == 0 && <JobsGrid projectId={id} size={{ xs: 12 }} />}
-            {tabValue == 1 && <CCP4i2DirectoryViewer projectId={id} />}
+            {tabValue == 0 && <ClassicJobList projectId={id} />}
+            {tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />}
+            {tabValue == 2 && <CCP4i2DirectoryViewer projectId={id} />}
           </Paper>
         </Panel>
         <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />
