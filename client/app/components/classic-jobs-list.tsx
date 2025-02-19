@@ -450,13 +450,28 @@ const JobMenu: React.FC = () => {
       anchorEl={anchorEl}
       onClose={() => setAnchorEl(null)}
     >
-      <MenuItem key="Clone" onClick={handleClone}>
+      <MenuItem
+        key="Clone"
+        disabled={(menuNode as Job).number.includes(".")}
+        onClick={handleClone}
+      >
         <CopyAll /> Clone
       </MenuItem>
-      <MenuItem key="Run" onClick={handleRun}>
+      <MenuItem
+        key="Run"
+        disabled={
+          (menuNode as Job).number.includes(".") ||
+          (menuNode as Job).status !== 1
+        }
+        onClick={handleRun}
+      >
         <RunCircle /> Run
       </MenuItem>
-      <MenuItem key="Delete" onClick={handleDelete}>
+      <MenuItem
+        key="Delete"
+        disabled={(menuNode as Job).number.includes(".")}
+        onClick={handleDelete}
+      >
         <Delete /> Delete
       </MenuItem>
     </Menu>

@@ -39,7 +39,8 @@ export interface ProjectLayoutProps extends PropsWithChildren {
 }
 
 export default function ProjectLayout(props: ProjectLayoutProps) {
-  const { setProjectId, setCootModule } = useContext(CCP4i2Context);
+  const { setProjectId, setCootModule, setJobPanelSize } =
+    useContext(CCP4i2Context);
   const api = useApi();
   const [tabValue, setTabValue] = useState(0);
   const { id } = use(props.params);
@@ -95,7 +96,6 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
           }}
         />
       )}
-      <ToolBar />
       <PanelGroup direction="horizontal">
         <Panel defaultSize={30} minSize={20}>
           <Paper sx={{ overflowY: "auto", height: "calc(100vh - 8rem)" }}>
@@ -105,16 +105,20 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               variant="fullWidth"
             >
               <Tab value={0} label="Job list" />
-              <Tab value={1} label="Job grid" />
+              {/*<Tab value={1} label="Job grid" />*/}
               <Tab value={2} label="Project directory" />
             </Tabs>
             {tabValue == 0 && <ClassicJobList projectId={id} />}
-            {tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />}
+            {/*tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />*/}
             {tabValue == 2 && <CCP4i2DirectoryViewer projectId={id} />}
           </Paper>
         </Panel>
         <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />
-        <Panel defaultSize={70} minSize={20}>
+        <Panel
+          defaultSize={70}
+          minSize={20}
+          onResize={(size) => setJobPanelSize && setJobPanelSize(size)}
+        >
           {props.children}
         </Panel>
       </PanelGroup>

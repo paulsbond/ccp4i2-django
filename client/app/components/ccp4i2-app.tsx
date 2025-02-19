@@ -5,9 +5,10 @@ import { CssBaseline } from "@mui/material";
 import MenuBar from "./menu-bar";
 
 export const CCP4i2App = (props: PropsWithChildren) => {
-  const [projectId, setProjectId] = useState<Number | null>(null);
-  const [jobId, setJobId] = useState<Number | null>(null);
+  const [projectId, setProjectId] = useState<number | null>(null);
+  const [jobId, setJobId] = useState<number | null>(null);
   const [cootModule, setCootModule] = useState<any | null>(null);
+  const [jobPanelSize, setJobPanelSize] = useState<number>(70);
 
   return (
     <CCP4i2Context.Provider
@@ -18,6 +19,8 @@ export const CCP4i2App = (props: PropsWithChildren) => {
         setJobId,
         cootModule,
         setCootModule,
+        jobPanelSize,
+        setJobPanelSize,
       }}
     >
       <CssBaseline />

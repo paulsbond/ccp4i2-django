@@ -9,6 +9,7 @@ import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidge
 import { CCP4i2Context } from "../../../../app-context";
 import { TaskContainer } from "../../../../components/task/task-container";
 import { useJob, useProject } from "../../../../utils";
+import ToolBar from "../../../../components/tool-bar";
 
 export default function JobPage({
   params,
@@ -53,58 +54,61 @@ export default function JobPage({
   if (!project || !jobs || !job) return <LinearProgress />;
 
   return (
-    <Container>
-      <JobHeader job={job} mutateJobs={mutateJobs} />
-      <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
-        <Tab value={0} label="Task interface" />
-        <Tab value={1} label="Params as xml" />
-        <Tab value={2} label="Report as xml" />
-        <Tab value={3} label="Report" />
-        <Tab value={4} label="Diagnostic xml" />
-        <Tab value={5} label="Def xml" />
-        <Tab value={6} label="Validation report" />
-        <Tab value={7} label="Job container" />
-      </Tabs>
-      {tabValue == 0 && <TaskContainer />}
-      {tabValue == 1 && params_xml && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={params_xml}
-          language="xml"
-        />
-      )}
-      {tabValue == 2 && report_xml && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={prettifyXml(report_xml)}
-          language="xml"
-        />
-      )}
-      {tabValue == 3 && jobid && <CCP4i2ReportXMLView />}
-      {tabValue == 4 && diagnostic_xml && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={diagnostic_xml}
-          language="xml"
-        />
-      )}
-      {tabValue == 5 && def_xml && (
-        <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
-      )}
-      {tabValue == 6 && validation && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={JSON.stringify(validation, null, 2)}
-          language="json"
-        />
-      )}
-      {tabValue == 7 && container && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={JSON.stringify(container.container, null, 2)}
-          language="json"
-        />
-      )}
-    </Container>
+    <>
+      <ToolBar />
+      <Container>
+        <JobHeader job={job} mutateJobs={mutateJobs} />
+        <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
+          <Tab value={0} label="Task interface" />
+          <Tab value={1} label="Params as xml" />
+          <Tab value={2} label="Report as xml" />
+          <Tab value={3} label="Report" />
+          <Tab value={4} label="Diagnostic xml" />
+          <Tab value={5} label="Def xml" />
+          <Tab value={6} label="Validation report" />
+          <Tab value={7} label="Job container" />
+        </Tabs>
+        {tabValue == 0 && <TaskContainer />}
+        {tabValue == 1 && params_xml && (
+          <Editor
+            height="calc(100vh - 15rem)"
+            value={params_xml}
+            language="xml"
+          />
+        )}
+        {tabValue == 2 && report_xml && (
+          <Editor
+            height="calc(100vh - 15rem)"
+            value={prettifyXml(report_xml)}
+            language="xml"
+          />
+        )}
+        {tabValue == 3 && jobid && <CCP4i2ReportXMLView />}
+        {tabValue == 4 && diagnostic_xml && (
+          <Editor
+            height="calc(100vh - 15rem)"
+            value={diagnostic_xml}
+            language="xml"
+          />
+        )}
+        {tabValue == 5 && def_xml && (
+          <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
+        )}
+        {tabValue == 6 && validation && (
+          <Editor
+            height="calc(100vh - 15rem)"
+            value={JSON.stringify(validation, null, 2)}
+            language="json"
+          />
+        )}
+        {tabValue == 7 && container && (
+          <Editor
+            height="calc(100vh - 15rem)"
+            value={JSON.stringify(container.container, null, 2)}
+            language="json"
+          />
+        )}
+      </Container>
+    </>
   );
 }

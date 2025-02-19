@@ -1,4 +1,4 @@
-import { Button, Stack } from "@mui/material";
+import { Button, Stack, useMediaQuery } from "@mui/material";
 import {
   Code,
   ContentCopy,
@@ -16,6 +16,8 @@ import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
 
 export default function ToolBar() {
+  const isSmall = useMediaQuery("(max-width:80rem)");
+  const { jobPanelSize } = useContext(CCP4i2Context);
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
   const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
@@ -87,22 +89,30 @@ export default function ToolBar() {
       <Button variant="outlined" startIcon={<Help />}>
         Help
       </Button>
-      <Button variant="outlined" startIcon={<MenuBook />}>
-        Bibliography
-      </Button>
-      <Button
-        variant="outlined"
-        startIcon={<SystemUpdateAlt />}
-        disabled={job?.status != 6}
-      >
-        Export MTZ
-      </Button>
-      <Button variant="outlined" startIcon={<Description />}>
-        Show log file
-      </Button>
-      <Button variant="outlined" startIcon={<Code />}>
-        Show i2run command
-      </Button>
+      {jobPanelSize && jobPanelSize > 40 && (
+        <Button variant="outlined" startIcon={<MenuBook />}>
+          Bibliography
+        </Button>
+      )}
+      {jobPanelSize && jobPanelSize > 60 && (
+        <Button
+          variant="outlined"
+          startIcon={<SystemUpdateAlt />}
+          disabled={job?.status != 6}
+        >
+          Export MTZ
+        </Button>
+      )}
+      {jobPanelSize && jobPanelSize > 80 && (
+        <Button variant="outlined" startIcon={<Description />}>
+          Show log file
+        </Button>
+      )}
+      {jobPanelSize && jobPanelSize > 100 && (
+        <Button variant="outlined" startIcon={<Code />}>
+          i2run command
+        </Button>
+      )}
     </Stack>
   );
 }
