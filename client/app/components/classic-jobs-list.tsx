@@ -25,6 +25,7 @@ import {
 import { CCP4i2JobAvatar } from "./job-avatar";
 import React, {
   createContext,
+  SyntheticEvent,
   useCallback,
   useContext,
   useMemo,
@@ -70,8 +71,8 @@ interface ContextProps {
   setPreviewNode: (node: JobWithChildren | DjangoFile | null) => void;
   anchorEl: HTMLElement | null;
   setAnchorEl: (element: HTMLElement | null) => void;
-  menuNode: JobWithChildren | DjangoFile | null;
-  setMenuNode: (node: JobWithChildren | DjangoFile | null) => void;
+  menuNode: Job | JobWithChildren | DjangoFile | null;
+  setMenuNode: (node: Job | JobWithChildren | DjangoFile | null) => void;
 }
 
 const TreeBrowserContext = createContext<ContextProps>({
@@ -98,9 +99,9 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
     JobWithChildren | DjangoFile | null
   >(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuNode, setMenuNode] = useState<JobWithChildren | DjangoFile | null>(
-    null
-  );
+  const [menuNode, setMenuNode] = useState<
+    Job | JobWithChildren | DjangoFile | null
+  >(null);
 
   const navigate = useRouter();
   const api = useApi();
@@ -212,8 +213,11 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
     id: projectId,
     endpoint: "files",
   });
+
   const job = jobs?.find((job) => job.uuid === itemId);
+
   const file = files?.find((file) => file.uuid === itemId);
+
   const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
     useContext(TreeBrowserContext);
 
@@ -317,7 +321,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
             onClick={(ev) => {
               ev.stopPropagation();
               setAnchorEl(ev.currentTarget);
-              setMenuNode(job || file);
+              setMenuNode(job || file || null);
             }}
           >
             <MenuIcon />
@@ -350,28 +354,37 @@ const JobMenu: React.FC = () => {
     endpoint: "dependent_jobs",
   });
 
-  const handleClone = useCallback(async () => {
-    const job = menuNode as Job;
-    const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
-    if (cloneResult?.id) {
-      mutateJobs();
-      setAnchorEl(null);
-      router.push(`/project/${job.project}/job/${cloneResult.id}`);
-    }
-  }, [menuNode]);
+  const handleClone = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const job = menuNode as Job;
+      const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
+      if (cloneResult?.id) {
+        mutateJobs();
+        setAnchorEl(null);
+        router.push(`/project/${job.project}/job/${cloneResult.id}`);
+      }
+    },
+    [menuNode]
+  );
 
-  const handleRun = useCallback(async () => {
-    const job = menuNode as Job;
-    const runResult: Job = await api.post(`jobs/${job.id}/run/`);
-    if (runResult?.id) {
-      mutateJobs();
-      setAnchorEl(null);
-      router.push(`/project/${job.project}/job/${runResult.id}`);
-    }
-  }, [menuNode]);
+  const handleRun = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const job = menuNode as Job;
+      const runResult: Job = await api.post(`jobs/${job.id}/run/`);
+      if (runResult?.id) {
+        mutateJobs();
+        setAnchorEl(null);
+        router.push(`/project/${job.project}/job/${runResult.id}`);
+      }
+    },
+    [menuNode]
+  );
 
   const handleDownloadFile = useCallback(
-    async (ev) => {
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
       const file = menuNode as DjangoFile;
       if (file) {
         ev.stopPropagation();
@@ -383,47 +396,53 @@ const JobMenu: React.FC = () => {
     [menuNode]
   );
 
-  const handleDelete = useCallback(() => {
-    const job = menuNode as Job;
-    if (deleteDialog)
-      deleteDialog({
-        type: "show",
-        what: `${job.number}: ${job.title}`,
-        onDelete: async () => {
-          const deleteResult = await api.delete(`jobs/${job.id}`);
-          console.log(deleteResult);
-          mutateJobs();
-        },
-        children: [
-          <Paper sx={{ maxHeight: "10rem", overflowY: "auto" }}>
-            {dependentJobs && dependentJobs?.length > 0 && (
-              <>
-                The following {dependentJobs.length} dependent jobs would be
-                deleted
-                <List dense>
-                  {dependentJobs &&
-                    dependentJobs.map((dependentJob: Job) => {
-                      return (
-                        <ListItem key={dependentJob.uuid}>
-                          <Toolbar>
-                            <CCP4i2JobAvatar job={dependentJob} />
-                            {`${dependentJob.number}: ${dependentJob.title}`}
-                          </Toolbar>
-                        </ListItem>
-                      );
-                    })}
-                </List>
-              </>
-            )}
-          </Paper>,
-        ],
-        deleteDisabled: !(
-          (dependentJobs && dependentJobs?.length == 0) ||
-          (dependentJobs &&
-            dependentJobs.some((dependentJob: Job) => dependentJob.status == 6))
-        ),
-      });
-  }, [dependentJobs, menuNode]);
+  const handleDelete = useCallback(
+    (ev: SyntheticEvent) => {
+      const job = menuNode as Job;
+      ev.stopPropagation();
+      if (deleteDialog)
+        deleteDialog({
+          type: "show",
+          what: `${job.number}: ${job.title}`,
+          onDelete: async () => {
+            const deleteResult = await api.delete(`jobs/${job.id}`);
+            console.log(deleteResult);
+            mutateJobs();
+          },
+          children: [
+            <Paper sx={{ maxHeight: "10rem", overflowY: "auto" }}>
+              {dependentJobs && dependentJobs?.length > 0 && (
+                <>
+                  The following {dependentJobs.length} dependent jobs would be
+                  deleted
+                  <List dense>
+                    {dependentJobs &&
+                      dependentJobs.map((dependentJob: Job) => {
+                        return (
+                          <ListItem key={dependentJob.uuid}>
+                            <Toolbar>
+                              <CCP4i2JobAvatar job={dependentJob} />
+                              {`${dependentJob.number}: ${dependentJob.title}`}
+                            </Toolbar>
+                          </ListItem>
+                        );
+                      })}
+                  </List>
+                </>
+              )}
+            </Paper>,
+          ],
+          deleteDisabled: !(
+            (dependentJobs && dependentJobs?.length == 0) ||
+            (dependentJobs &&
+              dependentJobs.some(
+                (dependentJob: Job) => dependentJob.status == 6
+              ))
+          ),
+        });
+    },
+    [dependentJobs, menuNode]
+  );
 
   return menuNode?.hasOwnProperty("parent") ? (
     <Menu
