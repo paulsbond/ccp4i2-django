@@ -9,12 +9,10 @@ import {
 } from "react";
 import { Paper, Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import ProjectDirectory from "../../components/project-directory";
 import ToolBar from "../../components/tool-bar";
 import { JobsGrid } from "../../components/jobs-grid";
 import { CCP4i2Context } from "../../app-context";
 import { useApi } from "../../api";
-import { Project } from "../../models";
 import Script from "next/script";
 import { CCP4i2DirectoryViewer } from "../../components/directory_viewer";
 import { useProject } from "../../utils";
@@ -73,7 +71,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
       spacing={2}
       sx={{ height: "calc(100vh - 4rem)", paddingTop: "1rem" }}
     >
-      {
+      {true && (
         <Script
           src="/moorhen.js"
           strategy="lazyOnload"
@@ -95,7 +93,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               });
           }}
         />
-      }
+      )}
       <ToolBar />
       <PanelGroup direction="horizontal">
         <Panel defaultSize={30} minSize={20}>

@@ -19,10 +19,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     return result;
   }, [item]);
 
-  const { data: fileDigest } = api.digest<any>(
-    `jobs/${props.job.id}/digest?object_path=${item._objectPath}`
-  );
-
+  const fileDigest = {};
   const infoContent = useMemo(
     () => <Typography>{JSON.stringify(fileDigest)}</Typography>,
     [fileDigest]

@@ -39,7 +39,6 @@ const endpoint_validation_fetcher = (endpointFetch: EndpointFetch) => {
       const results: any = {};
       objectPaths.forEach((errorObjectNode: HTMLElement) => {
         const objectPath = errorObjectNode.textContent?.trim();
-        console.log(objectPath);
         if (objectPath && objectPath.length > 0) {
           let objectErrors: { messages: string[]; maxSeverity: number };
           if (!Object.keys(results).includes(objectPath)) {
@@ -60,7 +59,6 @@ const endpoint_validation_fetcher = (endpointFetch: EndpointFetch) => {
           }
         }
       });
-      console.log(results);
       return Promise.resolve(results);
     });
 };
@@ -86,7 +84,49 @@ const endpoint_wrapped_json_fetcher = (endpointFetch: EndpointFetch) => {
   );
   return fetch(url)
     .then((r) => r.json())
-    .then((r) => JSON.parse(r.result));
+    .then((r) => {
+      const result = JSON.parse(r.result);
+      if (endpointFetch.endpoint === "container") {
+        const lookup = buildLookup(result);
+        return Promise.resolve({ container: result, lookup });
+      }
+      return result;
+    });
+};
+
+const buildLookup = (container: any, lookup_in?: any): any => {
+  const lookup = lookup_in ? lookup_in : {};
+  const objectPath = container._objectPath;
+  const pathElements = objectPath.split(".");
+  for (let i = 0; i < pathElements.length; i++) {
+    const subPath = pathElements.slice(-i).join(".");
+    lookup[subPath] = container;
+  }
+  if (container._baseClass === "CList") {
+    container._value.forEach((item: any) => {
+      buildLookup(item, lookup);
+    });
+  } else if (container._value?.constructor == Object) {
+    Object.keys(container._value).forEach((key: string) => {
+      const item = container._value[key];
+      buildLookup(item, lookup);
+    });
+  }
+  return lookup;
+};
+
+const endpoint_container_fetcher = (endpointFetch: EndpointFetch) => {
+  if (!endpointFetch.id) return Promise.reject();
+  const url = fullUrl(
+    `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
+  );
+  return fetch(url)
+    .then((r) => r.json())
+    .then((r) => {
+      const container = JSON.parse(r.result);
+      const lookup = buildLookup(container);
+      return Promise.resolve({ container, lookup });
+    });
 };
 
 const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
@@ -158,7 +198,6 @@ export function useApi() {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify(body);
       }
-      console.log(headers);
       const response = await fetch(fullUrl(endpoint), {
         method: "POST",
         headers: headers,

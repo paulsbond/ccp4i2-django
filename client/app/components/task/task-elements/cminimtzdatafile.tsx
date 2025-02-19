@@ -17,10 +17,6 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   const item = getTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
-  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=${item._objectPath}`
-  );
-
   const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: job.project,
@@ -41,6 +37,10 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 
   const { mutate: mutateFiles } = api.get<File[]>(
     `projects/${job.project}/files`
+  );
+
+  const { data: fileDigest } = api.digest<any>(
+    `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
 
   const infoContent = useMemo(
@@ -70,7 +70,6 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
           formData
         );
         setSelectedFiles(null);
-        mutateDigest();
         mutateJobs();
         mutateFiles();
         mutateContainer();

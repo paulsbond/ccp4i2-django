@@ -18,16 +18,19 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const { itemName, job, type, sx, qualifiers } = props;
   const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
+  //return <Typography>"{itemName}",</Typography>;
 
   const inputRef = useRef<HTMLElement | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);
 
-  const [value, setValue] = useState<number | string | boolean>(item._value);
+  const [value, setValue] = useState<number | string | boolean>(
+    item._value || ""
+  );
 
   const { setParameter } = useJob(job.id);
 
   useEffect(() => {
-    setValue(item._value);
+    setValue(item._value || "");
     if (type === "checkbox" && inputRef.current)
       //@ts-ignore
       inputRef.current.checked = item._value;

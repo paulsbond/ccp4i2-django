@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { Info } from "@mui/icons-material";
 import { useMemo, useState } from "react";
+import { ErrorInfo } from "./error-info";
 
 const spacegroups = [
   "P1",
@@ -646,11 +647,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
           title={qualifiers?.guiLabel}
           sx={{ backgroundColor: getValidationColor(item) }}
           titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
-          action={
-            <Button>
-              <Info />
-            </Button>
-          }
+          action={<ErrorInfo {...props} />}
         />
         <CardContent sx={{ my: 0, py: 0 }}>
           {item && (
@@ -660,6 +657,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
                 backgroundColor: inFlight ? "#ffeebe" : "palette.common.white",
               }}
               id="autocomplete-spacegroup"
+              disabled={inFlight || job.status != 1}
               multiple={false}
               options={spacegroups}
               value={value}

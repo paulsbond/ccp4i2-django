@@ -113,6 +113,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CPhaserRFileDataFile":
       case "CRefmacRestraintsDataFile":
       case "CAsuDataFile":
+      case "CSeqDataFile":
       case "CUnmergedDataFile":
       case "CMDLMolDataFile":
         return (
@@ -170,6 +171,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         return (
           <CCellElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
+      case "CSpaceGroup":
       case "CAltSpaceGroup":
         return (
           <CAltSpaceGroupElement

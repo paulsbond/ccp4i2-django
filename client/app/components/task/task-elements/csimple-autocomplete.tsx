@@ -5,6 +5,7 @@ import {
   LinearProgress,
   Stack,
   TextField,
+  Typography,
 } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
@@ -16,7 +17,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   const { itemName, job, type, sx, qualifiers } = props;
   const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
-
+  //return <Typography>"{itemName}",</Typography>;
   const [value, setValue] = useState<string | number>(item._value);
 
   const [inFlight, setInFlight] = useState(false);

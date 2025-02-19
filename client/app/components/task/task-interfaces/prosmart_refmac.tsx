@@ -281,6 +281,16 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             </CContainerElement>
           </CContainerElement>
         </CCP4i2Tab>
+        <CCP4i2Tab tab="Prosmart">
+          <CCP4i2TaskElement
+            {...props}
+            itemName="prosmartProtein"
+            qualifiers={{
+              containerHint: "FolderLevel",
+              guiLabel: "Prosmart - protein",
+            }}
+          />
+        </CCP4i2Tab>
       </CCP4i2Tabs>
     </Paper>
   );

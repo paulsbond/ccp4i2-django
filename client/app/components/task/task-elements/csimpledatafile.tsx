@@ -15,10 +15,6 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   const item = getTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
-  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=${item._objectPath}`
-  );
-
   const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: job.project,
@@ -64,7 +60,6 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       );
       console.log(uploadResult);
       setSelectedFiles(null);
-      mutateDigest();
       mutateJobs();
       mutateFiles();
       mutateContainer();

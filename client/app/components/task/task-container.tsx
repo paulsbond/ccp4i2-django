@@ -6,6 +6,7 @@ import { LinearProgress, Paper, Toolbar, Typography } from "@mui/material";
 import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
 import SubstituteLigandInterface from "./task-interfaces/SubStituteLigand";
 import AimlessPipeInterface from "./task-interfaces/aimless_pipe";
+import Crank2Interface from "./task-interfaces/crank2";
 import GenericInterface from "./task-interfaces/generic";
 import { useJob } from "../../utils";
 
@@ -26,6 +27,8 @@ export const TaskContainer = () => {
         return <SubstituteLigandInterface {...{ job }} />;
       case "aimless_pipe":
         return <AimlessPipeInterface {...{ job }} />;
+      case "crank2":
+        return <Crank2Interface {...{ job }} />;
       default:
         return <GenericInterface {...{ job }} />;
     }

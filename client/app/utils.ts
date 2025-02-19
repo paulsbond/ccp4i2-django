@@ -91,7 +91,7 @@ export const itemsForName = (
 };
 
 export interface SetParameterArg {
-  object_path: string;
+  object_path: any;
   value: any;
 }
 
@@ -185,9 +185,8 @@ export const useProject = (projectId: number) => {
  * @property def_xml - The definition XML data for the job.
  * @property mutateDef_xml - A function to mutate the definition XML data.
  */
+const api = useApi();
 export const useJob = (jobId: number | null | undefined) => {
-  const api = useApi();
-
   const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
     type: "jobs",
     id: jobId,
@@ -254,7 +253,6 @@ export const useJob = (jobId: number | null | undefined) => {
           await mutateContainer();
           await mutateParams_xml();
           await mutateValidation();
-          return result;
         } else
           console.log(
             "Alert attempting to edit interface of task not in pending state"
@@ -266,7 +264,7 @@ export const useJob = (jobId: number | null | undefined) => {
     getTaskItem: useMemo(() => {
       return (param_name: string) => {
         if (param_name?.length == 0) return null;
-        return itemsForName(param_name, container, false)[0];
+        return container.lookup[param_name];
       };
     }, [container]),
 
@@ -392,7 +390,7 @@ export const valueOfItem = (item: any): any => {
 /**
  * Determines the appropriate validation color based on the presence and severity of field errors.
  *
- * @param {any[]} fieldErrors - An array of field error objects.
+ * @param {any} fieldErrors - An array of field error objects.
  * @returns {string} - Returns "success.light" if there are no errors, "warning.light" if there are warnings, and "error.light" if there are errors.
  */
 export const validationColor = (fieldErrors: any): string => {
@@ -428,8 +426,9 @@ export const usePrevious = <T>(value: T): T | undefined => {
  * @param item - The item to check for validation errors. It can be of any type.
  * @param validation - An XML Document containing validation details.
  *
- * @returns An array of objects, each containing the severity and description of a validation error.
- *          If no errors are found, an empty array is returned.
+ * @returns An object comprising "message" (an array of errror messages, and the parameter "maxSeverity
+ *          where 0 implies no error, 1 implies a WARNING, and 2 implies a ERRPR
+ *          If no errors are found, null is returned.
  */
 const errorsInValidation = (item: any, validation: any): any | null => {
   if (validation) {

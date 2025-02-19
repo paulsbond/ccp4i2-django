@@ -8,6 +8,7 @@ import {
   styled,
   SxProps,
   TextField,
+  Typography,
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { CCP4i2TaskElementProps } from "./task-element";
@@ -98,6 +99,8 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const api = useApi();
   const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
+  //return <Typography>"{itemName}",</Typography>;
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
@@ -105,9 +108,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   );
   const validationOpen = Boolean(validationAnchor);
   const progressRef = useRef<HTMLElement | null>(null);
-  const { mutate: mutateDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=${item._objectPath}`
-  );
   const [value, setValue] = useState<CCP4i2File>(nullFile);
 
   const { objectPath, qualifiers } = useMemo<{
@@ -131,6 +131,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   });
   const { data: projects, mutate: mutateProjects } =
     api.get<Project[]>("projects");
+  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
+    `jobs/${job.id}/digest?object_path=${item._objectPath}`
+  );
 
   const fileType = useMemo<string | null>(() => {
     if (item?._class) {
@@ -302,6 +305,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
             .join(",")}
           handleFileChange={props.setFiles || defaultSetFile}
         />
+
         <ErrorInfo {...props}>
           {infoContent}
           {JSON.stringify(value)}

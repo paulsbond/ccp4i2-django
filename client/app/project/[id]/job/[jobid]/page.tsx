@@ -101,7 +101,7 @@ export default function JobPage({
       {tabValue == 7 && container && (
         <Editor
           height="calc(100vh - 15rem)"
-          value={JSON.stringify(container, null, 2)}
+          value={JSON.stringify(container.container, null, 2)}
           language="json"
         />
       )}
