@@ -319,8 +319,22 @@ class FileViewSet(ModelViewSet):
             the_file = models.File.objects.get(uuid=pk)
             serializer = serializers.FileSerializer(the_file, many=False)
             return Response(serializer.data)
-        except models.Job.DoesNotExist as err:
-            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+        except models.File.DoesNotExist as err:
+            logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def download(self, request, pk=None):
+        try:
+            the_file = models.File.objects.get(id=pk)
+            return FileResponse(open(the_file.path, "rb"), filename=the_file.name)
+        except models.File.DoesNotExist as err:
+            logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
 
 
