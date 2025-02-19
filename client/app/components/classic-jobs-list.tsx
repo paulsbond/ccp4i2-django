@@ -103,29 +103,18 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
 
   const navigate = useRouter();
   const api = useApi();
+
   const { data: jobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: projectId,
     endpoint: "jobs",
   });
+
   const { data: files } = api.get_endpoint<DjangoFile[]>({
     type: "projects",
     id: projectId,
     endpoint: "files",
   });
-
-  const handleSelectedItemsChange = useCallback(
-    (event: React.SyntheticEvent, ids: string | null) => {
-      const job = jobs?.find((job) => job.uuid === ids);
-      console.log(ids);
-      console.log({ job }, jobs);
-      if (job) {
-        navigate.push(`/project/${job.project}/job/${job.id}`);
-      }
-      setSelectedItems(ids ? [ids] : []);
-    },
-    [jobs]
-  );
 
   const decoratedJobs = useMemo<
     (JobWithChildren | DjangoFile)[] | undefined
@@ -142,7 +131,7 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
           children: childJobs.concat(childFiles || []),
         };
       });
-  }, [jobs]);
+  }, [jobs, files]);
 
   const getItemLabel = useCallback(
     (jobOrFile: JobWithChildren | DjangoFile) => {
@@ -154,6 +143,19 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
         : (jobOrFile as DjangoFile).job_param_name;
     },
     []
+  );
+
+  const handleSelectedItemsChange = useCallback(
+    (event: React.SyntheticEvent, ids: string | null) => {
+      const job = jobs?.find((job) => job.uuid === ids);
+      console.log(ids);
+      console.log({ job }, jobs);
+      if (job) {
+        navigate.push(`/project/${job.project}/job/${job.id}`);
+      }
+      setSelectedItems(ids ? [ids] : []);
+    },
+    [jobs]
   );
 
   return (
@@ -267,7 +269,14 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
 
   return (
     <TreeItem2Provider itemId={itemId}>
-      <TreeItem2Root {...getRootProps()}>
+      <TreeItem2Root
+        {...getRootProps()}
+        sx={
+          !file && !job?.number.includes(".")
+            ? { border: "1px solid #999" }
+            : {}
+        }
+      >
         <TreeItem2Content {...getContentProps()}>
           <TreeItem2IconContainer {...getIconContainerProps()}>
             <TreeItem2Icon status={status} />
@@ -327,12 +336,17 @@ const JobMenu: React.FC = () => {
   const api = useApi();
   const router = useRouter();
   const deleteDialog = useDeleteDialog();
-  const [dependentJobs, setDependentJobs] = useState<Job[] | null>(null);
 
   const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: (menuNode as Job)?.project,
     endpoint: "jobs",
+  });
+
+  const { data: dependentJobs } = api.get_endpoint<Job[]>({
+    type: "jobs",
+    id: (menuNode as Job)?.id,
+    endpoint: "dependent_jobs",
   });
 
   const handleClone = useCallback(async () => {
@@ -361,10 +375,10 @@ const JobMenu: React.FC = () => {
       deleteDialog({
         type: "show",
         what: `${job.number}: ${job.title}`,
-        onDelete: () => {
-          api.delete(`jobs/${job.id}`).then(() => {
-            mutateJobs();
-          });
+        onDelete: async () => {
+          const deleteResult = await api.delete(`jobs/${job.id}`);
+          console.log(deleteResult);
+          mutateJobs();
         },
         children: [
           <Paper sx={{ maxHeight: "10rem", overflowY: "auto" }}>
