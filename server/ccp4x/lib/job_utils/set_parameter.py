@@ -1,6 +1,7 @@
 import logging
 from typing import Union
 from ccp4i2.core.CCP4Container import CContainer
+from core import CCP4XtalData
 from .save_params_for_job import save_params_for_job
 from .find_objects import find_object_by_path
 from .get_job_plugin import get_job_plugin
@@ -18,7 +19,10 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
     # print("object_path", object_path)
     try:
         object_element = find_object_by_path(the_container, object_path)
-        e = object_element.getEtree()
+        logger.warning(
+            "Setting parameter %s", isinstance(object_element, CCP4XtalData.CSpaceGroup)
+        )
+        # e = object_element.getEtree()
         # print(ET.tostring(e).decode("utf-8"))
         object_element.unSet()
         if value is None:
@@ -31,6 +35,16 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
                 value,
             )
         else:
+            if isinstance(object_element, CCP4XtalData.CSpaceGroup):
+                status, corrected_spacegroup = (
+                    CCP4XtalData.CSymmetryManager().spaceGroupValidity(str(value))
+                )
+                if corrected_spacegroup == value:
+                    pass
+                elif isinstance(corrected_spacegroup, list):
+                    value = corrected_spacegroup[0]
+                else:
+                    value = corrected_spacegroup
             object_element.set(value)
             logger.warning(
                 "Setting parameter %s to %s",
