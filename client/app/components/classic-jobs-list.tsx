@@ -15,7 +15,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { useApi } from "../api";
+import { doDownload, useApi } from "../api";
 import {
   Job,
   File as DjangoFile,
@@ -49,6 +49,7 @@ import {
 import {
   CopyAll,
   Delete,
+  Download,
   Favorite,
   FavoriteBorder,
   Menu as MenuIcon,
@@ -369,6 +370,19 @@ const JobMenu: React.FC = () => {
     }
   }, [menuNode]);
 
+  const handleDownloadFile = useCallback(
+    async (ev) => {
+      const file = menuNode as DjangoFile;
+      if (file) {
+        ev.stopPropagation();
+        const composite_path = api.noSlashUrl(`files/${file.id}/download/`);
+        doDownload(composite_path, file.name);
+        setAnchorEl(null);
+      }
+    },
+    [menuNode]
+  );
+
   const handleDelete = useCallback(() => {
     const job = menuNode as Job;
     if (deleteDialog)
@@ -411,7 +425,7 @@ const JobMenu: React.FC = () => {
       });
   }, [dependentJobs, menuNode]);
 
-  return (
+  return menuNode?.hasOwnProperty("parent") ? (
     <Menu
       open={Boolean(anchorEl)}
       anchorEl={anchorEl}
@@ -425,6 +439,16 @@ const JobMenu: React.FC = () => {
       </MenuItem>
       <MenuItem key="Delete" onClick={handleDelete}>
         <Delete /> Delete
+      </MenuItem>
+    </Menu>
+  ) : (
+    <Menu
+      open={Boolean(anchorEl)}
+      anchorEl={anchorEl}
+      onClose={() => setAnchorEl(null)}
+    >
+      <MenuItem key="Done" onClick={handleDownloadFile}>
+        <Download /> Download
       </MenuItem>
     </Menu>
   );
