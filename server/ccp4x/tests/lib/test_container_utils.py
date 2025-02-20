@@ -22,6 +22,7 @@ from ...lib.job_utils.validate_container import validate_container
 from ...lib.job_utils.clone_job import clone_job
 from ...lib.job_utils.json_for_job_container import json_for_job_container
 from ...lib.job_utils.get_task_tree import get_task_tree
+from ...lib.ccp4i2_report import get_report_job_info
 
 
 @override_settings(
@@ -132,6 +133,14 @@ class CCP4i2TestCase(TestCase):
         result = get_task_tree()
         self.assertEqual(len(result["lookup"].items()), 135)
         self.assertEqual(len(result["tree"]), 17)
+
+    def test_get_report_job_info(self):
+        job = Job.objects.get(project__name="refmac_gamma_test_0", number="1")
+        result = get_report_job_info(job.uuid)
+        self.assertEqual(
+            result["fileroot"],
+            str(settings.CCP4I2_PROJECTS_DIR / "refmac_gamma_test_0/CCP4_JOBS/job_1/"),
+        )
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">
