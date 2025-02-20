@@ -48,7 +48,7 @@ def _get_basic_job_info(job: Job):
         "jobtitle": job.title,
         "creationtime": job.creation_time.timestamp(),
         "projectname": job.project.name,
-        "fileroot": str(job.directory),
+        "fileroot": str(job.directory) + "/",
         "tasktitle": job.task_name,
         "jobid": str(job.uuid),
     }
