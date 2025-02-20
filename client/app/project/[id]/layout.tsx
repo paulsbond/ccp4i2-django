@@ -35,7 +35,7 @@ const createArgs = {
 };
 
 export interface ProjectLayoutProps extends PropsWithChildren {
-  params: Promise<{ id: number }>;
+  params: Promise<{ id: string }>;
 }
 
 export default function ProjectLayout(props: ProjectLayoutProps) {
@@ -44,7 +44,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
   const api = useApi();
   const [tabValue, setTabValue] = useState(0);
   const { id } = use(props.params);
-  const { project } = useProject(id);
+  const { project } = useProject(parseInt(id));
   const scriptElement = useRef<HTMLElement | null | undefined>(null);
 
   useEffect(() => {
@@ -108,9 +108,13 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               {/*<Tab value={1} label="Job grid" />*/}
               <Tab value={2} label="Project directory" />
             </Tabs>
-            {tabValue == 0 && <ClassicJobList projectId={id} />}
+            {tabValue == 0 && project && (
+              <ClassicJobList projectId={project.id} />
+            )}
             {/*tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />*/}
-            {tabValue == 2 && <CCP4i2DirectoryViewer projectId={id} />}
+            {tabValue == 2 && project && (
+              <CCP4i2DirectoryViewer projectId={project.id} />
+            )}
           </Paper>
         </Panel>
         <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />

@@ -124,6 +124,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           />
         );
       case "CFreeRDataFile":
+      case "CMiniMtzDataFile":
       case "CObsDataFile":
       case "CMapCoeffsDataFile":
       case "CPhsDataFile":

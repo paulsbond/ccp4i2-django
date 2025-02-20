@@ -42,7 +42,7 @@ export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
         setPreviewNode,
       }}
     >
-      <Toolbar>
+      <Toolbar variant="regular" sx={{ backgroundColor: "#f0f0f0" }}>
         <CCP4i2JobAvatar job={job} />
         <Typography variant="h5" sx={{ ml: 2, mr: 2 }}>
           {job.number}

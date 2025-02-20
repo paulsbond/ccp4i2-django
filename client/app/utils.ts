@@ -187,7 +187,7 @@ export const useProject = (projectId: number) => {
  */
 const api = useApi();
 export const useJob = (jobId: number | null | undefined) => {
-  const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
+  const { data: job, mutate: mutateJob } = api.follow_endpoint<Job>({
     type: "jobs",
     id: jobId,
     endpoint: "",

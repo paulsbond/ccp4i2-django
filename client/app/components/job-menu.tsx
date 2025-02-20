@@ -59,7 +59,7 @@ export const JobMenu: React.FC = () => {
         router.push(`/project/${job.project}/job/${cloneResult.id}`);
       }
     },
-    [menuNode]
+    [menuNode, mutateJobs]
   );
 
   const handleRun = useCallback(
@@ -73,7 +73,7 @@ export const JobMenu: React.FC = () => {
         router.push(`/project/${job.project}/job/${runResult.id}`);
       }
     },
-    [menuNode]
+    [menuNode, mutateJobs]
   );
 
   const handleDownloadFile = useCallback(
@@ -102,6 +102,7 @@ export const JobMenu: React.FC = () => {
             const deleteResult = await api.delete(`jobs/${job.id}`);
             console.log(deleteResult);
             mutateJobs();
+            router.push(`/project/${job.project}`);
           },
           children: [
             <Paper sx={{ maxHeight: "10rem", overflowY: "auto" }}>
@@ -135,7 +136,7 @@ export const JobMenu: React.FC = () => {
           ),
         });
     },
-    [dependentJobs, menuNode]
+    [dependentJobs, menuNode, mutateJobs]
   );
 
   return menuNode?.hasOwnProperty("parent") ? (

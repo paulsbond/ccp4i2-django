@@ -15,7 +15,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { doDownload, useApi } from "../api";
+import { doDownload, EndpointFetch, useApi } from "../api";
 import {
   Job,
   File as DjangoFile,
@@ -28,6 +28,7 @@ import React, {
   SyntheticEvent,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -62,6 +63,7 @@ import { useRouter } from "next/navigation";
 import { fileTypeMapping } from "./files-table";
 import { useDeleteDialog } from "./delete-dialog";
 import { JobMenu, JobMenuContext, JobWithChildren } from "./job-menu";
+import { Endpoint } from "next/dist/build/swc/types";
 
 interface ClassicJobListProps {
   projectId: number;
@@ -85,13 +87,15 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   const navigate = useRouter();
   const api = useApi();
 
-  const { data: jobs } = api.get_endpoint<Job[]>({
+  const endpointFetch: EndpointFetch = {
     type: "projects",
     id: projectId,
     endpoint: "jobs",
-  });
+  };
+  console.log("In component", { endpointFetch });
+  const { data: jobs } = api.follow_endpoint<Job[]>(endpointFetch);
 
-  const { data: files } = api.get_endpoint<DjangoFile[]>({
+  const { data: files } = api.follow_endpoint<DjangoFile[]>({
     type: "projects",
     id: projectId,
     endpoint: "files",
@@ -177,12 +181,12 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
     id: projectId,
     endpoint: "jobs",
   });
-  const { data: jobCharValues } = api.get_endpoint<JobCharValue[]>({
+  const { data: jobCharValues } = api.follow_endpoint<JobCharValue[]>({
     type: "projects",
     id: projectId,
     endpoint: "job_char_values",
   });
-  const { data: jobFloatValues } = api.get_endpoint<JobFloatValue[]>({
+  const { data: jobFloatValues } = api.follow_endpoint<JobFloatValue[]>({
     type: "projects",
     id: projectId,
     endpoint: "job_float_values",

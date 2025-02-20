@@ -8,7 +8,7 @@ function fullUrl(endpoint: string): string {
   return url.href;
 }
 
-interface EndpointFetch {
+export interface EndpointFetch {
   type: string;
   id: number | null | undefined;
   endpoint: string;
@@ -115,20 +115,6 @@ const buildLookup = (container: any, lookup_in?: any): any => {
   return lookup;
 };
 
-const endpoint_container_fetcher = (endpointFetch: EndpointFetch) => {
-  if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
-    `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
-  );
-  return fetch(url)
-    .then((r) => r.json())
-    .then((r) => {
-      const container = JSON.parse(r.result);
-      const lookup = buildLookup(container);
-      return Promise.resolve({ container, lookup });
-    });
-};
-
 const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
   const url = fullUrl(
@@ -156,8 +142,18 @@ export function useApi() {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
 
+    follow: function <T>(endpoint: string) {
+      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 5000 });
+    },
+
     get_endpoint: function <T>(endpointFetch: EndpointFetch) {
-      return useSWR<T>(endpointFetch, { fetcher: endpoint_fetcher });
+      return useSWR<T>(endpointFetch, endpoint_fetcher as any);
+    },
+
+    follow_endpoint: function <T>(endpointFetch: EndpointFetch) {
+      return useSWR<T>(endpointFetch, endpoint_fetcher as any, {
+        refreshInterval: 5000,
+      });
     },
 
     get_endpoint_xml: function <XMLDocument>(endpointFetch: EndpointFetch) {
