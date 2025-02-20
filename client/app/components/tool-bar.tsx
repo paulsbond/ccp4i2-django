@@ -16,7 +16,11 @@ import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
 
 export default function ToolBar() {
-  const isSmall = useMediaQuery("(max-width:80rem)");
+  const sizeMinus1 = useMediaQuery("(max-width:110rem)");
+  const sizeMinus2 = useMediaQuery("(max-width:95rem)");
+  const sizeMinus3 = useMediaQuery("(max-width:80rem)");
+  const sizeMinus4 = useMediaQuery("(max-width:70rem)");
+  const sizeMinus5 = useMediaQuery("(max-width:60rem)");
   const { jobPanelSize } = useContext(CCP4i2Context);
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
@@ -89,12 +93,12 @@ export default function ToolBar() {
       <Button variant="outlined" startIcon={<Help />}>
         Help
       </Button>
-      {jobPanelSize && jobPanelSize > 40 && (
+      {!sizeMinus4 && (
         <Button variant="outlined" startIcon={<MenuBook />}>
           Bibliography
         </Button>
       )}
-      {jobPanelSize && jobPanelSize > 60 && (
+      {!sizeMinus3 && (
         <Button
           variant="outlined"
           startIcon={<SystemUpdateAlt />}
@@ -103,12 +107,12 @@ export default function ToolBar() {
           Export MTZ
         </Button>
       )}
-      {jobPanelSize && jobPanelSize > 80 && (
+      {!sizeMinus2 && (
         <Button variant="outlined" startIcon={<Description />}>
           Show log file
         </Button>
       )}
-      {jobPanelSize && jobPanelSize > 100 && (
+      {!sizeMinus1 && (
         <Button variant="outlined" startIcon={<Code />}>
           i2run command
         </Button>
