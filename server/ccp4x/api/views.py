@@ -403,7 +403,33 @@ class JobViewSet(ModelViewSet):
         """
         try:
             the_job = models.Job.objects.get(id=pk)
-            report_xml = make_old_report(the_job)
+            report_xml = ""
+            if the_job.status == models.Job.Status.PENDING:
+                report_xml = ET.Element("report")
+                ET.SubElement(report_xml, "status").text = "PENDING"
+            if the_job.status in [
+                models.Job.Status.FAILED,
+                models.Job.Status.UNSATISFACTORY,
+                models.Job.Status.INTERRUPTED,
+                models.Job.Status.FINISHED,
+            ]:
+                report_xml_path = the_job.directory / "report_xml.xml"
+                logger.error("report_xml_path: %s", report_xml_path)
+                if not report_xml_path.exists():
+                    report_xml = make_old_report(the_job)
+                    with open(report_xml_path, "wb") as report_xml_file:
+                        report_xml_file.write(ET.tostring(report_xml))
+                    ET.indent(report_xml, space="\t", level=0)
+                    return Response(
+                        {"status": "Success", "xml": ET.tostring(report_xml)}
+                    )
+                else:
+                    with open(
+                        report_xml_path, "r", encoding="utf-8"
+                    ) as report_xml_file:
+                        report_xml = ET.fromstring(report_xml_file.read())
+            else:
+                report_xml = make_old_report(the_job)
             ET.indent(report_xml, space="\t", level=0)
             return Response({"status": "Success", "xml": ET.tostring(report_xml)})
         except (ValueError, models.Job.DoesNotExist) as err:
