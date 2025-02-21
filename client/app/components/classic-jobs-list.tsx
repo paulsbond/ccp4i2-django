@@ -115,7 +115,8 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
           ...job,
           children: childJobs.concat(childFiles || []),
         };
-      });
+      })
+      .reverse();
   }, [jobs, files]);
 
   const getItemLabel = useCallback(
