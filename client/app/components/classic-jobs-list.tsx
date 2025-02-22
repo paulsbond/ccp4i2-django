@@ -303,6 +303,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
           />
           <Button
             size="small"
+            sx={{ p: 0, m: 0 }}
             variant="outlined"
             onClick={(ev) => {
               ev.stopPropagation();
@@ -310,7 +311,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
               setMenuNode(job || file || null);
             }}
           >
-            <MenuIcon />
+            <MenuIcon fontSize="small" />
           </Button>
         </TreeItem2Content>
         {children && (
