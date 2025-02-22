@@ -15,7 +15,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
   const { itemName, job, type, sx, qualifiers } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
   const [value, setValue] = useState<string | number>(item._value);
@@ -131,7 +131,12 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
           options={enumerators}
           size="small"
           renderInput={(params) => (
-            <TextField {...params} label={guiLabel} size="small" />
+            <TextField
+              {...params}
+              error={getValidationColor(item) === "error.light"}
+              label={guiLabel}
+              size="small"
+            />
           )}
         />
         <Stack direction="column">

@@ -16,7 +16,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
   const { itemName, job, type, sx, qualifiers } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
 
@@ -134,9 +134,18 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     () =>
       type === "checkbox"
         ? {
+            inputLabel: {
+              shrink: true,
+              disableAnimation: true,
+            },
             htmlInput: { checked: value, sx: { my: 1 } },
           }
-        : {},
+        : {
+            inputLabel: {
+              shrink: true,
+              disableAnimation: true,
+            },
+          },
     [type, value]
   );
 
@@ -159,6 +168,9 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
+          error={
+            getValidationColor(item) === "error.light" || Number.isNaN(value)
+          }
         />
         <Stack direction="column">
           <ErrorInfo {...props} />

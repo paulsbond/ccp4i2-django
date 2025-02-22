@@ -28,7 +28,7 @@ export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  return false
+  return usingSelect
     ? inferredVisibility && <CSimpleAutocompleteElement {...props} />
     : inferredVisibility && <CSimpleTextFieldElement {...props} />;
 };

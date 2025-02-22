@@ -293,7 +293,12 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           getOptionLabel={getOptionLabel}
           getOptionKey={(option) => `${option.uuid}`}
           renderInput={(params) => (
-            <TextField {...params} label={guiLabel} size="small" />
+            <TextField
+              {...params}
+              error={getValidationColor(item) === "error.light"}
+              label={guiLabel}
+              size="small"
+            />
           )}
           title={objectPath || item._className || "Title"}
         />
