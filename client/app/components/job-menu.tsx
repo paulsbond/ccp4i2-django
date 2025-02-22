@@ -1,4 +1,10 @@
-import { SyntheticEvent, useCallback, useContext, createContext } from "react";
+import {
+  SyntheticEvent,
+  useCallback,
+  useContext,
+  createContext,
+  useMemo,
+} from "react";
 import { Job, File as DjangoFile } from "../models";
 import { doDownload, useApi } from "../api";
 import { useRouter } from "next/navigation";
@@ -47,6 +53,10 @@ export const JobMenu: React.FC = () => {
     id: (menuNode as Job)?.id,
     endpoint: "dependent_jobs",
   });
+
+  const topLevelDependentJobs = useMemo<Job[]>(() => {
+    return dependentJobs?.filter((job) => job.parent === null) || [];
+  }, [dependentJobs]);
 
   const handleClone = useCallback(
     async (ev: SyntheticEvent) => {
@@ -102,17 +112,26 @@ export const JobMenu: React.FC = () => {
             const deleteResult = await api.delete(`jobs/${job.id}`);
             console.log(deleteResult);
             mutateJobs();
+            setAnchorEl(null);
+            setMenuNode(null);
             router.push(`/project/${job.project}`);
           },
+          onCancel: () => {
+            setAnchorEl(null);
+            setMenuNode(null);
+          },
           children: [
-            <Paper sx={{ maxHeight: "10rem", overflowY: "auto" }}>
-              {dependentJobs && dependentJobs?.length > 0 && (
+            <Paper
+              key="dependentJobs"
+              sx={{ maxHeight: "10rem", overflowY: "auto" }}
+            >
+              {topLevelDependentJobs && topLevelDependentJobs?.length > 0 && (
                 <>
-                  The following {dependentJobs.length} dependent jobs would be
-                  deleted
+                  The following {topLevelDependentJobs.length} dependent jobs
+                  would be deleted
                   <List dense>
-                    {dependentJobs &&
-                      dependentJobs.map((dependentJob: Job) => {
+                    {topLevelDependentJobs &&
+                      topLevelDependentJobs.map((dependentJob: Job) => {
                         return (
                           <ListItem key={dependentJob.uuid}>
                             <Toolbar>

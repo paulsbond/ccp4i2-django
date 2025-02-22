@@ -22,6 +22,7 @@ interface DeleteDialogState {
   children?: React.ReactNode[];
   deleteDisabled?: boolean;
   onDelete?: () => void;
+  onCancel?: () => void;
 }
 
 interface DeleteDialogAction {
@@ -30,6 +31,7 @@ interface DeleteDialogAction {
   children?: React.ReactNode[];
   deleteDisabled?: boolean;
   onDelete?: () => void;
+  onCancel?: () => void;
 }
 
 const DeleteDialogContext = createContext<Dispatch<DeleteDialogAction> | null>(
@@ -44,11 +46,12 @@ export function DeleteDialogProvider(props: DeleteDialogProviderProps) {
   const [state, dispatch] = useReducer(deleteDialogReducer, { open: false });
 
   function handleCancel() {
+    if (state.onCancel) state.onCancel();
     dispatch({ type: "hide" });
   }
 
   function handleDelete() {
-    state.onDelete?.();
+    if (state.onDelete) state.onDelete?.();
     dispatch({ type: "hide" });
   }
 
@@ -57,8 +60,10 @@ export function DeleteDialogProvider(props: DeleteDialogProviderProps) {
       <Dialog open={state.open}>
         <DialogTitle>{`Delete ${state.what}?`}</DialogTitle>
         <DialogContent>
-          <DialogContentText>This action cannot be undone.</DialogContentText>
-          {state.children && state.children.map((child: any) => child)}
+          <DialogContentText key="DialogContentText">
+            This action cannot be undone.
+          </DialogContentText>
+          {state.children}
         </DialogContent>
         <DialogActions>
           <Button key="Close" autoFocus onClick={handleCancel}>
@@ -97,6 +102,7 @@ function deleteDialogReducer(
         children: action.children,
         deleteDisabled: action.deleteDisabled,
         onDelete: action.onDelete,
+        onCancel: action.onCancel,
       };
     case "hide":
       return { open: false };
