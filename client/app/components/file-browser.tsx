@@ -142,9 +142,24 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
       {node.type === "directory" && Array.isArray(node.contents) && (
         <Collapse in={isOpen} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            {node.contents.map((child) => (
-              <TreeNode key={child.name} node={child} />
-            ))}
+            {node.contents
+              .sort((child1, child2) => {
+                if (child1.type === "directory" && child2.type === "file")
+                  return -1;
+                if (child1.type === "file" && child2.type === "directory")
+                  return 1;
+                const match1 = /job_(\d+)$/.exec(child1.name);
+                const match2 = /job_(\d+)$/.exec(child2.name);
+                if (match1 && match2) {
+                  return parseInt(match1[1]) - parseInt(match2[1]);
+                }
+                if (match1) return -1;
+                if (match2) return 1;
+                return child1.name.localeCompare(child2.name);
+              })
+              .map((child) => (
+                <TreeNode key={child.name} node={child} />
+              ))}
           </List>
         </Collapse>
       )}
