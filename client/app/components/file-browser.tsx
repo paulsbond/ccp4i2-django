@@ -94,8 +94,14 @@ interface TreeNodeProps {
 
 const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
-    useContext(FileBrowserContext);
+  const {
+    anchorEl,
+    setAnchorEl,
+    menuNode,
+    setMenuNode,
+    previewNode,
+    setPreviewNode,
+  } = useContext(FileBrowserContext);
   const menuOpen = Boolean(anchorEl);
 
   const toggleOpen = () => {
@@ -112,12 +118,23 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
   const handleMenuClose = (ev: any) => {
     setAnchorEl(null);
   };
+
+  const handlePreview = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      setPreviewNode(menuNode);
+      setAnchorEl(null);
+    },
+    [menuNode]
+  );
+
   return (
     <>
       <ListItem
         dense
         sx={{ ml: 0, px: 0 }}
         onClick={toggleOpen}
+        onDoubleClick={handlePreview}
         secondaryAction={
           node.type !== "directory" ? (
             <Button onClick={handleMenuOpen}>
@@ -267,7 +284,8 @@ const FilePreviewDialog: React.FC = () => {
 
   return (
     <Dialog
-      sx={{ maxWidth: "120rem" }}
+      fullWidth
+      maxWidth="xl"
       open={previewNode != null}
       onClose={() => {
         setPreviewNode(null);
@@ -277,7 +295,7 @@ const FilePreviewDialog: React.FC = () => {
       <DialogContent>
         {previewNode && previewContent && (
           <Editor
-            width="calc(100vw - 10rem)"
+            width="100%"
             height="calc(100vh - 20rem)"
             value={
               previewContent && previewNode.name.endsWith("xml")
