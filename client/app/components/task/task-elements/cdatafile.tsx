@@ -300,6 +300,12 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
             <TextField
               {...params}
               error={getValidationColor(item) === "error.light"}
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                  disableAnimation: true,
+                },
+              }}
               label={guiLabel}
               size="small"
             />

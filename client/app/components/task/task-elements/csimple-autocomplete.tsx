@@ -136,6 +136,12 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
               error={getValidationColor(item) === "error.light"}
               label={guiLabel}
               size="small"
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                  disableAnimation: true,
+                },
+              }}
             />
           )}
         />
