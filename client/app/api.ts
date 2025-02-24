@@ -2,7 +2,7 @@ import useSWR from "swr";
 import $ from "jquery";
 import { prettifyXml } from "./components/report/CCP4i2ReportFlotWidget";
 
-function fullUrl(endpoint: string): string {
+export function fullUrl(endpoint: string): string {
   const url = new URL(endpoint, "http://127.0.0.1:8000");
   if (url.pathname.charAt(url.pathname.length - 1) !== "/") url.pathname += "/";
   return url.href;
@@ -176,10 +176,6 @@ export function useApi() {
 
     get_validation: function (endpointFetch: EndpointFetch) {
       return useSWR(endpointFetch, endpoint_validation_fetcher, {});
-    },
-
-    follow: function <T>(endpoint: string) {
-      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 5000 });
     },
 
     digest: function <T>(endpoint: string) {
