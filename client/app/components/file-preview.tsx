@@ -18,14 +18,15 @@ export const FilePreviewDialog: React.FC<FilePreviewProps> = ({
   const [previewContent, setPreviewContent] = useState("");
 
   useEffect(() => {
-    const asyncFunc = async () => {
-      if (url && filename) {
+    if (url && filename) {
+      const asyncFunc = async () => {
         const fileContent = await doRetrieve(url, filename);
         var enc = new TextDecoder("utf-8");
+        console.log({ url, filename, enc: enc.decode(fileContent) });
         setPreviewContent(enc.decode(fileContent));
-      }
-    };
-    asyncFunc();
+      };
+      asyncFunc();
+    }
   }, [url, filename]);
 
   return (

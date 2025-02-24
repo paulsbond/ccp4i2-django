@@ -4,14 +4,23 @@ import {
   useContext,
   createContext,
   useMemo,
+  useEffect,
+  useState,
 } from "react";
 import { Job, File as DjangoFile } from "../models";
-import { doDownload, useApi } from "../api";
+import { doDownload, fullUrl, useApi } from "../api";
 import { useRouter } from "next/navigation";
 import { useDeleteDialog } from "./delete-dialog";
 import { List, ListItem, Menu, MenuItem, Paper, Toolbar } from "@mui/material";
 import { CCP4i2JobAvatar } from "./job-avatar";
-import { CopyAll, Delete, Download, RunCircle } from "@mui/icons-material";
+import {
+  CopyAll,
+  Delete,
+  Download,
+  Preview,
+  RunCircle,
+} from "@mui/icons-material";
+import { FilePreviewDialog } from "./file-preview";
 
 export interface JobWithChildren extends Job {
   children: (Job | DjangoFile)[];
@@ -36,8 +45,14 @@ export const JobMenuContext = createContext<ContextProps>({
 });
 
 export const JobMenu: React.FC = () => {
-  const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
-    useContext(JobMenuContext);
+  const {
+    anchorEl,
+    setAnchorEl,
+    menuNode,
+    setMenuNode,
+    previewNode,
+    setPreviewNode,
+  } = useContext(JobMenuContext);
   const api = useApi();
   const router = useRouter();
   const deleteDialog = useDeleteDialog();
@@ -55,7 +70,19 @@ export const JobMenu: React.FC = () => {
   });
 
   const topLevelDependentJobs = useMemo<Job[]>(() => {
-    return dependentJobs?.filter((job) => job.parent === null) || [];
+    try {
+      if (Array.isArray(dependentJobs) && dependentJobs.length > 0) {
+        const result = dependentJobs
+          ? dependentJobs.filter((job) => job.parent === null)
+          : [];
+
+        return result;
+      }
+    } catch (error) {
+      console.log(dependentJobs);
+      console.error(error);
+    }
+    return [];
   }, [dependentJobs]);
 
   const handleClone = useCallback(
@@ -94,6 +121,18 @@ export const JobMenu: React.FC = () => {
         ev.stopPropagation();
         const composite_path = api.noSlashUrl(`files/${file.id}/download/`);
         doDownload(composite_path, file.name);
+        setAnchorEl(null);
+      }
+    },
+    [menuNode]
+  );
+
+  const handlePreviewFile = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const file = menuNode as DjangoFile;
+      if (file) {
+        setPreviewNode(file);
         setAnchorEl(null);
       }
     },
@@ -195,9 +234,43 @@ export const JobMenu: React.FC = () => {
       anchorEl={anchorEl}
       onClose={() => setAnchorEl(null)}
     >
-      <MenuItem key="Done" onClick={handleDownloadFile}>
+      <MenuItem key="Download" onClick={handleDownloadFile}>
         <Download /> Download
       </MenuItem>
+      <MenuItem key="Preview" onClick={handlePreviewFile}>
+        <Preview /> Preview
+      </MenuItem>
+      <ClassicJobsListPreviewDialog />
     </Menu>
+  );
+};
+
+export const ClassicJobsListPreviewDialog: React.FC = () => {
+  const { previewNode, setPreviewNode } = useContext(JobMenuContext);
+  const { noSlashUrl } = useApi();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!previewNode) return;
+    if (!(previewNode as DjangoFile).name) return;
+    const djangoFile = previewNode as DjangoFile;
+    if (previewNode) {
+      const composite_path = fullUrl(`files/${djangoFile.id}/download/`);
+      setPreviewUrl(composite_path);
+    }
+  }, [previewNode, noSlashUrl]);
+
+  useEffect(() => {
+    if (!previewUrl) setPreviewNode(null);
+  }, [previewUrl]);
+
+  return (
+    previewNode && (
+      <FilePreviewDialog
+        url={previewUrl}
+        filename={(previewNode as DjangoFile).name}
+        setUrl={setPreviewUrl}
+      />
+    )
   );
 };
