@@ -145,13 +145,17 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   if (!project_files || !project_jobs) return <LinearProgress />;
 
   const fileOptions = useMemo<CCP4i2File[] | null>(() => {
-    return project_files.filter((file: CCP4i2File) => {
-      const fileJob: Job | undefined = project_jobs?.find(
-        (job: Job) => job.id == file.job
-      );
-      if (fileJob) return file.type === fileType && !fileJob.parent;
-      return file.type === fileType;
-    });
+    return project_files
+      .filter((file: CCP4i2File) => {
+        const fileJob: Job | undefined = project_jobs?.find(
+          (job: Job) => job.id == file.job
+        );
+        if (fileJob) return file.type === fileType && !fileJob.parent;
+        return file.type === fileType;
+      })
+      .sort((a, b) => {
+        return b.job - a.job;
+      });
   }, [project_files, project_jobs, fileType]);
 
   useEffect(() => {
