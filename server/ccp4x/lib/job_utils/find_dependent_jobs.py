@@ -8,19 +8,28 @@ logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
+# Note that python handles tuple sort exactly as one would wish
+# https://stackoverflow.com/questions/2574080/how-to-sort-in-python-a-list-of-strings-containing-numbers
+def version_sort_key(job: models.Job) -> tuple:
+    return tuple(map(int, job.number.split(".")))
+
+
 def find_dependent_jobs(
     the_job: models.Job, growing_list: List[models.Job] = None, leaf_action=None
 ) -> List[models.Job]:
     assert isinstance(the_job, models.Job)
     if growing_list is None:
         growing_list: List[models.Job] = []
-    descendent_files = models.File.objects.filter(
-        job=the_job
-    )  # Do I also have to worry about FileImports in this job ? I don't think so...those should have an associated FileUse
+    descendent_files = models.File.objects.filter(job=the_job)
+    # Do I also have to worry about FileImports in this job ? I don't think so...those should have an associated FileUse
     descendent_file_uses = models.FileUse.objects.filter(file__in=descendent_files)
-    descendent_jobs = [
-        file_use.job for file_use in descendent_file_uses if file_use.job != the_job
-    ]
+    unsorted_descendent_jobs = list(
+        {file_use.job for file_use in descendent_file_uses if file_use.job != the_job}
+    )
+    descendent_jobs = sorted(
+        unsorted_descendent_jobs, key=version_sort_key, reverse=True
+    )
+    logger.warning("descendent_jobs: {%s}", [dj.number for dj in descendent_jobs])
     for descendent_job in descendent_jobs:
         if descendent_job not in growing_list:
             growing_list.append(descendent_job)
@@ -42,9 +51,12 @@ def delete_job_and_dir(the_job: models.Job):
     for float_value_of_job in float_values_of_job:
         float_value_of_job.delete()
     files_of_job = models.File.objects.filter(job=the_job)
+    job_file: models.File
     for job_file in files_of_job:
-        job_file_as_file: models.File = job_file
-        job_file_as_file.path.unlink()
+        try:
+            job_file.path.unlink()
+        except FileNotFoundError:
+            logger.warning("File  not found when trying to delete it %s", job_file.path)
         job_file.delete()
     shutil.rmtree(str(the_job.directory))
     the_job.delete()
