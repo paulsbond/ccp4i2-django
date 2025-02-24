@@ -9,11 +9,7 @@ import React, {
 } from "react";
 import {
   Button,
-  ClickAwayListener,
   Collapse,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   List,
   ListItem,
   ListItemIcon,
@@ -29,11 +25,9 @@ import {
   ExpandMore,
   Menu as MenuIcon,
 } from "@mui/icons-material";
-import { itemsForName } from "../utils";
 import { CCP4i2Context } from "../app-context";
-import { doDownload, doRetrieve, useApi } from "../api";
-import { Editor } from "@monaco-editor/react";
-import { prettifyXml } from "./report/CCP4i2ReportFlotWidget";
+import { doDownload, useApi } from "../api";
+import { FilePreviewDialog } from "./file-preview";
 
 interface FileNode {
   id: string;
@@ -82,7 +76,7 @@ export const FileTree: React.FC<FileTreeProps> = ({ data }) => {
         {Array.isArray(data) &&
           data.map((item) => <TreeNode key={item.name} node={item} />)}
       </List>
-      <FilePreviewDialog />
+      <FileBrowserPreviewDialog />
       <FileMenu />
     </FileBrowserContext.Provider>
   );
@@ -122,8 +116,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
   const handlePreview = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
-      setPreviewNode(menuNode);
-      setAnchorEl(null);
+      setPreviewNode(node);
     },
     [menuNode]
   );
@@ -185,14 +178,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
 };
 
 const FileMenu: React.FC = () => {
-  const {
-    previewNode,
-    setPreviewNode,
-    anchorEl,
-    setAnchorEl,
-    menuNode,
-    setMenuNode,
-  } = useContext(FileBrowserContext);
+  const { setPreviewNode, anchorEl, setAnchorEl, menuNode } =
+    useContext(FileBrowserContext);
 
   const { noSlashUrl } = useApi();
   const { projectId } = useContext(CCP4i2Context);
@@ -212,6 +199,7 @@ const FileMenu: React.FC = () => {
     },
     [projectId, menuNode, noSlashUrl]
   );
+
   const handlePreview = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
@@ -234,7 +222,7 @@ const FileMenu: React.FC = () => {
       )}
       {menuNode?.name &&
         ["log", "xml", "json", "txt", "mmcif", "cif"].includes(
-          menuNode?.name?.split(".").at(-1)
+          menuNode?.name?.split(".").at(-1) || ""
         ) && <MenuItem onClick={handlePreview}>Preview</MenuItem>}
     </Menu>
   );
@@ -260,61 +248,37 @@ const FileBrowser: React.FC = () => {
   );
 };
 
-const FilePreviewDialog: React.FC = () => {
+const FileBrowserPreviewDialog: React.FC = () => {
   const { projectId } = useContext(CCP4i2Context);
   const { previewNode, setPreviewNode } = useContext(FileBrowserContext);
   const { noSlashUrl } = useApi();
-  const [previewContent, setPreviewContent] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const asyncFunc = async () => {
-      if (previewNode && projectId) {
-        const composite_path = noSlashUrl(
-          `projects/${projectId}/project_file?path=${encodeURIComponent(
-            previewNode.path
-          )}`
-        );
-        const fileContent = await doRetrieve(composite_path, previewNode.name);
-        var enc = new TextDecoder("utf-8");
-        setPreviewContent(enc.decode(fileContent));
-      }
-    };
-    asyncFunc();
-  }, [previewNode, projectId]);
+    if (previewNode?.type !== "file") return;
+    if (previewNode) {
+      const composite_path = noSlashUrl(
+        `projects/${projectId}/project_file?path=${encodeURIComponent(
+          previewNode.path
+        )}`
+      );
+      setPreviewUrl(composite_path);
+    }
+  }, [projectId, previewNode, noSlashUrl]);
+
+  useEffect(() => {
+    if (!previewUrl) setPreviewNode(null);
+  }, [previewUrl]);
 
   return (
-    <Dialog
-      fullWidth
-      maxWidth="xl"
-      open={previewNode != null}
-      onClose={() => {
-        setPreviewNode(null);
-      }}
-    >
-      <DialogTitle>{previewNode?.name}</DialogTitle>
-      <DialogContent>
-        {previewNode && previewContent && (
-          <Editor
-            width="100%"
-            height="calc(100vh - 20rem)"
-            value={
-              previewContent && previewNode.name.endsWith("xml")
-                ? prettifyXml($.parseXML(previewContent))
-                : previewContent
-            }
-            language={
-              previewNode.name.endsWith("xml")
-                ? "xml"
-                : previewNode.name.endsWith("json")
-                ? "json"
-                : previewNode.name.endsWith("log")
-                ? "log"
-                : "text"
-            }
-          />
-        )}
-      </DialogContent>
-    </Dialog>
+    previewNode && (
+      <FilePreviewDialog
+        url={previewUrl}
+        filename={previewNode.path}
+        setUrl={setPreviewUrl}
+      />
+    )
   );
 };
+
 export default FileBrowser;
