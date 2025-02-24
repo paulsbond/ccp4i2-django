@@ -203,7 +203,8 @@ export function useApi() {
     },
 
     delete: async function (endpoint: string): Promise<void> {
-      await fetch(fullUrl(endpoint), { method: "DELETE" });
+      const result = await fetch(fullUrl(endpoint), { method: "DELETE" });
+      console.log(result);
     },
 
     patch: async function <T>(endpoint: string, body: any = {}): Promise<T> {
