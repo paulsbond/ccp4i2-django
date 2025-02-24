@@ -61,9 +61,14 @@ import { Chicle } from "next/font/google";
 import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
 import { fileTypeMapping } from "./files-table";
-import { useDeleteDialog } from "./delete-dialog";
-import { JobMenu, JobMenuContext, JobWithChildren } from "./job-menu";
+import {
+  ClassicJobsListPreviewDialog,
+  JobMenu,
+  JobMenuContext,
+  JobWithChildren,
+} from "./job-menu";
 import { Endpoint } from "next/dist/build/swc/types";
+import { FilePreviewDialog } from "./file-preview";
 
 interface ClassicJobListProps {
   projectId: number;
@@ -167,6 +172,7 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
         />
       )}
       <JobMenu />
+      <ClassicJobsListPreviewDialog />
     </JobMenuContext.Provider>
   );
 };
