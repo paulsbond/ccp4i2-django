@@ -348,9 +348,12 @@ class JobViewSet(ModelViewSet):
         try:
             instance = self.get_object()
             delete_job_and_dependents(instance)
+            logger.warning("Deleted job %s", instance)
+            # Note I am adding a bit of body to the response because of an odd
+            # javascript feature which presents as network error if no body in response.
+            return Response({"status": "Success"})
         except Http404:
-            pass
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            return Http404("Job not found")
 
     @action(
         detail=True,
