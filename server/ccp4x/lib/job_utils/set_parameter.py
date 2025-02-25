@@ -13,53 +13,20 @@ logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
-def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict]):
+def set_parameter(
+    job: models.Job, object_path: str, value: Union[str, int, dict, None]
+):
     the_job_plugin = get_job_plugin(job)
     the_container: CContainer = the_job_plugin.container
-    # print("object_path", object_path)
-    try:
-        object_element = find_object_by_path(the_container, object_path)
-        logger.warning(
-            "Setting parameter %s", isinstance(object_element, CCP4XtalData.CSpaceGroup)
-        )
-        # e = object_element.getEtree()
-        # print(ET.tostring(e).decode("utf-8"))
-        object_element.unSet()
-        if value is None:
-            object_element.unSet()
-        elif hasattr(object_element, "update"):
-            object_element.update(value)
-            logger.warning(
-                "Updating parameter %s with dict %s",
-                object_element.objectName(),
-                value,
-            )
-        else:
-            if isinstance(object_element, CCP4XtalData.CSpaceGroup):
-                status, corrected_spacegroup = (
-                    CCP4XtalData.CSymmetryManager().spaceGroupValidity(str(value))
-                )
-                if corrected_spacegroup == value:
-                    pass
-                elif isinstance(corrected_spacegroup, list):
-                    value = corrected_spacegroup[0]
-                else:
-                    value = corrected_spacegroup
-            object_element.set(value)
-            logger.warning(
-                "Setting parameter %s to %s",
-                object_element.objectName(),
-                value,
-            )
-        # print(object_element)
 
+    try:
+        object_element = set_parameter_container(the_container, object_path, value)
         logger.warning(
             "Parameter %s now has value %s in job number %s",
             object_element.objectName(),
             object_element,
             job.number,
         )
-
         save_params_for_job(the_job_plugin=the_job_plugin, the_job=job)
 
         return ET.tostring(object_element.getEtree()).decode("utf-8")
@@ -68,3 +35,43 @@ def set_parameter(job: models.Job, object_path: str, value: Union[str, int, dict
             "Failed to set parameter for path %s", object_path, exc_info=err
         )
         return ""
+
+
+def set_parameter_container(
+    the_container: CContainer, object_path: str, value: Union[str, int, dict, None]
+):
+    object_element = find_object_by_path(the_container, object_path)
+    logger.warning(
+        "Setting parameter %s", isinstance(object_element, CCP4XtalData.CSpaceGroup)
+    )
+    # e = object_element.getEtree()
+    # print(ET.tostring(e).decode("utf-8"))
+    object_element.unSet()
+    if value is None:
+        object_element.unSet()
+    elif hasattr(object_element, "update"):
+        object_element.update(value)
+        logger.warning(
+            "Updating parameter %s with dict %s",
+            object_element.objectName(),
+            value,
+        )
+    else:
+        if isinstance(object_element, CCP4XtalData.CSpaceGroup):
+            status, corrected_spacegroup = (
+                CCP4XtalData.CSymmetryManager().spaceGroupValidity(str(value))
+            )
+            if corrected_spacegroup == value:
+                pass
+            elif isinstance(corrected_spacegroup, list):
+                value = corrected_spacegroup[0]
+            else:
+                value = corrected_spacegroup
+        object_element.set(value)
+        logger.warning(
+            "Setting parameter %s to %s",
+            object_element.objectName(),
+            value,
+        )
+    # print(object_element)
+    return object_element
