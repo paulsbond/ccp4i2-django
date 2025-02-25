@@ -6,7 +6,8 @@ import shutil
 import uuid
 
 from ccp4i2.core import CCP4Container
-from ccp4i2.core import CCP4File
+from ccp4i2.core.CCP4File import CDataFile
+from core import CCP4File
 from ccp4i2.core import CCP4PluginScript
 from ccp4i2.core.CCP4Data import CList
 from ccp4i2.dbapi import CCP4DbApi
@@ -49,7 +50,9 @@ def _process_input(
             while destFilePath.exists():
                 fileRoot, fileExt = os.path.splitext(destFilePath.name)
                 destFilePath = destFilePath.parent / "{}_1{}".format(fileRoot, fileExt)
-            # print('src, UniqueDestFilePath', sourceFilePath, destFilePath)
+            logger.warning(
+                "src %s, UniqueDestFilePath %s", sourceFilePath, destFilePath
+            )
             shutil.copyfile(sourceFilePath, destFilePath)
             # Now have to change the plugin to reflect the new location
 
@@ -126,8 +129,17 @@ def _process_input(
 
 def import_files(theJob, plugin):
     inputs = find_objects(
-        plugin.container.inputData, lambda a: isinstance(a, CCP4File.CDataFile)
+        plugin.container.inputData,
+        lambda a: isinstance(
+            a,
+            (
+                CCP4File.CDataFile,
+                CDataFile,
+            ),
+        ),
+        True,
     )
+    logger.warning("In import_files %s", len(inputs))
     for the_input in inputs:
         _process_input(theJob, plugin, the_input)
 

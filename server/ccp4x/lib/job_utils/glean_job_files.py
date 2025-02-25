@@ -41,14 +41,14 @@ def glean_job_files(
     job = models.Job.objects.get(uuid=uuid.UUID(jobId))
     inputs = []
     outputs = []
-    if 0 in roleList:
+    if models.FileUse.Role.OUT in roleList:
         outputs: List[CDataFile] = find_objects(
             container.outputData,
             lambda a: isinstance(a, CCP4File.CDataFile) or isinstance(a, CDataFile),
             True,
         )
         make_files(job, outputs, unSetMissingFiles)
-    if 1 in roleList:
+    if models.FileUse.Role.IN in roleList:
         inputs: List[CDataFile] = find_objects(
             container.inputData,
             lambda a: isinstance(a, CCP4File.CDataFile) or isinstance(a, CDataFile),
@@ -56,14 +56,18 @@ def glean_job_files(
         )
         make_file_uses(job, inputs)
     glean_performance_indicators(container.outputData, job)
+    # the_plugin = get_job_plugin(job)
+    # the_plugin.container = container
+    # save_params_for_job(the_plugin, job, mode="PARAMS")
 
 
 def make_files(
     job: models.Job, objects: List[CDataFile], unSetMissingFiles: bool = True
 ):
     for item in objects:
+
         if item.exists():
-            logger.debug(
+            logger.warning(
                 "File for param %s exists=%s" % (item.objectName(), item.exists())
             )
             _ = create_new_file(job, item)
@@ -73,22 +77,26 @@ def make_files(
 
 
 def create_new_file(job: models.Job, item: CDataFile):
-    logger.info("Creating new file %s" % item.objectName())
+    logger.warning("Creating new file %s" % item.objectName())
     file_type = item.qualifiers("mimeTypeName")
-    if file_type is None or len(file_type) == 0:
-        logger.info(
+    # Not happy with this, but need to add xmgr filetype support
+    if file_type == "application/grace":
+        file_type = "Unknown"
+    if file_type is None or len(file_type.strip()) == 0:
+        logger.warning(
             "Class %s Does not have an associated mimeTypeName....ASK FOR DEVELOPER FIX",
             str(item.__class__),
         )
-        if isinstance(item, CCP4File.CI2XmlDataFile) or isinstance(CI2XmlDataFile):
-            file_type = "Unknown"
+        file_type = "Unknown"
     elif file_type == "application/xml":
         file_type = "Unknown"
     try:
         file_type_object = models.FileType.objects.get(name=file_type)
     except models.FileType.DoesNotExist as err:
         logger.exception(
-            "Could not find file type matching %s" % (file_type,), exc_info=err
+            "Could not find file type matching %s objectPath %s",
+            file_type,
+            item.objectName(),
         )
         return
 
@@ -141,7 +149,7 @@ def create_new_file(job: models.Job, item: CDataFile):
         )
         the_file.save()
         item.dbFileId.set(str(the_file.uuid))
-        logger.debug("Created File for param %s" % item.objectName())
+        logger.warning("Created File for param %s" % item.objectName())
     except Exception as err:
         logger.exception("Exception harvesting %s", job_param_name, exc_info=err)
     return the_file

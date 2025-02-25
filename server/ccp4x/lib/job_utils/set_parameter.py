@@ -2,6 +2,8 @@ import logging
 from typing import Union
 from ccp4i2.core.CCP4Container import CContainer
 from core import CCP4XtalData
+from core import CCP4File
+from ccp4i2.core.CCP4File import CDataFile
 from .save_params_for_job import save_params_for_job
 from .find_objects import find_object_by_path
 from .get_job_plugin import get_job_plugin
@@ -24,7 +26,7 @@ def set_parameter(
         logger.warning(
             "Parameter %s now has value %s in job number %s",
             object_element.objectName(),
-            object_element,
+            object_element.__dict__,
             job.number,
         )
         save_params_for_job(the_job_plugin=the_job_plugin, the_job=job)
@@ -41,14 +43,21 @@ def set_parameter_container(
     the_container: CContainer, object_path: str, value: Union[str, int, dict, None]
 ):
     object_element = find_object_by_path(the_container, object_path)
-    logger.warning(
-        "Setting parameter %s", isinstance(object_element, CCP4XtalData.CSpaceGroup)
-    )
     # e = object_element.getEtree()
     # print(ET.tostring(e).decode("utf-8"))
     object_element.unSet()
     if value is None:
         object_element.unSet()
+    elif isinstance(
+        object_element,
+        (
+            CDataFile,
+            CCP4File.CDataFile,
+        ),
+    ) and isinstance(value, str):
+        logger.warning("Setting file with string %s", object_element)
+        object_element.set(value)
+        logger.warning("Set file with string %s", object_element)
     elif hasattr(object_element, "update"):
         object_element.update(value)
         logger.warning(
@@ -56,22 +65,22 @@ def set_parameter_container(
             object_element.objectName(),
             value,
         )
-    else:
-        if isinstance(object_element, CCP4XtalData.CSpaceGroup):
-            status, corrected_spacegroup = (
-                CCP4XtalData.CSymmetryManager().spaceGroupValidity(str(value))
-            )
-            if corrected_spacegroup == value:
-                pass
-            elif isinstance(corrected_spacegroup, list):
-                value = corrected_spacegroup[0]
-            else:
-                value = corrected_spacegroup
-        object_element.set(value)
-        logger.warning(
-            "Setting parameter %s to %s",
-            object_element.objectName(),
-            value,
+    elif isinstance(object_element, CCP4XtalData.CSpaceGroup):
+        status, corrected_spacegroup = (
+            CCP4XtalData.CSymmetryManager().spaceGroupValidity(str(value))
         )
-    # print(object_element)
+        if corrected_spacegroup == value:
+            pass
+        elif isinstance(corrected_spacegroup, list):
+            value = corrected_spacegroup[0]
+        else:
+            value = corrected_spacegroup
+
+    object_element.set(value)
+    logger.warning(
+        "Setting parameter %s to %s",
+        object_element.objectPath(),
+        value,
+    )
+
     return object_element

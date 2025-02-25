@@ -89,7 +89,10 @@ class CCP4i2RunnerBase(object):
         if growingList is None:
             growingList = []
         for child in container.children():
-            if isinstance(child, CCP4Container.CContainer):
+            if (
+                isinstance(child, CCP4Container.CContainer)
+                and "temporary" not in child.objectName()
+            ):
                 growingList = CCP4i2RunnerBase.keywordsOfContainer(child, growingList)
             else:
                 try:
@@ -403,8 +406,8 @@ class CCP4i2RunnerBase(object):
                 try:
                     if isinstance(theObject, CCP4Data.CList):
                         # Here handling lists that might or might not start out with a "dummy" entry
-                        if theObject.objectPath() not in self.listMap:
-                            self.listMap[theObject.objectPath()] = 1
+                        if theObject.objectPath() not in self.list_map:
+                            self.list_map[theObject.objectPath()] = 1
                             if len(theObject) == 0:
                                 theObject.append(theObject.makeItem())
                         else:

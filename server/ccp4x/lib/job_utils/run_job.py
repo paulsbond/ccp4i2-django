@@ -102,7 +102,7 @@ def _save_params_for_job(
     the_plugin: CCP4PluginScript.CPluginScript, new_job: models.Job
 ):
     try:
-        save_params_for_job(the_plugin, new_job)
+        save_params_for_job(the_plugin, new_job, mode="PARAMS")
     except Exception as err:
         logger.exception("Exception setting filenames", exc_info=err)
         new_job.status = models.Job.Status.FAILED
@@ -165,6 +165,7 @@ def executePlugin(
     new_job: models.Job,
     application_inst: QtCore.QEventLoop,
 ):
+    logger.warning("Using application_inst %s", application_inst)
     try:
         rv = the_plugin.process()
     except Exception as err:
@@ -176,7 +177,7 @@ def executePlugin(
 
     try:
         result = application_inst.exec_()
-        logger.info(f"Returned from exec_ with result {result}")
+        logger.warning(f"Returned from exec_ with result {result}")
         return result
     except Exception as err:
         logger.exception(f"Failed to execute plugin {new_job.task_name}", exc_info=err)

@@ -3,6 +3,7 @@ from ..db import models
 from ..api import serializers
 from ..lib.job_utils.create_job import create_job
 from ..lib.job_utils.run_job import run_job
+from ..lib.job_utils.save_params_for_job import save_params_for_job
 import os
 import shlex
 
@@ -129,12 +130,18 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         )
         return created_job_uuid.replace("-", "")
 
+    def pluginWithArgs(self, parsed_args, workDirectory=None, jobId=None):
+        result = super().pluginWithArgs(parsed_args, workDirectory, jobId)
+        save_params_for_job(result, the_job=models.Job.objects.get(uuid=jobId))
+        return result
+
     def execute(self):
         thePlugin = self.getPlugin()
         assert self.jobId is not None
         assert self.projectId is not None
         thePlugin.saveParams()
-        theJob = models.Job.objects.get(jobid=self.jobId)
+        theJob = models.Job.objects.get(uuid=self.jobId)
+        print(self.jobId)
         exitStatus = run_job(self.jobId)
 
         return self.jobId, exitStatus
