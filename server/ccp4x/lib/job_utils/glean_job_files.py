@@ -76,7 +76,7 @@ def make_files(
 ):
     for item in objects:
         if item.exists():
-            logger.warning(
+            logger.info(
                 "File for param %s exists=%s" % (item.objectName(), item.exists())
             )
             _ = create_new_file(job, item)
@@ -87,10 +87,10 @@ def make_files(
 
 def create_new_file(job: models.Job, item: CDataFile):
 
-    logger.warning("Creating new file %s" % item.objectName())
+    logger.info("Creating new file %s" % item.objectName())
     file_type = item.qualifiers("mimeTypeName")
     if file_type is None or len(file_type.strip()) == 0:
-        logger.warning(
+        logger.error(
             "Class %s Does not have an associated mimeTypeName....ASK FOR DEVELOPER FIX",
             str(item.__class__),
         )
@@ -159,7 +159,7 @@ def create_new_file(job: models.Job, item: CDataFile):
             the_file = models.File.objects.get(
                 job=job, directory=directory, name=name, job_param_name=job_param_name
             )
-            logger.warning("Found identikit file %s %s" % item.objectName(), the_file)
+            logger.error("Found identikit file %s %s" % item.objectName(), the_file)
         except models.File.DoesNotExist:
             the_file = models.File(
                 name=name,
@@ -174,7 +174,7 @@ def create_new_file(job: models.Job, item: CDataFile):
 
             the_file.save()
             item.dbFileId.set(str(the_file.uuid))
-            logger.warning("Created File for param %s" % item.objectName())
+            logger.info("Created File for param %s" % item.objectName())
     except Exception as err:
         logger.exception("Exception harvesting %s", job_param_name, exc_info=err)
     return the_file

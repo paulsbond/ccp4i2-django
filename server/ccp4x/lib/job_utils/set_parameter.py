@@ -77,7 +77,7 @@ def set_parameter_container(
             value = corrected_spacegroup
 
     object_element.set(value)
-    logger.warning(
+    logger.info(
         "Setting parameter %s to %s",
         object_element.objectPath(),
         value,
