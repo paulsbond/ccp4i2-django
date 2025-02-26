@@ -28,61 +28,40 @@ def find_objects(within, func, multiple=False, growing_list=None, growing_name=N
     """
     if growing_list is None:
         growing_list = []
+    original_length = len(growing_list)
+
     if growing_name is None:
         growing_name = within.objectPath()
 
-    # Identify how many matches already exist, will be used to know if additional matches have been found
-    original_length = len(growing_list)
-
     search_domain = (
-        within.CONTENTS
-        if hasattr(within, "CONTENTS")
-        else (
-            within.__dict__["_value"]
-            if isinstance(
-                within,
-                (
-                    CCP4Data.CList,
-                    CList,
-                ),
-            )
-            else within
-        )
+        within._value
+        if isinstance(within, (CCP4Data.CList, CList))
+        else within.CONTENTS
     )
     for ichild, child_ref in enumerate(search_domain):
         child = (
-            getattr(within, child_ref, None)
-            if hasattr(within, "CONTENTS")
-            else child_ref
+            child_ref
+            if isinstance(within, (CCP4Data.CList, CList))
+            else getattr(within, child_ref, None)
         )
-        if isinstance(
-            within.__dict__["_value"],
-            (list),
-        ) or isinstance(
-            within,
-            (list),
-        ):
-            growing_name = f"{growing_name}[{ichild}]"
-            # print("Searching list", within.objectName())
-        else:
-            growing_name = f"{growing_name}.{child.objectName()}"
-        # print(growing_name)
+        current_name = (
+            f"{growing_name}[{ichild}]"
+            if isinstance(within._value, (CCP4Data.CList, CList, list))
+            else f"{growing_name}.{child.objectName()}"
+        )
+
         if func(child):
             growing_list.append(child)
             if not multiple:
                 logger.warning("Match for %s", child.objectName())
                 return growing_list
-        elif isinstance(
-            child,
-            (
-                CCP4Data.CList,
-                CList,
-                list,
-            ),
-        ) or hasattr(within, "CONTENTS"):
-            find_objects(child, func, multiple, growing_list, growing_name)
-            if (not multiple) and (len(growing_list) > original_length):
+        elif isinstance(child, (CCP4Data.CList, CList, list)) or hasattr(
+            child, "CONTENTS"
+        ):
+            find_objects(child, func, multiple, growing_list, current_name)
+            if not multiple and len(growing_list) > original_length:
                 return growing_list
+
     return growing_list
 
 

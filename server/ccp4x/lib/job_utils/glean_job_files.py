@@ -4,6 +4,7 @@ import logging
 from core import CCP4File
 from core import CCP4PerformanceData
 from core import CCP4Data
+from ccp4i2.core.CCP4Data import CList
 from ccp4i2.core.CCP4Container import CContainer as CContainer
 from ccp4i2.core.CCP4File import CDataFile as CDataFile
 from ccp4i2.core.CCP4File import CI2XmlDataFile as CI2XmlDataFile
@@ -13,6 +14,16 @@ from .find_objects import find_objects
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
+
+
+def isDataFile(item):
+    return isinstance(
+        item,
+        (
+            CCP4File.CDataFile,
+            CDataFile,
+        ),
+    )
 
 
 def glean_job_files(
@@ -39,21 +50,20 @@ def glean_job_files(
         None
     """
     job = models.Job.objects.get(uuid=uuid.UUID(jobId))
-    inputs = []
-    outputs = []
+    print("Gleaning job %s", job)
+    inputs: List[CDataFile] = find_objects(
+        container.inputData,
+        lambda a: isDataFile(a),
+        True,
+    )
+    outputs: List[CDataFile] = find_objects(
+        container.outputData,
+        lambda a: isDataFile(a),
+        True,
+    )
     if models.FileUse.Role.OUT in roleList:
-        outputs: List[CDataFile] = find_objects(
-            container.outputData,
-            lambda a: isinstance(a, CCP4File.CDataFile) or isinstance(a, CDataFile),
-            True,
-        )
         make_files(job, outputs, unSetMissingFiles)
     if models.FileUse.Role.IN in roleList:
-        inputs: List[CDataFile] = find_objects(
-            container.inputData,
-            lambda a: isinstance(a, CCP4File.CDataFile) or isinstance(a, CDataFile),
-            True,
-        )
         make_file_uses(job, inputs)
     glean_performance_indicators(container.outputData, job)
     # the_plugin = get_job_plugin(job)
@@ -65,7 +75,6 @@ def make_files(
     job: models.Job, objects: List[CDataFile], unSetMissingFiles: bool = True
 ):
     for item in objects:
-
         if item.exists():
             logger.warning(
                 "File for param %s exists=%s" % (item.objectName(), item.exists())
@@ -77,21 +86,22 @@ def make_files(
 
 
 def create_new_file(job: models.Job, item: CDataFile):
+
     logger.warning("Creating new file %s" % item.objectName())
     file_type = item.qualifiers("mimeTypeName")
-    # Not happy with this, but need to add xmgr filetype support
-    if file_type == "application/grace":
-        file_type = "Unknown"
     if file_type is None or len(file_type.strip()) == 0:
         logger.warning(
             "Class %s Does not have an associated mimeTypeName....ASK FOR DEVELOPER FIX",
             str(item.__class__),
         )
         file_type = "Unknown"
+    elif file_type == "application/grace":
+        file_type = "Unknown"
     elif file_type == "application/xml":
         file_type = "Unknown"
     try:
         file_type_object = models.FileType.objects.get(name=file_type)
+
     except models.FileType.DoesNotExist as err:
         logger.exception(
             "Could not find file type matching %s objectPath %s",
@@ -134,22 +144,37 @@ def create_new_file(job: models.Job, item: CDataFile):
     if name is not None:
         name = str(name)
     job_param_name = item.objectName()
+    if isinstance(
+        item.parent(),
+        (
+            CCP4Data.CList,
+            CList,
+        ),
+    ):
+        job_param_name = item.parent().objectName()
     directory = 1
 
     try:
-        the_file = models.File(
-            name=name,
-            annotation=annotation,
-            type=file_type_object,
-            sub_type=sub_type,
-            content=content,
-            job=job,
-            job_param_name=job_param_name,
-            directory=directory,
-        )
-        the_file.save()
-        item.dbFileId.set(str(the_file.uuid))
-        logger.warning("Created File for param %s" % item.objectName())
+        try:
+            the_file = models.File.objects.get(
+                job=job, directory=directory, name=name, job_param_name=job_param_name
+            )
+            logger.warning("Found identikit file %s %s" % item.objectName(), the_file)
+        except models.File.DoesNotExist:
+            the_file = models.File(
+                name=name,
+                annotation=annotation,
+                type=file_type_object,
+                sub_type=sub_type,
+                content=content,
+                job=job,
+                job_param_name=job_param_name,
+                directory=directory,
+            )
+
+            the_file.save()
+            item.dbFileId.set(str(the_file.uuid))
+            logger.warning("Created File for param %s" % item.objectName())
     except Exception as err:
         logger.exception("Exception harvesting %s", job_param_name, exc_info=err)
     return the_file

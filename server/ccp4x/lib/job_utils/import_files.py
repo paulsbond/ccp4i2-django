@@ -29,7 +29,7 @@ def _process_input(
 ):
     theFile = None
     if input.dbFileId is not None and len(str(input.dbFileId)) != 0:
-        theFile = models.File.objects.get(uuid=uuid.UUID(input.dbFileId))
+        theFile = models.File.objects.get(uuid=uuid.UUID(str(input.dbFileId)))
     else:
         if input.baseName is not None and len(str(input.baseName).strip()) != 0:
             sourceFilePath = pathlib.Path(str(input.relPath)) / str(input.baseName)
@@ -104,11 +104,11 @@ def _process_input(
                     "checksum": input.checksum(),
                 }
                 # print(createDict)
-                newImportfile = models.FileImport()
+                newImportfile = models.FileImport(**createDict)
                 newImportfile.save()
-                for key in createDict:
-                    setattr(newImportfile, key, createDict[key])
-                    newImportfile.save()
+                # for key in createDict:
+                #    setattr(newImportfile, key, createDict[key])
+                #    newImportfile.save()
             except ValueError as err:
                 theFile = None
                 logger.error(
