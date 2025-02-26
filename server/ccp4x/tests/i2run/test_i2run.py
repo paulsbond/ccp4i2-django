@@ -37,6 +37,9 @@ case2a = """aimless_pipe \
         crystalName=hg7 \
         dataset=DS1 \
         file=$CCP4I2_TOP/demo_data/mdm2/mdm2_unmerged.mtz \
+    --XYZIN_REF fullPath=$CCP4I2_TOP/demo_data/mdm2/4hg7.pdb \
+	--MODE MATCH \
+	--REFERENCE_DATASET XYZ \
     --project_name refmac_gamma_test_0"""
 
 case2b = """prosmart_refmac \
