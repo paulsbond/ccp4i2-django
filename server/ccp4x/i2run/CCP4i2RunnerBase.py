@@ -337,8 +337,12 @@ class CCP4i2RunnerBase(object):
                 fileUseDict["projectId"] = thePlugin.projectId()
                 fileDict = self.fileForFileUse(**fileUseDict)
                 set_parameter_container(thePlugin.container, objectPath, fileDict)
+            elif subPath == "fullPath":
+                logger.info("Setting parameter to %s %s", objectPath, subValue)
+                set_parameter_container(thePlugin.container, objectPath, subValue)
             else:
                 compositePath = ".".join(objectPath.split(".") + subPath.split("/"))
+                logger.info("Setting parameter to %s %s", compositePath, subValue)
                 set_parameter_container(thePlugin.container, compositePath, subValue)
         elif value is not None:
             set_parameter_container(thePlugin.container, objectPath, value)
@@ -432,17 +436,15 @@ class CCP4i2RunnerBase(object):
     @staticmethod
     def parseFileUse(fileUse):
         fileUseParser_tN_jI_jP_pI = re.compile(
-            r"^(?P<task_name>.+)\[(?P<jobIndex>.+)\].(?P<jobParamName>.+)\[(?P<paramIndex>.+)\].*$"
+            r"^(?P<task_name>.+)\[(?P<jobIndex>.+)\]\.(?P<jobParamName>.+)\[(?P<paramIndex>.+)\].*$"
         )
         fileUseParser_jI_jP_pI = re.compile(
-            r"^\[(?P<jobIndex>.+)\].(?P<jobParamName>.*)\[(?P<paramIndex>.+)\].*$"
+            r"^(?P<jobIndex>.+)\.(?P<jobParamName>.*)\[(?P<paramIndex>.+)\].*$"
         )
         fileUseParser_tN_jI_jP = re.compile(
-            r"^(?P<task_name>.+)\[(?P<jobIndex>.+)\].(?P<jobParamName>.+).*$"
+            r"^(?P<task_name>.+)\[(?P<jobIndex>.+)\]\.(?P<jobParamName>.+).*$"
         )
-        fileUseParser_jI_jP = re.compile(
-            r"^\[(?P<jobIndex>.+)\].(?P<jobParamName>.+).*$"
-        )
+        fileUseParser_jI_jP = re.compile(r"^(?P<jobIndex>.+)\.(?P<jobParamName>.+).*$")
         # task_name[jobIndex].jobParamName[paramIndex] returns dict containing task_name, jobIndex, jobParamName, paramIndex
         result = {
             "task_name": None,
@@ -450,6 +452,7 @@ class CCP4i2RunnerBase(object):
             "jobParamName": None,
             "paramIndex": -1,
         }
+        print(f"Trying to match [{fileUse}]")
         try:
             matches = fileUseParser_tN_jI_jP_pI.match(fileUse)
             result.update(matches.groupdict())

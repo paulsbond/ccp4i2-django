@@ -1,17 +1,18 @@
+import os
+import glob
+import shlex
+import logging
 from .CCP4i2RunnerBase import CCP4i2RunnerBase
 from ..db import models
 from ..api import serializers
 from ..lib.job_utils.create_job import create_job
 from ..lib.job_utils.run_job import run_job
 from ..lib.job_utils.save_params_for_job import save_params_for_job
-import os
-import shlex
-
-# import the logging library
-import logging
+from ..db.ccp4i2_django_wrapper import using_django_pm
 
 # Get an instance of a logger
-logger = logging.getLogger("root")
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 class CCP4i2RunnerDjango(CCP4i2RunnerBase):
@@ -43,9 +44,9 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         assert jobIndex is not None
         if projectId is None:
             theProject = models.Project.objects.get(name=projectName)
-            projectId = theProject.uuid
+            projectId = str(theProject.uuid).replace("-", "")
         elif projectName is None:
-            theProject = models.Project.objects.get(uuid=projectId.replace("-", ""))
+            theProject = models.Project.objects.get(uuid=projectId)
             projectName = theProject.name
         relevantJobs = models.Job.objects.filter(project=theProject)
         if task_name is not None:
@@ -70,14 +71,14 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         if len(possibleFiles) > 0:
             theFile = list(possibleFiles)[paramIndex]
         else:
-            # Now if the file is an output file
+            # Now if the file is an input file
             inputFileUses = models.FileUse.objects.filter(job=theJob)
             logger.info(
                 f"inputFiles [{[(fileUse.job_param_name, fileUse.file.name) for fileUse in inputFileUses]}]"
             )
             inputFileUsesWithParam = inputFileUses.filter(job_param_name=jobParamName)
             possibleFiles = models.File.objects.filter(
-                file__in=[fileUse.file for fileUse in inputFileUsesWithParam]
+                id__in=[fileUse.file.id for fileUse in inputFileUsesWithParam]
             )
             if len(possibleFiles) > 0:
                 theFile = list(possibleFiles)[paramIndex]
@@ -88,10 +89,10 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         fileDict = {
             "project": str(theJob.project.uuid).replace("-", ""),
             "baseName": theFile.name,
-            "annotation": theFile.annotation,
             "dbFileId": str(theFile.uuid).replace("-", ""),
-            "subType": theFile.sub_type,
-            "contentFlag": theFile.content,
+            # "annotation": theFile.annotation,
+            # "subType": theFile.sub_type,
+            # "contentFlag": theFile.content,
         }
 
         fileDict["relPath"] = os.path.join(
@@ -100,7 +101,7 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         )
         if theFile.directory == models.File.Directory.IMPORT_DIR:
             fileDict["relPath"] = "CCP4_IMPORTED_FILES"
-
+        logger.info("File match is %s", fileDict)
         return fileDict
 
     def projectWithName(self, projectName):
@@ -142,6 +143,11 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         thePlugin.saveParams()
         theJob = models.Job.objects.get(uuid=self.jobId)
         print(self.jobId)
-        exitStatus = run_job(self.jobId)
+
+        @using_django_pm
+        def do_run():
+            return run_job(self.jobId)
+
+        exitStatus = do_run()
 
         return self.jobId, exitStatus

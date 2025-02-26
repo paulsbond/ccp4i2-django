@@ -1,10 +1,10 @@
 import sys
+import logging
 
 from django.core.management.base import BaseCommand
-import sys
+from ....db.ccp4i2_django_wrapper import using_django_pm
 from ....i2run import CCP4i2RunnerDjango
 from core import CCP4Modules
-import logging
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -25,5 +25,9 @@ class Command(BaseCommand):
         self.i2Runner.parseArgs()
 
     def handle(self, *args, **options):
-        self.i2Runner.execute()
+        @using_django_pm
+        def execute():
+            self.i2Runner.execute()
+
+        execute()
         return
