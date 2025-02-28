@@ -4,7 +4,6 @@ from django.core.management.base import BaseCommand
 from ccp4x.db.models import Job, Project
 from ccp4x.lib.job_utils.create_task import create_task
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
