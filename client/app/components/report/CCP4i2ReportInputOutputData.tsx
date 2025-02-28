@@ -6,6 +6,7 @@ import {
   Chip,
   Collapse,
   LinearProgress,
+  Stack,
   Toolbar,
   Typography,
 } from "@mui/material";
@@ -13,6 +14,8 @@ import { MyExpandMore } from "../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useApi } from "../../api";
 import { fileTypeMapping } from "../files-table";
+import EditableTypography from "../editable-typography";
+import { File as DjangoFile } from "../../models";
 //import { fileTypeMapping } from "../files-table";
 
 export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
@@ -91,42 +94,66 @@ interface CCP4i2ReportFileProps extends CCP4i2ReportElementProps {
 }
 const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
   const api = useApi();
-  const file: any = api.get(`files/${props.uuid}/by_uuid/`);
+  const { data: file, isLoading } = api.get<DjangoFile>(
+    `files/${props.uuid}/by_uuid/`
+  );
   const fileTypeIcon = useMemo(() => {
-    if (!file?.data?.type) return "ccp4";
-    return Object.keys(fileTypeMapping).includes(file?.data?.type)
-      ? fileTypeMapping[file.data.type]
+    if (!file?.type) return "ccp4";
+    return Object.keys(fileTypeMapping).includes(file?.type)
+      ? fileTypeMapping[file?.type]
       : "ccp4";
   }, [file]);
 
-  if (!file || !file.data || file.isLoading) return <LinearProgress />;
+  if (!file || isLoading) return <LinearProgress />;
   return (
-    <CardHeader
-      title={
-        <Toolbar>
-          <Avatar
-            src={`/qticons/${fileTypeIcon}.png`}
-            sx={{ mr: 2, width: "2rem", height: "2rem" }}
-          />
-          <Typography variant="body1">{file.data?.annotation}</Typography>
-        </Toolbar>
-      }
-      subheader={
-        <>
-          <Chip
-            key="subType"
-            avatar={<div style={{ width: "3rem" }}>Subtype</div>}
-            label={file.data?.sub_type}
-          />
-          {file.data?.content && (
+    <>
+      <Stack
+        direction="row"
+        sx={{
+          border: "3px solid",
+          borderRadius: "0.5rem",
+          mx: 2,
+          my: 1,
+          p: 1,
+        }}
+      >
+        <Avatar
+          src={`/qticons/${fileTypeIcon}.png`}
+          sx={{ mr: 2, width: "2rem", height: "2rem" }}
+        />
+        <EditableTypography
+          variant="body1"
+          text={
+            file?.annotation
+              ? file?.annotation
+              : file?.job_param_name
+              ? file.job_param_name
+              : ""
+          }
+          onDelay={(annotation) => {
+            const formData = new FormData();
+            formData.set("annotation", annotation);
+            api.patch(`files/${file?.id}`, formData);
+          }}
+        />
+        <Typography sx={{ flexGrow: 1 }} />
+        <div>
+          {file?.sub_type && (
+            <Chip
+              key="subType"
+              avatar={<div style={{ width: "3rem" }}>Subtype</div>}
+              label={file?.sub_type}
+            />
+          )}
+          {file?.content && (
             <Chip
               key="content"
               avatar={<div style={{ width: "3rem" }}>Content</div>}
-              label={file.data?.content}
+              label={file?.content}
             />
           )}
-        </>
-      }
-    ></CardHeader>
+        </div>
+      </Stack>
+    </>
   );
 };
