@@ -11,7 +11,6 @@ from ..lib.job_utils.save_params_for_job import save_params_for_job
 from ..db.ccp4i2_django_wrapper import using_django_pm
 
 # Get an instance of a logger
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
@@ -105,7 +104,7 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         return fileDict
 
     def projectWithName(self, projectName):
-        print("In project with name")
+        logger.info("In project with name %s", projectName)
         try:
             project = models.Project.objects.get(name=projectName)
             return project.uuid
@@ -118,15 +117,15 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
             ), f"Project serializer invalid because {newProjectSerializer.errors}"
             newProject = newProjectSerializer.save()
             newProject.save()
-            logger.warning(
+            logger.info(
                 f'Created new project "{newProject.name}" in {newProject.directory} with id {newProject.projectid}'
             )
             return newProject.uuid
 
     def projectJobWithTask(self, projectId, task_name=None):
-        logger.warning(f"Creating task {task_name} in project with id {projectId}")
+        logger.info(f"Creating task {task_name} in project with id {projectId}")
         created_job_uuid = create_job(projectId=str(projectId), taskName=task_name)
-        logger.warning(
+        logger.info(
             f"Created task {task_name} in project with id {projectId} uuid {created_job_uuid}"
         )
         return created_job_uuid.replace("-", "")
@@ -141,7 +140,6 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         assert self.jobId is not None
         assert self.projectId is not None
         thePlugin.saveParams()
-        theJob = models.Job.objects.get(uuid=self.jobId)
         print(self.jobId)
 
         @using_django_pm

@@ -11,8 +11,8 @@ from ..lib.job_utils.create_job import create_job
 from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 
 
-logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(f"ccp4x:{__name__}")
+logger.setLevel(logging.WARNING)
 
 
 def plugin_status_to_job_status(finishStatus):
@@ -98,9 +98,12 @@ class CCP4i2DjangoDbHandler:
         self.db = CCP4i2DjangoDbApi()
 
     def createJob(self, pluginName, jobTitle=None, parentJobId=None, jobNumber=None):
+        logger.info(
+            "Creating job %s %s %s %s", pluginName, jobTitle, parentJobId, jobNumber
+        )
         try:
             return create_job(
-                parentJobId=parentJobId,
+                parentJobId=uuid.UUID(parentJobId),
                 taskName=pluginName,
                 jobNumber=jobNumber,
                 saveParams=False,

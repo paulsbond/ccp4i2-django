@@ -14,8 +14,6 @@ import shlex
 import numpy
 from ..lib.job_utils.set_parameter import set_parameter_container
 
-logging.basicConfig(level=logging.ERROR)
-
 # Get an instance of a logger
 logger = logging.getLogger("root")
 
@@ -158,7 +156,7 @@ class CCP4i2RunnerBase(object):
     @staticmethod
     def addTaskArguments(theParser, task_name, parent=None):
         keywords = CCP4i2RunnerBase.keywordsOfTaskName(task_name, parent=parent)
-        # logger.warning(str(keywords))
+        logger.debug(str(keywords))
 
         for keyword in keywords:
             logger.debug(keyword["path"])
@@ -500,7 +498,7 @@ class TestParse(unittest.TestCase):
     )
 
     def setUp(self):
-        self.application = CCP4Modules.QTAPPLICATION()
+        self.application = CCP4Modules.QTAPPLICATION(graphical=False)
 
     def test1(self):
         args = ["prosmart_refmac"]
