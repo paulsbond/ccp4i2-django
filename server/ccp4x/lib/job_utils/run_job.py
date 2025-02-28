@@ -14,7 +14,7 @@ from .save_params_for_job import save_params_for_job
 from .set_output_file_names import set_output_file_names
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.DEBUG)
 
 
 def run_job(jobId: str):
@@ -94,9 +94,9 @@ def retrieve_plugin(
         the_plugin.setDbData(
             handler=dbHandler,
             projectName=new_job.project.name,
-            projectId=str(new_job.project.uuid),
+            projectId=str(new_job.project.uuid).replace("-", ""),
             jobNumber=new_job.number,
-            jobId=str(new_job.uuid),
+            jobId=str(new_job.uuid).replace("-", ""),
         )
         logger.info(f"Retrieved plugin {new_job.task_name}")
     except Exception as err:

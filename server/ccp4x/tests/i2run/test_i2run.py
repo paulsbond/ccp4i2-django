@@ -64,9 +64,12 @@ OLD_CCP4I2_PROJECTS_DIR = settings.CCP4I2_PROJECTS_DIR
     / "CCP4I2_TEST_PROJECT_DIRECTORY"
 )
 class CCP4i2TestCase(TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app = CCP4Modules.QTAPPLICATION(graphical=False)
+
     def setUp(self):
         # QApp.MYAPPLICATION = None
-        self.app = CCP4Modules.QTAPPLICATION(graphical=False)
         Path(settings.CCP4I2_PROJECTS_DIR).mkdir()
         import_ccp4_project_zip(
             Path(__file__).parent.parent.parent.parent.parent.parent
@@ -130,7 +133,7 @@ class CCP4i2TestCase(TestCase):
         self.assertEqual(Job.objects.last().project.name, "SubstituteLigand_test_0")
         self.assertEqual(Job.objects.filter(parent__isnull=True).last().number, "2")
         the_job = Job.objects.get(uuid=uuid.UUID(i2Runner.jobId))
-        print(glob.glob(str(the_job.directory / "*")))
+        # print(glob.glob(str(the_job.directory / "*")))
         self.assertEqual(the_job.status, Job.Status.FINISHED)
         self.assertAlmostEqual(
             JobFloatValue.objects.filter(job=the_job)[0].value, 0.253
