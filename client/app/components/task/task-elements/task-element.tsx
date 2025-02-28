@@ -18,6 +18,7 @@ import { CSimpleDataFileElement } from "./csimpledatafile";
 import { CReindexOperatorElement } from "./creindexoperator";
 import { CRangeElement } from "./crange";
 import { v4 as uuid4 } from "uuid";
+import { CAsuContentSeqElement } from "./casucontentseq";
 
 export interface CCP4i2TaskElementProps extends PropsWithChildren {
   job: Job;
@@ -83,6 +84,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           <CFloatElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
       case "CString":
+      case "CSequenceString":
       case "COneWord":
         return (
           <CStringElement key={the_uuid} {...props} qualifiers={qualifiers} />
@@ -114,6 +116,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CRefmacRestraintsDataFile":
       case "CAsuDataFile":
       case "CSeqDataFile":
+      case "CDataFile":
       case "CUnmergedDataFile":
       case "CMDLMolDataFile":
         return (
@@ -125,6 +128,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         );
       case "CFreeRDataFile":
       case "CMiniMtzDataFile":
+      case "CMtzDataFile":
       case "CObsDataFile":
       case "CMapCoeffsDataFile":
       case "CPhsDataFile":
@@ -139,6 +143,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CImportUnmergedList":
       case "CAltSpaceGroupList":
       case "CEnsembleList":
+      case "CAsuContentSeqList":
         return (
           <CListElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
@@ -150,6 +155,14 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CFloatRange":
         return (
           <CRangeElement key={the_uuid} {...props} qualifiers={qualifiers} />
+        );
+      case "CAsuContentSeq":
+        return (
+          <CAsuContentSeqElement
+            key={the_uuid}
+            {...props}
+            qualifiers={qualifiers}
+          />
         );
       case "CPdbEnsembleItem":
       case "CContainer":
