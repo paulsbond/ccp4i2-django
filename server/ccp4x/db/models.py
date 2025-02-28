@@ -148,8 +148,10 @@ class JobValueKey(Model):
 
 
 class JobFloatValue(Model):
+    # If a job is deleted, all its float values should be deleted
     job = ForeignKey(Job, CASCADE, related_name="float_values")
-    key = ForeignKey(JobValueKey, CASCADE, related_name="+")
+    # Existence of a JobFloatValue should preclude deletion of the corresponding JobValueKey
+    key = ForeignKey(JobValueKey, RESTRICT, related_name="+")
     value = FloatField()
 
     class Meta:
@@ -160,7 +162,9 @@ class JobFloatValue(Model):
 
 
 class JobCharValue(Model):
-    job = ForeignKey(Job, RESTRICT, related_name="char_values")
+    # If a job is deleted, all its char values should be deleted
+    job = ForeignKey(Job, CASCADE, related_name="char_values")
+    # Existence of a JobFloatValue should preclude deletion of the corresponding JobValueKey
     key = ForeignKey(JobValueKey, RESTRICT, related_name="+")
     value = CharField(max_length=255)
 
@@ -202,7 +206,7 @@ class File(Model):
         if self.directory == File.Directory.JOB_DIR:
             return self.job.directory / self.name
         elif self.directory == File.Directory.IMPORT_DIR:
-            return Path(self.job.project.directory) / "CCP4_IMPORTED_FILES"
+            return Path(self.job.project.directory) / "CCP4_IMPORTED_FILES" / self.name
 
     @property
     def rel_path(self) -> str:
