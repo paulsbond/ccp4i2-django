@@ -346,8 +346,8 @@ class JobViewSet(ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
+            logger.warning("Deleting job %s", instance)
             delete_job_and_dependents(instance)
-            logger.warning("Deleted job %s", instance)
             # Note I am adding a bit of body to the response because of an odd
             # javascript feature which presents as network error if no body in response.
             return Response({"status": "Success"})
