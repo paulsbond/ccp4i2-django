@@ -9,7 +9,6 @@ from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 from ..lib.job_utils.set_output_file_names import set_output_file_names
 
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

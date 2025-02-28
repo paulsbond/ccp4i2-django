@@ -6,7 +6,6 @@ from ccp4i2.core import CCP4PluginScript
 from core import CCP4File
 from .find_objects import find_objects
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

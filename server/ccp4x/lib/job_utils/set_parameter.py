@@ -11,7 +11,6 @@ from ...db import models
 import xml.etree.ElementTree as ET
 
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
@@ -23,7 +22,7 @@ def set_parameter(
 
     try:
         object_element = set_parameter_container(the_container, object_path, value)
-        logger.warning(
+        logger.debug(
             "Parameter %s now has value %s in job number %s",
             object_element.objectName(),
             object_element.__dict__,
@@ -55,12 +54,12 @@ def set_parameter_container(
             CCP4File.CDataFile,
         ),
     ) and isinstance(value, str):
-        logger.warning("Setting file with string %s", object_element)
+        logger.debug("Setting file with string %s", object_element)
         object_element.set(value)
-        logger.warning("Set file with string %s", object_element)
+        logger.debug("Set file with string %s", object_element)
     elif hasattr(object_element, "update"):
         object_element.update(value)
-        logger.warning(
+        logger.debug(
             "Updating parameter %s with dict %s",
             object_element.objectName(),
             value,

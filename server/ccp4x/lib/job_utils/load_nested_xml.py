@@ -5,7 +5,6 @@ from xml.etree import ElementTree as ET
 from ccp4i2.core import CCP4File
 from ...db.models import Project
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

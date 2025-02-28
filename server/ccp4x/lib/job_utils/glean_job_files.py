@@ -12,7 +12,6 @@ from ccp4i2.core.CCP4PerformanceData import CPerformanceIndicator
 from ...db import models
 from .find_objects import find_objects
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

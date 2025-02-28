@@ -66,7 +66,6 @@ from ..lib.job_utils.get_job_container import get_job_container
 from ..lib.job_utils.json_for_job_container import json_for_job_container
 from django.http import JsonResponse
 
-logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

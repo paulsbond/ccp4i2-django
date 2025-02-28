@@ -9,7 +9,6 @@ from .get_job_container import get_job_container
 from .json_encoder import CCP4i2JsonEncoder
 from .value_dict_for_object import value_dict_for_object
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

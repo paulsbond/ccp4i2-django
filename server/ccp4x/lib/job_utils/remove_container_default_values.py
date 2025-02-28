@@ -4,7 +4,6 @@ import logging
 # MN
 from core import CCP4Container
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

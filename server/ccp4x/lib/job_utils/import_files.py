@@ -18,7 +18,6 @@ from .save_params_for_job import save_params_for_job
 from .find_objects import find_objects
 
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
@@ -50,9 +49,7 @@ def _process_input(
             while destFilePath.exists():
                 fileRoot, fileExt = os.path.splitext(destFilePath.name)
                 destFilePath = destFilePath.parent / "{}_1{}".format(fileRoot, fileExt)
-            logger.warning(
-                "src %s, UniqueDestFilePath %s", sourceFilePath, destFilePath
-            )
+            logger.debug("src %s, UniqueDestFilePath %s", sourceFilePath, destFilePath)
             shutil.copyfile(sourceFilePath, destFilePath)
             # Now have to change the plugin to reflect the new location
 
@@ -139,7 +136,7 @@ def import_files(theJob, plugin):
         ),
         True,
     )
-    logger.warning("In import_files %s", len(inputs))
+    logger.debug("In import_files %s", len(inputs))
     for the_input in inputs:
         _process_input(theJob, plugin, the_input)
 

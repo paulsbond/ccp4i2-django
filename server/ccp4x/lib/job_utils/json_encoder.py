@@ -5,7 +5,6 @@ from core import CCP4Data
 from core import CCP4File
 
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

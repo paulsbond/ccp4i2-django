@@ -12,7 +12,6 @@ from .save_params_for_job import save_params_for_job
 from .remove_container_default_values import remove_container_default_values
 from .unset_output_data import unset_output_data
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

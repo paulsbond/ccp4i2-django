@@ -15,7 +15,6 @@ from .job_utils.get_job_plugin import get_job_plugin
 from ..db.ccp4i2_static_data import PATH_FLAG_JOB_DIR, PATH_FLAG_IMPORT_DIR
 
 
-logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
@@ -190,7 +189,7 @@ def make_old_report(job: Job):
                         "No programXML found", Job.Status(job.status).label
                     )
                 watched_path = pathlib.Path(job.directory) / pathlib.Path(watch_file)
-                logger.warning("watchFile is %s", watched_path)
+                logger.info("watchFile is %s", watched_path)
                 if watched_path.exists():
                     xml_path = None
                 else:

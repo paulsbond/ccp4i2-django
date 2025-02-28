@@ -4,7 +4,6 @@ from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4ErrorHandling
 
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

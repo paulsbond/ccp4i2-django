@@ -4,7 +4,6 @@ import shutil
 
 from ...db import models
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
@@ -29,7 +28,7 @@ def find_dependent_jobs(
     descendent_jobs = sorted(
         unsorted_descendent_jobs, key=version_sort_key, reverse=True
     )
-    logger.warning("descendent_jobs: {%s}", [dj.number for dj in descendent_jobs])
+    logger.debug("descendent_jobs: {%s}", [dj.number for dj in descendent_jobs])
     for descendent_job in descendent_jobs:
         if descendent_job not in growing_list:
             growing_list.append(descendent_job)
@@ -56,7 +55,7 @@ def delete_job_and_dir(the_job: models.Job):
         try:
             job_file.path.unlink()
         except FileNotFoundError:
-            logger.warning("File  not found when trying to delete it %s", job_file.path)
+            logger.debug("File  not found when trying to delete it %s", job_file.path)
         job_file.delete()
     shutil.rmtree(str(the_job.directory))
     the_job.delete()
@@ -76,7 +75,7 @@ def delete_job_and_dependents(the_job: models.Job):
     files_after = models.File.objects.count()
     file_uses_after = models.FileUse.objects.count()
     file_imports_after = models.FileImport.objects.count()
-    logger.warning("Deleted %s jobs", jobs_after - jobs_before)
-    logger.warning("Deleted %s files", files_after - files_before)
-    logger.warning("Deleted %s file_uses", file_uses_after - file_uses_before)
-    logger.warning("Deleted %s jobs", file_imports_after - file_imports_before)
+    logger.info("Deleted %s jobs", jobs_after - jobs_before)
+    logger.info("Deleted %s files", files_after - files_before)
+    logger.info("Deleted %s file_uses", file_uses_after - file_uses_before)
+    logger.info("Deleted %s jobs", file_imports_after - file_imports_before)

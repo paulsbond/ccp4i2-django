@@ -75,7 +75,6 @@ from .models import (
 )
 from .ccp4i2_static_data import FILETYPELIST, KEYTYPELIST
 
-logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 tag_map = {}

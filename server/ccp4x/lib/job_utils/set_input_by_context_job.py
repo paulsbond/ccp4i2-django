@@ -15,7 +15,6 @@ from .save_params_for_job import save_params_for_job
 from .get_file_by_job_context import get_file_by_job_context
 from .find_objects import find_objects
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

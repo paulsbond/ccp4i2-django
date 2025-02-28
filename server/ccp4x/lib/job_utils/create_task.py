@@ -4,7 +4,6 @@ from .create_job import create_job
 from .set_input_by_context_job import set_input_by_context_job
 from ...db import models
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
@@ -36,7 +35,7 @@ def create_task(the_project: models.Project, arg: any):
         )
         logger.debug("Context job is %s", str(context_job))
         if context_job is not None:
-            logger.warning("Context job selected is %s", context_job.number)
+            logger.debug("Context job selected is %s", context_job.number)
             set_input_by_context_job(str(new_job_uuid), str(context_job.uuid))
     new_job = models.Job.objects.get(uuid=new_job_uuid)
     return new_job

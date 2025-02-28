@@ -9,7 +9,6 @@ from core import CCP4File
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4Data import CList
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
@@ -53,7 +52,7 @@ def find_objects(within, func, multiple=False, growing_list=None, growing_name=N
         if func(child):
             growing_list.append(child)
             if not multiple:
-                logger.warning("Match for %s", child.objectName())
+                logger.debug("Match for %s", child.objectName())
                 return growing_list
         elif isinstance(child, (CCP4Data.CList, CList, list)) or hasattr(
             child, "CONTENTS"

@@ -16,13 +16,12 @@ from .save_params_for_job import save_params_for_job
 from .json_encoder import CCP4i2JsonEncoder
 from ...db import models
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def upload_file_param(job: models.Job, request) -> dict:
 
-    logger.warning("Received %s %s", job, request.POST)
+    logger.debug("Received %s %s", job, request.POST)
     plugin = get_job_plugin(the_job=job)
     container = plugin.container
     object_path = request.POST.get("objectPath")
@@ -43,10 +42,10 @@ def upload_file_param(job: models.Job, request) -> dict:
             file_import = models.FileImport.objects.get(file=existing_file)
             file_import.delete()
         except models.FileImport.DoesNotExist:
-            logger.warning("Existing file had no import [%s]", existing_file.path)
+            logger.debug("Existing file had no import [%s]", existing_file.path)
         existing_file.delete()
     except models.File.DoesNotExist:
-        logger.warning("Upload will not replace existing file")
+        logger.debug("Upload will not replace existing file")
 
     assert isinstance(
         param_object,
@@ -107,7 +106,7 @@ def upload_file_param(job: models.Job, request) -> dict:
     param_object.setFullPath(str(imported_file_path))
     param_object.loadFile()
     param_object.setContentFlag(reset=True)
-    logger.warning("Content flag is %s", param_object.contentFlag)
+    logger.debug("Content flag is %s", param_object.contentFlag)
 
     new_file = models.File(
         job=job,
@@ -147,7 +146,7 @@ def upload_file_param(job: models.Job, request) -> dict:
 
 
 def download_file(job: models.Job, the_file, initial_download_project_folder: str):
-    logger.warning("the_file is %s", the_file.name)
+    logger.debug("the_file is %s", the_file.name)
     file_stem = pathlib.Path(the_file.name).stem
     file_suffix = pathlib.Path(the_file.name).suffix
     destination_dir = (
@@ -160,7 +159,7 @@ def download_file(job: models.Job, the_file, initial_download_project_folder: st
 
     assert dest.is_relative_to(destination_dir)
 
-    logger.warning("Settled on destination path %s", dest)
+    logger.debug("Settled on destination path %s", dest)
     with open(dest, "wb") as uploadFile:
         CHUNK = 1024 * 1024
         while True:
@@ -169,5 +168,5 @@ def download_file(job: models.Job, the_file, initial_download_project_folder: st
                 break
             uploadFile.write(chunk)
         uploadFile.close()
-    logger.warning("Upload complete")
+    logger.debug("Upload complete")
     return dest

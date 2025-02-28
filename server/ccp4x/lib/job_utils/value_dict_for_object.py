@@ -2,7 +2,6 @@ import logging
 from core import CCP4Data
 from ccp4i2.core.CCP4Data import CData
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

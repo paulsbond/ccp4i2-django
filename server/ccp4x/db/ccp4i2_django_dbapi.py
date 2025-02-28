@@ -7,8 +7,6 @@ from ..lib.job_utils.glean_job_files import glean_job_files
 from ..lib.job_utils.get_file_by_job_context import get_file_by_job_context
 from . import models
 
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 project_field_old_to_new = {
@@ -183,10 +181,12 @@ class CCP4i2DjangoDbApi(object):
                         job_param_name=jobNumberParam[1],
                     )
                     file.delete()
-                except models.File.DoesNotExist as err:
+                except models.File.DoesNotExist:
                     logger.warning(
-                        "Err in deleteFilesOnJobNumberAndParamName %s %s %s"
-                        % (projectId, jobNumberParam[0], jobNumberParam[1])
+                        "Err in deleteFilesOnJobNumberAndParamName %s %s %s",
+                        projectId,
+                        jobNumberParam[0],
+                        jobNumberParam[1],
                     )
         except Exception as err:
             logger.exception(
@@ -249,7 +249,9 @@ class CCP4i2DjangoDbApi(object):
                 if "-" not in str(jobId):
                     jobId = uuid.UUID(jobId)
                 the_job_qs = models.Job.objects.filter(uuid=jobId)
-            assert len(list(the_job_qs)) == 1
+            assert (
+                len(list(the_job_qs)) == 1
+            ), f"Expected 1 job, got {len(list(the_job_qs))} for jobId {jobId}"
 
             if isinstance(mode, list):
                 arg = [item for item in mode]

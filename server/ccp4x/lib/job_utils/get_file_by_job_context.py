@@ -2,7 +2,6 @@ import logging
 import uuid
 from ...db import models
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

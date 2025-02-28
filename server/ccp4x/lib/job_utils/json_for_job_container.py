@@ -13,7 +13,6 @@ from .get_job_plugin import get_job_plugin
 from .json_encoder import CCP4i2JsonEncoder
 
 
-logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 

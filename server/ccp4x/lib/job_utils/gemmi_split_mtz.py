@@ -6,7 +6,6 @@ import re
 from core import CCP4XtalData
 from .available_file_name_based_on import available_file_name_based_on
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
