@@ -63,7 +63,8 @@ DATABASES = {
 
 TIME_ZONE = "UTC"
 USE_TZ = True
-CCP4I2_PROJECTS_DIR = Path.home().resolve() / "CCP4X_PROJECTS"
+CCP4I2_PROJECTS_DIR = Path.home().resolve() / ".ccp4x" / "CCP4X_PROJECTS"
+CCP4I2_PROJECTS_DIR.mkdir(exist_ok=True)
 
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": (
