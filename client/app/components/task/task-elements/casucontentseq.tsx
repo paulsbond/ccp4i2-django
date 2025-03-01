@@ -27,10 +27,25 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
         sx={{ backgroundColor: getValidationColor(item) }}
         action={<ErrorInfo {...props} />}
       />
-      <CardContent sx={{ my: 0, py: 0 }}>
+      <CardContent sx={{ my: 0, py: 0, pt: 2 }}>
         <Grid2 container rowSpacing={0} sx={{ my: 0, py: 0 }}>
           {item &&
-            ["nCopies", "polymerType", "name"].map((key) => (
+            ["nCopies"].map((key) => (
+              <Grid2 key={key} size={{ xs: 4 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  sx={{ my: 0, py: 0, minWidth: "10rem" }}
+                  itemName={`${item._objectPath}.${key}`}
+                  qualifiers={{
+                    ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
+                    guiLabel: key,
+                    onlyEnumerators: true,
+                  }}
+                />
+              </Grid2>
+            ))}
+          {item &&
+            ["polymerType", "name"].map((key) => (
               <Grid2 key={key} size={{ xs: 4 }}>
                 <CCP4i2TaskElement
                   {...props}
@@ -48,6 +63,20 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
               <CCP4i2TaskElement
                 {...props}
                 sx={{ my: 0, py: 0, minWidth: "100%", mr: 2 }}
+                itemName={`${item._objectPath}.${key}`}
+                qualifiers={{
+                  ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
+                  guiLabel: key,
+                  multiLine: true,
+                }}
+              />
+            </Grid2>
+          ))}
+          {["source"].map((key) => (
+            <Grid2 key={key} size={{ xs: 12 }}>
+              <CCP4i2TaskElement
+                {...props}
+                sx={{ my: 0, py: 0 }}
                 itemName={`${item._objectPath}.${key}`}
                 qualifiers={{
                   ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,

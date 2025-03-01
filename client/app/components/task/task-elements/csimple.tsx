@@ -9,14 +9,28 @@ export interface CCP4i2CSimpleElementProps extends CCP4i2TaskElementProps {
 }
 
 export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
-  const { itemName, job } = props;
+  const { itemName, job, qualifiers } = props;
   const { getTaskItem } = useJob(job.id);
   const item = getTaskItem(itemName);
 
+  const patchedQualifiers = useMemo(() => {
+    if (item?._qualifiers) {
+      try {
+        const overriddenQualifiers = qualifiers
+          ? { ...item._qualifiers, ...qualifiers }
+          : item._qualifiers;
+        return overriddenQualifiers;
+      } catch (err) {
+        console.log(`Error getting qualifiers on ${itemName}`);
+      }
+    }
+    return qualifiers;
+  }, [item, qualifiers, itemName]);
+
   const usingSelect = useMemo(() => {
     return (
-      item?._qualifiers?.onlyEnumerators &&
-      item?._qualifiers?.enumerators?.length > 0
+      patchedQualifiers.onlyEnumerators &&
+      patchedQualifiers.enumerators?.length > 0
     );
   }, [item]);
 
@@ -29,6 +43,10 @@ export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
   }, [props.visibility]);
 
   return usingSelect
-    ? inferredVisibility && <CSimpleAutocompleteElement {...props} />
-    : inferredVisibility && <CSimpleTextFieldElement {...props} />;
+    ? inferredVisibility && (
+        <CSimpleAutocompleteElement {...props} qualifiers={patchedQualifiers} />
+      )
+    : inferredVisibility && (
+        <CSimpleTextFieldElement {...props} qualifiers={patchedQualifiers} />
+      );
 };

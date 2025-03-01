@@ -82,7 +82,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
         setInFlight(true);
         try {
           const result: any = await setParameter(setParameterArg);
-          if (result.status === "Failed") {
+          if (result?.status === "Failed") {
             setValue(item._value);
           }
         } catch (err) {
