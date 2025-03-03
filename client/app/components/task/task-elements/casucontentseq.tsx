@@ -82,6 +82,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
                   guiLabel: key,
                   multiLine: true,
+                  mimeTypeName: "application/CCP4-seq",
                 }}
               />
             </Grid2>
