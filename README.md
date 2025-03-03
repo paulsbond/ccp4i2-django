@@ -5,12 +5,12 @@
 Clone the project from GitHub,
 install the dependencies, make an inital database migration
 and start the Django development server for the REST API.
-ccp4x has ccp4i2 as a requirement, and the currently supported mechanism
-for this is to operate it via a dedicated installation of ccp4, since some
-of the ccp4x dependencies wil overwrite different versions of those dependencies
-provided (and required) by the main ccp4 install.
+ccp4x is an overlay on vanilla ccp4i2, but requires some python dependencies of CCP4 to be updated.  
+For development, therefore, the currently supported mechanism
+is to install a dedicated instance of ccp4 in which those dependencies can be updated without risk to the developer's main CCP4 installation.
 
 ```console
+user:$$ # After installing or activating your dedicated CCP4 instance and
 user:~$ git clone https://github.com/paulsbond/ccp4x
 user:~$ cd ccp4x/server
 user:~/ccp4x/server$ ccp4-python -m pip install --editable .
@@ -28,7 +28,7 @@ To recover and import the test suite, navigate to the directory in which you hav
 
 ```console
 user:~/ccp4x/server$ #Starting from the directory where you ended up above
-user:~/ccp4x/server$ cd ~
+user:~/ccp4x/server$ cd ../..
 user:~$ git clone git@gitlab.com:ccp4i2/test101.git
 user:~$ cd ccp4x/server
 user:~$ ccp4-python manage.py import_ccp4_project_zip ../../test101/ProjectZips/*.ccp4_project.zip
@@ -37,11 +37,14 @@ user:~$ ccp4-python manage.py import_ccp4_project_zip ../../test101/ProjectZips/
 ## Setup and run client
 
 For easy viewing of the REST API and Next.js logs separately,
-start the Next.js development server in a new terminal.
+start the Next.js development server in a new terminal. Moorhen is now loaded with
+ccp4x, and this means an extra installment step is needed to copy the Moorhen web assembly
+and other resources into the `public' folder of the ccp4x NextJS app.
 
 ```console
-user:~/ccp4x/server$ cd ../client
+user:~$ cd ccp4x/client
 user:~/ccp4x/client$ npm ci
+user:~/ccp4x/client$ cp -r node_modules/public/* ./public/
 user:~/ccp4x/client$ npm run dev
 ```
 
