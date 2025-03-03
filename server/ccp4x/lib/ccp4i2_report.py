@@ -51,6 +51,7 @@ def _get_basic_job_info(job: Job):
         "tasktitle": job.task_name,
         "jobid": str(job.uuid),
     }
+    logger.warning(result)
     if job.finish_time is not None:
         result["finishtime"] = job.finish_time.timestamp()
     return result
@@ -210,6 +211,7 @@ def make_old_report(job: Job):
         jobStatus=status,
         jobNumber=job.number,
         xrtnode=None,
+        projectId=str(job.project.uuid).replace("-", ""),
     )
     report_etree = report.as_data_etree()
     return report_etree

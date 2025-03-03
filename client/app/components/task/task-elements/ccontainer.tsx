@@ -66,17 +66,21 @@ export const CContainerElement: React.FC<
   }, [item]);
 
   const calculatedContent = useMemo(() => {
-    return childNames.map((childName: string) => (
-      <Grid2 key={`${item._objectPath}.${childName}`} size={size}>
-        <CCP4i2TaskElement
-          key={`${item._objectPath}.${childName}`}
-          {...props}
-          sx={elementSx}
-          itemName={`${item._objectPath}.${childName}`}
-          qualifiers={{ ...props, guiLabel: childName }}
-        />
-      </Grid2>
-    ));
+    return childNames.map((childName: string) => {
+      const childObjectPath = `${item._objectPath}.${childName}`;
+      const childItem = getTaskItem(childObjectPath);
+      return (
+        <Grid2 key={childObjectPath} size={size}>
+          <CCP4i2TaskElement
+            key={childObjectPath}
+            {...props}
+            sx={elementSx}
+            itemName={childObjectPath}
+            qualifiers={{ ...childItem._qualifiers }}
+          />
+        </Grid2>
+      );
+    });
   }, [item, elementSx, childNames]);
 
   return containerHint === "FolderLevel" || containerHint === "BlockLevel"
@@ -92,7 +96,9 @@ export const CContainerElement: React.FC<
           )}
           <CardContent>
             {children}
+            {/*The container might have content explicitly provided in the task intrface*/}
             <Grid2 container>{calculatedContent}</Grid2>
+            {/*Or inferred if it is rendering a task container item*/}
           </CardContent>
         </Card>
       )
