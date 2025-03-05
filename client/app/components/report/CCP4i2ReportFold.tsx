@@ -6,6 +6,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   CCP4i2ReportElement,
   CCP4i2ReportElementProps,
+  cssToDict,
 } from "./CCP4i2ReportElement";
 
 export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
@@ -24,7 +25,7 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
             continue;
           }
           const styleString: string = $(child).attr("style") as string;
-          var childCssDict = cssToDict(styleString);
+          var childCssDict = {}; //cssToDict(styleString);
           if (Object.keys(childCssDict).includes("float")) {
             const oldStyle = styleString;
             const fixedStyle = oldStyle
@@ -104,17 +105,3 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
     </>
   );
 };
-
-function cssToDict(cssText: string) {
-  const regex = /([\w-]*)\s*:\s*([^;]*)/g;
-  var match,
-    properties: any = {};
-
-  while ((match = regex.exec(cssText))) {
-    const camelCase = match[1]
-      .trim()
-      .replace(/-(.)/g, (m, p) => p.toUpperCase());
-    properties[camelCase] = match[2];
-  }
-  return properties;
-}

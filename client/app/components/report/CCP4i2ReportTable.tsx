@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { GeneralTable } from "../General/GeneralTable";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
+import $ from "jquery";
 
 export const CCP4i2ReportTable: React.FC<CCP4i2ReportElementProps> = (
   props
@@ -73,13 +74,15 @@ export const CCP4i2ReportTable: React.FC<CCP4i2ReportElementProps> = (
   }, [props.job, props.item]);
 
   return (
-    <GeneralTable
-      columns={columns}
-      dataSource={data}
-      tableRowProps={{ sx: { p: 0.5 } }}
-      size="small"
-      pagination={false}
-      sx={{ mx: 6, my: 0, py: 0 }}
-    />
+    <>
+      <GeneralTable
+        columns={columns}
+        dataSource={data}
+        tableRowProps={{ sx: { p: 0.5 } }}
+        size="small"
+        pagination={false}
+        sx={{ mx: 6, my: 0, py: 0 }}
+      />
+    </>
   );
 };

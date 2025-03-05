@@ -27,11 +27,14 @@ export const useOnScreen = (ref: React.RefObject<HTMLElement>) => {
 
 interface CCP4i2ReportFlotWidgetProps extends CCP4i2ReportElementProps {
   uniqueId?: string;
+  selected?: boolean;
 }
 
-export const CCP4i2ReportFlotWidget: React.FC<CCP4i2ReportFlotWidgetProps> = (
-  props
-) => {
+export const CCP4i2ReportFlotWidget: React.FC<CCP4i2ReportFlotWidgetProps> = ({
+  item,
+  uniqueId,
+  selected = true,
+}) => {
   const divRef = useRef<HTMLDivElement | null>(null);
   const isVisible = useOnScreen(divRef);
   const graphPlot = useRef<any>(null);
@@ -47,25 +50,24 @@ export const CCP4i2ReportFlotWidget: React.FC<CCP4i2ReportFlotWidgetProps> = (
   }, []);
 
   const sluggifiedName = useMemo(() => {
-    if (props.uniqueId)
-      return CSS.escape(props.uniqueId).replace(/[^a-zA-Z0-9]/g, "_");
+    if (uniqueId) return CSS.escape(uniqueId).replace(/[^a-zA-Z0-9]/g, "_");
     return "UNNAMED_GRAPHPLOT";
-  }, [props.uniqueId]);
+  }, [uniqueId]);
 
   useEffect(() => {
-    if (isVisible) {
+    if (isVisible && selected) {
       //console.log('In mount', graphPlot.current)
       if (graphPlot.current !== null) {
         graphPlot.current.destroy();
         graphPlot.current = null;
       }
       graphPlot.current = new CCP4GraphPlot(sluggifiedName, false);
-      var tables = $(props.item).find("ccp4_data").toArray();
+      var tables = $(item).find("ccp4_data").toArray();
       if (tables.length == 0) {
-        tables = $(props.item).find("ccp4\\:ccp4_data").toArray();
+        tables = $(item).find("ccp4\\:ccp4_data").toArray();
       }
       if (tables.length == 0) {
-        tables = $(props.item).find("ns0\\:ccp4_data").toArray();
+        tables = $(item).find("ns0\\:ccp4_data").toArray();
       }
       //try {
       graphPlot.current.loadXML(graphPlot.current, null, tables);
@@ -85,7 +87,7 @@ export const CCP4i2ReportFlotWidget: React.FC<CCP4i2ReportFlotWidgetProps> = (
         graphPlot.current = null;
       }
     }
-  }, [isVisible, props.item, props.uniqueId]);
+  }, [isVisible, item, uniqueId]);
 
   return (
     <div

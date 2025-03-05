@@ -1,4 +1,11 @@
-import { Button, ClickAwayListener, Popper, Typography } from "@mui/material";
+import {
+  Button,
+  ClickAwayListener,
+  Popper,
+  Table,
+  TableRow,
+  Typography,
+} from "@mui/material";
 import { Box } from "@mui/system";
 import { useState } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
@@ -56,6 +63,20 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
             <Typography variant="subtitle1">
               No errors for {item._objectPath}
             </Typography>
+          )}
+          {item && item._qualifiers && (
+            <Table>
+              {Object.keys(item._qualifiers).map((key: string) => (
+                <TableRow>
+                  <th style={{ textAlign: "left" }}>{key}</th>
+                  <td>
+                    {Array.isArray(item._qualifiers[key])
+                      ? JSON.stringify(item._qualifiers[key])
+                      : item._qualifiers[key]}
+                  </td>
+                </TableRow>
+              ))}
+            </Table>
           )}
         </Box>
         {props.children}

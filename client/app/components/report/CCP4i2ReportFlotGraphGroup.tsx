@@ -12,6 +12,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
   useEffect(() => {
     console.log(props.item);
   }, [props.item]);
+
   const xmlGraphs = useMemo(() => {
     if (props.item && props.job) {
       const childGraphs = $(props.item).children().toArray();
@@ -71,6 +72,10 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
     });
   }, [graphs]);
 
+  const graphToDraw = useMemo(() => {
+    return graphs.find((graph, iGraph) => iGraph === shown);
+  }, [graphs, shown]);
+
   return (
     graphs.length > 0 &&
     xmlGraphs.length > 0 &&
@@ -94,9 +99,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
             )}
           />
         )}
-        {graphs &&
-          graphs.length > 0 &&
-          graphs.map((child, iChild) => (iChild == shown ? child : null))}
+        {graphToDraw}
       </div>
     )
   );

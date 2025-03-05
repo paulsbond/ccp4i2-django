@@ -50,17 +50,29 @@ export const BaseSpacegroupCellElement: React.FC<
                 : "?"}
             </TableCell>
           </TableRow>
-          <TableRow>
-            <TableCell variant="head">Cell</TableCell>
-            {Object.keys(props.data.cell).map((key: string) => (
-              <TableCell variant="body" key={key}>
-                {key}=
-                {props.data?.cell && props.data?.cell[key]?.toPrecision
-                  ? props.data.cell[key].toPrecision(4)
-                  : "?"}
-              </TableCell>
-            ))}
-          </TableRow>
+          {props.data.cell && (
+            <TableRow>
+              <TableCell variant="head">Cell</TableCell>
+              {["a", "b", "c", "alpha", "beta", "gamma"].map((key: string) => {
+                if (props?.data?.cell) {
+                  const { a, b, c, alpha, beta, gamma } = props.data.cell;
+                  const cell: CCell = { a, b, c, alpha, beta, gamma };
+                  const constrainedKey = key as
+                    | "a"
+                    | "b"
+                    | "c"
+                    | "alpha"
+                    | "beta"
+                    | "gamma";
+                  return (
+                    <TableCell variant="body" key={key}>
+                      {key}={cell[constrainedKey].toPrecision(4)}
+                    </TableCell>
+                  );
+                }
+              })}
+            </TableRow>
+          )}
           <TableRow>
             <TableCell variant="head">Resolution</TableCell>
             <TableCell variant="body" key="low">

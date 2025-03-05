@@ -78,13 +78,13 @@ export default function FilesTable({
               />
             </TableCell>
             <TableCell>{file.name}</TableCell>
-            <TableCell>{fileSize(file.size)}</TableCell>
+            {/*<TableCell>{fileSize(file.size)}</TableCell>*/}
             <TableCell>
-              <Tooltip title="Export file">
+              {/*<Tooltip title="Export file">
                 <IconButton href={file.file} download>
                   <Download />
                 </IconButton>
-              </Tooltip>
+              </Tooltip>*/}
               <Tooltip title="Delete file">
                 <IconButton onClick={() => handleDelete(file)}>
                   <Delete />

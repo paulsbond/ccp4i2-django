@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import $ from "jquery";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 import {
   Avatar,

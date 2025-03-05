@@ -1451,9 +1451,10 @@ CCP4GraphPlot.prototype.plotWithoutBreaks = async function (
   if (usePlotly) {
     this.plotlyPlot(d, divTop, layout, null, true);
   } else {
-    const thePlot = await import("jquery.flot").then((result) =>
-      $.plot(divTop, d, layout)
-    );
+    console.log({ layout });
+    const thePlot = await import("jquery.flot").then((result) => {
+      $.plot(divTop, d, layout);
+    });
     this.plotShapes(thePlot, 1);
     this.drawBackground(thePlot, divTop);
   }
@@ -1680,6 +1681,7 @@ CCP4GraphPlot.prototype.plotSingleBreak = async function (
   if (usePlotly) {
     this.plotlyPlot(dRight, bDName, layout, breakLocation, true);
   } else {
+    console.log({ layout });
     const thePlot2 = await import("jquery.flot").then((result) =>
       $.plot(`#${bDName}`, dRight, layout)
     );

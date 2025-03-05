@@ -4,6 +4,7 @@ import { Grid2 } from "@mui/material";
 import {
   CCP4i2ReportElement,
   CCP4i2ReportElementProps,
+  cssToDict,
 } from "./CCP4i2ReportElement";
 
 export const CCP4i2ReportDiv: React.FC<CCP4i2ReportElementProps> = (props) => {
@@ -18,7 +19,7 @@ export const CCP4i2ReportDiv: React.FC<CCP4i2ReportElementProps> = (props) => {
           if (attrValue === undefined) {
             continue;
           }
-          var childCssDict = cssToDict(attrValue);
+          var childCssDict = {}; //cssToDict(attrValue);
           if (Object.keys(childCssDict).includes("float")) {
             const oldStyle = attrValue;
             const fixedStyle = oldStyle
@@ -56,17 +57,3 @@ export const CCP4i2ReportDiv: React.FC<CCP4i2ReportElementProps> = (props) => {
     </Fragment>
   );
 };
-
-function cssToDict(cssText: string) {
-  const regex = /([\w-]*)\s*:\s*([^;]*)/g;
-  var match,
-    properties: any = {};
-
-  while ((match = regex.exec(cssText))) {
-    const camelCase = match[1]
-      .trim()
-      .replace(/-(.)/g, (m, p) => p.toUpperCase());
-    properties[camelCase] = match[2];
-  }
-  return properties;
-}
