@@ -44,7 +44,7 @@ and other resources into the `public' folder of the ccp4x NextJS app.
 ```console
 user:~$ cd ccp4x/client
 user:~/ccp4x/client$ npm ci
-user:~/ccp4x/client$ cp -r node_modules/public/* ./public/
+user:~/ccp4x/client$ cp -r node_modules/moorhen/public/* ./public/
 user:~/ccp4x/client$ npm run dev
 ```
 
