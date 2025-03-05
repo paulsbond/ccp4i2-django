@@ -36,6 +36,7 @@ export interface Plot {
   xintegral?: string;
   xrange?: { min?: number; max?: number };
   yrange?: { min?: number; max?: number };
+  polygon?: any[] | any;
 }
 
 export interface PlotLine {

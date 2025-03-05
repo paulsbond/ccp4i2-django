@@ -15,6 +15,7 @@ import {
   ChartData,
 } from "chart.js";
 import { Chart, ChartProps, Line, Scatter } from "react-chartjs-2";
+import annotationPlugin from "chartjs-plugin-annotation";
 import { parse } from "path";
 import { Autocomplete, Paper, TextField, Typography } from "@mui/material";
 
@@ -26,7 +27,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
 interface CCP4i2ApplicationOutputViewProps {
@@ -182,6 +184,44 @@ export const CCP4i2ApplicationOutputView: React.FC<
         },
       },
     };
+
+    if (selectedPlot.polygon) {
+      result.plugins.annotation = {
+        annotations: {
+          polygon: {
+            type: "box",
+            xMax: Math.max(
+              ...selectedPlot.polygon["_"]
+                .split(" ")
+                .filter((item: string, iItem: number) => !(iItem % 2))
+                .map((item: string) => parseFloat(item))
+            ),
+            xMin: Math.min(
+              ...selectedPlot.polygon["_"]
+                .split(" ")
+                .filter((item: string, iItem: number) => !(iItem % 2))
+                .map((item: string) => parseFloat(item))
+            ),
+            yMax: Math.max(
+              ...selectedPlot.polygon["_"]
+                .split(" ")
+                .filter((item: string, iItem: number) => iItem % 2)
+                .map((item: string) => parseFloat(item))
+            ),
+            yMin: Math.min(
+              ...selectedPlot.polygon["_"]
+                .split(" ")
+                .filter((item: string, iItem: number) => iItem % 2)
+                .map((item: string) => parseFloat(item))
+            ),
+            drawTime: "beforeDatasetsDraw",
+            backgroundColor: selectedPlot.polygon.fillcolour,
+            strokeColor: selectedPlot.polygon.linecolour,
+          },
+        },
+      };
+    }
+
     if (selectedPlot.xintegral && selectedPlot.xintegral === "true") {
       //@ts-ignore
       result.scales.x.ticks = {
@@ -201,6 +241,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
     if (selectedPlot?.yrange?.max) {
       result.scales.yAxisLeft.max = selectedPlot.yrange.max;
     }
+    console.log({ options: result });
     return result;
   }, [graph, selectedPlot]);
 
