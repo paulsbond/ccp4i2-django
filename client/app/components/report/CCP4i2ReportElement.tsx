@@ -14,6 +14,7 @@ import { CCP4i2ReportTitle } from "./CCP4i2ReportTitle";
 import { CCP4i2ReportText } from "./CCP4i2ReportText";
 import { CCP4i2ReportReference } from "./CCP4i2ReportReference";
 import { CCP4i2ReportObjectGallery } from "./CCP4i2ReportObjectGallery";
+import { CCP4i2ApplicationOutputView } from "./CCP4i2ApplicationOutputView";
 
 export interface CCP4i2ReportElementProps {
   iItem: Number;
@@ -65,15 +66,16 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
           />
         );
       } else if (["CCP4i2ReportFlotGraph"].includes(tagName)) {
-        return (
-          <CCP4i2ReportFlotWidget
+        return <CCP4i2ApplicationOutputView output={item} />;
+        {
+          /*<CCP4i2ReportFlotWidget
             key={`${iItem}`}
             iItem={iItem}
             item={item}
             uniqueId={$(item).attr("key")}
             job={job}
-          />
-        );
+          />*/
+        }
       } else if (["CCP4i2ReportGeneric"].includes(tagName)) {
         return (
           <CCP4i2ReportGeneric

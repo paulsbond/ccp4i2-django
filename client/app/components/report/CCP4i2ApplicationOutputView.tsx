@@ -236,9 +236,9 @@ export const CCP4i2ApplicationOutputView: React.FC<
     if (selectedPlot?.text) {
       const textObject = {
         type: "label",
-        xValue: selectedPlot.text.xPos, // X position (match a data point)
-        yValue: selectedPlot.text.yPos, // Y position
-        backgroundColor: "rgba(0, 0, 0, 0.2)",
+        xValue: parseFloat(selectedPlot.text.xpos), // X position (match a data point)
+        yValue: parseFloat(selectedPlot.text.ypos), // Y position
+        backgroundColor: "rgba(0,0,0, 0.2)",
         content: selectedPlot.text["_"],
         color: selectedPlot.text.colour,
         font: {
@@ -306,7 +306,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
   return (
     <Paper sx={{ maxHeight: "calc(100vh - 15rem)", overflow: "auto" }}>
-      {allPlots && selectedPlot && (
+      {allPlots && selectedPlot && allPlots.length > 1 && (
         <Autocomplete
           sx={{ mt: 1, mb: 1, px: 0, py: 0 }}
           options={allPlots}
@@ -323,11 +323,13 @@ export const CCP4i2ApplicationOutputView: React.FC<
         />
       )}
       {options && plotData && <Scatter options={options} data={plotData} />}
-      <Editor
-        height="calc(100vh - 15rem)"
-        value={JSON.stringify(parsedOutput, null, 2)}
-        language="json"
-      />
+      {false && (
+        <Editor
+          height="calc(100vh - 15rem)"
+          value={JSON.stringify(parsedOutput, null, 2)}
+          language="json"
+        />
+      )}
     </Paper>
   );
 };

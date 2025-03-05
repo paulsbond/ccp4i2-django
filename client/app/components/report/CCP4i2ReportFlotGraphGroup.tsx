@@ -4,6 +4,7 @@ import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
 import { Autocomplete, TextField } from "@mui/material";
 
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
+import { CCP4i2ApplicationOutputView } from "./CCP4i2ApplicationOutputView";
 
 export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
   props
@@ -50,14 +51,19 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
 
   const graphs = useMemo(() => {
     if (xmlGraphs && props.job) {
-      const result = xmlGraphs.map((child, iChild) => (
-        <CCP4i2ReportFlotWidget
+      const result = xmlGraphs.map((child, iChild) => {
+        const tableNode = $(child).find("ccp4_data, ns0\\:ccp4_data")[0];
+        const result = (
+          <CCP4i2ApplicationOutputView key={`${iChild}`} output={tableNode} />
+        );
+        /*<CCP4i2ReportFlotWidget
           key={`${iChild}`}
           iItem={iChild}
           item={child}
           job={props.job}
-        />
-      ));
+        />*/
+        return result;
+      });
       return result;
     }
     return [];
@@ -95,7 +101,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
               setShown(newValue.id);
             }}
             renderInput={(params) => (
-              <TextField {...params} label={groupTitle} />
+              <TextField {...params} size="small" label={groupTitle} />
             )}
           />
         )}
