@@ -116,19 +116,22 @@ export const CCP4i2ApplicationOutputView: React.FC<
       ? selectedPlot.plotline
       : [selectedPlot.plotline];
 
-    const result: ChartData = {
+    const result: any = {
       datasets: plotlineList.map((plotline: PlotLine, iPlotline: number) => {
-        const dataset: ChartDataSet = {
+        const dataset: any = {
           label: allHeaders[plotline.ycol - 1],
           labels: dataAsGrid.map(
-            (row: any) => row[parseInt(`${plotline.xcol}`)]
+            (row: any) => row[parseInt(`${plotline.xcol}`) - 1]
           ),
           yAxisID: plotline.rightaxis
             ? plotline.rightaxis === "true"
-              ? "right"
-              : "left"
-            : "left",
-          data: dataAsGrid.map((row: any) => row[parseInt(`${plotline.ycol}`)]),
+              ? "yAxisRight"
+              : "yAxisLeft"
+            : "yAxisLeft",
+          data: dataAsGrid.map((row) => ({
+            x: row[parseInt(`${plotline.xcol}`) - 1],
+            y: row[parseInt(`${plotline.ycol}`) - 1],
+          })),
           backgroundColor: plotline.colour
             ? plotline.colour
             : colours[iPlotline % colours.length],
@@ -144,7 +147,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
   const options = useMemo<ChartOptions<"scatter">>(() => {
     if (!selectedPlot) return null;
-    const result: ChartOptions<"line"> = {
+    const result: ChartOptions<"scatter"> = {
       type: "scatter",
       animation: false,
       responsive: true,
@@ -158,7 +161,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
         },
       },
       scales: {
-        xAxis: {
+        x: {
           type: "linear",
           position: "bottom",
           title: {
@@ -167,29 +170,30 @@ export const CCP4i2ApplicationOutputView: React.FC<
           },
         },
         yAxisLeft: {
-          id: "left",
+          axis: "y",
           type: "linear",
           position: "left",
         },
         yAxisRight: {
-          id: "right",
+          axis: "y",
           type: "linear",
           position: "right",
+          grid: { display: false },
         },
       },
     };
     if (selectedPlot.xintegral && selectedPlot.xintegral === "true") {
       //@ts-ignore
-      result.scales.xAxis.ticks = {
+      result.scales.x.ticks = {
         stepSize: 1, // Force integer steps
         callback: (value: any) => (Number.isInteger(value) ? value : null), // Hide non-integer labels
       };
     }
     if (selectedPlot?.xrange?.min) {
-      result.scales.xAxis.min = selectedPlot.xrange.min;
+      result.scales.x.min = selectedPlot.xrange.min;
     }
     if (selectedPlot?.xrange?.max) {
-      result.scales.xAxis.max = selectedPlot.xrange.max;
+      result.scales.x.max = selectedPlot.xrange.max;
     }
     if (selectedPlot?.yrange?.min) {
       result.scales.yAxisLeft.min = selectedPlot.yrange.min;
