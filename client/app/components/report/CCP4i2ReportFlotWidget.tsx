@@ -98,7 +98,7 @@ export const CCP4i2ReportFlotWidget: React.FC<CCP4i2ReportFlotWidgetProps> = (
 
 export const prettifyXml = (sourceXml: Document) => {
   if (!sourceXml) return "";
-  let theNode: Document | HTMLElement | undefined = sourceXml;
+  let theNode: Document | Element | undefined = sourceXml;
   if (!theNode?.nodeName) {
     //Possible explanation is that the is a jQuery node
     //@ts-ignore
@@ -112,6 +112,7 @@ export const prettifyXml = (sourceXml: Document) => {
     //console.log('theNode', theNode)
   }
   if (!theNode) return "";
+
   var xsltDoc = new DOMParser().parseFromString(
     [
       // describes how we want to modify the XML - indent everything

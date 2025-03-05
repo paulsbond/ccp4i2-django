@@ -57,7 +57,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         });
       }
     }
-  }, [F_SIGFDigest, setParameter, getTaskItem, wavelengthItem]);
+  }, [F_SIGFDigest, setParameter, wavelengthItem]);
 
   return (
     <Paper>

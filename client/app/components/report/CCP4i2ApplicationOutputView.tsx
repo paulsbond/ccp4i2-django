@@ -118,22 +118,21 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
     const result: ChartData = {
       datasets: plotlineList.map((plotline: PlotLine, iPlotline: number) => {
-        const dataset = {
+        const dataset: ChartDataSet = {
           label: allHeaders[plotline.ycol - 1],
+          labels: dataAsGrid.map(
+            (row: any) => row[parseInt(`${plotline.xcol}`)]
+          ),
           yAxisID: plotline.rightaxis
             ? plotline.rightaxis === "true"
               ? "right"
               : "left"
             : "left",
-          data: dataAsGrid
-            .map((row: any) => ({
-              x: row[parseInt(`${plotline.xcol}`) - 1],
-              y: row[parseInt(`${plotline.ycol}`) - 1],
-            }))
-            .filter((point) => point.x && point.y),
+          data: dataAsGrid.map((row: any) => row[parseInt(`${plotline.ycol}`)]),
           backgroundColor: plotline.colour
             ? plotline.colour
             : colours[iPlotline % colours.length],
+          showLine: true,
         };
         return dataset;
       }),
@@ -143,7 +142,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
     return result;
   }, [dataAsGrid, selectedPlot, allHeaders]);
 
-  const options = useMemo<ChartOptions<"line">>(() => {
+  const options = useMemo<ChartOptions<"scatter">>(() => {
     if (!selectedPlot) return null;
     const result: ChartOptions<"line"> = {
       type: "scatter",
@@ -219,7 +218,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
           )}
         />
       )}
-      {options && plotData && <Line options={options} data={plotData} />}
+      {options && plotData && <Scatter options={options} data={plotData} />}
       <Editor
         height="calc(100vh - 15rem)"
         value={JSON.stringify(parsedOutput, null, 2)}
