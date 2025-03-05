@@ -1,5 +1,5 @@
 "use client";
-import { use, useContext, useEffect, useState } from "react";
+import { use, useContext, useEffect, useMemo, useState } from "react";
 import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
 import { useApi } from "../../../../api";
 import { Editor } from "@monaco-editor/react";
@@ -10,6 +10,9 @@ import { CCP4i2Context } from "../../../../app-context";
 import { TaskContainer } from "../../../../components/task/task-container";
 import { useJob, useProject } from "../../../../utils";
 import ToolBar from "../../../../components/tool-bar";
+import { parseTables } from "../../../../components/report/CCP4i2ParsePimple";
+import { parseXML } from "../../../../components/report/Parser";
+import { CCP4i2ApplicationOutputView } from "../../../../components/report/CCP4i2ApplicationOutputView";
 
 export default function JobPage({
   params,
@@ -38,7 +41,7 @@ export default function JobPage({
     container,
   } = useJob(job?.id);
 
-  const [tabValue, setTabValue] = useState<Number>(0);
+  const [tabValue, setTabValue] = useState<Number>(8);
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
   };
@@ -52,6 +55,19 @@ export default function JobPage({
     asyncFunc();
   }, [job, setJobId]);
   if (!project || !jobs || !job) return <LinearProgress />;
+  /*
+  const reportTables: any[] = useMemo(() => {
+    if (report_xml) {
+      var newCharts = [];
+      var newTables = $(report_xml).find("ccp4_data").toArray();
+      if (newTables.length === 0) {
+        newTables = $(report_xml).find("ccp4\\:ccp4_data").toArray();
+      }
+      return parseTables(newTables);
+    }
+    return [];
+  }, [report_xml]);
+*/
 
   return (
     <>
@@ -67,6 +83,7 @@ export default function JobPage({
           <Tab value={5} label="Def xml" />
           <Tab value={6} label="Validation report" />
           <Tab value={7} label="Job container" />
+          <Tab value={8} label="Report tables" />
         </Tabs>
         {tabValue == 0 && <TaskContainer />}
         {tabValue == 1 && params_xml && (
@@ -106,6 +123,13 @@ export default function JobPage({
             height="calc(100vh - 15rem)"
             value={JSON.stringify(container.container, null, 2)}
             language="json"
+          />
+        )}
+        {tabValue == 8 && report_xml && (
+          <CCP4i2ApplicationOutputView
+            output={
+              $(report_xml).find("ccp4_data, ns0\\:ccp4_data").toArray()[0]
+            }
           />
         )}
       </Container>
