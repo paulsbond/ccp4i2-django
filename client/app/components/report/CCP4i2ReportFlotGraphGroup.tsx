@@ -25,7 +25,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
   const groupTitle = useMemo<string>(() => {
     const possibleTitle = $(props.item).attr("title");
     if (possibleTitle) return possibleTitle;
-    return `Graph of ${xmlGraphs.length} graphs`;
+    return `Group of ${xmlGraphs.length} graphs`;
   }, [props.item]);
 
   const graphTitles = useMemo<string[]>(() => {
@@ -90,6 +90,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
         {$(props.item).attr("title")}
         {graphs && graphs.length > 1 && (
           <Autocomplete
+            sx={{ mt: 2 }}
             defaultValue={
               graphTitles && graphTitles.length > 0 ? graphTitles[0] : "0"
             }
