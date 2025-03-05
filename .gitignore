@@ -14,3 +14,4 @@ client/public/moorhen.wasm
 client/public/moorhen64.js
 client/public/moorhen64.wasm
 client/public/robots.txt
+client/package-lock.json
