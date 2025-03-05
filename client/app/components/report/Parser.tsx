@@ -37,6 +37,9 @@ export interface Plot {
   xrange?: { min?: number; max?: number };
   yrange?: { min?: number; max?: number };
   polygon?: any[] | any;
+  xscale?: string;
+  customXTicks?: string;
+  customXLabels?: string;
 }
 
 export interface PlotLine {

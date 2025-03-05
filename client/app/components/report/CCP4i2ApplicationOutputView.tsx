@@ -137,6 +137,9 @@ export const CCP4i2ApplicationOutputView: React.FC<
           backgroundColor: plotline.colour
             ? plotline.colour
             : colours[iPlotline % colours.length],
+          borderColor: plotline.colour
+            ? plotline.colour
+            : colours[iPlotline % colours.length],
           showLine: true,
         };
         return dataset;
@@ -168,19 +171,27 @@ export const CCP4i2ApplicationOutputView: React.FC<
           position: "bottom",
           title: {
             display: true,
-            text: selectedPlot ? selectedPlot.xlabel : "",
+            text: selectedPlot?.xlabel ? selectedPlot.xlabel : "",
           },
         },
         yAxisLeft: {
           axis: "y",
           type: "linear",
           position: "left",
+          title: {
+            display: true,
+            text: selectedPlot?.ylabel ? selectedPlot.ylabel : "",
+          },
         },
         yAxisRight: {
           axis: "y",
           type: "linear",
           position: "right",
           grid: { display: false },
+          title: {
+            display: true,
+            text: selectedPlot?.rylabel ? selectedPlot.rylabel : "",
+          },
         },
       },
     };
@@ -222,13 +233,61 @@ export const CCP4i2ApplicationOutputView: React.FC<
       };
     }
 
+    if (selectedPlot?.text) {
+      const textObject = {
+        type: "label",
+        xValue: selectedPlot.text.xPos, // X position (match a data point)
+        yValue: selectedPlot.text.yPos, // Y position
+        backgroundColor: "rgba(0, 0, 0, 0.2)",
+        content: selectedPlot.text["_"],
+        color: selectedPlot.text.colour,
+        font: {
+          size: 14,
+          weight: "bold",
+        },
+        padding: 6,
+        borderRadius: 4,
+      };
+      if (!result.plugins) result.plugins = {};
+      if (!result.plugins.annotation) result.plugins.annotation = {};
+      if (!result.plugins.annotation.annotations)
+        result.plugins.annotation.annotations = {};
+
+      result.plugins.annotation.annotations.text = textObject;
+    }
+
+    if (selectedPlot?.xscale === "oneoversqrt") {
+      result.plugins.tooltip = {
+        callbacks: {
+          label: (tooltipItem) =>
+            `Res: ${(1 / Math.sqrt(tooltipItem.raw.x)).toPrecision(3)}, ${
+              tooltipItem.dataset.label
+            }: ${tooltipItem.raw.y}`,
+        },
+      };
+    }
+
+    //Custom tick scenarios
     if (selectedPlot.xintegral && selectedPlot.xintegral === "true") {
       //@ts-ignore
       result.scales.x.ticks = {
         stepSize: 1, // Force integer steps
         callback: (value: any) => (Number.isInteger(value) ? value : null), // Hide non-integer labels
       };
+    } else if (selectedPlot?.xscale === "oneoversqrt") {
+      //@ts-ignore
+      result.scales.x.ticks = {
+        callback: (value: any, index: number) =>
+          (1 / Math.sqrt(value)).toPrecision(3), // Hide non-integer labels
+      };
+    } else if (selectedPlot?.customXLabels) {
+      //@ts-ignore
+      result.scales.x.ticks = {
+        callback: (value: any, index: number) =>
+          selectedPlot.customXLabels.split(",")[index], // Hide non-integer labels
+      };
     }
+
     if (selectedPlot?.xrange?.min) {
       result.scales.x.min = selectedPlot.xrange.min;
     }
@@ -236,10 +295,10 @@ export const CCP4i2ApplicationOutputView: React.FC<
       result.scales.x.max = selectedPlot.xrange.max;
     }
     if (selectedPlot?.yrange?.min) {
-      result.scales.yAxisLeft.min = selectedPlot.yrange.min;
+      result.scales.yAxisLeft.min = parseFloat(selectedPlot.yrange.min);
     }
     if (selectedPlot?.yrange?.max) {
-      result.scales.yAxisLeft.max = selectedPlot.yrange.max;
+      result.scales.yAxisLeft.max = parseFloat(selectedPlot.yrange.max);
     }
     console.log({ options: result });
     return result;
