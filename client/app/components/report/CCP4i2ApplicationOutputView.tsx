@@ -140,7 +140,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
           borderColor: plotline.colour
             ? plotline.colour
             : colours[iPlotline % colours.length],
-          showLine: true,
+          showLine: plotline.linestyle !== ".",
         };
         return dataset;
       }),
@@ -156,6 +156,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
       type: "scatter",
       animation: false,
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: "top" as const,
@@ -305,7 +306,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
   }, [graph, selectedPlot]);
 
   return (
-    <Paper sx={{ maxHeight: "calc(100vh - 15rem)", overflow: "auto" }}>
+    <Paper sx={{ maxHeight: "300px", minHeight: "300px", overflow: "auto" }}>
       {allPlots && selectedPlot && allPlots.length > 1 && (
         <Autocomplete
           sx={{ mt: 1, mb: 1, px: 0, py: 0 }}

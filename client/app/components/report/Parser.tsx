@@ -48,6 +48,7 @@ export interface PlotLine {
   dataid?: string;
   rightaxis?: string;
   colour?: string;
+  linestyle?: string;
 }
 
 export interface Histogram {
@@ -88,7 +89,15 @@ export interface Surface {
 export const parseXML = async (xml: string): Promise<CCP4ApplicationOutput> => {
   const nsStripped = stripNamespaces(xml);
   const tablised = changeTagName(nsStripped, "ccp4_data", "CCP4Table");
-  const result = await parseStringPromise(tablised, {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(tablised, "application/xml");
+  const oldElements = xmlDoc.getElementsByTagName("CCP4Table");
+  const firstTable = oldElements[0];
+  // Serialize back to string
+  const serializer = new XMLSerializer();
+  const firstTableString = serializer.serializeToString(firstTable);
+
+  const result = await parseStringPromise(firstTableString, {
     explicitArray: false,
     mergeAttrs: true,
   });
@@ -98,7 +107,6 @@ export const parseXML = async (xml: string): Promise<CCP4ApplicationOutput> => {
 function stripNamespaces(xmlString: string): string {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, "application/xml");
-  console.log("Before", { xmlDoc });
   function processNode(node: Node): void {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as Element;
@@ -130,8 +138,6 @@ function stripNamespaces(xmlString: string): string {
 
   // Serialize back to string
   const serializer = new XMLSerializer();
-  console.log("After", { xmlDoc });
-
   return serializer.serializeToString(xmlDoc);
 }
 
