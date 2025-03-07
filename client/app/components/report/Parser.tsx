@@ -32,11 +32,14 @@ export interface Plot {
   barchart?: BarChart[];
   xlabel?: string;
   ylabel?: string;
+  rylabel?: string;
   description?: string;
   xintegral?: string;
   xrange?: { min?: number; max?: number };
   yrange?: { min?: number; max?: number };
   polygon?: any[] | any;
+  circle?: any[] | any;
+  text?: any[] | any;
   xscale?: string;
   customXTicks?: string;
   customXLabels?: string;
