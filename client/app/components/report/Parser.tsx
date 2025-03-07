@@ -40,6 +40,8 @@ export interface Plot {
   xscale?: string;
   customXTicks?: string;
   customXLabels?: string;
+  showlegend?: "true" | "false";
+  fixaspectratio?: "true" | "false";
 }
 
 export interface PlotLine {

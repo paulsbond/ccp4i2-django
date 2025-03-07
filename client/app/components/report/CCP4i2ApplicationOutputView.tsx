@@ -69,13 +69,47 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
   const dataAsGrid = useMemo<any[][]>(() => {
     if (graph) {
-      const data = graph.data.replace(/^\n/, ""); // Remove leading newline;
-      const rows = data.split("\n");
-      const result: any[][] = rows.map((row: string) =>
-        row.split(/\s+/).filter((item: string) => item.trim().length > 0)
-      );
-      console.log({ datagrid: result });
-      return result;
+      if (typeof graph.data === "string" || graph.data instanceof String) {
+        const data = graph.data.replace(/^\n/, ""); // Remove leading newline;
+        const rows = data.split("\n");
+        const result: any[][] = rows.map((row: string) =>
+          row.split(/\s+/).filter((item: string) => item.trim().length > 0)
+        );
+        console.log({ datagrid: result });
+        return result;
+      } else if (Array.isArray(graph.data)) {
+        let result: any[][] = [];
+        graph.data.forEach((dataBlockOrDataBlockObject: string | any) => {
+          let dataBlock: string = "";
+          if (
+            typeof dataBlockOrDataBlockObject === "string" ||
+            dataBlockOrDataBlockObject instanceof String
+          ) {
+            dataBlock = dataBlockOrDataBlockObject as string;
+          } else {
+            dataBlock = dataBlockOrDataBlockObject["_"] as string;
+          }
+          console.log({ dataBlock });
+          const data = dataBlock.replace(/^\n/, ""); // Remove leading newline;
+          const rows = data.split("\n");
+          const blockRows: any[][] = rows.map((row: string) =>
+            row.split(/\s+/).filter((item: string) => item.trim().length > 0)
+          );
+          result = result.concat(blockRows);
+        });
+        console.log({ datagrid: result });
+        return result;
+      } else if (typeof graph.data === "object") {
+        console.log(graph.title, graph.data);
+        console.log(Object.keys(graph.data));
+        const data = graph.data["_"].replace(/^\n/, ""); // Remove leading newline;
+        const rows = data.split("\n");
+        const result: any[][] = rows.map((row: string) =>
+          row.split(/\s+/).filter((item: string) => item.trim().length > 0)
+        );
+        console.log({ datagrid: result });
+        return result;
+      }
     }
     const result: any[][] = [];
     return result;
@@ -135,8 +169,10 @@ export const CCP4i2ApplicationOutputView: React.FC<
             y: row[parseInt(`${plotline.ycol}`) - 1],
           })),
           backgroundColor: plotline.colour
-            ? plotline.colour
-            : colours[iPlotline % colours.length],
+            ? plotline.colour.startsWith("#")
+              ? hexToRGBA(plotline.colour, 0.5)
+              : colorNameToRGBA(plotline.colour, 0.5)
+            : colorNameToRGBA(colours[iPlotline % colours.length], 0.5),
           borderColor: plotline.colour
             ? plotline.colour
             : colours[iPlotline % colours.length],
@@ -158,9 +194,6 @@ export const CCP4i2ApplicationOutputView: React.FC<
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          position: "top" as const,
-        },
         title: {
           display: true,
           text: parsedOutput ? graph.title : "",
@@ -196,6 +229,12 @@ export const CCP4i2ApplicationOutputView: React.FC<
         },
       },
     };
+
+    if (selectedPlot?.showlegend === "false") {
+      result.plugins.legend = {
+        display: false,
+      };
+    }
 
     if (selectedPlot.polygon) {
       result.plugins.annotation = {
@@ -289,6 +328,14 @@ export const CCP4i2ApplicationOutputView: React.FC<
       };
     }
 
+    if (
+      (selectedPlot?.xlabel === "Phi" && selectedPlot?.ylabel === "Psi") ||
+      selectedPlot?.fixaspectratio === "true"
+    ) {
+      result.maintainAspectRatio = true;
+      result.aspectRatio = 1;
+    }
+
     if (selectedPlot?.xrange?.min) {
       result.scales.x.min = selectedPlot.xrange.min;
     }
@@ -306,7 +353,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
   }, [graph, selectedPlot]);
 
   return (
-    <Paper sx={{ maxHeight: "300px", minHeight: "300px", overflow: "auto" }}>
+    <Paper sx={{ maxHeight: 400 }}>
       {allPlots && selectedPlot && allPlots.length > 1 && (
         <Autocomplete
           sx={{ mt: 1, mb: 1, px: 0, py: 0 }}
@@ -323,7 +370,9 @@ export const CCP4i2ApplicationOutputView: React.FC<
           )}
         />
       )}
-      {options && plotData && <Scatter options={options} data={plotData} />}
+      {options && plotData && (
+        <Scatter options={options} width="400" height="400" data={plotData} />
+      )}
       {false && (
         <Editor
           height="calc(100vh - 15rem)"
@@ -334,3 +383,57 @@ export const CCP4i2ApplicationOutputView: React.FC<
     </Paper>
   );
 };
+
+function colorNameToRGBA(colorName: string, alpha: number = 0.5): string {
+  // Ensure alpha value is between 0 and 1
+  if (alpha < 0 || alpha > 1) {
+    throw new Error("Alpha value must be between 0 and 1");
+  }
+
+  // Create a temporary element to access the computed color value
+  const tempElement = document.createElement("div");
+  tempElement.style.color = colorName;
+  document.body.appendChild(tempElement);
+
+  // Get the computed RGB color
+  const rgb = window.getComputedStyle(tempElement).color;
+
+  // Remove the temporary element from the DOM
+  document.body.removeChild(tempElement);
+
+  // rgb will be in format "rgb(r, g, b)"
+  const rgbValues = rgb.match(/\d+/g); // Extracts the numeric values
+
+  if (!rgbValues) {
+    throw new Error("Invalid color name");
+  }
+
+  // Convert the extracted values to an RGBA string
+  return `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${alpha})`;
+}
+
+function hexToRGBA(hex: string, alpha: number = 0.5): string {
+  // Ensure alpha value is between 0 and 1
+  if (alpha < 0 || alpha > 1) {
+    throw new Error("Alpha value must be between 0 and 1");
+  }
+
+  // Check if the hex is in the valid format (#RRGGBB or #RGB)
+  const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+  if (!hexRegex.test(hex)) {
+    throw new Error("Invalid hex color");
+  }
+
+  // If the hex is 3 characters, convert it to 6 characters (e.g. #FFF -> #FFFFFF)
+  if (hex.length === 4) {
+    hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+  }
+
+  // Extract RGB values from the hex color
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  // Return the RGBA string
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
