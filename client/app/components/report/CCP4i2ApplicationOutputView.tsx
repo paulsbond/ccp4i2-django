@@ -325,26 +325,33 @@ export const CCP4i2ApplicationOutputView: React.FC<
     }
 
     if (selectedPlot?.text) {
-      const textObject = {
-        type: "label",
-        xValue: parseFloat(selectedPlot.text.xpos), // X position (match a data point)
-        yValue: parseFloat(selectedPlot.text.ypos), // Y position
-        backgroundColor: "rgba(0,0,0, 0.2)",
-        content: selectedPlot.text["_"],
-        color: selectedPlot.text.colour,
-        font: {
-          size: 14,
-          weight: "bold",
-        },
-        padding: 6,
-        borderRadius: 4,
-      };
-      if (!result.plugins) result.plugins = {};
-      if (!result.plugins.annotation) result.plugins.annotation = {};
-      if (!result.plugins.annotation.annotations)
-        result.plugins.annotation.annotations = {};
-
-      result.plugins.annotation.annotations.text = textObject;
+      let texts: any[] = [];
+      if (Array.isArray(selectedPlot.text)) {
+        texts = selectedPlot.text;
+      } else {
+        texts = [selectedPlot.text];
+      }
+      texts.forEach((text, iText) => {
+        const textObject = {
+          type: "label",
+          xValue: parseFloat(text.xpos), // X position (match a data point)
+          yValue: parseFloat(text.ypos), // Y position
+          backgroundColor: "rgba(0,0,0, 0.2)",
+          content: text["_"],
+          color: text.colour,
+          font: {
+            size: 14,
+            weight: "bold",
+          },
+          padding: 6,
+          borderRadius: 4,
+        };
+        if (!result.plugins) result.plugins = {};
+        if (!result.plugins.annotation) result.plugins.annotation = {};
+        if (!result.plugins.annotation.annotations)
+          result.plugins.annotation.annotations = {};
+        result.plugins.annotation.annotations[`text-${iText}`] = textObject;
+      });
     }
 
     if (selectedPlot?.xscale === "oneoversqrt") {
