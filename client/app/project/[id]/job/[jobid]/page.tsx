@@ -11,7 +11,7 @@ import { TaskContainer } from "../../../../components/task/task-container";
 import { useJob, useProject } from "../../../../utils";
 import ToolBar from "../../../../components/tool-bar";
 import { parseTables } from "../../../../components/report/CCP4i2ParsePimple";
-import { parseXML } from "../../../../components/report/Parser";
+import { parseXML } from "../../../../components/report/ChartLib";
 import { CCP4i2ApplicationOutputView } from "../../../../components/report/CCP4i2ApplicationOutputView";
 
 export default function JobPage({

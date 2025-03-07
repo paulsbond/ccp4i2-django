@@ -1,6 +1,20 @@
 import { Editor } from "@monaco-editor/react";
 import { useEffect, useMemo, useState } from "react";
-import { parseXML, Plot, PlotLine } from "./Parser";
+import {
+  addCircles,
+  addLines,
+  addPolygons,
+  addTexts,
+  colorNameToRGBA,
+  handleCustomXLabels,
+  handleOneOverSqrt,
+  handleRangeSpecifiers,
+  handleXIntegral,
+  hexToRGBA,
+  parseXML,
+  Plot,
+  PlotLine,
+} from "./ChartLib";
 import {
   Chart as ChartJS,
   ChartOptions,
@@ -57,6 +71,7 @@ const colours = [
   "rgba(153, 102, 255, 1)",
   "rgba(255, 159, 64, 1)",
 ];
+
 export const CCP4i2ApplicationOutputView: React.FC<
   CCP4i2ApplicationOutputViewProps
 > = ({ output }) => {
@@ -213,11 +228,22 @@ export const CCP4i2ApplicationOutputView: React.FC<
       },
       scales: {
         x: {
+          axis: "x",
           type: "linear",
           position: "bottom",
           title: {
             display: true,
             text: selectedPlot?.xlabel ? selectedPlot.xlabel : "",
+          },
+          ticks: {
+            callback: (value: string | number, index: number) => {
+              if (typeof value === "string") {
+                return value;
+              } else if (Number.isInteger(value)) {
+                return value;
+              }
+              return value.toPrecision(3);
+            },
           },
         },
         yAxisLeft: {
@@ -242,37 +268,9 @@ export const CCP4i2ApplicationOutputView: React.FC<
       },
     };
 
-    const plotlineList: PlotLine[] = Array.isArray(selectedPlot?.plotline)
-      ? (selectedPlot.plotline as PlotLine[])
-      : [selectedPlot.plotline as PlotLine];
-    const rightAxisPlotlines = plotlineList.filter(
-      (plotline: PlotLine) => plotline.rightaxis === "true"
-    );
-    if (rightAxisPlotlines.length > 0) {
-      if (!result.scales) result.scales = {};
-      result.scales.yAxisRight = {
-        axis: "y",
-        type: "linear",
-        position: "right",
-        grid: { display: false },
-        title: {
-          display: true,
-          text: selectedPlot?.rylabel ? selectedPlot.rylabel : "",
-        },
-      };
-      result.scales.yAxisRight.ticks = {
-        callback: (value: string | number, index: number) => {
-          if (typeof value === "string") {
-            return value;
-          } else if (Number.isInteger(value)) {
-            return value;
-          }
-          return value.toPrecision(3);
-        },
-      };
-    }
+    handleRangeSpecifiers(selectedPlot, result);
 
-    if (selectedPlot?.showlegend === "false") {
+    if (selectedPlot?.plotline?.showlegend === "false") {
       if (!result.plugins) result.plugins = {};
       result.plugins.legend = {
         display: false,
@@ -280,127 +278,32 @@ export const CCP4i2ApplicationOutputView: React.FC<
     }
 
     if (selectedPlot.polygon) {
-      let polygons: any[] = [];
-      if (Array.isArray(selectedPlot.polygon)) {
-        polygons = selectedPlot.polygon;
-      } else {
-        polygons = [selectedPlot.polygon];
-      }
-      polygons.forEach((polygon: any, iPolygon: number) => {
-        if (!result.plugins) result.plugins = {};
-        if (!result.plugins.annotation) result.plugins.annotation = {};
-        if (!result.plugins.annotation.annotations)
-          result.plugins.annotation.annotations = {};
-        result.plugins.annotation.annotations[`polygon-${iPolygon}`] = {
-          type: "box",
-          xMax: Math.max(
-            ...polygon["_"]
-              .split(" ")
-              .filter((item: string, iItem: number) => !(iItem % 2))
-              .map((item: string) => parseFloat(item))
-          ),
-          xMin: Math.min(
-            ...polygon["_"]
-              .split(" ")
-              .filter((item: string, iItem: number) => !(iItem % 2))
-              .map((item: string) => parseFloat(item))
-          ),
-          yMax: Math.max(
-            ...polygon["_"]
-              .split(" ")
-              .filter((item: string, iItem: number) => iItem % 2)
-              .map((item: string) => parseFloat(item))
-          ),
-          yMin: Math.min(
-            ...polygon["_"]
-              .split(" ")
-              .filter((item: string, iItem: number) => iItem % 2)
-              .map((item: string) => parseFloat(item))
-          ),
-          drawTime: "beforeDatasetsDraw",
-          backgroundColor: selectedPlot.polygon.fillcolour,
-          strokeColor: selectedPlot.polygon.linecolour,
-        };
-      });
+      addPolygons(selectedPlot, result);
+    }
+
+    if (selectedPlot.circle) {
+      addCircles(selectedPlot, result);
+    }
+
+    if (selectedPlot.line) {
+      addLines(selectedPlot, result);
     }
 
     if (selectedPlot?.text) {
-      let texts: any[] = [];
-      if (Array.isArray(selectedPlot.text)) {
-        texts = selectedPlot.text;
-      } else {
-        texts = [selectedPlot.text];
-      }
-      texts.forEach((text, iText) => {
-        const textObject = {
-          type: "label",
-          xValue: parseFloat(text.xpos), // X position (match a data point)
-          yValue: parseFloat(text.ypos), // Y position
-          backgroundColor: "rgba(0,0,0, 0.2)",
-          content: text["_"],
-          color: text.colour,
-          font: {
-            size: 14,
-            weight: "bold",
-          },
-          padding: 6,
-          borderRadius: 4,
-        };
-        if (!result.plugins) result.plugins = {};
-        if (!result.plugins.annotation) result.plugins.annotation = {};
-        if (!result.plugins.annotation.annotations)
-          result.plugins.annotation.annotations = {};
-        result.plugins.annotation.annotations[`text-${iText}`] = textObject;
-      });
+      addTexts(selectedPlot, result);
     }
 
     if (selectedPlot?.xscale === "oneoversqrt") {
-      if (!result.plugins) result.plugins = {};
-      result.plugins.tooltip = {
-        callbacks: {
-          label: (tooltipItem: any) =>
-            `Res: ${(1 / Math.sqrt(tooltipItem.raw.x)).toPrecision(3)}, ${
-              tooltipItem.dataset.label
-            }: ${tooltipItem.raw.y}`,
-        },
-      };
+      handleOneOverSqrt(selectedPlot, result);
     }
 
     //Custom tick scenarios
-    if (selectedPlot.xintegral && selectedPlot.xintegral === "true") {
-      //@ts-ignore
-      result.scales.x.ticks = {
-        stepSize: 1, // Force integer steps
-        callback: (value: any) => (Number.isInteger(value) ? value : null), // Hide non-integer labels
-      };
-    } else if (selectedPlot?.xscale === "oneoversqrt") {
-      //@ts-ignore
-      result.scales.x.ticks = {
-        callback: (value: any, index: number) =>
-          (1 / Math.sqrt(value)).toPrecision(3), // Hide non-integer labels
-      };
-    } else if (selectedPlot?.customXLabels) {
-      //@ts-ignore
-      result.scales.x.ticks = {
-        callback: (value: string | number, index: number) => {
-          if (selectedPlot.customXTicks) {
-            return selectedPlot?.customXLabels?.split(",")[index]; // Hide non-integer labels
-          }
-          return "";
-        },
-      };
-    } else {
-      //@ts-ignore
-      result.scales.x.ticks = {
-        callback: (value: string | number, index: number) => {
-          if (typeof value === "string") {
-            return value;
-          } else if (Number.isInteger(value)) {
-            return value;
-          }
-          return value.toPrecision(3);
-        },
-      };
+    if (selectedPlot?.xintegral) {
+      handleXIntegral(selectedPlot, result);
+    }
+
+    if (selectedPlot?.customXLabels) {
+      handleCustomXLabels(selectedPlot, result);
     }
 
     if (
@@ -411,26 +314,6 @@ export const CCP4i2ApplicationOutputView: React.FC<
       result.aspectRatio = 1;
     }
 
-    if (selectedPlot?.xrange?.min) {
-      if (!result?.scales) result.scales = {};
-      if (!result?.scales.x) result.scales.x = {};
-      result.scales.x.min = selectedPlot.xrange.min;
-    }
-    if (selectedPlot?.xrange?.max) {
-      if (!result?.scales) result.scales = {};
-      if (!result?.scales.x) result.scales.x = {};
-      result.scales.x.max = selectedPlot.xrange.max;
-    }
-    if (selectedPlot?.yrange?.min) {
-      if (!result?.scales) result.scales = {};
-      if (!result?.scales.yAxisLeft) result.scales.yAxisLeft = {};
-      result.scales.yAxisLeft.min = selectedPlot.yrange.min;
-    }
-    if (selectedPlot?.yrange?.max) {
-      if (!result?.scales) result.scales = {};
-      if (!result?.scales.yAxisLeft) result.scales.yAxisLeft = {};
-      result.scales.yAxisLeft.max = selectedPlot.yrange.max;
-    }
     console.log({ options: result });
     return result;
   }, [graph, selectedPlot]);
@@ -492,57 +375,3 @@ export const CCP4i2ApplicationOutputView: React.FC<
     </>
   );
 };
-
-function colorNameToRGBA(colorName: string, alpha: number = 0.5): string {
-  // Ensure alpha value is between 0 and 1
-  if (alpha < 0 || alpha > 1) {
-    throw new Error("Alpha value must be between 0 and 1");
-  }
-
-  // Create a temporary element to access the computed color value
-  const tempElement = document.createElement("div");
-  tempElement.style.color = colorName;
-  document.body.appendChild(tempElement);
-
-  // Get the computed RGB color
-  const rgb = window.getComputedStyle(tempElement).color;
-
-  // Remove the temporary element from the DOM
-  document.body.removeChild(tempElement);
-
-  // rgb will be in format "rgb(r, g, b)"
-  const rgbValues = rgb.match(/\d+/g); // Extracts the numeric values
-
-  if (!rgbValues) {
-    throw new Error("Invalid color name");
-  }
-
-  // Convert the extracted values to an RGBA string
-  return `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${alpha})`;
-}
-
-function hexToRGBA(hex: string, alpha: number = 0.5): string {
-  // Ensure alpha value is between 0 and 1
-  if (alpha < 0 || alpha > 1) {
-    throw new Error("Alpha value must be between 0 and 1");
-  }
-
-  // Check if the hex is in the valid format (#RRGGBB or #RGB)
-  const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-  if (!hexRegex.test(hex)) {
-    throw new Error("Invalid hex color");
-  }
-
-  // If the hex is 3 characters, convert it to 6 characters (e.g. #FFF -> #FFFFFF)
-  if (hex.length === 4) {
-    hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
-  }
-
-  // Extract RGB values from the hex color
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-
-  // Return the RGBA string
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
