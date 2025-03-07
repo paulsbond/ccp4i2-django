@@ -6,6 +6,8 @@ import {
   addPolygons,
   addTexts,
   colorNameToRGBA,
+  extractDataset,
+  extractDatasets,
   handleCustomXLabels,
   handleOneOverSqrt,
   handleRangeSpecifiers,
@@ -154,62 +156,15 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
   const plotData = useMemo<any | null>(() => {
     if (!selectedPlot || !parsedDataBlocks || !allHeaders) return null;
-    if (
-      !selectedPlot.plotline ||
-      (Array.isArray(selectedPlot.plotline) &&
-        selectedPlot.plotline.length == 0)
-    )
-      return null;
-
-    const plotlineList = Array.isArray(selectedPlot.plotline)
-      ? selectedPlot.plotline
-      : [selectedPlot.plotline];
-
-    const datasets = plotlineList.map(
-      (plotline: PlotLine, iPlotline: number) => {
-        let dataAsGrid: any[][] = [];
-        if (
-          plotline.dataid &&
-          Object.keys(parsedDataBlocks).includes(plotline.dataid)
-        ) {
-          dataAsGrid = parsedDataBlocks[plotline.dataid];
-        } else if (Object.keys(parsedDataBlocks).includes("_")) {
-          dataAsGrid = parsedDataBlocks["_"];
-        } else return null;
-
-        const dataset: any = {
-          label: allHeaders[plotline.ycol - 1],
-          labels: dataAsGrid.map(
-            (row: any) => row[parseInt(`${plotline.xcol}`) - 1]
-          ),
-          yAxisID: plotline.rightaxis
-            ? plotline.rightaxis === "true"
-              ? "yAxisRight"
-              : "yAxisLeft"
-            : "yAxisLeft",
-          data: dataAsGrid.map((row) => ({
-            x: row[parseInt(`${plotline.xcol}`) - 1],
-            y: row[parseInt(`${plotline.ycol}`) - 1],
-          })),
-          backgroundColor: plotline.colour
-            ? plotline.colour.startsWith("#")
-              ? hexToRGBA(plotline.colour, 0.5)
-              : colorNameToRGBA(plotline.colour, 0.5)
-            : colorNameToRGBA(colours[iPlotline % colours.length], 0.5),
-          borderColor: plotline.colour
-            ? plotline.colour
-            : colours[iPlotline % colours.length],
-          showLine: plotline.linestyle !== ".",
-        };
-        return dataset;
-      }
+    const datasets = extractDatasets(
+      selectedPlot,
+      parsedDataBlocks,
+      allHeaders
     );
-
+    if (!datasets) return null;
     const result: any = {
       datasets: datasets,
     };
-    console.log({ result });
-
     return result;
   }, [parsedDataBlocks, selectedPlot, allHeaders]);
 
@@ -270,7 +225,15 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
     handleRangeSpecifiers(selectedPlot, result);
 
-    if (selectedPlot?.plotline?.showlegend === "false") {
+    const plotlines = Array.isArray(selectedPlot.plotline)
+      ? selectedPlot.plotline
+      : selectedPlot.plotline
+      ? [selectedPlot.plotline]
+      : [];
+    if (
+      plotlines.filter((plotline: PlotLine) => plotline.showlegend === "false")
+        .length > 0
+    ) {
       if (!result.plugins) result.plugins = {};
       result.plugins.legend = {
         display: false,

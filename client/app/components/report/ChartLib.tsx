@@ -1,5 +1,15 @@
 import { ChartOptions } from "chart.js";
+import { data } from "jquery";
 import { parseStringPromise } from "xml2js";
+
+const colours = [
+  "rgba(255, 99, 132, 1)",
+  "rgba(54, 162, 235, 1)",
+  "rgba(255, 206, 86, 1)",
+  "rgba(75, 192, 192, 1)",
+  "rgba(153, 102, 255, 1)",
+  "rgba(255, 159, 64, 1)",
+];
 
 export interface CCP4ApplicationOutput {
   CCP4Table?: CCP4Table[];
@@ -56,6 +66,7 @@ export interface PlotLine {
   rightaxis?: string;
   colour?: string;
   linestyle?: string;
+  showlegend?: "true" | "false";
 }
 
 export interface Histogram {
@@ -274,6 +285,75 @@ export const addPlotLines = (selectedPlot: Plot, result: ChartOptions) => {
     };
   }
 };
+
+export const extractDatasets = (
+  selectedPlot: Plot,
+  parsedDataBlocks: any,
+  allHeaders: string[]
+) => {
+  if (
+    !selectedPlot.plotline ||
+    (Array.isArray(selectedPlot.plotline) && selectedPlot.plotline.length == 0)
+  )
+    return null;
+
+  const plotlineList = Array.isArray(selectedPlot.plotline)
+    ? selectedPlot.plotline
+    : [selectedPlot.plotline];
+
+  const datasets = plotlineList.map((plotline: PlotLine, iPlotline: number) => {
+    let dataAsGrid: any[][] = [];
+    if (
+      plotline.dataid &&
+      Object.keys(parsedDataBlocks).includes(plotline.dataid)
+    ) {
+      dataAsGrid = parsedDataBlocks[plotline.dataid];
+    } else if (Object.keys(parsedDataBlocks).includes("_")) {
+      dataAsGrid = parsedDataBlocks["_"];
+    } else return null;
+
+    const dataset: any = extractDataset(
+      dataAsGrid,
+      allHeaders,
+      plotline,
+      iPlotline
+    );
+    return dataset;
+  });
+  return datasets;
+};
+
+export const extractDataset = (
+  dataAsGrid: any[][],
+  allHeaders: string[],
+  plotline: PlotLine,
+  iPlotline: number
+) => {
+  const result = {
+    label: allHeaders[plotline.ycol - 1],
+    labels: dataAsGrid.map((row: any) => row[parseInt(`${plotline.xcol}`) - 1]),
+    yAxisID: plotline.rightaxis
+      ? plotline.rightaxis === "true"
+        ? "yAxisRight"
+        : "yAxisLeft"
+      : "yAxisLeft",
+    data: dataAsGrid.map((row) => ({
+      x: row[parseInt(`${plotline.xcol}`) - 1],
+      y: row[parseInt(`${plotline.ycol}`) - 1],
+    })),
+    backgroundColor: plotline.colour
+      ? plotline.colour.startsWith("#")
+        ? hexToRGBA(plotline.colour, 0.5)
+        : colorNameToRGBA(plotline.colour, 0.5)
+      : colorNameToRGBA(colours[iPlotline % colours.length], 0.5),
+    borderColor: plotline.colour
+      ? plotline.colour
+      : colours[iPlotline % colours.length],
+    showLine: plotline.linestyle !== ".",
+  };
+  return result;
+};
+
 export const addLines = (selectedPlot: Plot, result: ChartOptions) => {
   if (!selectedPlot.line) return;
   let lines: any[] = [];
