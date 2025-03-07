@@ -67,52 +67,35 @@ export const CCP4i2ApplicationOutputView: React.FC<
     asyncEffect();
   }, [output]);
 
-  const dataAsGrid = useMemo<any[][]>(() => {
+  const parsedDataBlocks = useMemo<any | null>(() => {
     if (graph) {
-      if (typeof graph.data === "string" || graph.data instanceof String) {
-        const data = graph.data.replace(/^\n/, ""); // Remove leading newline;
-        const rows = data.split("\n");
-        const result: any[][] = rows.map((row: string) =>
-          row.split(/\s+/).filter((item: string) => item.trim().length > 0)
-        );
-        console.log({ datagrid: result });
-        return result;
-      } else if (Array.isArray(graph.data)) {
-        let result: any[][] = [];
-        graph.data.forEach((dataBlockOrDataBlockObject: string | any) => {
-          let dataBlock: string = "";
-          if (
-            typeof dataBlockOrDataBlockObject === "string" ||
-            dataBlockOrDataBlockObject instanceof String
-          ) {
-            dataBlock = dataBlockOrDataBlockObject as string;
-          } else {
-            dataBlock = dataBlockOrDataBlockObject["_"] as string;
-          }
-          console.log({ dataBlock });
-          const data = dataBlock.replace(/^\n/, ""); // Remove leading newline;
-          const rows = data.split("\n");
-          const blockRows: any[][] = rows.map((row: string) =>
-            row.split(/\s+/).filter((item: string) => item.trim().length > 0)
-          );
-          result = result.concat(blockRows);
-        });
-        console.log({ datagrid: result });
-        return result;
-      } else if (typeof graph.data === "object") {
-        console.log(graph.title, graph.data);
-        console.log(Object.keys(graph.data));
-        const data = graph.data["_"].replace(/^\n/, ""); // Remove leading newline;
-        const rows = data.split("\n");
-        const result: any[][] = rows.map((row: string) =>
-          row.split(/\s+/).filter((item: string) => item.trim().length > 0)
-        );
-        console.log({ datagrid: result });
-        return result;
+      let dataBlocks: any = {};
+      if (Array.isArray(graph.data)) {
+        dataBlocks = graph.data;
+      } else {
+        dataBlocks = [graph.data];
       }
+      let parsedDataBlocks: any = {};
+
+      dataBlocks.forEach((dataBlock: any) => {
+        let actualRows: string = dataBlock;
+        let dataBlockId: string = "_";
+        if (typeof dataBlock === "object") {
+          actualRows = dataBlock["_"];
+          if (dataBlock.id) {
+            dataBlockId = dataBlock.id;
+          }
+        }
+        const data = actualRows.replace(/^\n/, ""); // Remove leading newline;
+        const blockRows = data.split("\n");
+        const parsedBlockRows: any[][] = blockRows.map((row: string) =>
+          row.split(/\s+/).filter((item: string) => item.trim().length > 0)
+        );
+        parsedDataBlocks[dataBlockId] = parsedBlockRows;
+      });
+      return parsedDataBlocks;
     }
-    const result: any[][] = [];
-    return result;
+    return null;
   }, [graph]);
 
   const allPlots = useMemo<Plot[] | null>(() => {
@@ -140,7 +123,8 @@ export const CCP4i2ApplicationOutputView: React.FC<
   }, [graph]);
 
   const plotData = useMemo<any | null>(() => {
-    if (!selectedPlot || dataAsGrid.length === 0 || !allHeaders) return null;
+    if (!selectedPlot || !parsedDataBlocks || !allHeaders) return null;
+
     if (
       !selectedPlot.plotline ||
       (Array.isArray(selectedPlot.plotline) &&
@@ -152,8 +136,18 @@ export const CCP4i2ApplicationOutputView: React.FC<
       ? selectedPlot.plotline
       : [selectedPlot.plotline];
 
-    const result: any = {
-      datasets: plotlineList.map((plotline: PlotLine, iPlotline: number) => {
+    const datasets = plotlineList.map(
+      (plotline: PlotLine, iPlotline: number) => {
+        let dataAsGrid: any[][] = [];
+        if (
+          plotline.dataid &&
+          Object.keys(parsedDataBlocks).includes(plotline.dataid)
+        ) {
+          dataAsGrid = parsedDataBlocks[plotline.dataid];
+        } else if (Object.keys(parsedDataBlocks).includes("_")) {
+          dataAsGrid = parsedDataBlocks["_"];
+        } else return null;
+
         const dataset: any = {
           label: allHeaders[plotline.ycol - 1],
           labels: dataAsGrid.map(
@@ -179,12 +173,16 @@ export const CCP4i2ApplicationOutputView: React.FC<
           showLine: plotline.linestyle !== ".",
         };
         return dataset;
-      }),
+      }
+    );
+
+    const result: any = {
+      datasets: datasets,
     };
     console.log({ result });
 
     return result;
-  }, [dataAsGrid, selectedPlot, allHeaders]);
+  }, [parsedDataBlocks, selectedPlot, allHeaders]);
 
   const options = useMemo<ChartOptions<"scatter">>(() => {
     if (!selectedPlot) return null;
