@@ -77,10 +77,12 @@ export interface Histogram {
 }
 
 export interface BarChart {
-  col: number;
+  col?: number;
   tcol?: number;
   colour?: string;
   width?: string;
+  rightaxis?: string;
+  dataid?: string;
 }
 
 export interface Fonts {
@@ -291,39 +293,78 @@ export const extractDatasets = (
   parsedDataBlocks: any,
   allHeaders: string[]
 ) => {
-  if (
-    !selectedPlot.plotline ||
-    (Array.isArray(selectedPlot.plotline) && selectedPlot.plotline.length == 0)
-  )
-    return null;
+  if (!selectedPlot.plotline && !selectedPlot.barchart) return null;
+  const nPlotlines: number = Array.isArray(selectedPlot.plotline)
+    ? selectedPlot.plotline.length
+    : selectedPlot.plotline
+    ? 1
+    : 0;
+  const nBarcharts: number = Array.isArray(selectedPlot.barchart)
+    ? selectedPlot.barchart.length
+    : selectedPlot.barchart
+    ? 1
+    : 0;
+  if (nPlotlines + nBarcharts === 0) return null;
 
   const plotlineList = Array.isArray(selectedPlot.plotline)
     ? selectedPlot.plotline
-    : [selectedPlot.plotline];
+    : selectedPlot.plotline
+    ? [selectedPlot.plotline]
+    : [];
 
-  const datasets = plotlineList.map((plotline: PlotLine, iPlotline: number) => {
-    let dataAsGrid: any[][] = [];
-    if (
-      plotline.dataid &&
-      Object.keys(parsedDataBlocks).includes(plotline.dataid)
-    ) {
-      dataAsGrid = parsedDataBlocks[plotline.dataid];
-    } else if (Object.keys(parsedDataBlocks).includes("_")) {
-      dataAsGrid = parsedDataBlocks["_"];
-    } else return null;
+  const plotlineDatasets = plotlineList.map(
+    (plotline: PlotLine, iPlotline: number) => {
+      let dataAsGrid: any[][] = [];
+      if (
+        plotline.dataid &&
+        Object.keys(parsedDataBlocks).includes(plotline.dataid)
+      ) {
+        dataAsGrid = parsedDataBlocks[plotline.dataid];
+      } else if (Object.keys(parsedDataBlocks).includes("_")) {
+        dataAsGrid = parsedDataBlocks["_"];
+      } else return null;
 
-    const dataset: any = extractDataset(
-      dataAsGrid,
-      allHeaders,
-      plotline,
-      iPlotline
-    );
-    return dataset;
-  });
-  return datasets;
+      const dataset: any = extractPlotLineDataset(
+        dataAsGrid,
+        allHeaders,
+        plotline,
+        iPlotline
+      );
+      return dataset;
+    }
+  );
+
+  const barChartList = Array.isArray(selectedPlot.barchart)
+    ? selectedPlot.barchart
+    : selectedPlot.barchart
+    ? [selectedPlot.barchart]
+    : [];
+  const barChartDatasets = barChartList.map(
+    (barChart: BarChart, iBarChart: number) => {
+      let dataAsGrid: any[][] = [];
+      if (
+        barChart.dataid &&
+        Object.keys(parsedDataBlocks).includes(barChart.dataid)
+      ) {
+        dataAsGrid = parsedDataBlocks[barChart.dataid];
+      } else if (Object.keys(parsedDataBlocks).includes("_")) {
+        dataAsGrid = parsedDataBlocks["_"];
+      } else return null;
+
+      const dataset: any = extractBarChartDataset(
+        dataAsGrid,
+        allHeaders,
+        barChart,
+        iBarChart
+      );
+      return dataset;
+    }
+  );
+
+  return plotlineDatasets.concat(barChartDatasets);
 };
 
-export const extractDataset = (
+export const extractPlotLineDataset = (
   dataAsGrid: any[][],
   allHeaders: string[],
   plotline: PlotLine,
@@ -350,6 +391,37 @@ export const extractDataset = (
       ? plotline.colour
       : colours[iPlotline % colours.length],
     showLine: plotline.linestyle !== ".",
+  };
+  return result;
+};
+
+export const extractBarChartDataset = (
+  dataAsGrid: any[][],
+  allHeaders: string[],
+  barChart: BarChart,
+  iBarChart: number
+) => {
+  const result = {
+    label: allHeaders[barChart.tcol - 1],
+    labels: dataAsGrid.map((row: any) => row[parseInt(`${barChart.col}`) - 1]),
+    yAxisID: barChart.rightaxis
+      ? barChart.rightaxis === "true"
+        ? "yAxisRight"
+        : "yAxisLeft"
+      : "yAxisLeft",
+    data: dataAsGrid.map((row) => ({
+      x: row[parseInt(`${barChart.col}`) - 1],
+      y: row[parseInt(`${barChart.tcol}`) - 1],
+    })),
+    backgroundColor: barChart.colour
+      ? barChart.colour.startsWith("#")
+        ? hexToRGBA(barChart.colour, 0.5)
+        : colorNameToRGBA(barChart.colour, 0.5)
+      : colorNameToRGBA(colours[iBarChart % colours.length], 0.5),
+    borderColor: barChart.colour
+      ? barChart.colour
+      : colours[iBarChart % colours.length],
+    showLine: true,
   };
   return result;
 };
