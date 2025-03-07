@@ -13,11 +13,25 @@ import {
   Legend,
   LogarithmicScale,
   ChartData,
+  Scale,
+  CoreScaleOptions,
 } from "chart.js";
 import { Chart, ChartProps, Line, Scatter } from "react-chartjs-2";
 import annotationPlugin from "chartjs-plugin-annotation";
 import { parse } from "path";
-import { Autocomplete, Paper, TextField, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Dialog,
+  DialogContent,
+  Paper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { Preview } from "@mui/icons-material";
 
 ChartJS.register(
   CategoryScale,
@@ -49,6 +63,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
   const [graph, setGraph] = useState<any | null>(null);
   const [parsedOutput, setParsedOutput] = useState<any | null>(null);
   const [selectedPlot, setSelectedPlot] = useState<Plot | null>(null);
+  const [showJson, setShowJson] = useState(false);
 
   useEffect(() => {
     const asyncEffect = async () => {
@@ -124,7 +139,6 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
   const plotData = useMemo<any | null>(() => {
     if (!selectedPlot || !parsedDataBlocks || !allHeaders) return null;
-
     if (
       !selectedPlot.plotline ||
       (Array.isArray(selectedPlot.plotline) &&
@@ -214,61 +228,100 @@ export const CCP4i2ApplicationOutputView: React.FC<
             display: true,
             text: selectedPlot?.ylabel ? selectedPlot.ylabel : "",
           },
-        },
-        yAxisRight: {
-          axis: "y",
-          type: "linear",
-          position: "right",
-          grid: { display: false },
-          title: {
-            display: true,
-            text: selectedPlot?.rylabel ? selectedPlot.rylabel : "",
+          ticks: {
+            callback: (value: string | number, index: number) => {
+              if (typeof value === "string") {
+                return value;
+              } else if (Number.isInteger(value)) {
+                return value;
+              }
+              return value.toPrecision(3);
+            },
           },
         },
       },
     };
 
+    const plotlineList: PlotLine[] = Array.isArray(selectedPlot?.plotline)
+      ? (selectedPlot.plotline as PlotLine[])
+      : [selectedPlot.plotline as PlotLine];
+    const rightAxisPlotlines = plotlineList.filter(
+      (plotline: PlotLine) => plotline.rightaxis === "true"
+    );
+    if (rightAxisPlotlines.length > 0) {
+      if (!result.scales) result.scales = {};
+      result.scales.yAxisRight = {
+        axis: "y",
+        type: "linear",
+        position: "right",
+        grid: { display: false },
+        title: {
+          display: true,
+          text: selectedPlot?.rylabel ? selectedPlot.rylabel : "",
+        },
+      };
+      result.scales.yAxisRight.ticks = {
+        callback: (value: string | number, index: number) => {
+          if (typeof value === "string") {
+            return value;
+          } else if (Number.isInteger(value)) {
+            return value;
+          }
+          return value.toPrecision(3);
+        },
+      };
+    }
+
     if (selectedPlot?.showlegend === "false") {
+      if (!result.plugins) result.plugins = {};
       result.plugins.legend = {
         display: false,
       };
     }
 
     if (selectedPlot.polygon) {
-      result.plugins.annotation = {
-        annotations: {
-          polygon: {
-            type: "box",
-            xMax: Math.max(
-              ...selectedPlot.polygon["_"]
-                .split(" ")
-                .filter((item: string, iItem: number) => !(iItem % 2))
-                .map((item: string) => parseFloat(item))
-            ),
-            xMin: Math.min(
-              ...selectedPlot.polygon["_"]
-                .split(" ")
-                .filter((item: string, iItem: number) => !(iItem % 2))
-                .map((item: string) => parseFloat(item))
-            ),
-            yMax: Math.max(
-              ...selectedPlot.polygon["_"]
-                .split(" ")
-                .filter((item: string, iItem: number) => iItem % 2)
-                .map((item: string) => parseFloat(item))
-            ),
-            yMin: Math.min(
-              ...selectedPlot.polygon["_"]
-                .split(" ")
-                .filter((item: string, iItem: number) => iItem % 2)
-                .map((item: string) => parseFloat(item))
-            ),
-            drawTime: "beforeDatasetsDraw",
-            backgroundColor: selectedPlot.polygon.fillcolour,
-            strokeColor: selectedPlot.polygon.linecolour,
-          },
-        },
-      };
+      let polygons: any[] = [];
+      if (Array.isArray(selectedPlot.polygon)) {
+        polygons = selectedPlot.polygon;
+      } else {
+        polygons = [selectedPlot.polygon];
+      }
+      polygons.forEach((polygon: any, iPolygon: number) => {
+        if (!result.plugins) result.plugins = {};
+        if (!result.plugins.annotation) result.plugins.annotation = {};
+        if (!result.plugins.annotation.annotations)
+          result.plugins.annotation.annotations = {};
+        result.plugins.annotation.annotations[`polygon-${iPolygon}`] = {
+          type: "box",
+          xMax: Math.max(
+            ...polygon["_"]
+              .split(" ")
+              .filter((item: string, iItem: number) => !(iItem % 2))
+              .map((item: string) => parseFloat(item))
+          ),
+          xMin: Math.min(
+            ...polygon["_"]
+              .split(" ")
+              .filter((item: string, iItem: number) => !(iItem % 2))
+              .map((item: string) => parseFloat(item))
+          ),
+          yMax: Math.max(
+            ...polygon["_"]
+              .split(" ")
+              .filter((item: string, iItem: number) => iItem % 2)
+              .map((item: string) => parseFloat(item))
+          ),
+          yMin: Math.min(
+            ...polygon["_"]
+              .split(" ")
+              .filter((item: string, iItem: number) => iItem % 2)
+              .map((item: string) => parseFloat(item))
+          ),
+          drawTime: "beforeDatasetsDraw",
+          backgroundColor: selectedPlot.polygon.fillcolour,
+          strokeColor: selectedPlot.polygon.linecolour,
+        };
+      });
     }
 
     if (selectedPlot?.text) {
@@ -295,9 +348,10 @@ export const CCP4i2ApplicationOutputView: React.FC<
     }
 
     if (selectedPlot?.xscale === "oneoversqrt") {
+      if (!result.plugins) result.plugins = {};
       result.plugins.tooltip = {
         callbacks: {
-          label: (tooltipItem) =>
+          label: (tooltipItem: any) =>
             `Res: ${(1 / Math.sqrt(tooltipItem.raw.x)).toPrecision(3)}, ${
               tooltipItem.dataset.label
             }: ${tooltipItem.raw.y}`,
@@ -321,8 +375,24 @@ export const CCP4i2ApplicationOutputView: React.FC<
     } else if (selectedPlot?.customXLabels) {
       //@ts-ignore
       result.scales.x.ticks = {
-        callback: (value: any, index: number) =>
-          selectedPlot.customXLabels.split(",")[index], // Hide non-integer labels
+        callback: (value: string | number, index: number) => {
+          if (selectedPlot.customXTicks) {
+            return selectedPlot?.customXLabels?.split(",")[index]; // Hide non-integer labels
+          }
+          return "";
+        },
+      };
+    } else {
+      //@ts-ignore
+      result.scales.x.ticks = {
+        callback: (value: string | number, index: number) => {
+          if (typeof value === "string") {
+            return value;
+          } else if (Number.isInteger(value)) {
+            return value;
+          }
+          return value.toPrecision(3);
+        },
       };
     }
 
@@ -335,50 +405,84 @@ export const CCP4i2ApplicationOutputView: React.FC<
     }
 
     if (selectedPlot?.xrange?.min) {
+      if (!result?.scales) result.scales = {};
+      if (!result?.scales.x) result.scales.x = {};
       result.scales.x.min = selectedPlot.xrange.min;
     }
     if (selectedPlot?.xrange?.max) {
+      if (!result?.scales) result.scales = {};
+      if (!result?.scales.x) result.scales.x = {};
       result.scales.x.max = selectedPlot.xrange.max;
     }
     if (selectedPlot?.yrange?.min) {
-      result.scales.yAxisLeft.min = parseFloat(selectedPlot.yrange.min);
+      if (!result?.scales) result.scales = {};
+      if (!result?.scales.yAxisLeft) result.scales.yAxisLeft = {};
+      result.scales.yAxisLeft.min = selectedPlot.yrange.min;
     }
     if (selectedPlot?.yrange?.max) {
-      result.scales.yAxisLeft.max = parseFloat(selectedPlot.yrange.max);
+      if (!result?.scales) result.scales = {};
+      if (!result?.scales.yAxisLeft) result.scales.yAxisLeft = {};
+      result.scales.yAxisLeft.max = selectedPlot.yrange.max;
     }
     console.log({ options: result });
     return result;
   }, [graph, selectedPlot]);
 
   return (
-    <Paper sx={{ maxHeight: 400 }}>
-      {allPlots && selectedPlot && allPlots.length > 1 && (
-        <Autocomplete
-          sx={{ mt: 1, mb: 1, px: 0, py: 0 }}
-          options={allPlots}
-          getOptionKey={(option) => allPlots.indexOf(option)}
-          getOptionLabel={(option) => option.title || "Unnamed plot"}
-          onChange={(event, newValue) => {
-            console.log({ newValue });
-            setSelectedPlot(newValue);
-          }}
-          value={selectedPlot}
-          renderInput={(params) => (
-            <TextField {...params} size="small" label="Plot" />
-          )}
+    <>
+      <Card>
+        <CardHeader
+          title={
+            allPlots &&
+            selectedPlot &&
+            allPlots.length > 1 && (
+              <Autocomplete
+                sx={{ mt: 1, mb: 1, px: 0, py: 0 }}
+                options={allPlots}
+                getOptionKey={(option) => allPlots.indexOf(option)}
+                getOptionLabel={(option) => option.title || "Unnamed plot"}
+                onChange={(event, newValue) => {
+                  setSelectedPlot(newValue);
+                }}
+                value={selectedPlot}
+                renderInput={(params) => (
+                  <TextField {...params} size="small" label="Plot" />
+                )}
+              />
+            )
+          }
+          action={
+            <Button
+              onClick={() => {
+                setShowJson(true);
+              }}
+            >
+              <Preview />
+            </Button>
+          }
         />
-      )}
-      {options && plotData && (
-        <Scatter options={options} width="400" height="400" data={plotData} />
-      )}
-      {false && (
-        <Editor
-          height="calc(100vh - 15rem)"
-          value={JSON.stringify(parsedOutput, null, 2)}
-          language="json"
-        />
-      )}
-    </Paper>
+        <CardContent sx={{ height: "350px" }}>
+          {options && plotData && <Scatter options={options} data={plotData} />}
+        </CardContent>
+      </Card>
+      <Dialog
+        fullWidth
+        maxWidth="xl"
+        open={showJson}
+        onClose={() => {
+          setShowJson(false);
+        }}
+      >
+        <DialogContent>
+          <Typography variant="h6">JSON</Typography>
+          <Editor
+            height="200px"
+            defaultLanguage="json"
+            defaultValue={JSON.stringify(selectedPlot, null, 2)}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
