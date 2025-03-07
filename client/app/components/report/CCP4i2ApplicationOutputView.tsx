@@ -28,6 +28,8 @@ import {
   Tooltip,
   Legend,
   LogarithmicScale,
+  BarElement,
+  BarController,
   ChartData,
   Scale,
   CoreScaleOptions,
@@ -47,7 +49,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { Preview } from "@mui/icons-material";
+import { BarChart, Preview } from "@mui/icons-material";
 
 ChartJS.register(
   CategoryScale,
@@ -55,6 +57,8 @@ ChartJS.register(
   LogarithmicScale,
   PointElement,
   LineElement,
+  BarElement,
+  BarController,
   Title,
   Tooltip,
   Legend,
@@ -168,10 +172,14 @@ export const CCP4i2ApplicationOutputView: React.FC<
     return result;
   }, [parsedDataBlocks, selectedPlot, allHeaders]);
 
-  const options = useMemo<ChartOptions<"scatter">>(() => {
+  const isBarChart = useMemo(() => {
+    return Boolean(selectedPlot?.barchart);
+  }, [selectedPlot]);
+
+  const options = useMemo<ChartOptions>(() => {
     if (!selectedPlot) return null;
-    const result: ChartOptions<"scatter"> = {
-      type: "scatter",
+    const result: ChartOptions = {
+      type: isBarChart ? "bar" : "scatter",
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
@@ -315,7 +323,11 @@ export const CCP4i2ApplicationOutputView: React.FC<
           }
         />
         <CardContent sx={{ height: "350px" }}>
-          {options && plotData && <Scatter options={options} data={plotData} />}
+          {options && plotData && selectedPlot?.plotline ? (
+            <Chart options={options} data={plotData} />
+          ) : options && plotData && selectedPlot?.barchart ? (
+            <Chart options={options} data={plotData} />
+          ) : null}
         </CardContent>
       </Card>
       <Dialog

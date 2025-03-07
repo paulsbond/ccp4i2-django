@@ -1,4 +1,4 @@
-import { ChartOptions } from "chart.js";
+import { ChartData, ChartDataset, ChartOptions } from "chart.js";
 import { data } from "jquery";
 import { parseStringPromise } from "xml2js";
 
@@ -292,7 +292,7 @@ export const extractDatasets = (
   selectedPlot: Plot,
   parsedDataBlocks: any,
   allHeaders: string[]
-) => {
+): ChartDataset[] | null => {
   if (!selectedPlot.plotline && !selectedPlot.barchart) return null;
   const nPlotlines: number = Array.isArray(selectedPlot.plotline)
     ? selectedPlot.plotline.length
@@ -312,7 +312,7 @@ export const extractDatasets = (
     ? [selectedPlot.plotline]
     : [];
 
-  const plotlineDatasets = plotlineList.map(
+  const plotlineDatasets: ChartDataset[] = plotlineList.map(
     (plotline: PlotLine, iPlotline: number) => {
       let dataAsGrid: any[][] = [];
       if (
@@ -339,7 +339,7 @@ export const extractDatasets = (
     : selectedPlot.barchart
     ? [selectedPlot.barchart]
     : [];
-  const barChartDatasets = barChartList.map(
+  const barChartDatasets: ChartDataset[] = barChartList.map(
     (barChart: BarChart, iBarChart: number) => {
       let dataAsGrid: any[][] = [];
       if (
@@ -361,7 +361,9 @@ export const extractDatasets = (
     }
   );
 
-  return plotlineDatasets.concat(barChartDatasets);
+  const result = plotlineDatasets.concat(barChartDatasets);
+  console.log("Result is", { result });
+  return result;
 };
 
 export const extractPlotLineDataset = (
@@ -369,9 +371,10 @@ export const extractPlotLineDataset = (
   allHeaders: string[],
   plotline: PlotLine,
   iPlotline: number
-) => {
-  const result = {
+): ChartDataset | null => {
+  const result: ChartDataset = {
     label: allHeaders[plotline.ycol - 1],
+    type: "scatter",
     labels: dataAsGrid.map((row: any) => row[parseInt(`${plotline.xcol}`) - 1]),
     yAxisID: plotline.rightaxis
       ? plotline.rightaxis === "true"
@@ -400,10 +403,14 @@ export const extractBarChartDataset = (
   allHeaders: string[],
   barChart: BarChart,
   iBarChart: number
-) => {
-  const result = {
+): ChartDataset | null => {
+  if (!barChart.col) return null;
+  if (!barChart.tcol) return null;
+
+  const result: ChartDataset = {
     label: allHeaders[barChart.tcol - 1],
     labels: dataAsGrid.map((row: any) => row[parseInt(`${barChart.col}`) - 1]),
+    type: "bar",
     yAxisID: barChart.rightaxis
       ? barChart.rightaxis === "true"
         ? "yAxisRight"
@@ -421,7 +428,6 @@ export const extractBarChartDataset = (
     borderColor: barChart.colour
       ? barChart.colour
       : colours[iBarChart % colours.length],
-    showLine: true,
   };
   return result;
 };
