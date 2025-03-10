@@ -62,7 +62,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
             <Grid2 key={key} size={{ xs: 12 }}>
               <CCP4i2TaskElement
                 {...props}
-                sx={{ my: 0, py: 0, minWidth: "100%", mr: 2 }}
+                sx={{ my: 0, py: 0, minWidth: "calc(100% - 4rem)", mr: 2 }}
                 itemName={`${item._objectPath}.${key}`}
                 qualifiers={{
                   ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
