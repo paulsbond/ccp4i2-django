@@ -1,4 +1,4 @@
-import { ChartData, ChartDataset, ChartOptions } from "chart.js";
+import { ChartOptions } from "chart.js";
 import { data } from "jquery";
 import { parseStringPromise } from "xml2js";
 
@@ -18,11 +18,196 @@ export interface CCP4ApplicationOutput {
   title?: string;
 }
 
-export interface CCP4Table {
-  headers?: Header[];
-  data?: Data[];
-  plot?: Plot[];
+interface CCP4TableInterface {
+  headers?: Header;
+  data?: Data | Data[];
+  plot?: Plot | Plot[];
   title?: string;
+}
+class CCP4Table implements CCP4TableInterface {
+  headers?: Header;
+  data?: Data | Data[];
+  plot?: Plot | Plot[];
+  title?: string;
+  _parsedDataBlocks?: any;
+  constructor(xmlFromJson: CCP4Table) {
+    this.headers = xmlFromJson.headers;
+    this.data = xmlFromJson.data;
+    this.plot = xmlFromJson.plot;
+    this.title = xmlFromJson.title;
+    this._parsedDataBlocks = parsedDataBlocks(this);
+  }
+  get parsedDataBlocks(): any {
+    return this._parsedDataBlocks;
+  }
+  get allPlots(): null | Plot[] {
+    if (!this.plot) return null;
+    if (Array.isArray(this.plot)) return this.plot;
+    else return [this.plot];
+  }
+  get allHeaders(): null | string[] {
+    if (!this.headers) return null;
+    let headers: string[];
+    if (typeof this.headers === "string" || this.headers instanceof String) {
+      headers = this.headers.split(" ");
+    } else {
+      console.log("Non string headers: ", this.headers);
+      let separator: string | RegExp | undefined = this.headers.separator;
+      if (!separator) separator = /\s+/;
+      headers = this.headers["_"]
+        .split(separator)
+        .map((header: string) => header.trim())
+        .filter((header: string) => header.length > 0);
+    }
+    console.log("Headers is", { headers });
+    return headers;
+  }
+  plotData(selectedPlot: Plot): null | any[] {
+    if (!selectedPlot || !this.parsedDataBlocks || !this.allHeaders)
+      return null;
+    const datasets = extractDatasets(
+      selectedPlot,
+      this.parsedDataBlocks,
+      this.allHeaders
+    );
+    if (!datasets) return null;
+    const result: any = {
+      datasets: datasets,
+    };
+    return result;
+  }
+  plotOptions(selectedPlot: Plot): null | ChartOptions {
+    if (!selectedPlot) return null;
+    const result: ChartOptions = {
+      type: selectedPlot.barchart ? "bar" : "scatter",
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: this.title,
+        },
+      },
+      scales: {
+        x: {
+          axis: "x",
+          type: "linear",
+          position: "bottom",
+          title: {
+            display: true,
+            text: selectedPlot?.xlabel ? selectedPlot.xlabel : "",
+          },
+          ticks: {
+            callback: (value: string | number, index: number) => {
+              if (typeof value === "string") {
+                return value;
+              } else if (Number.isInteger(value)) {
+                return value;
+              }
+              return value.toPrecision(3);
+            },
+          },
+        },
+        yAxisLeft: {
+          axis: "y",
+          type: "linear",
+          position: "left",
+          title: {
+            display: true,
+            text: selectedPlot?.ylabel ? selectedPlot.ylabel : "",
+          },
+          ticks: {
+            callback: (value: string | number, index: number) => {
+              if (typeof value === "string") {
+                return value;
+              } else if (Number.isInteger(value)) {
+                return value;
+              }
+              return value.toPrecision(3);
+            },
+          },
+        },
+      },
+    };
+
+    handleRangeSpecifiers(selectedPlot, result);
+
+    const plotlines = Array.isArray(selectedPlot.plotline)
+      ? selectedPlot.plotline
+      : selectedPlot.plotline
+      ? [selectedPlot.plotline]
+      : [];
+    if (
+      plotlines.filter((plotline: PlotLine) => plotline.showlegend === "false")
+        .length > 0
+    ) {
+      if (!result.plugins) result.plugins = {};
+      result.plugins.legend = {
+        display: false,
+      };
+    } else {
+      if (!result.plugins) result.plugins = {};
+      result.plugins.legend = {
+        display: true,
+        position: "chartArea",
+        customLegend: {
+          id: "customLegend",
+          afterDraw(chart) {
+            const ctx: CanvasRenderingContext2D = chart.ctx;
+            ctx.fillStyle = "rgba(255, 255, 255, 0.1)"; // Semi-transparent background
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; // Semi-transparent background
+            ctx.fillRect(
+              chart.chartArea.left + 20,
+              chart.chartArea.top + 10,
+              120,
+              30
+            ); // Positioning
+          },
+        },
+      };
+    }
+
+    if (selectedPlot.polygon) {
+      addPolygons(selectedPlot, result);
+    }
+
+    if (selectedPlot.circle) {
+      addCircles(selectedPlot, result);
+    }
+
+    if (selectedPlot.line) {
+      addLines(selectedPlot, result);
+    }
+
+    if (selectedPlot?.text) {
+      addTexts(selectedPlot, result);
+    }
+
+    if (selectedPlot?.xscale === "oneoversqrt") {
+      handleOneOverSqrt(selectedPlot, result);
+    }
+
+    //Custom tick scenarios
+    if (selectedPlot?.xintegral) {
+      handleXIntegral(selectedPlot, result);
+    }
+
+    if (selectedPlot?.customXLabels) {
+      handleCustomXLabels(selectedPlot, result);
+    }
+
+    if (
+      (selectedPlot?.xlabel === "Phi" && selectedPlot?.ylabel === "Psi") ||
+      selectedPlot?.fixaspectratio === "true"
+    ) {
+      result.maintainAspectRatio = true;
+      result.aspectRatio = 1;
+    }
+
+    console.log({ options: result });
+    return result;
+  }
 }
 
 export interface Header {
@@ -36,7 +221,7 @@ export interface Data {
   id?: string;
 }
 
-export interface Plot {
+class Plot {
   title?: string;
   plotline?: PlotLine[] | PlotLine;
   histogram?: Histogram[];
@@ -161,6 +346,15 @@ function stripNamespaces(xmlString: string): string {
   return serializer.serializeToString(xmlDoc);
 }
 
+/**
+ * Changes the tag name of elements in an XML string within a specified namespace.
+ *
+ * @param xmlString - The XML string to be modified.
+ * @param namespaceURI - The namespace URI of the elements to be changed.
+ * @param oldTagName - The current tag name of the elements to be changed.
+ * @param newTagName - The new tag name to replace the old tag name.
+ * @returns The modified XML string with the tag names changed.
+ */
 function changeTagNameNS(
   xmlString: string,
   namespaceURI: string,
@@ -203,6 +397,22 @@ function changeTagNameNS(
   return serializer.serializeToString(xmlDoc);
 }
 
+/**
+ * Changes the tag name of elements in an XML string.
+ *
+ * @param {string} xmlString - The XML string to process.
+ * @param {string} oldTagName - The old tag name to be replaced.
+ * @param {string} newTagName - The new tag name to replace with.
+ * @param {string} [namespaceURI] - Optional namespace URI to match and preserve.
+ * @returns {string} - The modified XML string with updated tag names.
+ *
+ * @example
+ * ```typescript
+ * const xml = `<root><oldTag>Content</oldTag></root>`;
+ * const result = changeTagName(xml, "oldTag", "newTag");
+ * console.log(result); // <root><newTag>Content</newTag></root>
+ * ```
+ */
 function changeTagName(
   xmlString: string,
   oldTagName: string,
@@ -255,6 +465,19 @@ function changeTagName(
   return serializer.serializeToString(xmlDoc);
 }
 
+/**
+ * Adds plot lines to the chart options based on the selected plot.
+ *
+ * @param {Plot} selectedPlot - The plot object containing plotline information.
+ * @param {ChartOptions} result - The chart options object to which plot lines will be added.
+ *
+ * @remarks
+ * - If the selected plot does not have any plotline, the function returns early.
+ * - The function processes the plotline(s) and filters those that should be displayed on the right axis.
+ * - If there are plotlines for the right axis, it ensures the `scales` property exists in the result and adds the right axis configuration.
+ * - The right axis configuration includes axis type, position, grid display, and title.
+ * - The ticks for the right axis are configured to display integer values as they are and non-integer values with a precision of 3 significant digits.
+ */
 export const addPlotLines = (selectedPlot: Plot, result: ChartOptions) => {
   if (!selectedPlot.plotline) return;
   const plotlineList: PlotLine[] = Array.isArray(selectedPlot?.plotline)
@@ -288,11 +511,19 @@ export const addPlotLines = (selectedPlot: Plot, result: ChartOptions) => {
   }
 };
 
+/**
+ * Extracts the datasets for a chart from the provided data blocks.
+ *
+ * @param {Plot} selectedPlot - The plot object containing the chart configuration.
+ * @param {object} parsedDataBlocks - The parsed data blocks from the CCP4 XML output.
+ * @param {string[]} allHeaders - An array of all header strings.
+ * @returns {any[]} An array of objects representing the datasets for the chart.
+ */
 export const extractDatasets = (
   selectedPlot: Plot,
   parsedDataBlocks: any,
   allHeaders: string[]
-): ChartDataset[] | null => {
+) => {
   if (!selectedPlot.plotline && !selectedPlot.barchart) return null;
   const nPlotlines: number = Array.isArray(selectedPlot.plotline)
     ? selectedPlot.plotline.length
@@ -312,7 +543,7 @@ export const extractDatasets = (
     ? [selectedPlot.plotline]
     : [];
 
-  const plotlineDatasets: ChartDataset[] = plotlineList.map(
+  const plotlineDatasets = plotlineList.map(
     (plotline: PlotLine, iPlotline: number) => {
       let dataAsGrid: any[][] = [];
       if (
@@ -339,7 +570,7 @@ export const extractDatasets = (
     : selectedPlot.barchart
     ? [selectedPlot.barchart]
     : [];
-  const barChartDatasets: ChartDataset[] = barChartList.map(
+  const barChartDatasets = barChartList.map(
     (barChart: BarChart, iBarChart: number) => {
       let dataAsGrid: any[][] = [];
       if (
@@ -361,20 +592,26 @@ export const extractDatasets = (
     }
   );
 
-  const result = plotlineDatasets.concat(barChartDatasets);
-  console.log("Result is", { result });
-  return result;
+  return plotlineDatasets.concat(barChartDatasets);
 };
 
+/**
+ * Extracts a dataset for a plot line from the provided grid data.
+ *
+ * @param dataAsGrid - A 2D array representing the grid data.
+ * @param allHeaders - An array of all header strings.
+ * @param plotline - An object representing the plot line configuration.
+ * @param iPlotline - The index of the current plot line.
+ * @returns An object representing the dataset for the plot line.
+ */
 export const extractPlotLineDataset = (
   dataAsGrid: any[][],
   allHeaders: string[],
   plotline: PlotLine,
   iPlotline: number
-): ChartDataset | null => {
-  const result: ChartDataset = {
+) => {
+  const result = {
     label: allHeaders[plotline.ycol - 1],
-    type: "scatter",
     labels: dataAsGrid.map((row: any) => row[parseInt(`${plotline.xcol}`) - 1]),
     yAxisID: plotline.rightaxis
       ? plotline.rightaxis === "true"
@@ -398,19 +635,26 @@ export const extractPlotLineDataset = (
   return result;
 };
 
+/**
+ * Extracts a dataset for a bar chart from the provided grid data.
+ *
+ * @param dataAsGrid - A 2D array representing the grid data.
+ * @param allHeaders - An array of all header strings.
+ * @param barChart - An object representing the bar chart configuration.
+ * @param iBarChart - The index of the current bar chart.
+ * @returns An object representing the dataset for the bar chart, or null if the required columns are not specified.
+ */
 export const extractBarChartDataset = (
   dataAsGrid: any[][],
   allHeaders: string[],
   barChart: BarChart,
   iBarChart: number
-): ChartDataset | null => {
-  if (!barChart.col) return null;
-  if (!barChart.tcol) return null;
-
-  const result: ChartDataset = {
+) => {
+  if (!barChart?.col) return null;
+  if (!barChart?.tcol) return null;
+  const result = {
     label: allHeaders[barChart.tcol - 1],
     labels: dataAsGrid.map((row: any) => row[parseInt(`${barChart.col}`) - 1]),
-    type: "bar",
     yAxisID: barChart.rightaxis
       ? barChart.rightaxis === "true"
         ? "yAxisRight"
@@ -428,11 +672,22 @@ export const extractBarChartDataset = (
     borderColor: barChart.colour
       ? barChart.colour
       : colours[iBarChart % colours.length],
+    showLine: true,
   };
   return result;
 };
 
-export const addLines = (selectedPlot: Plot, result: ChartOptions) => {
+/**
+ * Adds lines to the chart options for annotation purposes.
+ *
+ * @param selectedPlot - The plot object containing line data.
+ * @param result - The chart options object to which the lines will be added.
+ *
+ * The function checks if the selected plot has line annotations. If it does, it processes
+ * each line annotation and adds it to the chart options under the `plugins.annotation.annotations` property.
+ * Each line annotation is configured with properties such as start and end points, draw time, and color.
+ */
+export const addLines = (selectedPlot: Plot, result: ChartOptions): void => {
   if (!selectedPlot.line) return;
   let lines: any[] = [];
   if (Array.isArray(selectedPlot.line)) {
@@ -464,6 +719,12 @@ export const addLines = (selectedPlot: Plot, result: ChartOptions) => {
   });
 };
 
+/**
+ * Adds polygons to the chart options for annotation purposes.
+ *
+ * @param {Plot} selectedPlot - The plot object containing polygon data.
+ * @param {ChartOptions} result - The chart options object to which the polygons will be added.
+ */
 export const addPolygons = (selectedPlot: Plot, result: ChartOptions) => {
   let polygons: any[] = [];
   if (Array.isArray(selectedPlot.polygon)) {
@@ -516,6 +777,12 @@ export const addPolygons = (selectedPlot: Plot, result: ChartOptions) => {
   });
 };
 
+/**
+ * Adds circle annotations to the given chart options based on the selected plot.
+ *
+ * @param {Plot} selectedPlot - The plot containing circle data to be added as annotations.
+ * @param {ChartOptions} result - The chart options object where the circle annotations will be added.
+ */
 export const addCircles = (selectedPlot: Plot, result: ChartOptions) => {
   let circles: any[] = [];
   if (Array.isArray(selectedPlot.circle)) {
@@ -548,6 +815,16 @@ export const addCircles = (selectedPlot: Plot, result: ChartOptions) => {
   });
 };
 
+/**
+ * Adds text annotations to the given chart options based on the selected plot.
+ *
+ * @param selectedPlot - The plot object containing text annotations to be added.
+ * @param result - The chart options object where the text annotations will be added.
+ *
+ * The function checks if the selected plot has text annotations. If it does, it processes
+ * each text annotation and adds it to the chart options under the `plugins.annotation.annotations` property.
+ * Each text annotation is configured with properties such as position, background color, content, color, font, padding, and border radius.
+ */
 export const addTexts = (selectedPlot: Plot, result: ChartOptions) => {
   if (selectedPlot?.text) {
     let texts: any[] = [];
@@ -580,10 +857,17 @@ export const addTexts = (selectedPlot: Plot, result: ChartOptions) => {
   }
 };
 
-export const handleOneOverSqrt = (
-  selectedPlot: Plot,
-  result: ChartOptions<"scatter">
-) => {
+/**
+ * Adjusts the chart options for a scatter plot to display the x-axis values as the inverse of their square roots.
+ *
+ * @param selectedPlot - The plot object that is selected.
+ * @param result - The chart options for a scatter plot that will be modified.
+ *
+ * This function modifies the provided `result` object to:
+ * - Set the x-axis tick labels to the inverse of the square root of the original values, formatted to 3 significant digits.
+ * - Customize the tooltip to display the x-axis value as the inverse of its square root, along with the dataset label and y-axis value.
+ */
+export const handleOneOverSqrt = (selectedPlot: Plot, result: ChartOptions) => {
   if (!result.scales) result.scales = {};
   if (!result.scales.x) result.scales.x = {};
   result.scales.x.ticks = {
@@ -601,10 +885,26 @@ export const handleOneOverSqrt = (
   };
 };
 
-export const handleXIntegral = (
-  selectedPlot: Plot,
-  result: ChartOptions<"scatter">
-) => {
+/**
+ * Adjusts the x-axis scale of a scatter chart to display integer steps if the selected plot requires it.
+ *
+ * @param selectedPlot - The plot object containing configuration details.
+ * @param result - The chart options object to be modified.
+ *
+ * @remarks
+ * This function modifies the `result` object to ensure that the x-axis displays integer steps
+ * if the `xintegral` property of the `selectedPlot` is set to "true". It sets the `stepSize` to 1
+ * and hides non-integer labels on the x-axis.
+ *
+ * @example
+ * ```typescript
+ * const selectedPlot = { xintegral: "true" };
+ * const result = { scales: { x: {} } };
+ * handleXIntegral(selectedPlot, result);
+ * // result.scales.x.ticks will be set to force integer steps and hide non-integer labels
+ * ```
+ */
+export const handleXIntegral = (selectedPlot: Plot, result: ChartOptions) => {
   if (!result.scales) result.scales = {};
   if (!result.scales.x) result.scales.x = {};
   if (selectedPlot.xintegral && selectedPlot.xintegral === "true") {
@@ -615,9 +915,27 @@ export const handleXIntegral = (
   }
 };
 
+/**
+ * Updates the x-axis tick labels of a scatter chart with custom labels.
+ *
+ * @param selectedPlot - The plot object containing custom X labels.
+ * @param result - The chart options object for a scatter chart.
+ *
+ * @remarks
+ * If `selectedPlot.customXLabels` is defined, this function will split the labels by commas
+ * and assign them to the x-axis ticks based on their index. If not defined, it will return an empty string.
+ *
+ * @example
+ * ```typescript
+ * const plot = { customXLabels: "Label1,Label2,Label3" };
+ * const chartOptions = { scales: { x: { ticks: {} } } };
+ * handleCustomXLabels(plot, chartOptions);
+ * // chartOptions.scales.x.ticks.callback will now use the custom labels
+ * ```
+ */
 export const handleCustomXLabels = (
   selectedPlot: Plot,
-  result: ChartOptions<"scatter">
+  result: ChartOptions
 ) => {
   //@ts-ignore
   result.scales.x.ticks = {
@@ -630,9 +948,25 @@ export const handleCustomXLabels = (
   };
 };
 
+/**
+ * Updates the `result` ChartOptions object with the range specifiers from the `selectedPlot`.
+ *
+ * @param selectedPlot - The plot object containing the range specifiers for x and y axes.
+ * @param result - The ChartOptions object to be updated with the range specifiers.
+ *
+ * The function checks for the presence of `xrange` and `yrange` properties in the `selectedPlot` object.
+ * If these properties are present, it updates the corresponding `min` and `max` values in the `result` object.
+ *
+ * - If `selectedPlot.xrange.min` is defined, it sets `result.scales.x.min` to this value.
+ * - If `selectedPlot.xrange.max` is defined, it sets `result.scales.x.max` to this value.
+ * - If `selectedPlot.yrange.min` is defined, it sets `result.scales.yAxisLeft.min` to this value.
+ * - If `selectedPlot.yrange.max` is defined, it sets `result.scales.yAxisLeft.max` to this value.
+ *
+ * The function ensures that the `scales` and `x`/`yAxisLeft` objects are initialized before setting the values.
+ */
 export const handleRangeSpecifiers = (
   selectedPlot: Plot,
-  result: ChartOptions<"scatter">
+  result: ChartOptions
 ) => {
   if (selectedPlot?.xrange?.min) {
     if (!result?.scales) result.scales = {};
@@ -656,6 +990,45 @@ export const handleRangeSpecifiers = (
   }
 };
 
+const parsedDataBlocks = (graph: CCP4Table) => {
+  if (graph) {
+    let dataBlocks: any = {};
+    if (Array.isArray(graph.data)) {
+      dataBlocks = graph.data;
+    } else {
+      dataBlocks = [graph.data];
+    }
+    let parsedDataBlocks: any = {};
+
+    dataBlocks.forEach((dataBlock: any) => {
+      let actualRows: string = dataBlock;
+      let dataBlockId: string = "_";
+      if (typeof dataBlock === "object") {
+        actualRows = dataBlock["_"];
+        if (dataBlock.id) {
+          dataBlockId = dataBlock.id;
+        }
+      }
+      const data = actualRows.replace(/^\n/, ""); // Remove leading newline;
+      const blockRows = data.split("\n");
+      const parsedBlockRows: any[][] = blockRows.map((row: string) =>
+        row.split(/\s+/).filter((item: string) => item.trim().length > 0)
+      );
+      parsedDataBlocks[dataBlockId] = parsedBlockRows;
+    });
+    return parsedDataBlocks;
+  }
+  return null;
+};
+
+/**
+ * Converts a color name to an RGBA string with the specified alpha value.
+ *
+ * @param colorName - The name of the color to convert (e.g., "red", "blue").
+ * @param alpha - The alpha value for the RGBA color (default is 0.5). Must be between 0 and 1.
+ * @returns The RGBA string representation of the color.
+ * @throws Will throw an error if the alpha value is not between 0 and 1 or if the color name is invalid.
+ */
 export function colorNameToRGBA(
   colorName: string,
   alpha: number = 0.5
@@ -687,6 +1060,15 @@ export function colorNameToRGBA(
   return `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${alpha})`;
 }
 
+/**
+ * Converts a hex color code to an RGBA color string.
+ *
+ * @param {string} hex - The hex color code in the format #RRGGBB or #RGB.
+ * @param {number} [alpha=0.5] - The alpha value for the RGBA color, between 0 and 1.
+ * @returns {string} The RGBA color string.
+ * @throws {Error} If the alpha value is not between 0 and 1.
+ * @throws {Error} If the hex color code is invalid.
+ */
 export function hexToRGBA(hex: string, alpha: number = 0.5): string {
   // Ensure alpha value is between 0 and 1
   if (alpha < 0 || alpha > 1) {

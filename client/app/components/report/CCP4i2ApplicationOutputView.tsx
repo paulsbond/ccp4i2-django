@@ -1,40 +1,34 @@
 import { Editor } from "@monaco-editor/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addCircles,
   addLines,
   addPolygons,
   addTexts,
-  colorNameToRGBA,
-  extractDataset,
   extractDatasets,
   handleCustomXLabels,
   handleOneOverSqrt,
   handleRangeSpecifiers,
   handleXIntegral,
-  hexToRGBA,
   parseXML,
   Plot,
   PlotLine,
 } from "./ChartLib";
+
 import {
   Chart as ChartJS,
-  ChartOptions,
   CategoryScale,
   LinearScale,
   PointElement,
+  BarElement,
   LineElement,
   Title,
   Tooltip,
   Legend,
-  LogarithmicScale,
-  BarElement,
-  BarController,
-  ChartData,
-  Scale,
-  CoreScaleOptions,
+  ChartOptions,
 } from "chart.js";
-import { Chart, ChartProps, Line, Scatter } from "react-chartjs-2";
+import { Chart, Bar, Scatter } from "react-chartjs-2";
+
 import annotationPlugin from "chartjs-plugin-annotation";
 import { parse } from "path";
 import {
@@ -49,16 +43,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { BarChart, Preview } from "@mui/icons-material";
+import { Preview } from "@mui/icons-material";
 
+// Register components for both Scatter and Bar charts
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  LogarithmicScale,
   PointElement,
-  LineElement,
   BarElement,
-  BarController,
+  LineElement,
   Title,
   Tooltip,
   Legend,
@@ -85,6 +78,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
   const [parsedOutput, setParsedOutput] = useState<any | null>(null);
   const [selectedPlot, setSelectedPlot] = useState<Plot | null>(null);
   const [showJson, setShowJson] = useState(false);
+  const chartRef = useRef(null);
 
   useEffect(() => {
     const asyncEffect = async () => {
@@ -246,6 +240,26 @@ export const CCP4i2ApplicationOutputView: React.FC<
       result.plugins.legend = {
         display: false,
       };
+    } else {
+      if (!result.plugins) result.plugins = {};
+      result.plugins.legend = {
+        display: true,
+        position: "chartArea",
+        customLegend: {
+          id: "customLegend",
+          afterDraw(chart) {
+            const ctx: CanvasRenderingContext2D = chart.ctx;
+            ctx.fillStyle = "rgba(255, 255, 255, 0.1)"; // Semi-transparent background
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; // Semi-transparent background
+            ctx.fillRect(
+              chart.chartArea.left + 20,
+              chart.chartArea.top + 10,
+              120,
+              30
+            ); // Positioning
+          },
+        },
+      };
     }
 
     if (selectedPlot.polygon) {
@@ -296,7 +310,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
           title={
             allPlots &&
             selectedPlot &&
-            allPlots.length > 1 && (
+            allPlots.length > 0 && (
               <Autocomplete
                 sx={{ mt: 1, mb: 1, px: 0, py: 0 }}
                 options={allPlots}
@@ -305,6 +319,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
                 onChange={(event, newValue) => {
                   setSelectedPlot(newValue);
                 }}
+                disabled={allPlots.length === 1}
                 value={selectedPlot}
                 renderInput={(params) => (
                   <TextField {...params} size="small" label="Plot" />
@@ -322,11 +337,11 @@ export const CCP4i2ApplicationOutputView: React.FC<
             </Button>
           }
         />
-        <CardContent sx={{ height: "350px" }}>
+        <CardContent sx={{ height: "400px" }}>
           {options && plotData && selectedPlot?.plotline ? (
-            <Chart options={options} data={plotData} />
+            <Scatter options={options} data={plotData} />
           ) : options && plotData && selectedPlot?.barchart ? (
-            <Chart options={options} data={plotData} />
+            <Bar options={options} data={plotData} />
           ) : null}
         </CardContent>
       </Card>
