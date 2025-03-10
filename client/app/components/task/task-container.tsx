@@ -1,4 +1,4 @@
-import { useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../app-context";
 import { useApi } from "../../api";
 import { Job } from "../../models";
@@ -13,25 +13,71 @@ import { useJob } from "../../utils";
 export interface CCP4i2TaskInterfaceProps {
   job: Job;
 }
+interface TaskInterfaceContextProps {
+  errorInfoAnchor: HTMLElement | null;
+  setErrorInfoAnchor: (el: HTMLElement) => void;
+  errorInfoItem: any | null;
+  setErrorInfoItem: (item: any) => void;
+}
+export const TaskInterfaceContext = createContext<TaskInterfaceContextProps>({
+  errorInfoAnchor: null,
+  setErrorInfoAnchor: (item: any) => {},
+  errorInfoItem: null,
+  setErrorInfoItem: (item: any) => {},
+});
 
 export const TaskContainer = () => {
   const api = useApi();
   const { jobId } = useContext(CCP4i2Context);
   const { job, container } = useJob(jobId);
+  const [errorInfoAnchor, setErrorInfoAnchor] = useState<HTMLElement | null>(
+    null
+  );
+  const [errorInfoItem, setErrorInfoItem] = useState<any | null>(null);
   const taskInterface = useMemo(() => {
     switch (job?.task_name) {
       case null:
         return <LinearProgress />;
       case "prosmart_refmac":
-        return <ProsmartRefmacInterface {...{ job }} />;
+        return (
+          <ProsmartRefmacInterface
+            {...{
+              job,
+            }}
+          />
+        );
       case "SubstituteLigand":
-        return <SubstituteLigandInterface {...{ job }} />;
+        return (
+          <SubstituteLigandInterface
+            {...{
+              job,
+            }}
+          />
+        );
       case "aimless_pipe":
-        return <AimlessPipeInterface {...{ job }} />;
+        return (
+          <AimlessPipeInterface
+            {...{
+              job,
+            }}
+          />
+        );
       case "crank2":
-        return <Crank2Interface {...{ job }} />;
+        return (
+          <Crank2Interface
+            {...{
+              job,
+            }}
+          />
+        );
       default:
-        return <GenericInterface {...{ job }} />;
+        return (
+          <GenericInterface
+            {...{
+              job,
+            }}
+          />
+        );
     }
   }, [job, container]);
 
@@ -40,8 +86,17 @@ export const TaskContainer = () => {
   if (!job) return <LinearProgress />;
 
   return (
-    <Paper sx={{ maxHeight: "calc(100vh - 15rem)", overflowY: "auto" }}>
-      {taskInterface}
-    </Paper>
+    <TaskInterfaceContext.Provider
+      value={{
+        errorInfoAnchor,
+        setErrorInfoAnchor,
+        errorInfoItem,
+        setErrorInfoItem,
+      }}
+    >
+      <Paper sx={{ maxHeight: "calc(100vh - 15rem)", overflowY: "auto" }}>
+        {taskInterface}
+      </Paper>
+    </TaskInterfaceContext.Provider>
   );
 };

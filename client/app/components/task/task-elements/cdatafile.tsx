@@ -15,6 +15,7 @@ import { CCP4i2TaskElementProps } from "./task-element";
 import { File as CCP4i2File, Job, nullFile, Project } from "../../../models";
 import { CDataFile } from "../../../cdata_types";
 import {
+  ChangeEvent,
   ReactNode,
   SyntheticEvent,
   useCallback,
@@ -52,7 +53,7 @@ const VisuallyHiddenInput = styled("input")({
 });
 
 interface InputFileUploadProps {
-  handleFileChange: (files: FileList | null) => void;
+  handleFileChange: (ev: ChangeEvent<HTMLInputElement>) => void;
   disabled: boolean;
   accept: string;
   sx?: SxProps;
@@ -77,9 +78,7 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
       <VisuallyHiddenInput
         disabled={disabled}
         type="file"
-        onChange={(event) => {
-          handleFileChange(event.target.files);
-        }}
+        onChange={handleFileChange}
         accept={accept}
         sx={sx}
       />
@@ -272,7 +271,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  const defaultSetFile = (files: FileList | null) => {};
+  const handleFileChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    if (props.setFiles) props.setFiles(ev.currentTarget.files);
+  };
 
   return (
     inferredVisibility && (
@@ -318,7 +319,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           accept={item._qualifiers.fileExtensions
             .map((ext: string) => `.${ext}`)
             .join(",")}
-          handleFileChange={props.setFiles || defaultSetFile}
+          handleFileChange={handleFileChange}
         />
 
         <ErrorInfo {...props}>

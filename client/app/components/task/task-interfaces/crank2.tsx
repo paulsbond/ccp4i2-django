@@ -20,9 +20,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         qualifiers={{ guiLabel: "Ligand geometry" }}
         containerHint="BlockLevel"
       >
-        {itemList.map((itemName) => (
-          <CCP4i2TaskElement key={itemName} {...props} itemName={itemName} />
-        ))}
+        {itemList
+          .filter((item: any, iItem: number) => iItem < 30)
+          .map((itemName) => (
+            <CCP4i2TaskElement key={itemName} {...props} itemName={itemName} />
+          ))}
       </CContainerElement>
     </>
   );
