@@ -76,7 +76,9 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
             job={job}
           />*/
         }
-      } else if (["CCP4i2ReportGeneric"].includes(tagName)) {
+      } else if (
+        ["CCP4i2ReportGeneric", "CCP4i2ReportGenericElement"].includes(tagName)
+      ) {
         return (
           <CCP4i2ReportGeneric
             key={`${iItem}`}
