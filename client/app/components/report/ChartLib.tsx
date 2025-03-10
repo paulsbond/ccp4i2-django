@@ -1,5 +1,4 @@
-import { ChartOptions } from "chart.js";
-import { data } from "jquery";
+import { ChartData, ChartOptions } from "chart.js";
 import { parseStringPromise } from "xml2js";
 
 const colours = [
@@ -12,7 +11,7 @@ const colours = [
 ];
 
 export interface CCP4ApplicationOutput {
-  CCP4Table?: CCP4Table[];
+  CCP4Table?: CCP4Table | CCP4Table[];
   Fonts?: Fonts;
   CCP4Surface?: Surface;
   title?: string;
@@ -24,7 +23,7 @@ interface CCP4TableInterface {
   plot?: Plot | Plot[];
   title?: string;
 }
-class CCP4Table implements CCP4TableInterface {
+export class CCP4Table implements CCP4TableInterface {
   headers?: Header;
   data?: Data | Data[];
   plot?: Plot | Plot[];
@@ -62,7 +61,8 @@ class CCP4Table implements CCP4TableInterface {
     console.log("Headers is", { headers });
     return headers;
   }
-  plotData(selectedPlot: Plot): null | any[] {
+
+  plotData(selectedPlot: Plot): ChartData<"bar" | "scatter"> | null {
     if (!selectedPlot || !this.parsedDataBlocks || !this.allHeaders)
       return null;
     const datasets = extractDatasets(
@@ -76,10 +76,10 @@ class CCP4Table implements CCP4TableInterface {
     };
     return result;
   }
+
   plotOptions(selectedPlot: Plot): null | ChartOptions {
     if (!selectedPlot) return null;
     const result: ChartOptions = {
-      type: selectedPlot.barchart ? "bar" : "scatter",
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
@@ -151,20 +151,6 @@ class CCP4Table implements CCP4TableInterface {
       result.plugins.legend = {
         display: true,
         position: "chartArea",
-        customLegend: {
-          id: "customLegend",
-          afterDraw(chart) {
-            const ctx: CanvasRenderingContext2D = chart.ctx;
-            ctx.fillStyle = "rgba(255, 255, 255, 0.1)"; // Semi-transparent background
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; // Semi-transparent background
-            ctx.fillRect(
-              chart.chartArea.left + 20,
-              chart.chartArea.top + 10,
-              120,
-              30
-            ); // Positioning
-          },
-        },
       };
     }
 
@@ -221,7 +207,7 @@ export interface Data {
   id?: string;
 }
 
-class Plot {
+export class Plot {
   title?: string;
   plotline?: PlotLine[] | PlotLine;
   histogram?: Histogram[];
@@ -715,7 +701,9 @@ export const addLines = (selectedPlot: Plot, result: ChartOptions): void => {
           : line.fillcolour
         : "rgba(0,0,0,0)",
     };
-    result.plugins.annotation.annotations[`line-${iLine}`] = lineObject;
+    (result.plugins.annotation.annotations as Record<string, any>)[
+      `line-${iLine}`
+    ] = lineObject;
   });
 };
 
@@ -773,7 +761,9 @@ export const addPolygons = (selectedPlot: Plot, result: ChartOptions) => {
         : "rgba(0,0,0,0)",
       strokeColor: polygon.linecolour || "rgba(0,0,0,1)",
     };
-    result.plugins.annotation.annotations[`polygon-${iPolygon}`] = boxObject;
+    (result.plugins.annotation.annotations as Record<string, any>)[
+      `polygon-${iPolygon}`
+    ] = boxObject;
   });
 };
 
@@ -811,7 +801,9 @@ export const addCircles = (selectedPlot: Plot, result: ChartOptions) => {
         : "rgba(0,0,0,0)",
       strokeColor: circle.linecolour,
     };
-    result.plugins.annotation.annotations[`circle-${iCircle}`] = circleObject;
+    (result.plugins.annotation.annotations as Record<string, any>)[
+      `circle-${iCircle}`
+    ] = circleObject;
   });
 };
 
@@ -852,7 +844,9 @@ export const addTexts = (selectedPlot: Plot, result: ChartOptions) => {
       if (!result.plugins.annotation) result.plugins.annotation = {};
       if (!result.plugins.annotation.annotations)
         result.plugins.annotation.annotations = {};
-      result.plugins.annotation.annotations[`text-${iText}`] = textObject;
+      (result.plugins.annotation.annotations as Record<string, any>)[
+        `text-${iText}`
+      ] = textObject;
     });
   }
 };
@@ -875,7 +869,8 @@ export const handleOneOverSqrt = (selectedPlot: Plot, result: ChartOptions) => {
       (1 / Math.sqrt(value)).toPrecision(3), // Hide non-integer labels
   };
   if (!result.plugins) result.plugins = {};
-  result.tooltip = {
+  if (!result.plugins) result.plugins = {};
+  result.plugins.tooltip = {
     callbacks: {
       label: (tooltipItem: any) =>
         `Res: ${(1 / Math.sqrt(tooltipItem.raw.x)).toPrecision(3)}, ${
