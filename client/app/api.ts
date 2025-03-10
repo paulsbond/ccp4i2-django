@@ -156,8 +156,11 @@ export function useApi() {
       });
     },
 
-    get_endpoint_xml: function <XMLDocument>(endpointFetch: EndpointFetch) {
-      return useSWR(endpointFetch, endpoint_xml_fetcher);
+    get_endpoint_xml: function <XMLDocument>(
+      endpointFetch: EndpointFetch,
+      refreshInterval: number = 0
+    ) {
+      return useSWR(endpointFetch, endpoint_xml_fetcher, { refreshInterval });
     },
 
     follow_endpoint_xml: function (endpointFetch: EndpointFetch) {

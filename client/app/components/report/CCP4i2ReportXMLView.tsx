@@ -18,20 +18,14 @@ export const CCP4i2ReportXMLView = () => {
   const api = useApi();
   const { jobId } = useContext(CCP4i2Context);
   const { data: job, mutate: mutateJob } = api.follow<Job>(`jobs/${jobId}`);
-  const { data: report_xml, mutate: mutateReportXml } =
-    job?.status == 3
-      ? api.follow_endpoint_xml({
-          type: "jobs",
-          id: jobId,
-          endpoint: "report_xml",
-        })
-      : api.get_endpoint_xml({
-          type: "jobs",
-          id: jobId,
-          endpoint: "report_xml",
-        });
-
-  if (!job) return <LinearProgress />;
+  const { data: report_xml, mutate: mutateReportXml } = api.get_endpoint_xml(
+    {
+      type: "jobs",
+      id: jobId,
+      endpoint: "report_xml",
+    },
+    job?.status == 3 ? 5000 : 0
+  );
 
   const bodyNode = useMemo<JQuery<XMLDocument> | null>(() => {
     if (report_xml) {
@@ -96,7 +90,9 @@ export const CCP4i2ReportXMLView = () => {
 
   if (!bodyNode) return <Skeleton />;
 
-  return (
+  return !job ? (
+    <LinearProgress />
+  ) : (
     <Paper
       sx={{
         width: "100%",

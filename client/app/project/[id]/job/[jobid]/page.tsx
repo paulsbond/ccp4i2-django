@@ -8,7 +8,7 @@ import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportX
 import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidget";
 import { CCP4i2Context } from "../../../../app-context";
 import { TaskContainer } from "../../../../components/task/task-container";
-import { useJob, useProject } from "../../../../utils";
+import { useJob, usePrevious, useProject } from "../../../../utils";
 import ToolBar from "../../../../components/tool-bar";
 import { parseTables } from "../../../../components/report/CCP4i2ParsePimple";
 import { parseXML } from "../../../../components/report/ChartLib";
@@ -41,7 +41,9 @@ export default function JobPage({
     container,
   } = useJob(job?.id);
 
-  const [tabValue, setTabValue] = useState<Number>(8);
+  const previousJob = usePrevious(job);
+
+  const [tabValue, setTabValue] = useState<Number>(job?.status == 1 ? 0 : 3);
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
   };
@@ -51,25 +53,16 @@ export default function JobPage({
       if (job && setJobId) {
         setJobId(job.id);
       }
+      if (job && job != previousJob) {
+        setTabValue(job.status == 1 ? 0 : [3, 6].includes(job.status) ? 3 : 4);
+      }
     };
     asyncFunc();
   }, [job, setJobId]);
-  if (!project || !jobs || !job) return <LinearProgress />;
-  /*
-  const reportTables: any[] = useMemo(() => {
-    if (report_xml) {
-      var newCharts = [];
-      var newTables = $(report_xml).find("ccp4_data").toArray();
-      if (newTables.length === 0) {
-        newTables = $(report_xml).find("ccp4\\:ccp4_data").toArray();
-      }
-      return parseTables(newTables);
-    }
-    return [];
-  }, [report_xml]);
-*/
 
-  return (
+  return !project || !jobs || !job ? (
+    <LinearProgress />
+  ) : (
     <>
       <ToolBar />
       <Container>

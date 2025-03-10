@@ -19,8 +19,9 @@ export const TaskContainer = () => {
   const { jobId } = useContext(CCP4i2Context);
   const { job, container } = useJob(jobId);
   const taskInterface = useMemo(() => {
-    if (!job || !container) return <LinearProgress />;
-    switch (job.task_name) {
+    switch (job?.task_name) {
+      case null:
+        return <LinearProgress />;
       case "prosmart_refmac":
         return <ProsmartRefmacInterface {...{ job }} />;
       case "SubstituteLigand":
@@ -35,6 +36,7 @@ export const TaskContainer = () => {
   }, [job, container]);
 
   if (!jobId) return <LinearProgress />;
+  if (!container) return <LinearProgress />;
   if (!job) return <LinearProgress />;
 
   return (
