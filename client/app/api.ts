@@ -143,7 +143,7 @@ export function useApi() {
     },
 
     follow: function <T>(endpoint: string) {
-      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 5000 });
+      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 10000 });
     },
 
     get_endpoint: function <T>(endpointFetch: EndpointFetch) {
@@ -152,7 +152,7 @@ export function useApi() {
 
     follow_endpoint: function <T>(endpointFetch: EndpointFetch) {
       return useSWR<T>(endpointFetch, endpoint_fetcher as any, {
-        refreshInterval: 5000,
+        refreshInterval: 10000,
       });
     },
 
@@ -165,7 +165,7 @@ export function useApi() {
 
     follow_endpoint_xml: function (endpointFetch: EndpointFetch) {
       return useSWR(endpointFetch, endpoint_xml_fetcher, {
-        refreshInterval: 5000,
+        refreshInterval: 10000,
       });
     },
 
