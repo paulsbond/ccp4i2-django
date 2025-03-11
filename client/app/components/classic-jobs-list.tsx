@@ -220,7 +220,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
             .map((item: JobCharValue) => (
               <Chip
                 key={item.key}
-                avatar={<div style={{ width: "5rem" }}>{item.key}</div>}
+                avatar={<div style={{ width: "4rem" }}>{item.key}</div>}
                 label={item.value}
               />
             ))}
@@ -231,7 +231,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
               <Chip
                 key={item.key}
                 sx={{ backgroundColor: "#DFD" }}
-                avatar={<div style={{ width: "5rem" }}>{item.key}</div>}
+                avatar={<div style={{ width: "4rem" }}>{item.key}</div>}
                 label={item.value.toPrecision(3)}
               />
             ))}
