@@ -19,6 +19,7 @@ import {
   ReactNode,
   SyntheticEvent,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -26,7 +27,8 @@ import {
 } from "react";
 import { Folder } from "@mui/icons-material";
 import { useJob } from "../../../utils";
-import { ErrorInfo } from "./error-info";
+import { ErrorInfo, ErrorTrigger } from "./error-info";
+import { TaskInterfaceContext } from "../task-container";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -98,10 +100,16 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const api = useApi();
   const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
+  const {
+    errorInfoAnchor,
+    setErrorInfoAnchor,
+    errorInfoItem,
+    setErrorInfoItem,
+    inFlight,
+    setInFlight,
+  } = useContext(TaskInterfaceContext);
   //return <Typography>"{itemName}",</Typography>;
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
     null
   );
@@ -117,7 +125,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       return { objectPath: item._objectPath, qualifiers: item._qualifiers };
     return { objectPath: null, qualifiers: null };
   }, [item]);
-  const [inFlight, setInFlight] = useState(false);
 
   const { data: project_files, mutate: mutateFiles } = api.get_endpoint<
     CCP4i2File[]
@@ -321,17 +328,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
             .join(",")}
           handleFileChange={handleFileChange}
         />
-
-        <ErrorInfo {...props}>
-          {infoContent}
-          {JSON.stringify(value)}
-        </ErrorInfo>
-        <LinearProgress
-          ref={progressRef}
-          sx={{ height: "2rem", width: "4rem", mt: 1.5 }}
-          variant={inFlight ? "indeterminate" : "determinate"}
-          value={0}
-        />
+        <ErrorTrigger {...{ item, job }} />
       </Stack>
     )
   );

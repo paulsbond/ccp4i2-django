@@ -1,32 +1,86 @@
 import {
   Button,
   ClickAwayListener,
+  LinearProgress,
   Popper,
   Table,
+  TableBody,
   TableRow,
   Typography,
 } from "@mui/material";
 import { Box } from "@mui/system";
-import { useMemo, useState } from "react";
+import {
+  SyntheticEvent,
+  use,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { Info } from "@mui/icons-material";
 import { useJob } from "../../../utils";
+import { TaskInterfaceContext } from "../task-container";
+import { Job } from "../../../models";
+import { Line } from "react-chartjs-2";
 
-export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
-  const { itemName, job } = props;
+export const ErrorTrigger: React.FC<{ item: any; job: Job }> = ({
+  item,
+  job,
+}) => {
+  const { setErrorInfoAnchor, setErrorInfoItem } =
+    useContext(TaskInterfaceContext);
+  const { getValidationColor } = useJob(job.id);
+  const handleClick = useCallback(
+    (ev: SyntheticEvent) => {
+      setErrorInfoAnchor(ev.currentTarget);
+      setErrorInfoItem(item);
+      ev.stopPropagation();
+      ev.preventDefault();
+    },
+    [setErrorInfoAnchor, setErrorInfoItem, item]
+  );
+
+  return (
+    <Button
+      size="small"
+      sx={{ px: 0, py: 0, mx: 0, my: 0, maxWidth: "1rem" }}
+      onClick={handleClick}
+    >
+      <Info sx={{ width: 1, color: getValidationColor(item) }} />
+    </Button>
+  );
+};
+
+export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
+  const {
+    setErrorInfoAnchor,
+    errorInfoAnchor,
+    setErrorInfoItem,
+    errorInfoItem,
+  } = useContext(TaskInterfaceContext);
   const { getTaskItem, getValidationColor, getErrors } = useJob(job.id);
-  const item = getTaskItem(itemName);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const infoOpen = Boolean(anchorEl);
-  const fieldErrors = getErrors(item);
+  const fieldErrors = errorInfoItem ? getErrors(errorInfoItem) : null;
+  useEffect(() => {
+    console.log("errorInfoItem", errorInfoItem, errorInfoAnchor);
+  }, [errorInfoItem, errorInfoAnchor]);
+
   const errorContent = useMemo(() => {
+    if (!errorInfoItem || !fieldErrors) return null;
     return (
       <>
         {" "}
-        {fieldErrors && fieldErrors.messages.length > 0 ? (
-          <>
+        {errorInfoItem && fieldErrors && fieldErrors.messages.length > 0 ? (
+          <Box
+            sx={{
+              borderRadius: 5,
+              bgcolor: getValidationColor(errorInfoItem),
+              p: 1,
+            }}
+          >
             <Typography variant="subtitle1">
-              Errors in {item._objectPath}
+              Errors in {errorInfoItem._objectPath}
             </Typography>
             {fieldErrors.messages.map((fieldError: any, iError: number) => (
               <Typography
@@ -36,59 +90,68 @@ export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
                 {fieldError}
               </Typography>
             ))}
-          </>
+          </Box>
         ) : (
           <Typography variant="subtitle1">
-            No errors for {item._objectPath}
+            No errors for {errorInfoItem._objectPath}
           </Typography>
         )}
-        {item && item._qualifiers && (
+        {errorInfoItem && errorInfoItem._qualifiers && (
           <Table>
-            {Object.keys(item._qualifiers).map((key: string) => (
-              <TableRow>
-                <th style={{ textAlign: "left" }}>{key}</th>
-                <td>
-                  {Array.isArray(item._qualifiers[key])
-                    ? JSON.stringify(item._qualifiers[key])
-                    : item._qualifiers[key]}
-                </td>
-              </TableRow>
-            ))}
+            <TableBody>
+              {Object.keys(errorInfoItem._qualifiers).map((key: string) => (
+                <TableRow key={key}>
+                  <th style={{ textAlign: "left" }}>{key}</th>
+                  <td>
+                    {Array.isArray(errorInfoItem._qualifiers[key])
+                      ? JSON.stringify(errorInfoItem._qualifiers[key])
+                      : errorInfoItem._qualifiers[key]}
+                  </td>
+                </TableRow>
+              ))}
+            </TableBody>
           </Table>
         )}
       </>
     );
-  }, [item, fieldErrors]);
+  }, [errorInfoItem, fieldErrors]);
+
+  const isOpen = Boolean(errorInfoAnchor);
   return (
-    <>
-      <span>{itemName}</span>
+    <Popper
+      anchorEl={errorInfoAnchor}
+      placement="auto-end"
+      open={errorInfoAnchor != null}
+      sx={{
+        zIndex: 1000,
+        bgcolor: "background.paper",
+        p: 1,
+        maxWidth: "40rem",
+      }}
+    >
       <ClickAwayListener
-        onClickAway={() => {
-          setAnchorEl(null);
+        onClickAway={(ev: MouseEvent | TouchEvent) => {
+          console.log("Registerd click away");
+          setErrorInfoAnchor(null);
+          setErrorInfoItem(null);
+          ev.stopPropagation();
         }}
       >
-        <Button
-          size="small"
-          sx={{ px: 0, py: 0, mx: 0, my: 0, maxWidth: "1rem" }}
-          onClick={(ev) => {
-            setAnchorEl(ev.currentTarget);
-          }}
-        >
-          <Info sx={{ width: 1, color: getValidationColor(item) }} />
-        </Button>
-      </ClickAwayListener>
-      <Popper anchorEl={anchorEl} placement="auto-end" open={infoOpen}>
         <Box
           sx={{
             border: 1,
             p: 1,
-            bgcolor: "background.paper",
+            bgcolor: "paper",
             textWrap: "pretty",
           }}
-        ></Box>
-        {errorContent}
-        {props.children}
-      </Popper>
-    </>
+        >
+          {errorContent}
+        </Box>
+      </ClickAwayListener>
+    </Popper>
   );
+};
+
+export const ErrorInfo: React.FC<CCP4i2TaskElementProps> = (props) => {
+  return <LinearProgress />;
 };

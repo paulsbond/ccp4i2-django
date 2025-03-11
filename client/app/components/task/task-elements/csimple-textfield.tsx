@@ -10,7 +10,7 @@ import {
 import { LinearProgress, Stack, TextField, Typography } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
-import { ErrorInfo } from "./error-info";
+import { ErrorInfo, ErrorTrigger } from "./error-info";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
@@ -172,14 +172,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
             getValidationColor(item) === "error.light" || Number.isNaN(value)
           }
         />
-        <Stack direction="column">
-          <ErrorInfo {...props} />
-          <LinearProgress
-            sx={{ height: "0.5rem", width: "2rem" }}
-            variant={inFlight ? "indeterminate" : "determinate"}
-            value={0}
-          />
-        </Stack>
+        <ErrorTrigger {...{ item, job }} />
       </Stack>
     )
   );

@@ -21,7 +21,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         containerHint="BlockLevel"
       >
         {itemList
-          .filter((item: any, iItem: number) => iItem < 30)
+          /*.filter((item: any, iItem: number) => iItem < 30)*/
           .map((itemName) => (
             <CCP4i2TaskElement key={itemName} {...props} itemName={itemName} />
           ))}
