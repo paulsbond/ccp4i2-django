@@ -2,13 +2,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../app-context";
 import { useApi } from "../../api";
 import { Job } from "../../models";
-import {
-  Dialog,
-  DialogContent,
-  LinearProgress,
-  Paper,
-  Popper,
-} from "@mui/material";
+import { CircularProgress, LinearProgress, Paper, Popper } from "@mui/material";
 import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
 import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
 import AimlessPipeInterface from "./task-interfaces/aimless_pipe";
@@ -116,6 +110,21 @@ export const TaskContainer = () => {
         {taskInterface}
       </Paper>
       <ErrorPopper key="error-popper" job={job} />
+      <Popper
+        open={inFlight}
+        placement="bottom-end"
+        sx={{
+          zIndex: 1300, // Ensure it's above other content
+        }}
+        style={{
+          display: "grid",
+          placeItems: "center" /* Centers both horizontally and vertically */,
+          height: "100vh" /* Full height of the viewport */,
+          width: "100vw",
+        }}
+      >
+        <CircularProgress size={150} thickness={4} />
+      </Popper>
     </TaskInterfaceContext.Provider>
   );
 };
