@@ -23,6 +23,7 @@ interface CCP4TableInterface {
   plot?: Plot | Plot[];
   title?: string;
 }
+
 export class CCP4Table implements CCP4TableInterface {
   headers?: Header;
   data?: Data | Data[];
@@ -89,70 +90,15 @@ export class CCP4Table implements CCP4TableInterface {
           text: this.title,
         },
       },
-      scales: {
-        x: {
-          axis: "x",
-          type: "linear",
-          position: "bottom",
-          title: {
-            display: true,
-            text: selectedPlot?.xlabel ? selectedPlot.xlabel : "",
-          },
-          ticks: {
-            callback: (value: string | number, index: number) => {
-              if (typeof value === "string") {
-                return value;
-              } else if (Number.isInteger(value)) {
-                return value;
-              }
-              return value.toPrecision(3);
-            },
-          },
-        },
-        yAxisLeft: {
-          axis: "y",
-          type: "linear",
-          position: "left",
-          title: {
-            display: true,
-            text: selectedPlot?.ylabel ? selectedPlot.ylabel : "",
-          },
-          ticks: {
-            callback: (value: string | number, index: number) => {
-              if (typeof value === "string") {
-                return value;
-              } else if (Number.isInteger(value)) {
-                return value;
-              }
-              return value.toPrecision(3);
-            },
-          },
-        },
-      },
     };
+
+    installDefaultScales(selectedPlot, result);
+
+    checkForRightAxis(selectedPlot, result);
 
     handleRangeSpecifiers(selectedPlot, result);
 
-    const plotlines = Array.isArray(selectedPlot.plotline)
-      ? selectedPlot.plotline
-      : selectedPlot.plotline
-      ? [selectedPlot.plotline]
-      : [];
-    if (
-      plotlines.filter((plotline: PlotLine) => plotline.showlegend === "false")
-        .length > 0
-    ) {
-      if (!result.plugins) result.plugins = {};
-      result.plugins.legend = {
-        display: false,
-      };
-    } else {
-      if (!result.plugins) result.plugins = {};
-      result.plugins.legend = {
-        display: true,
-        position: "chartArea",
-      };
-    }
+    handleLegend(selectedPlot, result);
 
     if (selectedPlot.polygon) {
       addPolygons(selectedPlot, result);
@@ -451,8 +397,94 @@ function changeTagName(
   return serializer.serializeToString(xmlDoc);
 }
 
+const handleLegend = (selectedPlot: Plot, result: ChartOptions) => {
+  const plotlines = Array.isArray(selectedPlot.plotline)
+    ? selectedPlot.plotline
+    : selectedPlot.plotline
+    ? [selectedPlot.plotline]
+    : [];
+  if (
+    plotlines.filter((plotline: PlotLine) => plotline.showlegend === "false")
+      .length > 0
+  ) {
+    if (!result.plugins) result.plugins = {};
+    result.plugins.legend = {
+      display: false,
+    };
+  } else {
+    if (!result.plugins) result.plugins = {};
+    result.plugins.legend = {
+      display: true,
+      position: "chartArea",
+    };
+  }
+};
+
 /**
- * Adds plot lines to the chart options based on the selected plot.
+ * Configures the default scales for a given chart.
+ *
+ * @param {Plot} selectedPlot - The plot object containing the labels for the axes.
+ * @param {ChartOptions} result - The chart options object where the scales will be set.
+ *
+ * The function sets up the x-axis and y-axis scales with the following properties:
+ * - `x` axis:
+ *   - `axis`: "x"
+ *   - `type`: "linear"
+ *   - `position`: "bottom"
+ *   - `title`: Displays the x-axis label from `selectedPlot.xlabel`
+ *   - `ticks`: Formats the tick values, displaying integers as they are and non-integers with a precision of 3
+ * - `yAxisLeft` axis:
+ *   - `axis`: "y"
+ *   - `type`: "linear"
+ *   - `position`: "left"
+ *   - `title`: Displays the y-axis label from `selectedPlot.ylabel`
+ *   - `ticks`: Formats the tick values, displaying integers as they are and non-integers with a precision of 3
+ */
+const installDefaultScales = (selectedPlot: Plot, result: ChartOptions) => {
+  result.scales = {
+    x: {
+      axis: "x",
+      type: "linear",
+      position: "bottom",
+      title: {
+        display: true,
+        text: selectedPlot?.xlabel ? selectedPlot.xlabel : "",
+      },
+      ticks: {
+        callback: (value: string | number, index: number) => {
+          if (typeof value === "string") {
+            return value;
+          } else if (Number.isInteger(value)) {
+            return value;
+          }
+          return value.toPrecision(3);
+        },
+      },
+    },
+    yAxisLeft: {
+      axis: "y",
+      type: "linear",
+      position: "left",
+      title: {
+        display: true,
+        text: selectedPlot?.ylabel ? selectedPlot.ylabel : "",
+      },
+      ticks: {
+        callback: (value: string | number, index: number) => {
+          if (typeof value === "string") {
+            return value;
+          } else if (Number.isInteger(value)) {
+            return value;
+          }
+          return value.toPrecision(3);
+        },
+      },
+    },
+  };
+};
+
+/**
+ * Checks for occurrence of plotLines which are specified to have a right axis.
  *
  * @param {Plot} selectedPlot - The plot object containing plotline information.
  * @param {ChartOptions} result - The chart options object to which plot lines will be added.
@@ -464,7 +496,7 @@ function changeTagName(
  * - The right axis configuration includes axis type, position, grid display, and title.
  * - The ticks for the right axis are configured to display integer values as they are and non-integer values with a precision of 3 significant digits.
  */
-export const addPlotLines = (selectedPlot: Plot, result: ChartOptions) => {
+export const checkForRightAxis = (selectedPlot: Plot, result: ChartOptions) => {
   if (!selectedPlot.plotline) return;
   const plotlineList: PlotLine[] = Array.isArray(selectedPlot?.plotline)
     ? (selectedPlot.plotline as PlotLine[])
@@ -483,15 +515,15 @@ export const addPlotLines = (selectedPlot: Plot, result: ChartOptions) => {
         display: true,
         text: selectedPlot?.rylabel ? selectedPlot.rylabel : "",
       },
-    };
-    result.scales.yAxisRight.ticks = {
-      callback: (value: string | number, index: number) => {
-        if (typeof value === "string") {
-          return value;
-        } else if (Number.isInteger(value)) {
-          return value;
-        }
-        return value.toPrecision(3);
+      ticks: {
+        callback: (value: string | number, index: number) => {
+          if (typeof value === "string") {
+            return value;
+          } else if (Number.isInteger(value)) {
+            return value;
+          }
+          return value.toPrecision(3);
+        },
       },
     };
   }
@@ -985,6 +1017,24 @@ export const handleRangeSpecifiers = (
   }
 };
 
+/**
+ * Parses the data blocks from a CCP4Table graph object.
+ *
+ * @param {CCP4Table} graph - The graph object containing data blocks to be parsed.
+ * @returns {object | null} - An object where each key is a data block ID and the value is a 2D array of parsed rows, or null if the graph is not provided.
+ *
+ * The function performs the following steps:
+ * 1. Checks if the graph object is provided.
+ * 2. Initializes an empty object to store data blocks.
+ * 3. Checks if the graph data is an array, if not, wraps it in an array.
+ * 4. Iterates over each data block and processes it:
+ *    - If the data block is an object, extracts the actual rows and the data block ID.
+ *    - Removes leading newline characters from the actual rows.
+ *    - Splits the rows by newline characters and then splits each row by whitespace, filtering out empty items.
+ *    - Stores the parsed rows in the parsedDataBlocks object with the data block ID as the key.
+ * 5. Returns the parsedDataBlocks object.
+ * 6. Returns null if the graph object is not provided.
+ */
 const parsedDataBlocks = (graph: CCP4Table) => {
   if (graph) {
     let dataBlocks: any = {};
