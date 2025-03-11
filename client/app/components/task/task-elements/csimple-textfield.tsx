@@ -2,26 +2,28 @@ import {
   ChangeEventHandler,
   KeyboardEventHandler,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { LinearProgress, Stack, TextField, Typography } from "@mui/material";
+import { Stack, TextField } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
-import { ErrorInfo, ErrorTrigger } from "./error-info";
+import { ErrorTrigger } from "./error-info";
+import { TaskInterfaceContext } from "../task-container";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
   const { itemName, job, type, sx, qualifiers } = props;
+  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
   const { getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
 
   const inputRef = useRef<HTMLElement | null>(null);
-  const [inFlight, setInFlight] = useState<boolean>(false);
 
   const [value, setValue] = useState<number | string | boolean>(
     item._value || ""
@@ -149,7 +151,10 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     [type, value]
   );
 
-  const isDisabled = useMemo(() => job.status !== 1, [job]);
+  const isDisabled = useMemo(
+    () => inFlight || job.status !== 1,
+    [job, inFlight]
+  );
 
   return (
     inferredVisibility && (
