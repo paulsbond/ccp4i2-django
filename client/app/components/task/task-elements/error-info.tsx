@@ -1,6 +1,10 @@
 import {
   Button,
+  Card,
+  CardContent,
+  CardHeader,
   ClickAwayListener,
+  Collapse,
   LinearProgress,
   Popper,
   Table,
@@ -65,12 +69,12 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
   useEffect(() => {
     console.log("errorInfoItem", errorInfoItem, errorInfoAnchor);
   }, [errorInfoItem, errorInfoAnchor]);
+  const [qualifiersOpen, setQualifiersOpen] = useState<boolean>(true);
 
   const errorContent = useMemo(() => {
-    if (!errorInfoItem || !fieldErrors) return null;
+    if (!errorInfoItem) return null;
     return (
       <>
-        {" "}
         {errorInfoItem && fieldErrors && fieldErrors.messages.length > 0 ? (
           <Box
             sx={{
@@ -97,58 +101,82 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
           </Typography>
         )}
         {errorInfoItem && errorInfoItem._qualifiers && (
-          <Table>
-            <TableBody>
-              {Object.keys(errorInfoItem._qualifiers).map((key: string) => (
-                <TableRow key={key}>
-                  <th style={{ textAlign: "left" }}>{key}</th>
-                  <td>
-                    {Array.isArray(errorInfoItem._qualifiers[key])
-                      ? JSON.stringify(errorInfoItem._qualifiers[key])
-                      : errorInfoItem._qualifiers[key]}
-                  </td>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Card>
+            <CardHeader
+              subheader="Item qualifiers"
+              onClick={() => {
+                setQualifiersOpen(qualifiersOpen ? false : true);
+              }}
+            />
+            <CardContent>
+              <Collapse
+                in={qualifiersOpen}
+                timeout="auto"
+                unmountOnExit
+                sx={{ p: 2 }}
+              >
+                <Table>
+                  <TableBody>
+                    {Object.keys(errorInfoItem._qualifiers).map(
+                      (key: string) => (
+                        <TableRow key={key}>
+                          <th style={{ textAlign: "left" }}>{key}</th>
+                          <td>
+                            {Array.isArray(errorInfoItem._qualifiers[key])
+                              ? JSON.stringify(errorInfoItem._qualifiers[key])
+                              : errorInfoItem._qualifiers[key]}
+                          </td>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
+              </Collapse>
+            </CardContent>
+          </Card>
         )}
       </>
     );
-  }, [errorInfoItem, fieldErrors]);
+  }, [errorInfoItem, fieldErrors, qualifiersOpen]);
 
   const isOpen = Boolean(errorInfoAnchor);
+
+  const handleClickAway = (ev: MouseEvent | TouchEvent) => {
+    console.log("Identified click away");
+    setErrorInfoAnchor(null);
+    setErrorInfoItem(null);
+    ev.stopPropagation();
+  };
+
   return (
-    <Popper
-      anchorEl={errorInfoAnchor}
-      placement="auto-end"
-      open={errorInfoAnchor != null}
-      sx={{
-        zIndex: 1000,
-        bgcolor: "background.paper",
-        p: 1,
-        maxWidth: "40rem",
-      }}
-    >
-      <ClickAwayListener
-        onClickAway={(ev: MouseEvent | TouchEvent) => {
-          console.log("Registerd click away");
-          setErrorInfoAnchor(null);
-          setErrorInfoItem(null);
-          ev.stopPropagation();
+    errorInfoItem &&
+    errorInfoAnchor &&
+    errorContent && (
+      <Popper
+        anchorEl={errorInfoAnchor}
+        placement="auto-end"
+        open={errorInfoAnchor != null}
+        sx={{
+          zIndex: 1000,
+          bgcolor: "background.paper",
+          p: 1,
+          maxWidth: "40rem",
         }}
       >
-        <Box
-          sx={{
-            border: 1,
-            p: 1,
-            bgcolor: "paper",
-            textWrap: "pretty",
-          }}
-        >
-          {errorContent}
-        </Box>
-      </ClickAwayListener>
-    </Popper>
+        <ClickAwayListener onClickAway={handleClickAway}>
+          <Box
+            sx={{
+              border: 1,
+              p: 1,
+              bgcolor: "paper",
+              textWrap: "pretty",
+            }}
+          >
+            {errorContent}
+          </Box>
+        </ClickAwayListener>
+      </Popper>
+    )
   );
 };
 
