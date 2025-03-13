@@ -1,7 +1,18 @@
 {
+  "name": "ccp4x",
+  "main": "main.cjs",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "An overlay of Electron/NextJS (frontend) and Django (backend) for CCP4X",
+  "author": "PaulBond, Maritn Noble, Stuart McNicholas",
   "scripts": {
     "dev": "next dev",
-    "update": "npx npm-check-updates -u"
+    "update": "npx npm-check-updates -u",
+    "start": "electron -r ts-node/register ./main.cjs",
+    "electron-dev": "concurrently \"next dev\" \"npx ts-node ./node_modules/.bin/electron .\"",
+    "electron-build": "next build && next export && npx ts-node/register ./node_modules/.bin/electron .",
+    "package": "electron-builder",
+    "compile": "tsc"
   },
   "dependencies": {
     "@emotion/cache": "^11.13.1",
@@ -15,6 +26,8 @@
     "@types/chartjs": "^0.0.31",
     "chart.js": "^4.4.8",
     "chartjs-plugin-annotation": "^3.1.0",
+    "concurrently": "^9.1.2",
+    "express": "^4.21.2",
     "faker": "^6.6.6",
     "fs": "^0.0.1-security",
     "jquery": "^3.7.1",
@@ -39,6 +52,10 @@
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@types/xml2js": "^0.4.14",
+    "electron": "^35.0.1",
+    "electron-builder": "^25.1.8",
+    "electron-is-dev": "^3.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "5.6.3",
     "xml-js": "^1.6.11"
   }
