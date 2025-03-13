@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import $ from "jquery";
-import { prettifyXml } from "./components/report/CCP4i2ReportFlotWidget";
+import { prettifyXml } from "./utils";
 
 export function fullUrl(endpoint: string): string {
   const url = new URL(endpoint, "http://127.0.0.1:8000");
@@ -258,7 +258,7 @@ export const doDownload = (
         const blob = new Blob([Uint8Chunks]);
 
         // Create blob link to download
-        const url = window.URL.createObjectURL(blob);
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
         link.setAttribute("download", targetName);

@@ -1,9 +1,8 @@
-import { useContext, useEffect, useState } from "react";
-import { CCP4i2Context } from "../app-context";
-import { doRetrieve, useApi } from "../api";
+import { useEffect, useState } from "react";
+import { doRetrieve } from "../api";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { Editor } from "@monaco-editor/react";
-import { prettifyXml } from "./report/CCP4i2ReportFlotWidget";
+import { prettifyXml } from "../utils";
 
 interface FilePreviewProps {
   url: string | null;

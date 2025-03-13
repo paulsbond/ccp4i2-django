@@ -1,17 +1,19 @@
 "use client";
-import { use, useContext, useEffect, useMemo, useState } from "react";
+import { use, useContext, useEffect, useState } from "react";
 import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
 import { useApi } from "../../../../api";
 import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../components/job-header";
 import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportXMLView";
-import { prettifyXml } from "../../../../components/report/CCP4i2ReportFlotWidget";
 import { CCP4i2Context } from "../../../../app-context";
 import { TaskContainer } from "../../../../components/task/task-container";
-import { useJob, usePrevious, useProject } from "../../../../utils";
+import {
+  prettifyXml,
+  useJob,
+  usePrevious,
+  useProject,
+} from "../../../../utils";
 import ToolBar from "../../../../components/tool-bar";
-import { parseTables } from "../../../../components/report/CCP4i2ParsePimple";
-import { parseXML } from "../../../../components/report/ChartLib";
 import { CCP4i2ApplicationOutputView } from "../../../../components/report/CCP4i2ApplicationOutputView";
 
 export default function JobPage({

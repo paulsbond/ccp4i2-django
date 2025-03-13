@@ -436,3 +436,43 @@ const errorsInValidation = (item: any, validation: any): any | null => {
   }
   return null;
 };
+
+export const prettifyXml = (sourceXml: Document) => {
+  if (!sourceXml) return "";
+  let theNode: Document | Element | undefined = sourceXml;
+  if (!theNode?.nodeName) {
+    //Possible explanation is that the is a jQuery node
+    //@ts-ignore
+    try {
+      theNode = $(sourceXml).get(0);
+    } catch (err) {
+      console.error(
+        `Source XML is not something from hwhich JQuery can extract an HTMLElemeent for processing`
+      );
+    }
+    //console.log('theNode', theNode)
+  }
+  if (!theNode) return "";
+
+  var xsltDoc = new DOMParser().parseFromString(
+    [
+      // describes how we want to modify the XML - indent everything
+      '<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+      '  <xsl:strip-space elements="*"/>',
+      '  <xsl:template match="para[content-style][not(text())]">', // change to just text() to strip space in text nodes
+      '    <xsl:value-of select="normalize-space(.)"/>',
+      "  </xsl:template>",
+      '  <xsl:template match="node()|@*">',
+      '    <xsl:copy><xsl:apply-templates select="node()|@*"/></xsl:copy>',
+      "  </xsl:template>",
+      '  <xsl:output indent="yes"/>',
+      "</xsl:stylesheet>",
+    ].join("\n"),
+    "application/xml"
+  );
+  var xsltProcessor = new XSLTProcessor();
+  xsltProcessor.importStylesheet(xsltDoc);
+  var resultDoc = xsltProcessor.transformToDocument(theNode);
+  var resultXml = new XMLSerializer().serializeToString(resultDoc);
+  return resultXml;
+};
