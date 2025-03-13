@@ -72,6 +72,7 @@ export const CCP4i2ReportXMLView = () => {
 
   const reportContent = useMemo<ReactNode[] | null[] | null>(() => {
     if (!bodyNode) return null;
+    if (!job) return null;
     return bodyNode
       .children()
       .children()

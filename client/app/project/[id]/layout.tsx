@@ -78,12 +78,10 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
           src="/moorhen.js"
           strategy="lazyOnload"
           id="moorhen-script-element"
-          onLoad={async () => {
-            console.log("Hello");
-            const cootModule = window
+          onLoad={async (arg) => {
+            const cootModule =
               //@ts-ignore
-              .createCootModule(createArgs)
-              .then((module: any) => {
+              createCootModule(createArgs).then((module: any) => {
                 //@ts-ignore
                 setCootModule(module);
                 scriptElement.current = Array.from(

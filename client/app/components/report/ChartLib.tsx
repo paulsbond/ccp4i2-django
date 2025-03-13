@@ -1089,20 +1089,23 @@ export function colorNameToRGBA(
   document.body.appendChild(tempElement);
 
   // Get the computed RGB color
-  const rgb = window.getComputedStyle(tempElement).color;
+  if (typeof window !== "undefined") {
+    const rgb = window.getComputedStyle(tempElement).color;
 
-  // Remove the temporary element from the DOM
-  document.body.removeChild(tempElement);
+    // Remove the temporary element from the DOM
+    document.body.removeChild(tempElement);
 
-  // rgb will be in format "rgb(r, g, b)"
-  const rgbValues = rgb.match(/\d+/g); // Extracts the numeric values
+    // rgb will be in format "rgb(r, g, b)"
+    const rgbValues = rgb.match(/\d+/g); // Extracts the numeric values
 
-  if (!rgbValues) {
-    throw new Error("Invalid color name");
+    if (!rgbValues) {
+      throw new Error("Invalid color name");
+    }
+
+    // Convert the extracted values to an RGBA string
+    return `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${alpha})`;
   }
-
-  // Convert the extracted values to an RGBA string
-  return `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${alpha})`;
+  return "";
 }
 
 /**
