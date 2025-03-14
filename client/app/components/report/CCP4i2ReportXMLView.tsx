@@ -1,18 +1,11 @@
-import {
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { ReactNode, useContext, useMemo } from "react";
 import $ from "jquery";
 import { LinearProgress, Paper, Skeleton } from "@mui/material";
 import { Job } from "../../models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
-import { M_PLUS_1 } from "next/font/google";
 import { CCP4i2Context } from "../../app-context";
+import { JobMenuContext } from "../job-menu";
 
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
@@ -27,53 +20,10 @@ export const CCP4i2ReportXMLView = () => {
     job?.status == 3 ? 5000 : 0
   );
 
-  const bodyNode = useMemo<JQuery<XMLDocument> | null>(() => {
-    if (report_xml) {
-      //return $(report_xml);
-      const reportXMLDocument = report_xml;
-      const $reportXMLDocument = $(reportXMLDocument);
-      let iterator: any;
-      try {
-        iterator = reportXMLDocument.evaluate(
-          "//CCP4i2ReportGeneric/br",
-          reportXMLDocument,
-          null,
-          XPathResult.ORDERED_NODE_ITERATOR_TYPE
-        );
-      } catch (err) {
-        console.log(err, reportXMLDocument);
-      }
-      try {
-        const matchingNodes = [];
-        let thisNode = iterator.iterateNext();
-
-        while (thisNode) {
-          matchingNodes.push(thisNode);
-          thisNode = iterator.iterateNext();
-        }
-        console.log({ matchingNodes });
-        matchingNodes.forEach((thisNode) => {
-          const lastNode = thisNode;
-          thisNode.parentNode?.removeChild(thisNode);
-        });
-      } catch (e) {
-        console.error(`Error: Document tree modified during iteration ${e}`);
-      }
-      const modifiedXmlString = new XMLSerializer().serializeToString(
-        reportXMLDocument
-      );
-      const reportXMLDocument1 = $.parseXML(modifiedXmlString);
-      const $reportXMLDocument1 = $(reportXMLDocument1);
-
-      return $reportXMLDocument;
-    }
-    return null;
-  }, [report_xml]);
-
-  const reportContent = useMemo<ReactNode[] | null[] | null>(() => {
-    if (!bodyNode) return null;
+  const reportContent = useMemo<ReactNode[] | null>(() => {
+    if (!report_xml) return null;
     if (!job) return null;
-    return bodyNode
+    return $(report_xml)
       .children()
       .children()
       .map((iItem: Number, item: any) => {
@@ -84,15 +34,13 @@ export const CCP4i2ReportXMLView = () => {
             item={item}
             job={job}
           />
-        ); //callbackHandleItem(iItem, item) as ReactNode;
+        );
       })
       .toArray();
-  }, [bodyNode]);
+  }, [report_xml, job]);
 
-  if (!bodyNode) return <Skeleton />;
-
-  return !job ? (
-    <LinearProgress />
+  return !reportContent ? (
+    <Skeleton />
   ) : (
     <Paper
       sx={{
