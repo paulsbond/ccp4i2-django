@@ -2,6 +2,7 @@ import logging
 import datetime
 import json
 import pathlib
+import os
 from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
@@ -512,11 +513,13 @@ class JobViewSet(ModelViewSet):
             Response: A Response object containing the serialized job data.
         """
         try:
+            ccp4_python = str(pathlib.Path(os.environ["CCP4"]) / "bin" / "ccp4-python")
+            manage_py = str(pathlib.Path(__file__).parent.parent.parent / "manage.py")
             job = models.Job.objects.get(id=pk)
             subprocess.Popen(
                 [
-                    "ccp4-python",
-                    "manage.py",
+                    ccp4_python,
+                    manage_py,
                     "run_job",
                     "-ju",
                     f"{str(job.uuid)}",
