@@ -20,6 +20,27 @@ const CCP4_PYTHON = path.join(
   "ccp4-python"
 );
 
+const env = Object.assign({}, process.env, {
+  PYTHONPATH: path.join(__dirname, "..", "server"),
+});
+
+const createWindow = () => {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  mainWindow.loadURL(`http://localhost:${NEXT_PORT}`);
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+};
+
 nextApp.prepare().then(() => {
   const server = express();
   server.all("*", (req, res) => nextHandler(req, res));
@@ -28,7 +49,10 @@ nextApp.prepare().then(() => {
     console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
 
     // 2️⃣ Start Python process
-    pythonProcess = spawn(CCP4_PYTHON, [PYTHON_SCRIPT, "runserver"]);
+    //pythonProcess = spawn(CCP4_PYTHON, [PYTHON_SCRIPT, "runserver"]);
+    pythonProcess = spawn(CCP4_PYTHON, ["-m", "uvicorn", "asgi:application"], {
+      env,
+    });
 
     pythonProcess.stdout.on("data", (data) => {
       console.log(`🐍 Python Output: ${data}`);
@@ -44,20 +68,7 @@ nextApp.prepare().then(() => {
 
     // 3️⃣ Start Electron window
     app.whenReady().then(() => {
-      mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-        },
-      });
-
-      mainWindow.loadURL(`http://localhost:${NEXT_PORT}`);
-
-      mainWindow.on("closed", () => {
-        mainWindow = null;
-      });
+      createWindow();
     });
   });
 });
@@ -80,6 +91,9 @@ app.on("quit", () => {
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+    // 3️⃣ Start Electron window
+    app.whenReady().then(() => {
+      createWindow();
+    });
   }
 });
