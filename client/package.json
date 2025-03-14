@@ -58,5 +58,13 @@
     "ts-node": "^10.9.2",
     "typescript": "5.6.3",
     "xml-js": "^1.6.11"
+  },
+  "build": {
+    "extraResources": [
+      {
+        "from": "server/",
+        "to": "server"
+      }
+    ]
   }
 }
