@@ -139,6 +139,18 @@ export const JobMenu: React.FC = () => {
     [menuNode]
   );
 
+  const handlePreviewFileInCoot = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const file = menuNode as DjangoFile;
+      if (file) {
+        console.log("Handling preview in coot", file);
+        setAnchorEl(null);
+      }
+    },
+    [menuNode]
+  );
+
   const handleDelete = useCallback(
     (ev: SyntheticEvent) => {
       const job = menuNode as Job;
@@ -239,6 +251,9 @@ export const JobMenu: React.FC = () => {
       </MenuItem>
       <MenuItem key="Preview" onClick={handlePreviewFile}>
         <Preview /> Preview
+      </MenuItem>
+      <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>
+        <Preview /> Coot
       </MenuItem>
       <ClassicJobsListPreviewDialog />
     </Menu>
