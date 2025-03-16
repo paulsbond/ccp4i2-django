@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require("electron");
+const { app, session, dialog, BrowserWindow } = require("electron");
 const path = require("path");
 const next = require("next");
 const express = require("express");
@@ -29,8 +29,8 @@ const createWindow = () => {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
+      nodeIntegration: true,
+      //contextIsolation: true,
     },
   });
 
@@ -38,6 +38,22 @@ const createWindow = () => {
 
   mainWindow.on("closed", () => {
     mainWindow = null;
+  });
+
+  // Intercept downloads
+  session.defaultSession.on("will-download", async (event, item) => {
+    // Ask the user where to save the file
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: "Save File",
+      defaultPath: path.join(app.getPath("downloads"), item.getFilename()), // Default to Downloads folder
+      buttonLabel: "Save",
+    });
+
+    if (filePath) {
+      item.setSavePath(filePath); // Set the path where the file will be saved
+    } else {
+      item.cancel(); // Cancel the download if no path was chosen
+    }
   });
 };
 
