@@ -7,9 +7,10 @@ from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
 from django.http import FileResponse
+from django.core.management import call_command
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, JSONParser
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Container import CContainer
 from core import CCP4ErrorHandling
@@ -17,7 +18,6 @@ from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_file
 from ..lib.job_utils.list_project import list_project
-from ..lib.job_utils.value_dict_for_object import value_dict_for_object
 from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.get_task_tree import get_task_tree
 from ..lib.job_utils.create_task import create_task
@@ -82,6 +82,7 @@ class ProjectViewSet(ModelViewSet):
 
     queryset = models.Project.objects.all()
     serializer_class = serializers.ProjectSerializer
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     @action(
         detail=True,
@@ -115,6 +116,11 @@ class ProjectViewSet(ModelViewSet):
         methods=["get"],
         permission_classes=[],
         serializer_class=serializers.JobSerializer,
+        parser_classes=[
+            JSONParser,
+            FormParser,
+            MultiPartParser,
+        ],  # Allow JSON and form data
     )
     def jobs(self, request, pk=None):
         """
@@ -273,6 +279,53 @@ class ProjectViewSet(ModelViewSet):
             raise Http404("Unacceptable file")
 
         return FileResponse(open(composite_path, "rb"), filename=composite_path.name)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectSerializer,
+    )
+    def preview_file(self, request, pk=None):
+        """
+        Preview a file from the specified project directory, using the specified viewer.
+        This view handles POST requests to preview a file from a project's directory.
+        It ensures that the requested file path is within the project's directory to
+        prevent directory traversal attacks.
+
+        Args:
+            request (HttpRequest): The HTTP request object containing query parameters.
+            pk (int, optional): The primary key of the project.
+
+        Raises:
+            Http404: If the requested file path is not within the project's directory.
+
+        Returns:
+            JsonResponse: A JSON response indicating success or failure of the viewer launch.
+        """
+        the_project = models.Project.objects.get(pk=pk)
+        file_path = request.data.get("path")
+        viewer = request.data.get("viewer")
+        composite_path = pathlib.Path(the_project.directory) / (
+            file_path if not file_path.startswith("/") else file_path[1:]
+        )
+        if not composite_path.resolve().is_relative_to(
+            pathlib.Path(the_project.directory)
+        ):
+            raise Http404("Unacceptable file - outside project directory")
+
+        logger.info("Previewing file %s with viewer %s", composite_path, viewer)
+        try:
+            call_command("preview_file", "-d", "-e", viewer, "-p", str(composite_path))
+            return JsonResponse({"status": "Success"})
+        except Exception as err:
+            logger.exception(
+                "Failed to preview file %s with viewer %s",
+                composite_path,
+                viewer,
+                exc_info=err,
+            )
+            return JsonResponse({"status": "Failed", "reason": str(err)})
 
     @action(
         detail=True,
