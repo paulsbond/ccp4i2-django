@@ -24,10 +24,13 @@ import {
   ExpandLess,
   ExpandMore,
   Menu as MenuIcon,
+  Preview,
+  Download,
 } from "@mui/icons-material";
 import { CCP4i2Context } from "../app-context";
 import { doDownload, useApi } from "../api";
 import { FilePreviewDialog } from "./file-preview";
+import { Project } from "../models";
 
 interface FileNode {
   id: string;
@@ -180,9 +183,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
 const FileMenu: React.FC = () => {
   const { setPreviewNode, anchorEl, setAnchorEl, menuNode } =
     useContext(FileBrowserContext);
-
-  const { noSlashUrl } = useApi();
+  const { noSlashUrl, post, postNoSlash, get } = useApi();
   const { projectId } = useContext(CCP4i2Context);
+  const { data: project } = get<Project>(`projects/${projectId}`);
   const isMenuOpen = Boolean(anchorEl);
   const handleDownload = useCallback(
     (ev: SyntheticEvent) => {
@@ -206,7 +209,64 @@ const FileMenu: React.FC = () => {
       setPreviewNode(menuNode);
       setAnchorEl(null);
     },
-    [projectId, menuNode, noSlashUrl]
+    [menuNode]
+  );
+
+  const handlePreviewFile = async (
+    project_id: number,
+    viewer: string,
+    path: string
+  ) => {
+    const jsonBody = { viewer, path };
+    const previewResult: any = await post<any>(
+      `projects/${project_id}/preview_file/`,
+      jsonBody
+    );
+  };
+
+  const handlePreviewFileInCoot = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (project) {
+        handlePreviewFile(
+          project.id,
+          "coot",
+          menuNode?.path.slice(project.directory.length) || ""
+        );
+      }
+      setAnchorEl(null);
+    },
+    [project, menuNode, setAnchorEl]
+  );
+
+  const handlePreviewFileInHklview = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (project) {
+        handlePreviewFile(
+          project.id,
+          "hklview",
+          menuNode?.path.slice(project.directory.length) || ""
+        );
+      }
+      setAnchorEl(null);
+    },
+    [project, menuNode, setAnchorEl]
+  );
+
+  const handlePreviewFileInCcp4mg = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (project) {
+        handlePreviewFile(
+          project.id,
+          "ccp4mg",
+          menuNode?.path.slice(project.directory.length) || ""
+        );
+      }
+      setAnchorEl(null);
+    },
+    [project, menuNode, setAnchorEl]
   );
 
   return (
@@ -218,12 +278,45 @@ const FileMenu: React.FC = () => {
       }}
     >
       {menuNode?.type !== "directory" && (
-        <MenuItem onClick={handleDownload}>Download</MenuItem>
+        <MenuItem onClick={handleDownload}>
+          <Download />
+          Download
+        </MenuItem>
       )}
       {menuNode?.name &&
-        ["log", "xml", "json", "txt", "mmcif", "cif"].includes(
+        ["log", "xml", "json", "txt", "mmcif", "cif", "pdb"].includes(
           menuNode?.name?.split(".").at(-1) || ""
-        ) && <MenuItem onClick={handlePreview}>Preview</MenuItem>}
+        ) && (
+          <MenuItem onClick={handlePreview}>
+            <Preview />
+            Preview
+          </MenuItem>
+        )}
+      {menuNode?.name &&
+        ["pdb", "mmcif", "cif", "mtz"].includes(
+          menuNode?.name?.split(".").at(-1) || ""
+        ) && (
+          <MenuItem onClick={handlePreviewFileInCoot}>
+            <Preview />
+            Coot
+          </MenuItem>
+        )}
+      {menuNode?.name &&
+        ["pdb", "mmcif", "cif", "mtz"].includes(
+          menuNode?.name?.split(".").at(-1) || ""
+        ) && (
+          <MenuItem onClick={handlePreviewFileInCcp4mg}>
+            <Preview />
+            CCP4MG
+          </MenuItem>
+        )}
+      {menuNode?.name &&
+        ["mtz"].includes(menuNode?.name?.split(".").at(-1) || "") && (
+          <MenuItem onClick={handlePreviewFileInHklview}>
+            <Preview />
+            HKLView
+          </MenuItem>
+        )}
     </Menu>
   );
 };
