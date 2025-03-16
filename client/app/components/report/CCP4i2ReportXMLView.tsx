@@ -1,11 +1,10 @@
 import { ReactNode, useContext, useMemo } from "react";
 import $ from "jquery";
-import { LinearProgress, Paper, Skeleton } from "@mui/material";
+import { Paper, Skeleton } from "@mui/material";
 import { Job } from "../../models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
 import { CCP4i2Context } from "../../app-context";
-import { JobMenuContext } from "../job-menu";
 
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
