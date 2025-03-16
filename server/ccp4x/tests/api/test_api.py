@@ -129,3 +129,22 @@ class CCP4i2TestCase(TestCase):
         )
         result = response.json()
         print(result)
+
+    def test_preview_file(self):
+        response = self.client.post(
+            "/projects/1/preview_file/",
+            content_type="application/json; charset=utf-8",
+            data=json.dumps(
+                {
+                    "path": "CCP4_IMPORTED_FILES/gamma_model_1.pdb",
+                    "viewer": "coot",
+                }
+            ),
+        )
+        result = response.json()
+        self.assertDictEqual(
+            result,
+            {
+                "status": "Success",
+            },
+        )
