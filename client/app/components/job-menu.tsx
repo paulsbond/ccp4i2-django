@@ -145,6 +145,7 @@ export const JobMenu: React.FC = () => {
       const file = menuNode as DjangoFile;
       if (file) {
         console.log("Handling preview in coot", file);
+        api.post<any>(`files/${file.id}/preview/`, { viewer: "coot" });
         setAnchorEl(null);
       }
     },
@@ -209,6 +210,8 @@ export const JobMenu: React.FC = () => {
     [dependentJobs, menuNode, mutateJobs]
   );
 
+  const menuNodeAsFile = menuNode as DjangoFile;
+
   return menuNode?.hasOwnProperty("parent") ? (
     <Menu
       open={Boolean(anchorEl)}
@@ -252,9 +255,11 @@ export const JobMenu: React.FC = () => {
       <MenuItem key="Preview" onClick={handlePreviewFile}>
         <Preview /> Preview
       </MenuItem>
-      <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>
-        <Preview /> Coot
-      </MenuItem>
+      {menuNodeAsFile && ["chemical/x-pdb"].includes(menuNodeAsFile.type) && (
+        <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>
+          <Preview /> Coot
+        </MenuItem>
+      )}
       <ClassicJobsListPreviewDialog />
     </Menu>
   );

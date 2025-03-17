@@ -21,6 +21,7 @@ from ..lib.job_utils.list_project import list_project
 from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.get_task_tree import get_task_tree
 from ..lib.job_utils.create_task import create_task
+from ..lib.job_utils.preview_file import preview_file
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -316,7 +317,8 @@ class ProjectViewSet(ModelViewSet):
 
         logger.info("Previewing file %s with viewer %s", composite_path, viewer)
         try:
-            call_command("preview_file", "-d", "-e", viewer, "-p", str(composite_path))
+            # call_command("preview_file", "-d", "-e", viewer, "-p", str(composite_path))
+            preview_file(viewer, str(composite_path))
             return JsonResponse({"status": "Success"})
         except Exception as err:
             logger.exception(
@@ -359,7 +361,7 @@ class ProjectTagViewSet(ModelViewSet):
 class FileViewSet(ModelViewSet):
     queryset = models.File.objects.all()
     serializer_class = serializers.FileSerializer
-    parser_classes = [FormParser, MultiPartParser]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     @action(
         detail=True,
@@ -386,6 +388,22 @@ class FileViewSet(ModelViewSet):
         try:
             the_file = models.File.objects.get(id=pk)
             return FileResponse(open(the_file.path, "rb"), filename=the_file.name)
+        except models.File.DoesNotExist as err:
+            logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def preview(self, request, pk=None):
+        try:
+            the_file = models.File.objects.get(id=pk)
+            the_viewer = request.data.get("viewer")
+            preview_file(the_viewer, str(the_file.path))
+            return Response({"status": "Success"})
         except models.File.DoesNotExist as err:
             logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})

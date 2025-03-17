@@ -46,7 +46,6 @@ class Command(BaseCommand):
         )
         parser.add_argument("-fi", "--file_id", help="File id", type=int)
         parser.add_argument("-fu", "--file_uuid", help="FIle uuid", type=str)
-        parser.add_argument("-d", "--detach", help="Detach job", action="store_true")
         parser.add_argument(
             "-e", "--executable", help="Executable of viewer to use", type=str
         )
@@ -57,22 +56,7 @@ class Command(BaseCommand):
         except (File.DoesNotExist, Project.DoesNotExist) as e:
             self.stderr.write(self.style.ERROR(str(e)))
             return
-
-        if options["detach"]:
-            subprocess.Popen(
-                [
-                    "ccp4-python",
-                    "manage.py",
-                    "preview_file",
-                    "-e",
-                    options["executable"],
-                    "-p",
-                    str(file_path),
-                ],
-                start_new_session=True,
-            )
-        else:
-            preview_file(options["executable"], str(file_path))
+        preview_file(options["executable"], str(file_path))
 
     def get_path(self, options):
         if options["path"] is not None:
