@@ -152,6 +152,31 @@ export const JobMenu: React.FC = () => {
     [menuNode]
   );
 
+  const handlePreviewFileInHklview = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const file = menuNode as DjangoFile;
+      if (file) {
+        console.log("Handling preview in hklview", file);
+        api.post<any>(`files/${file.id}/preview/`, { viewer: "hklview" });
+        setAnchorEl(null);
+      }
+    },
+    [menuNode]
+  );
+
+  const handlePreviewFileInCCP4MG = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const file = menuNode as DjangoFile;
+      if (file) {
+        console.log("Handling preview in CCP4MG", file);
+        api.post<any>(`files/${file.id}/preview/`, { viewer: "ccp4mg" });
+        setAnchorEl(null);
+      }
+    },
+    [menuNode]
+  );
   const handleDelete = useCallback(
     (ev: SyntheticEvent) => {
       const job = menuNode as Job;
@@ -255,11 +280,28 @@ export const JobMenu: React.FC = () => {
       <MenuItem key="Preview" onClick={handlePreviewFile}>
         <Preview /> Preview
       </MenuItem>
-      {menuNodeAsFile && ["chemical/x-pdb"].includes(menuNodeAsFile.type) && (
-        <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>
-          <Preview /> Coot
-        </MenuItem>
-      )}
+      {menuNodeAsFile &&
+        ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(
+          menuNodeAsFile.type
+        ) && (
+          <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>
+            <Preview /> Coot
+          </MenuItem>
+        )}
+      {menuNodeAsFile &&
+        ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(
+          menuNodeAsFile.type
+        ) && (
+          <MenuItem key="CCP4MG" onClick={handlePreviewFileInCCP4MG}>
+            <Preview /> CCP4MG
+          </MenuItem>
+        )}
+      {menuNodeAsFile &&
+        menuNodeAsFile.type.startsWith("application/CCP4-mtz") && (
+          <MenuItem key="HKLVIEW" onClick={handlePreviewFileInHklview}>
+            <Preview /> HKLVIEW
+          </MenuItem>
+        )}
       <ClassicJobsListPreviewDialog />
     </Menu>
   );
