@@ -2,6 +2,8 @@ import gemmi
 import unittest
 import argparse
 import re
+from ccp4i2.core.CCP4Container import CContainer
+from ccp4i2.core.CCP4PluginScript import CPluginScript
 from core import CCP4Container
 from core import CCP4Modules
 from core import CCP4Data
@@ -13,6 +15,7 @@ import logging
 import shlex
 import numpy
 from ..lib.job_utils.set_parameter import set_parameter_container
+from ..lib.job_utils.find_objects import find_object_by_path
 
 # Get an instance of a logger
 logger = logging.getLogger("root")
@@ -83,12 +86,12 @@ class CCP4i2RunnerBase(object):
         )
 
     @staticmethod
-    def keywordsOfContainer(container, growingList=None):
+    def keywordsOfContainer(container: CContainer, growingList=None):
         if growingList is None:
             growingList = []
         for child in container.children():
             if (
-                isinstance(child, CCP4Container.CContainer)
+                isinstance(child, (CContainer, CCP4Container.CContainer))
                 and "temporary" not in child.objectName()
             ):
                 growingList = CCP4i2RunnerBase.keywordsOfContainer(child, growingList)
@@ -144,7 +147,7 @@ class CCP4i2RunnerBase(object):
 
     @staticmethod
     def keywordsOfTaskName(task_name, parent=None):
-        theContainer = CCP4Container.CContainer(parent=parent)
+        theContainer: CContainer = CCP4Container.CContainer(parent=parent)
         xmlLocation = CCP4Modules.TASKMANAGER().lookupDefFile(
             name=task_name, version=None
         )
@@ -315,12 +318,14 @@ class CCP4i2RunnerBase(object):
 
         return objectPath
 
-    def handleItem(self, thePlugin, objectPath, value):
+    def handleItem(self, thePlugin: CPluginScript, objectPath, value):
         if isinstance(value, str) and "=" in value:
             subPath, subValue = value.split("=")
             # Intercept some things to do with (e.g.) columnLabels
             if subPath == "columnLabels":
-                theObject = PluginUtils.locateElement(thePlugin.container, objectPath)
+                theObject = find_object_by_path(
+                    thePlugin.container, objectPath
+                )  # PluginUtils.locateElement(thePlugin.container, objectPath)
                 splitFilePath = CCP4i2RunnerBase.gemmiSplitMTZ(
                     inputFilePath=theObject.fullPath.__str__(),
                     inputColumnPath=subValue,
