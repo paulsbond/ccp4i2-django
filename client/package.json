@@ -62,7 +62,7 @@
   "build": {
     "extraResources": [
       {
-        "from": "server/",
+        "from": "../server/",
         "to": "server"
       }
     ]
