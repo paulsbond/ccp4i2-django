@@ -58,7 +58,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from . import serializers
 from ..db import models
-from ..lib.ccp4i2_report import make_old_report
+from ..lib.job_utils.ccp4i2_report import make_old_report
 from ..lib.job_utils.clone_job import clone_job
 from ..lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ..lib.job_utils.find_dependent_jobs import delete_job_and_dependents
@@ -478,7 +478,7 @@ class JobViewSet(ModelViewSet):
         try:
             the_job = models.Job.objects.get(id=pk)
             report_xml = ""
-            if the_job.status == models.Job.Status.PENDING:
+            if the_job.status in [models.Job.Status.PENDING, models.Job.Status.UNKNOWN]:
                 report_xml = ET.Element("report")
                 ET.SubElement(report_xml, "status").text = "PENDING"
             if the_job.status in [

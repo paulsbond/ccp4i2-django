@@ -41,3 +41,22 @@ def parse_pir_or_fasta(path: str) -> list[gemmi.FastaSeq]:
 def parse_chemical_component(path: str) -> gemmi.ChemComp:
     block = gemmi.cif.read(path)[-1]
     return gemmi.make_chemcomp_from_block(block)
+
+
+def parse_mtz(file_path):
+    mtz = gemmi.read_mtz_file(file_path)
+    reflections = []
+
+    # Extract column labels
+    column_labels = [col.label for col in mtz.columns]
+
+    for hkl, values in zip(mtz, mtz.array):
+        reflection = {
+            "h": hkl.h,
+            "k": hkl.k,
+            "l": hkl.l,
+            **{label: value for label, value in zip(column_labels, values)},
+        }
+        reflections.append(reflection)
+
+    return reflections

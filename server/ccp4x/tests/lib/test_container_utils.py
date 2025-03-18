@@ -8,10 +8,11 @@ from core import CCP4ErrorHandling
 from core import CCP4Data
 from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4TaskManager
-from ...db.models import Job
+from ...db.models import Job, File
 from ...db.import_i2xml import import_ccp4_project_zip
 
 from ...lib.job_utils.get_job_plugin import get_job_plugin
+from ...lib.job_utils.mtz_as_dict import mtz_as_dict
 from ...lib.job_utils.unset_output_data import unset_output_data
 from ...lib.job_utils.remove_container_default_values import (
     remove_container_default_values,
@@ -22,7 +23,7 @@ from ...lib.job_utils.validate_container import validate_container
 from ...lib.job_utils.clone_job import clone_job
 from ...lib.job_utils.json_for_job_container import json_for_job_container
 from ...lib.job_utils.get_task_tree import get_task_tree
-from ...lib.ccp4i2_report import get_report_job_info
+from ...lib.job_utils.ccp4i2_report import get_report_job_info
 
 
 @override_settings(
@@ -141,6 +142,13 @@ class CCP4i2TestCase(TestCase):
             result["fileroot"],
             str(settings.CCP4I2_PROJECTS_DIR / "refmac_gamma_test_0/CCP4_JOBS/job_1/"),
         )
+
+    def test_mtz_as_dict(self):
+        mtz_file = File.objects.filter(type="application/CCP4-mtz-observed").first()
+        result = mtz_as_dict(mtz_file.path, with_reflections=True)
+        print(result)
+        self.assertEqual(result["header_info"]["title"], "From Clipper CCP4MTZfile")
+        self.assertEqual(result["header_info"]["spacegroup"], "P 21 21 21")
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">

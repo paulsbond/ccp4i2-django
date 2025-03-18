@@ -9,10 +9,10 @@ from ccp4i2.core.CCP4TaskManager import CTaskManager
 from ccp4i2.dbapi.CCP4DbApi import FILETYPES_CLASS, FILETYPES_TEXT
 from ccp4i2.report.CCP4ReportParser import ReportClass
 
-from ..db.ccp4i2_django_wrapper import using_django_pm
-from ..db.models import Job, FileUse, File
-from .job_utils.get_job_plugin import get_job_plugin
-from ..db.ccp4i2_static_data import PATH_FLAG_JOB_DIR, PATH_FLAG_IMPORT_DIR
+from ...db.ccp4i2_django_wrapper import using_django_pm
+from ...db.models import Job, FileUse, File
+from .get_job_plugin import get_job_plugin
+from ...db.ccp4i2_static_data import PATH_FLAG_JOB_DIR, PATH_FLAG_IMPORT_DIR
 
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
