@@ -1,21 +1,5 @@
-import {
-  Avatar,
-  Button,
-  Chip,
-  Collapse,
-  IconButton,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Paper,
-  Stack,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-import { doDownload, EndpointFetch, useApi } from "../api";
+import { Avatar, Button, Chip, Stack, Typography } from "@mui/material";
+import { EndpointFetch, useApi } from "../api";
 import {
   Job,
   File as DjangoFile,
@@ -23,18 +7,9 @@ import {
   JobFloatValue,
 } from "../models";
 import { CCP4i2JobAvatar } from "./job-avatar";
-import React, {
-  createContext,
-  SyntheticEvent,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import {
   RichTreeView,
-  TreeItem2,
   TreeItem2Content,
   TreeItem2GroupTransition,
   TreeItem2Icon,
@@ -44,20 +19,9 @@ import {
   TreeItem2Props,
   TreeItem2Provider,
   TreeItem2Root,
-  TreeItem2SlotProps,
   useTreeItem2,
-  useTreeItem2Utils,
 } from "@mui/x-tree-view";
-import {
-  CopyAll,
-  Delete,
-  Download,
-  Favorite,
-  FavoriteBorder,
-  Menu as MenuIcon,
-  RunCircle,
-} from "@mui/icons-material";
-import { Chicle } from "next/font/google";
+import { Menu as MenuIcon } from "@mui/icons-material";
 import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
 import { fileTypeMapping } from "./files-table";
@@ -67,8 +31,6 @@ import {
   JobMenuContext,
   JobWithChildren,
 } from "./job-menu";
-import { Endpoint } from "next/dist/build/swc/types";
-import { FilePreviewDialog } from "./file-preview";
 
 interface ClassicJobListProps {
   projectId: number;
