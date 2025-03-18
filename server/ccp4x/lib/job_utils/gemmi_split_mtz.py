@@ -1,7 +1,7 @@
 import pathlib
 import logging
 import gemmi
-import numpy
+from typing import List
 import re
 from core import CCP4XtalData
 from .available_file_name_based_on import available_file_name_based_on
@@ -47,19 +47,89 @@ def gemmi_split_mtz(
         )
 
     mtzin = gemmi.read_mtz_file(str(input_file_path))
-    providedColumnNames = mtzin.column_labels()
+    mtzin.ensure_asu()
+
+    provided_column_names = mtzin.column_labels()
     if input_column_path.startswith("/"):
         input_column_path = input_column_path[1:]
     if len(input_column_path.split("/")) not in [1, 3]:
         raise Exception("smartSplitMTZ Exception:", "Invalid input columnPath")
-    selectedColumns = re.sub("[\[\] ]", "", input_column_path.split("/")[-1]).split(",")
-    outputColumns = [mtzin.column_with_label(label) for label in ["H", "K", "L"]]
-    typeSignature = ""
-    for columnLabel in selectedColumns:
-        if providedColumnNames.count(columnLabel) == 1:
+
+    selected_columns = re.sub("[\[\] ]", "", input_column_path.split("/")[-1]).split(
+        ","
+    )
+    output_columns, type_signature = get_output_columns(
+        selected_columns, provided_column_names, mtzin, input_column_path
+    )
+
+    logger.error("Output columns are %s", output_columns)
+    final_dest = available_file_name_based_on(preferred_dest)
+
+    mtzout = gemmi.Mtz()
+    mtzout.spacegroup = mtzin.spacegroup
+    mtzout.cell = mtzin.cell
+    # Create a base dataset object with the same spacegroup and cell as the input file and populate with a full set of unique reflections
+    hkl_base = mtzout.add_dataset("HKL_base")
+    mtzout.add_column("H", "H")
+    mtzout.add_column("K", "H")
+    mtzout.add_column("L", "H")
+    uniques = gemmi.make_miller_array(
+        mtzout.cell, mtzout.spacegroup, mtzin.resolution_high(), mtzin.resolution_low()
+    )
+    mtzout.set_data(uniques)
+
+    dataset = hkl_base
+    if len(mtzin.datasets) > 1:
+        dataset = output_columns[-1].dataset
+        ds = mtzout.add_dataset(dataset.project_name)
+        ds.crystal_name = dataset.crystal_name
+        ds.dataset_name = dataset.dataset_name
+        ds.wavelength = dataset.wavelength
+
+    output_column_labels = []
+    labels_dict = {
+        "FQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 4},
+        "JQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 3},
+        "GLGL": {"cls": CCP4XtalData.CObsDataFile, "contentType": 2},
+        # surely not
+        "FQFQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 2},
+        "KMKM": {"cls": CCP4XtalData.CObsDataFile, "contentType": 1},
+        # surely not
+        "JQJQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 1},
+        "AAAA": {"cls": CCP4XtalData.CPhsDataFile, "contentType": 1},
+        "PW": {"cls": CCP4XtalData.CPhsDataFile, "contentType": 2},
+        "I": {"cls": CCP4XtalData.CFreeRDataFile, "contentType": 1},
+    }
+    output_column_labels.extend(
+        getattr(labels_dict[type_signature]["cls"], "CONTENT_SIGNATURE_LIST")[
+            labels_dict[type_signature]["contentType"] - 1
+        ]
+    )
+
+    for i, column in enumerate(output_columns):
+        new_column = mtzout.copy_column(-1, column)
+        new_column.label = output_column_labels[i]
+        new_column.dataset_id = dataset.id
+
+    mtzout.history = [f"MTZ file created from {input_file_path.name} using gemmi."]
+    mtzout.write_to_file(str(final_dest))
+
+    return final_dest
+
+
+def get_output_columns(
+    selected_columns: List[str],
+    provided_column_names: List[str],
+    mtzin: gemmi.Mtz,
+    input_column_path: str,
+):
+    output_columns = []
+    type_signature = ""
+    for columnLabel in selected_columns:
+        if provided_column_names.count(columnLabel) == 1:
             column = mtzin.column_with_label(columnLabel)
-            outputColumns.append(column)
-            typeSignature += column.type
+            output_columns.append(column)
+            type_signature += column.type
         else:
             if len(input_column_path.split("/")) != 3:
                 raise Exception(
@@ -74,56 +144,13 @@ def gemmi_split_mtz(
                     column = mtzin.column_with_label(
                         columnLabel, mtzin.dataset(dataset.id)
                     )
-                    outputColumns.append(column)
-                    typeSignature += column.type
+                    output_columns.append(column)
+                    type_signature += column.type
 
-    if len(outputColumns[3:]) != len(selectedColumns):
+    if len(output_columns) != len(selected_columns):
         raise Exception(
             "smartSplitMTZ Exception:",
-            f"Unable to select columns from input file - options are {providedColumnNames}",
+            f"Unable to select columns from input file - options are {provided_column_names}",
         )
 
-    logger.error("Output columns are %s", outputColumns)
-    final_dest = available_file_name_based_on(preferred_dest)
-
-    mtzout = gemmi.Mtz()
-    mtzout.spacegroup = mtzin.spacegroup
-    mtzout.cell = mtzin.cell
-    mtzout.add_dataset("HKL_base")
-    if len(mtzin.datasets) > 1:
-        dataset = outputColumns[-1].dataset
-        ds = mtzout.add_dataset(dataset.project_name)
-        ds.crystal_name = dataset.crystal_name
-        ds.dataset_name = dataset.dataset_name
-        ds.wavelength = dataset.wavelength
-    outputColumnLabels = ["H", "K", "L"]
-    labelsDict = {
-        "FQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 4},
-        "JQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 3},
-        "GLGL": {"cls": CCP4XtalData.CObsDataFile, "contentType": 2},
-        # surely not
-        "FQFQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 2},
-        "KMKM": {"cls": CCP4XtalData.CObsDataFile, "contentType": 1},
-        # surely not
-        "JQJQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 1},
-        "AAAA": {"cls": CCP4XtalData.CPhsDataFile, "contentType": 1},
-        "PW": {"cls": CCP4XtalData.CPhsDataFile, "contentType": 2},
-        "I": {"cls": CCP4XtalData.CFreeRDataFile, "contentType": 1},
-    }
-    outputColumnLabels.extend(
-        getattr(labelsDict[typeSignature]["cls"], "CONTENT_SIGNATURE_LIST")[
-            labelsDict[typeSignature]["contentType"] - 1
-        ]
-    )
-    for i, column in enumerate(outputColumns):
-        (
-            mtzout.add_column(outputColumnLabels[i], column.type, dataset_id=0)
-            if i < 3 or len(mtzin.datasets) <= 1
-            else mtzout.add_column(outputColumnLabels[i], column.type, dataset_id=1)
-        )
-    data = numpy.stack(outputColumns, axis=1)
-    mtzout.set_data(data)
-    mtzout.history = [f"MTZ file created from {input_file_path.name} using gemmi."]
-    mtzout.write_to_file(str(final_dest))
-
-    return final_dest
+    return output_columns, type_signature
