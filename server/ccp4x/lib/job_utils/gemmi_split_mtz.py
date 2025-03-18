@@ -14,6 +14,21 @@ def gemmi_split_mtz(
     input_column_path: str = None,
     preferred_dest: pathlib.Path = None,
 ):
+    """
+    Splits an MTZ file based on specified columns and writes the result to a new file.
+
+    Args:
+        input_file_path (pathlib.Path): Path to the input MTZ file. Must be provided and must exist.
+        input_column_path (str): Path to the columns to be extracted, e.g., '/*/*/[F,SIGFP]'. Must be provided.
+        preferred_dest (pathlib.Path): Preferred destination path for the split file. Must be provided.
+
+    Raises:
+        Exception: If any of the required arguments are not provided or if the input file does not exist.
+        Exception: If the input column path is invalid or if the specified columns cannot be found in the input file.
+
+    Returns:
+        pathlib.Path: Path to the newly created MTZ file with the selected columns.
+    """
     if input_file_path is None:
         raise Exception("smartSplitMTZ Exception:", "Must provide an input file")
     if not input_file_path.is_file():

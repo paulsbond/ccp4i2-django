@@ -1,11 +1,14 @@
+import os
 from pathlib import Path
 from shutil import rmtree
 from xml.etree import ElementTree as ET
 from django.test import TestCase, override_settings
 from django.conf import settings
+import gemmi
 from core import CCP4PerformanceData
 from core import CCP4ErrorHandling
 from core import CCP4Data
+from ccp4i2.pimple import MGQTmatplotlib
 from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4TaskManager
 from ...db.models import Job, File
@@ -24,6 +27,7 @@ from ...lib.job_utils.clone_job import clone_job
 from ...lib.job_utils.json_for_job_container import json_for_job_container
 from ...lib.job_utils.get_task_tree import get_task_tree
 from ...lib.job_utils.ccp4i2_report import get_report_job_info
+from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
 
 
 @override_settings(
@@ -149,6 +153,19 @@ class CCP4i2TestCase(TestCase):
         print(result)
         self.assertEqual(result["header_info"]["title"], "From Clipper CCP4MTZfile")
         self.assertEqual(result["header_info"]["spacegroup"], "P 21 21 21")
+
+    def test_gemmi_split_mtz(self):
+        os.environ.setdefault(
+            "CCP4I2_TOP", str(Path(MGQTmatplotlib.__file__).parent.parent)
+        )
+        beta_mtz = os.path.expandvars(
+            "$CCP4I2_TOP/demo_data/beta_blip/beta_blip_P3221.mtz"
+        )
+        split_mtz_path = gemmi_split_mtz(
+            Path(beta_mtz), "/*/*/[Fobs,Sigma]", Path("/tmp/beta_blip")
+        )
+        split_mtz = gemmi.read_mtz_file(str(split_mtz_path))
+        print(split_mtz.column_labels())
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">
