@@ -92,6 +92,8 @@ def _process_input(
                 input.project.set(str(theJob.project.uuid))
                 input.relPath.set("CCP4_IMPORTED_FILES")
                 input.baseName.set(destFilePath.name)
+                input.loadFile()
+                input.setContentFlag(reset=True)
 
                 createDict = {
                     "file": theFile,
