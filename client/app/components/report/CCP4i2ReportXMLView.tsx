@@ -16,7 +16,7 @@ export const CCP4i2ReportXMLView = () => {
       id: jobId,
       endpoint: "report_xml",
     },
-    job?.status == 3 ? 5000 : 0
+    job?.status == 3 || job?.status == 2 ? 5000 : 0
   );
 
   const reportContent = useMemo<ReactNode[] | null>(() => {
