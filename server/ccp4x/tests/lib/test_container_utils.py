@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from shutil import rmtree
+import subprocess
 from xml.etree import ElementTree as ET
 from django.test import TestCase, override_settings
 from django.conf import settings
@@ -161,11 +162,22 @@ class CCP4i2TestCase(TestCase):
         beta_mtz = os.path.expandvars(
             "$CCP4I2_TOP/demo_data/beta_blip/beta_blip_P3221.mtz"
         )
+        unsplit_mtz = gemmi.read_mtz_file(beta_mtz)
+        uniques = gemmi.make_miller_array(
+            unsplit_mtz.cell,
+            unsplit_mtz.spacegroup,
+            unsplit_mtz.resolution_high(),
+            unsplit_mtz.resolution_low(),
+            unique=True,
+        )
+        print("size", uniques.size / 3)
+        print(unsplit_mtz.nreflections)
         split_mtz_path = gemmi_split_mtz(
-            Path(beta_mtz), "/*/*/[Fobs,Sigma]", Path("/tmp/beta_blip")
+            Path(beta_mtz), "/*/*/[Fobs,Sigma]", Path("/tmp/beta_blip.mtz")
         )
         split_mtz = gemmi.read_mtz_file(str(split_mtz_path))
-        print(split_mtz.column_labels())
+        subprocess.call(["mtzdmp", str(beta_mtz), "10"])
+        subprocess.call(["mtzdmp", str(split_mtz_path), "10"])
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">
