@@ -188,22 +188,6 @@ class CCP4i2RunnerBase(object):
         return theParser
 
     @staticmethod
-    def availableNameBasedOn(filePath):
-        if not os.path.exists(filePath):
-            return filePath
-        if "." in filePath:
-            # Clumsy thing to deal with double dotted extensions like .scene.xml
-            basePath = filePath.split(".")[0]
-            extension = "." + ".".join(filePath.split(".")[1:])
-        else:
-            basePath = filePath
-            extension = ""
-        counter = 1
-        while os.path.exists(basePath + "_" + str(counter) + extension):
-            counter += 1
-        return basePath + "_" + str(counter) + extension
-
-    @staticmethod
     def slugify_variable(variable):
         # Remove any non-alphanumeric characters except for commas and hyphens
         variable = re.sub(r"[/*\[\] ,]+", "-", variable)
@@ -239,7 +223,7 @@ class CCP4i2RunnerBase(object):
             output_path_str = (
                 CCP4i2RunnerBase.slugify_variable(inputColumnPath) + "_split.mtz"
             )
-        output_path = pathlib.Path(Path(intoDirectory) / output_path_str)
+        output_path = pathlib.Path(intoDirectory) / output_path_str
 
         final_dest = gemmi_split_mtz(input_path, inputColumnPath, output_path)
         return str(final_dest)
@@ -253,7 +237,7 @@ class CCP4i2RunnerBase(object):
                     thePlugin.container, objectPath
                 )  # PluginUtils.locateElement(thePlugin.container, objectPath)
                 splitFilePath = CCP4i2RunnerBase.gemmiSplitMTZ(
-                    input_file_path=theObject.fullPath.__str__(),
+                    input_path_str=theObject.fullPath.__str__(),
                     inputColumnPath=subValue,
                     intoDirectory=thePlugin.workDirectory,
                 )
@@ -302,6 +286,7 @@ class CCP4i2RunnerBase(object):
         thePlugin = CCP4Modules.TASKMANAGER().getPluginScriptClass(
             parsed_args.task_name
         )(jobId=jobId, workDirectory=workDirectory, parent=self.parent)
+        self.work_directory = workDirectory
         if jobId is not None:
             jobInfo = (
                 CCP4Modules.PROJECTSMANAGER()
