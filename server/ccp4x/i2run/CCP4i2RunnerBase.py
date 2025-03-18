@@ -1,4 +1,4 @@
-import gemmi
+import pathlib
 import unittest
 import argparse
 import re
@@ -16,6 +16,7 @@ import shlex
 import numpy
 from ..lib.job_utils.set_parameter import set_parameter_container
 from ..lib.job_utils.find_objects import find_object_by_path
+from ..lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
 
 # Get an instance of a logger
 logger = logging.getLogger("root")
@@ -203,120 +204,45 @@ class CCP4i2RunnerBase(object):
         return basePath + "_" + str(counter) + extension
 
     @staticmethod
+    def slugify_variable(variable):
+        # Remove any non-alphanumeric characters except for commas and hyphens
+        variable = re.sub(r"[/*\[\] ,]+", "-", variable)
+
+        # Convert to lowercase
+        variable = variable.lower()
+
+        # Remove leading/trailing hyphens, if any
+        variable = variable.strip("-")
+
+        return variable
+
+    @staticmethod
     def gemmiSplitMTZ(
-        inputFilePath=None, inputColumnPath=None, objectPath=None, intoDirectory=None
+        input_path_str: str = None,
+        inputColumnPath: str = None,
+        output_path_str: str = None,
+        intoDirectory: str = None,
     ):
-        if inputFilePath is None:
-            raise Exception("smartSplitMTZ Exception:", "Must provide an input file")
-        if not os.path.isfile(inputFilePath):
-            raise Exception(
-                "smartSplitMTZ Exception:", "inputFile must exist" + str(inputFilePath)
-            )
-        if inputColumnPath is None:
+        if output_path_str is not None and intoDirectory is not None:
             raise Exception(
                 "smartSplitMTZ Exception:",
-                "Must provide an input columnPath e.g. '/*/*/[F,SIGFP]'",
+                "Provide *either* full output path for file, or name of directory where file should be placed",
             )
-        if objectPath is not None and intoDirectory is not None:
+        if output_path_str is None and intoDirectory is None:
             raise Exception(
                 "smartSplitMTZ Exception:",
                 "Provide either full output path for file, or name of directory where file should be placed",
             )
-        if objectPath is None and intoDirectory is None:
-            raise Exception(
-                "smartSplitMTZ Exception:",
-                "Provide either full output path for file, or name of directory where file should be placed",
-            )
+        input_path = pathlib.Path(input_path_str)
 
-        mtzin = gemmi.read_mtz_file(inputFilePath)
-        providedColumnNames = mtzin.column_labels()
-        if inputColumnPath.startswith("/"):
-            inputColumnPath = inputColumnPath[1:]
-        if len(inputColumnPath.split("/")) not in [1, 3]:
-            raise Exception("smartSplitMTZ Exception:", "Invalid input columnPath")
-        selectedColumns = re.sub("[\[\] ]", "", inputColumnPath.split("/")[-1]).split(
-            ","
-        )
-        outputColumns = [mtzin.column_with_label(label) for label in ["H", "K", "L"]]
-        typeSignature = ""
-        for columnLabel in selectedColumns:
-            if providedColumnNames.count(columnLabel) == 1:
-                column = mtzin.column_with_label(columnLabel)
-                outputColumns.append(column)
-                typeSignature += column.type
-            else:
-                if len(inputColumnPath.split("/")) != 3:
-                    raise Exception(
-                        "smartSplitMTZ Exception:",
-                        "Input file requires full input columnPath e.g. '/crystal/dataset/[F,SIGFP]'",
-                    )
-                for dataset in mtzin.datasets:
-                    if (
-                        dataset.crystal_name == inputColumnPath.split("/")[-3]
-                        and dataset.dataset_name == inputColumnPath.split("/")[-2]
-                    ):
-                        column = mtzin.column_with_label(
-                            columnLabel, mtzin.dataset(dataset.id)
-                        )
-                        outputColumns.append(column)
-                        typeSignature += column.type
-        if len(outputColumns[3:]) != len(selectedColumns):
-            raise Exception(
-                "smartSplitMTZ Exception:",
-                f"Unable to select columns from input file - options are {providedColumnNames}",
+        if output_path_str is None:
+            output_path_str = (
+                CCP4i2RunnerBase.slugify_variable(inputColumnPath) + "_split.mtz"
             )
+        output_path = pathlib.Path(Path(intoDirectory) / output_path_str)
 
-        if intoDirectory is not None:
-            firstGuess = os.path.join(
-                intoDirectory,
-                typeSignature + "_ColumnsFrom_" + os.path.split(inputFilePath)[1],
-            )
-            objectPath = CCP4i2RunnerBase.availableNameBasedOn(firstGuess)
-        mtzout = gemmi.Mtz()
-        mtzout.spacegroup = mtzin.spacegroup
-        mtzout.cell = mtzin.cell
-        mtzout.add_dataset("HKL_base")
-        if len(mtzin.datasets) > 1:
-            dataset = outputColumns[-1].dataset
-            ds = mtzout.add_dataset(dataset.project_name)
-            ds.crystal_name = dataset.crystal_name
-            ds.dataset_name = dataset.dataset_name
-            ds.wavelength = dataset.wavelength
-        outputColumnLabels = ["H", "K", "L"]
-        labelsDict = {
-            "FQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 4},
-            "JQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 3},
-            "GLGL": {"cls": CCP4XtalData.CObsDataFile, "contentType": 2},
-            # surely not
-            "FQFQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 2},
-            "KMKM": {"cls": CCP4XtalData.CObsDataFile, "contentType": 1},
-            # surely not
-            "JQJQ": {"cls": CCP4XtalData.CObsDataFile, "contentType": 1},
-            "AAAA": {"cls": CCP4XtalData.CPhsDataFile, "contentType": 1},
-            "PW": {"cls": CCP4XtalData.CPhsDataFile, "contentType": 2},
-            "I": {"cls": CCP4XtalData.CFreeRDataFile, "contentType": 1},
-        }
-        outputColumnLabels.extend(
-            getattr(labelsDict[typeSignature]["cls"], "CONTENT_SIGNATURE_LIST")[
-                labelsDict[typeSignature]["contentType"] - 1
-            ]
-        )
-        for i, column in enumerate(outputColumns):
-            (
-                mtzout.add_column(outputColumnLabels[i], column.type, dataset_id=0)
-                if i < 3 or len(mtzin.datasets) <= 1
-                else mtzout.add_column(outputColumnLabels[i], column.type, dataset_id=1)
-            )
-        data = numpy.stack(outputColumns, axis=1)
-        mtzout.set_data(data)
-        mtzout.history = [
-            "MTZ file created from {} using gemmi.".format(
-                os.path.basename(inputFilePath)
-            )
-        ]
-        mtzout.write_to_file(objectPath)
-
-        return objectPath
+        final_dest = gemmi_split_mtz(input_path, inputColumnPath, output_path)
+        return str(final_dest)
 
     def handleItem(self, thePlugin: CPluginScript, objectPath, value):
         if isinstance(value, str) and "=" in value:
@@ -327,7 +253,7 @@ class CCP4i2RunnerBase(object):
                     thePlugin.container, objectPath
                 )  # PluginUtils.locateElement(thePlugin.container, objectPath)
                 splitFilePath = CCP4i2RunnerBase.gemmiSplitMTZ(
-                    inputFilePath=theObject.fullPath.__str__(),
+                    input_file_path=theObject.fullPath.__str__(),
                     inputColumnPath=subValue,
                     intoDirectory=thePlugin.workDirectory,
                 )
