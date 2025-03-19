@@ -587,7 +587,7 @@ class JobViewSet(ModelViewSet):
             ccp4_python = str(pathlib.Path(os.environ["CCP4"]) / "bin" / "ccp4-python")
             manage_py = str(pathlib.Path(__file__).parent.parent.parent / "manage.py")
             job = models.Job.objects.get(id=pk)
-            subprocess.Popen(
+            process = subprocess.Popen(
                 [
                     ccp4_python,
                     manage_py,
@@ -597,6 +597,8 @@ class JobViewSet(ModelViewSet):
                 ],
                 start_new_session=True,
             )
+            job.process_id = process.pid
+            job.save()
             serializer = serializers.JobSerializer(job)
             return Response(serializer.data)
         except (ValueError, models.Job.DoesNotExist) as err:
