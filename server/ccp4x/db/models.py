@@ -249,7 +249,7 @@ class FileUse(Model):
     job_param_name = CharField(max_length=32, blank=True)
 
     class Meta:
-        unique_together = ["file", "job", "role"]
+        unique_together = ["file", "job", "role", "job_param_name"]
 
     def __str__(self):
         return self.job_param_name
