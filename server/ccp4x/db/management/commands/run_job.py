@@ -45,7 +45,7 @@ class Command(BaseCommand):
             return
 
         if options["detach"]:
-            subprocess.Popen(
+            process = subprocess.Popen(
                 [
                     "ccp4-python",
                     "manage.py",
@@ -55,6 +55,8 @@ class Command(BaseCommand):
                 ],
                 start_new_session=True,
             )
+            the_job.process_id = process.pid
+            the_job.save()
         else:
             run_job(str(the_job.uuid))
 

@@ -60,7 +60,22 @@ def run_job(jobId: str):
                         force=True,
                     )
                     _import_files(new_job, the_plugin)
-                    executePlugin(the_plugin, new_job)
+                    try:
+                        executePlugin(the_plugin, new_job)
+                    except Exception as err:
+                        logger.exception("Failed to execute plugin", exc_info=err)
+                    finally:
+                        maybe_updated_job = models.Job.objects.get(id=new_job.id)
+                        if maybe_updated_job.status not in [
+                            models.Job.Status.FINISHED,
+                            models.Job.Status.FAILED,
+                            models.Job.Status.UNSATISFACTORY,
+                        ]:
+                            maybe_updated_job.status = models.Job.Status.FAILED
+                            maybe_updated_job.save()
+                        maybe_updated_job.process_id = None
+                        maybe_updated_job.save()
+                        logger.info("Job finished")
 
 
 def setup_db_handler(new_job: models.Job):
