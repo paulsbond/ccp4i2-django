@@ -42,7 +42,11 @@ def set_output_file_names(
                 )
             if isinstance(dobj, CCP4ModelData.CPdbDataFile):
                 oldBaseName = str(Path(str(dobj.baseName)).stem)
-                if dobj.contentFlag is None or int(dobj.contentFlag) == 1:
+                if (
+                    dobj.contentFlag is None
+                    or dobj.contentFlag._value is None
+                    or int(dobj.contentFlag) == 1
+                ):
                     dobj.baseName.set(f"{oldBaseName}.pdb")
                 elif int(dobj.contentFlag) == 2:
                     dobj.baseName.set(f"{oldBaseName}.cif")
