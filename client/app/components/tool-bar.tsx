@@ -9,11 +9,12 @@ import {
   MenuBook,
   SystemUpdateAlt,
 } from "@mui/icons-material";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useApi } from "../api";
 import { Job, Project } from "../models";
 import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
+import { HelpIframe } from "./help_iframe";
 
 export default function ToolBar() {
   const sizeMinus1 = useMediaQuery("(max-width:110rem)");
@@ -35,6 +36,7 @@ export default function ToolBar() {
     endpoint: "jobs",
   });
   const router = useRouter();
+  const [showHelp, setShowHelp] = useState(false);
   const handleClone = async () => {
     if (job) {
       const cloneResult: Job = await api.post(`jobs/${job?.id}/clone/`);
@@ -90,7 +92,13 @@ export default function ToolBar() {
       >
         Clone job
       </Button>
-      <Button variant="outlined" startIcon={<Help />}>
+      <Button
+        variant="outlined"
+        startIcon={<Help />}
+        onClick={() => {
+          setShowHelp(true);
+        }}
+      >
         Help
       </Button>
       {!sizeMinus4 && (
@@ -117,6 +125,13 @@ export default function ToolBar() {
           i2run command
         </Button>
       )}
+      <HelpIframe
+        url={`http://localhost:3000/help/html/tasks/${job?.task_name}/index.html`}
+        open={showHelp}
+        handleClose={() => {
+          setShowHelp(false);
+        }}
+      />
     </Stack>
   );
 }
