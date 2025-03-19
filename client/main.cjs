@@ -40,6 +40,21 @@ const createWindow = () => {
     mainWindow = null;
   });
 
+  // Intercept window.open and create a new Electron window instead
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    const newWin = new BrowserWindow({
+      width: 600,
+      height: 400,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
+    });
+
+    newWin.loadURL(url);
+    return { action: "deny" }; // Prevent default behavior
+  });
+
   // Intercept downloads
   session.defaultSession.on("will-download", async (event, item) => {
     // Ask the user where to save the file
