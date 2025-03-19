@@ -6,6 +6,8 @@ from xml.etree import ElementTree as ET
 from core import CCP4Container
 from ccp4i2.core.CCP4Container import CContainer
 from core import CCP4File
+from core import CCP4Data
+from ccp4i2.core.CCP4Data import CList
 from ccp4i2.core.CCP4File import CDataFile
 
 from ...db.ccp4i2_django_wrapper import using_django_pm
@@ -53,6 +55,28 @@ def set_input_by_context_job(job_id: str = None, context_job_id: str = None):
         and item.qualifiers("fromPreviousJob"),
         multiple=True,
     )
+
+    # Now find input data that is a list of files, add an item of such lists to the list of dObjs for which we need to set the input
+    list_list = find_objects(
+        input_data,
+        lambda item: isinstance(item, CCP4Data.CList)
+        and item.qualifiers("fromPreviousJob"),
+        multiple=True,
+    )
+    a_list: CList
+    for a_list in list_list:
+        try:
+            a_list_item = a_list.makeItem()
+            if isinstance(a_list_item, CCP4File.CDataFile):
+                a_list.append(a_list_item)
+                dobj_list.append(a_list_item)
+        except Exception as err:
+            logger.exception(
+                "Exception in set_input_by_context_job for %s",
+                a_list.objectPath(),
+                exc_info=err,
+            )
+
     dobj: CDataFile
     for dobj in dobj_list:
         file_id_list = get_file_by_job_context(
