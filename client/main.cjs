@@ -43,7 +43,7 @@ const createWindow = () => {
   // Intercept window.open and create a new Electron window instead
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     const newWin = new BrowserWindow({
-      width: 600,
+      width: 800,
       height: 400,
       webPreferences: {
         nodeIntegration: false,
