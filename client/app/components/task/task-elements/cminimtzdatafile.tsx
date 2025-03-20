@@ -61,7 +61,8 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
         });
 
         const formData = new FormData();
-        formData.append("column_selector", signature);
+        if (signature && signature.trim().length > 0)
+          formData.append("column_selector", signature);
         formData.append("objectPath", item._objectPath);
         formData.append("file", fileBlob, selectedFiles[0].name);
         console.log(signature, item._objectPath, selectedFiles[0]);
