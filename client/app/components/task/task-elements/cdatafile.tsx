@@ -25,10 +25,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { Folder } from "@mui/icons-material";
+import { Folder, Language } from "@mui/icons-material";
 import { useJob } from "../../../utils";
 import { ErrorInfo, ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../task-container";
+import { InputFileFetch } from "./input-file-fetch";
+import { InputFileUpload } from "./input-file-upload";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -40,52 +42,6 @@ const fileTypeMapping: { [key: string]: string } = {
   CUnmergedDataFile: "application/CCP4-unmerged-experimental",
   CPdbDataFile: "chemical/x-pdb",
   CAsuDataFile: "application/CCP4-asu-content",
-};
-
-const VisuallyHiddenInput = styled("input")({
-  clip: "rect(0 0 0 0)",
-  clipPath: "inset(50%)",
-  height: 1,
-  overflow: "hidden",
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  whiteSpace: "nowrap",
-  width: 1,
-});
-
-interface InputFileUploadProps {
-  handleFileChange: (ev: ChangeEvent<HTMLInputElement>) => void;
-  disabled: boolean;
-  accept: string;
-  sx?: SxProps;
-}
-export const InputFileUpload: React.FC<InputFileUploadProps> = ({
-  handleFileChange,
-  disabled,
-  accept,
-  sx,
-}) => {
-  return (
-    <Button
-      disabled={disabled}
-      component="label"
-      role={undefined}
-      variant="outlined"
-      tabIndex={-1}
-      size="small"
-      startIcon={<Folder />}
-      sx={sx}
-    >
-      <VisuallyHiddenInput
-        disabled={disabled}
-        type="file"
-        onChange={handleFileChange}
-        accept={accept}
-        sx={sx}
-      />
-    </Button>
-  );
 };
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
@@ -107,6 +63,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     setErrorInfoItem,
     inFlight,
     setInFlight,
+    downloadDialogOpen,
+    setDownloadDialogOpen,
+    downloadItem,
+    setDownloadItem,
   } = useContext(TaskInterfaceContext);
   //return <Typography>"{itemName}",</Typography>;
 
@@ -208,15 +168,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         setParameterArg.value = null;
       } else if (value) {
         setValue(value);
-        const newFile: CDataFile = {
-          dbFileId: value.uuid.replace(/-/g, ""),
-          subType: value.sub_type,
-          contentFlag: value.content,
-          annotation: value.annotation,
-          baseName: value.name,
-          relPath: "",
-          project: 0,
-        };
         setParameterArg.value = {
           dbFileId: value.uuid.replace(/-/g, ""),
           subType: value.sub_type,
@@ -224,7 +175,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           annotation: value.annotation,
           baseName: value.name,
         };
-        let project: string | null = null;
         if (value.directory == 2) {
           setParameterArg.value.relPath = "CCP4_IMPORTED_FILES";
         }
@@ -328,6 +278,17 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
             .join(",")}
           handleFileChange={handleFileChange}
         />
+        {item?._qualifiers?.downloadModes?.length > 0 && (
+          <InputFileFetch
+            sx={{ my: 1, mr: 2 }}
+            disabled={inFlight || job.status !== 1}
+            accept={item._qualifiers.fileExtensions
+              .map((ext: string) => `.${ext}`)
+              .join(",")}
+            handleFileChange={handleFileChange}
+            item={item}
+          />
+        )}
         <ErrorTrigger {...{ item, job }} />
       </Stack>
     )

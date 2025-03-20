@@ -10,6 +10,7 @@ import Crank2Interface from "./task-interfaces/crank2";
 import GenericInterface from "./task-interfaces/generic";
 import { useJob } from "../../utils";
 import { ErrorPopper } from "./task-elements/error-info";
+import { FetchFileForParam } from "./task-elements/fetch-file-for-param";
 
 export interface CCP4i2TaskInterfaceProps {
   job: Job;
@@ -21,6 +22,10 @@ interface TaskInterfaceContextProps {
   setErrorInfoItem: (item: any) => void;
   inFlight: any | null;
   setInFlight: (item: any) => void;
+  downloadItem?: any | null;
+  setDownloadItem: (item: any) => void;
+  downloadDialogOpen?: boolean;
+  setDownloadDialogOpen?: (valie: boolean) => void;
 }
 export const TaskInterfaceContext = createContext<TaskInterfaceContextProps>({
   errorInfoAnchor: null,
@@ -29,6 +34,10 @@ export const TaskInterfaceContext = createContext<TaskInterfaceContextProps>({
   setErrorInfoItem: (item: any) => {},
   inFlight: null,
   setInFlight: (item: any) => {},
+  downloadItem: null,
+  setDownloadItem: (item: any) => {},
+  downloadDialogOpen: false,
+  setDownloadDialogOpen: (value: boolean) => {},
 });
 
 export const TaskContainer = () => {
@@ -38,6 +47,8 @@ export const TaskContainer = () => {
   const [errorInfoAnchor, setErrorInfoAnchor] = useState<Element | null>(null);
   const [errorInfoItem, setErrorInfoItem] = useState<any | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);
+  const [downloadItem, setDownloadItem] = useState<any | null>(null);
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState<boolean>(false);
 
   const taskInterface = useMemo(() => {
     switch (job?.task_name) {
@@ -101,6 +112,10 @@ export const TaskContainer = () => {
         setErrorInfoItem,
         inFlight,
         setInFlight,
+        downloadDialogOpen,
+        setDownloadDialogOpen,
+        downloadItem,
+        setDownloadItem,
       }}
     >
       <Paper
@@ -125,6 +140,13 @@ export const TaskContainer = () => {
       >
         <CircularProgress size={150} thickness={4} />
       </Popper>
+      <FetchFileForParam
+        item={downloadItem}
+        open={downloadDialogOpen}
+        onClose={() => {
+          setDownloadDialogOpen(false);
+        }}
+      />
     </TaskInterfaceContext.Provider>
   );
 };
