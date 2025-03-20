@@ -51,9 +51,9 @@ def _get_basic_job_info(job: Job):
         "tasktitle": job.task_name,
         "jobid": str(job.uuid),
     }
-    logger.warning(result)
     if job.finish_time is not None:
         result["finishtime"] = job.finish_time.timestamp()
+    logger.warning(result)
     return result
 
 

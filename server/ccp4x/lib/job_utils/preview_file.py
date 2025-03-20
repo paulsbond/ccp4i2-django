@@ -20,7 +20,7 @@ def preview_file(viewer: str = None, file_path: pathlib.Path = None):
         # Here should dial into mechanism to use the user-specified path to coot as appropriate.
         # Also suspect will need diverse environment variables to be set for this to work.
         subprocess.Popen(
-            ["coot", str(file_path)],
+            ["coot", "--no-guano", str(file_path)],
             start_new_session=True,
         )
         return {"status": "Success"}
