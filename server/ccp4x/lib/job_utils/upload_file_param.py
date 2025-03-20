@@ -1,9 +1,13 @@
 import logging
 import pathlib
 import json
+import gemmi
+from typing import List
+from ccp4i2.core.CCP4Data import CData
 from ccp4i2.core.CCP4File import CDataFile
 from ccp4i2.core.CCP4XtalData import CMtzDataFile
 from django.utils.text import slugify
+from django.http import HttpRequest
 from core import CCP4File
 from core import CCP4XtalData
 
@@ -19,7 +23,7 @@ from ...db import models
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
-def upload_file_param(job: models.Job, request) -> dict:
+def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
 
     logger.debug("Received %s %s", job, request.POST)
     plugin = get_job_plugin(the_job=job)
@@ -79,20 +83,9 @@ def upload_file_param(job: models.Job, request) -> dict:
             CMtzDataFile,
         ),
     ):
-        logger.error(
-            "Dealing with an MTZ file %s %s",
-            isinstance(param_object, (CMtzDataFile,)),
-            isinstance(param_object, (CCP4XtalData.CMtzDataFile,)),
-        )
-        column_selector = request.POST.get("column_selector")
-        dest = (
-            pathlib.Path(job.project.directory)
-            / "CCP4_IMPORTED_FILES"
-            / slugify(pathlib.Path(files[0].name).stem)
-        ).with_suffix(pathlib.Path(files[0].name).suffix)
-        logger.error("Preferred imported file destination is %s", dest)
-        imported_file_path = gemmi_split_mtz(
-            downloaded_file_path, column_selector, dest
+        column_selector = request.POST.get("column_selector", None)
+        imported_file_path = handle_reflections(
+            job, param_object, files[0].name, column_selector, downloaded_file_path
         )
     else:
         imported_file_path = downloaded_file_path
@@ -170,3 +163,26 @@ def download_file(job: models.Job, the_file, initial_download_project_folder: st
         uploadFile.close()
     logger.debug("Upload complete")
     return dest
+
+
+def handle_reflections(
+    job: models.Job,
+    param_object: CData,
+    file_name: str,
+    column_selector: str,
+    downloaded_file_path: pathlib.Path,
+):
+    logger.error(
+        "Dealing with ation object %s %s",
+        isinstance(param_object, (CMtzDataFile,)),
+        isinstance(param_object, (CCP4XtalData.CMtzDataFile,)),
+    )
+    # a = gemmi.CifToMtz()
+    dest = (
+        pathlib.Path(job.project.directory)
+        / "CCP4_IMPORTED_FILES"
+        / slugify(pathlib.Path(file_name).stem)
+    ).with_suffix(pathlib.Path(file_name).suffix)
+    logger.error("Preferred imported file destination is %s", dest)
+    imported_file_path = gemmi_split_mtz(downloaded_file_path, column_selector, dest)
+    return imported_file_path
