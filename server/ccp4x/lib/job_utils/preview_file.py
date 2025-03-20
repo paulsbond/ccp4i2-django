@@ -1,5 +1,6 @@
 import pathlib
 import subprocess
+from .open_terminal_in_directory import open_terminal_in_directory
 
 
 def preview_file(viewer: str = None, file_path: pathlib.Path = None):
@@ -40,4 +41,8 @@ def preview_file(viewer: str = None, file_path: pathlib.Path = None):
             start_new_session=True,
         )
         return {"status": "Success"}
+    if viewer == "terminal":
+        open_terminal_in_directory(str(pathlib.Path(file_path).parent))
+        return {"status": "Success"}
+
     raise ValueError(f"Viewer {viewer} is not supported.")

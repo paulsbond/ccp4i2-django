@@ -19,6 +19,7 @@ import {
   Download,
   Preview,
   RunCircle,
+  Terminal,
 } from "@mui/icons-material";
 import { FilePreviewDialog } from "./file-preview";
 
@@ -176,6 +177,20 @@ export const JobMenu: React.FC = () => {
     },
     [menuNode]
   );
+
+  const handlePreviewFileInTerminal = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const file = menuNode as DjangoFile;
+      if (file) {
+        console.log("Handling preview in terminal", file);
+        api.post<any>(`files/${file.id}/preview/`, { viewer: "terminal" });
+        setAnchorEl(null);
+      }
+    },
+    [menuNode]
+  );
+
   const handleDelete = useCallback(
     (ev: SyntheticEvent) => {
       const job = menuNode as Job;
@@ -278,6 +293,9 @@ export const JobMenu: React.FC = () => {
       </MenuItem>
       <MenuItem key="Preview" onClick={handlePreviewFile}>
         <Preview /> Preview
+      </MenuItem>
+      <MenuItem key="Preview" onClick={handlePreviewFileInTerminal}>
+        <Terminal /> Terminal
       </MenuItem>
       {menuNodeAsFile &&
         ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(
