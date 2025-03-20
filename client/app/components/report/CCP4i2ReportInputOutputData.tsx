@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import $ from "jquery";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 import {
   Avatar,
+  Button,
   CardHeader,
   Chip,
   Collapse,
@@ -13,10 +14,17 @@ import {
 } from "@mui/material";
 import { MyExpandMore } from "../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { Menu as MenuIcon } from "@mui/icons-material";
 import { useApi } from "../../api";
 import { fileTypeMapping } from "../files-table";
 import EditableTypography from "../editable-typography";
-import { File as DjangoFile } from "../../models";
+import { File as DjangoFile, Job } from "../../models";
+import {
+  ClassicJobsListPreviewDialog,
+  JobMenu,
+  JobMenuContext,
+  JobWithChildren,
+} from "../job-menu";
 //import { fileTypeMapping } from "../files-table";
 
 export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
@@ -24,6 +32,14 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
 ) => {
   const [fileUUIDs, setFileUUIDs] = useState<string[]>([]);
   const [expanded, setExpanded] = useState(true);
+  const [previewNode, setPreviewNode] = useState<
+    JobWithChildren | DjangoFile | null
+  >(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [menuNode, setMenuNode] = useState<
+    Job | JobWithChildren | DjangoFile | null
+  >(null);
+
   useEffect(() => {
     if (!props.item) return;
     const fileUUIDs: string[] = [];
@@ -54,38 +70,54 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
 
   return (
     <>
-      <Toolbar
-        variant="dense"
-        sx={{ backgroundColor: "primary.main", color: "primary.contrastText" }}
-        key={$(props.item).attr("key")}
-        onClick={(ev) => {
-          ev.stopPropagation();
-          setExpanded(!expanded);
+      <JobMenuContext.Provider
+        value={{
+          anchorEl,
+          setAnchorEl,
+          menuNode,
+          setMenuNode,
+          previewNode,
+          setPreviewNode,
         }}
       >
-        <MyExpandMore
-          expand={expanded}
+        <Toolbar
+          variant="dense"
+          sx={{
+            backgroundColor: "primary.main",
+            color: "primary.contrastText",
+          }}
+          key={$(props.item).attr("key")}
           onClick={(ev) => {
             ev.stopPropagation();
             setExpanded(!expanded);
           }}
-          aria-expanded={expanded}
-          aria-label="show more"
         >
-          <ExpandMoreIcon />
-        </MyExpandMore>
-        {title}
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ flexGrow: 1 }}
-        ></Typography>
-      </Toolbar>
-      <Collapse in={expanded} timeout="auto" unmountOnExit sx={{ p: 2 }}>
-        {fileUUIDs.map((fileUUID: string, iFile: Number) => (
-          <CCP4i2ReportFile {...props} uuid={fileUUID} key={`${iFile}`} />
-        ))}
-      </Collapse>
+          <MyExpandMore
+            expand={expanded}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setExpanded(!expanded);
+            }}
+            aria-expanded={expanded}
+            aria-label="show more"
+          >
+            <ExpandMoreIcon />
+          </MyExpandMore>
+          {title}
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1 }}
+          ></Typography>
+        </Toolbar>
+        <Collapse in={expanded} timeout="auto" unmountOnExit sx={{ p: 2 }}>
+          {fileUUIDs.map((fileUUID: string, iFile: Number) => (
+            <CCP4i2ReportFile {...props} uuid={fileUUID} key={`${iFile}`} />
+          ))}
+        </Collapse>
+        <JobMenu />
+        <ClassicJobsListPreviewDialog />
+      </JobMenuContext.Provider>
     </>
   );
 };
@@ -98,6 +130,9 @@ const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
   const { data: file, isLoading } = api.get<DjangoFile>(
     `files/${props.uuid}/by_uuid/`
   );
+  const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
+    useContext(JobMenuContext);
+
   const fileTypeIcon = useMemo(() => {
     if (!file?.type) return "ccp4";
     return Object.keys(fileTypeMapping).includes(file?.type)
@@ -153,6 +188,19 @@ const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
               label={file?.content}
             />
           )}
+          <Button
+            size="small"
+            sx={{ p: 0, m: 0 }}
+            variant="outlined"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              ev.preventDefault();
+              setAnchorEl(ev.currentTarget);
+              setMenuNode(file || null);
+            }}
+          >
+            <MenuIcon fontSize="small" />
+          </Button>
         </div>
       </Stack>
     </>
