@@ -10,6 +10,7 @@ from django.utils.text import slugify
 from django.http import HttpRequest
 from core import CCP4File
 from core import CCP4XtalData
+from core.CCP4XtalData import CMtzDataFile
 
 from .find_objects import find_object_by_path
 from .available_file_name_based_on import available_file_name_based_on
@@ -18,6 +19,7 @@ from .get_job_plugin import get_job_plugin
 from .gemmi_split_mtz import gemmi_split_mtz
 from .save_params_for_job import save_params_for_job
 from .json_encoder import CCP4i2JsonEncoder
+from .value_dict_for_object import value_dict_for_object
 from ...db import models
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -167,17 +169,28 @@ def download_file(job: models.Job, the_file, initial_download_project_folder: st
 
 def handle_reflections(
     job: models.Job,
-    param_object: CData,
+    param_object: CMtzDataFile,
     file_name: str,
     column_selector: str,
     downloaded_file_path: pathlib.Path,
 ):
     logger.error(
-        "Dealing with ation object %s %s",
+        "Dealing with a reflection object %s %s",
         isinstance(param_object, (CMtzDataFile,)),
         isinstance(param_object, (CCP4XtalData.CMtzDataFile,)),
     )
-    # a = gemmi.CifToMtz()
+    try:
+        _ = gemmi.read_mtz_file(str(downloaded_file_path))
+    except RuntimeError as err:
+        logger.exception(
+            "Error reading MTZ file %s", downloaded_file_path, exc_info=err
+        )
+        downloaded_file_path, default_column_selector = gemmi_convert_to_mtz(
+            param_object, downloaded_file_path
+        )
+        if column_selector is None:
+            column_selector = default_column_selector
+
     dest = (
         pathlib.Path(job.project.directory)
         / "CCP4_IMPORTED_FILES"
@@ -186,3 +199,79 @@ def handle_reflections(
     logger.error("Preferred imported file destination is %s", dest)
     imported_file_path = gemmi_split_mtz(downloaded_file_path, column_selector, dest)
     return imported_file_path
+
+
+def gemmi_convert_to_mtz(dobj: CMtzDataFile, downloaded_file_path: pathlib.Path):
+    document = gemmi.cif.read_file(str(downloaded_file_path))
+    block = gemmi.as_refln_blocks(document)[0]
+    converter = gemmi.CifToMtz()
+    returned_mtz = converter.convert_block_to_mtz(block)
+    # print(returned_mtz.column_labels())
+    dest = downloaded_file_path.with_suffix(".mtz")
+    deduped_dest = available_file_name_based_on(dest)
+    returned_mtz.write_to_file(str(deduped_dest))
+    # print("dest", deduped_dest)
+    analysis = find_column_selections(dobj, deduped_dest)
+    # print(analysis)
+    # FOr now assume that there is at least one matching column group and take the first
+    selected_columns = analysis["options"][0]["columnPath"]
+    print("selected_columns", selected_columns)
+    return deduped_dest, selected_columns
+
+
+def find_column_selections(data_object: CMtzDataFile, deduped_dest: pathlib.Path):
+    data_object.setFullPath(str(deduped_dest))
+    data_object.loadFile()
+    contents = data_object.getFileContent()
+    column_groups = contents.getColumnGroups()
+    groups_dict = value_dict_for_object(column_groups)
+    if isinstance(data_object, CCP4XtalData.CObsDataFile):
+        possibilities = [
+            column_group
+            for column_group in groups_dict
+            if column_group["columnGroupType"] == "Obs"
+        ]
+    elif isinstance(data_object, CCP4XtalData.CFreeRDataFile):
+        possibilities = [
+            column_group
+            for column_group in groups_dict
+            if column_group["columnGroupType"] == "FreeR"
+        ]
+    elif isinstance(data_object, CCP4XtalData.CPhsDataFile):
+        possibilities = [
+            column_group
+            for column_group in groups_dict
+            if column_group["columnGroupType"] == "Phs"
+        ]
+    elif isinstance(data_object, CCP4XtalData.CMapCoeffsDataFile):
+        fs = {}
+        phis = {}
+        for group in groups_dict:
+            for column in group["columnList"]:
+                if column["columnType"] == "F":
+                    fs[group["dataset"]] = column
+                elif column["columnType"] == "P":
+                    phis[group["dataset"]] = column
+        possibilities = []
+
+        for key, f_column in fs.items():
+            if key in phis:
+                f_column["groupIndex"] = len(possibilities) + 1
+                phis[key]["groupIndex"] = len(possibilities) + 1
+                possibility = {
+                    "columnGroupType": "MapCoeffs",
+                    "contentFlag": 1,
+                    "dataset": key,
+                    "columnList": [f_column, phis[key]],
+                }
+                possibilities.append(possibility)
+
+    possibilities = sorted(possibilities, key=lambda example: -example["contentFlag"])
+    for possibility in possibilities:
+        possibility_column_path = "/*/{}/[{}]".format(
+            possibility["dataset"],
+            ",".join([column["columnLabel"] for column in possibility["columnList"]]),
+        )
+        possibility["columnPath"] = possibility_column_path
+    # print("possibilities", possibilities)
+    return {"options": possibilities, "originalName": deduped_dest.name}
