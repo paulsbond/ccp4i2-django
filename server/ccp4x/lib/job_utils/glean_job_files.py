@@ -15,7 +15,7 @@ from .find_objects import find_objects
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
-def isDataFile(item):
+def is_data_file(item):
     return isinstance(
         item,
         (
@@ -52,12 +52,12 @@ def glean_job_files(
     print("Gleaning job %s", job)
     inputs: List[CDataFile] = find_objects(
         container.inputData,
-        lambda a: isDataFile(a),
+        lambda a: is_data_file(a),
         True,
     )
     outputs: List[CDataFile] = find_objects(
         container.outputData,
-        lambda a: isDataFile(a),
+        lambda a: is_data_file(a),
         True,
     )
     if models.FileUse.Role.OUT in roleList:
@@ -75,9 +75,7 @@ def make_files(
 ):
     for item in objects:
         if item.exists():
-            logger.info(
-                "File for param %s exists=%s" % (item.objectName(), item.exists())
-            )
+            logger.info("File for param %s exists=%s", item.objectName(), item.exists())
             _ = create_new_file(job, item)
             # create_file_use(job, item, the_file, role)
         elif unSetMissingFiles:
@@ -86,7 +84,7 @@ def make_files(
 
 def create_new_file(job: models.Job, item: CDataFile):
 
-    logger.info("Creating new file %s" % item.objectName())
+    logger.info("Creating new file %s", item.objectName())
     file_type = item.qualifiers("mimeTypeName")
     if file_type is None or len(file_type.strip()) == 0:
         logger.error(
@@ -101,7 +99,7 @@ def create_new_file(job: models.Job, item: CDataFile):
     try:
         file_type_object = models.FileType.objects.get(name=file_type)
 
-    except models.FileType.DoesNotExist as err:
+    except models.FileType.DoesNotExist:
         logger.exception(
             "Could not find file type matching %s objectPath %s",
             file_type,
@@ -114,11 +112,9 @@ def create_new_file(job: models.Job, item: CDataFile):
         sub_type = int(sub_type)
     except AttributeError as err:
         logger.debug(
-            "No sub_type %s on %s"
-            % (
-                sub_type,
-                item.baseName,
-            ),
+            "No sub_type %s on %s",
+            sub_type,
+            item.baseName,
             exc_info=err,
         )
         sub_type = None
@@ -128,11 +124,9 @@ def create_new_file(job: models.Job, item: CDataFile):
         content = int(content)
     except AttributeError as err:
         logger.debug(
-            "No content %s on %s"
-            % (
-                content,
-                item.baseName,
-            ),
+            "No content %s on %s",
+            content,
+            item.baseName,
             exc_info=err,
         )
         content = None
@@ -158,7 +152,7 @@ def create_new_file(job: models.Job, item: CDataFile):
             the_file = models.File.objects.get(
                 job=job, directory=directory, name=name, job_param_name=job_param_name
             )
-            logger.error("Found identikit file %s %s" % item.objectName(), the_file)
+            logger.error("Found identikit file %s %s", item.objectName(), the_file)
         except models.File.DoesNotExist:
             the_file = models.File(
                 name=name,
@@ -173,7 +167,7 @@ def create_new_file(job: models.Job, item: CDataFile):
 
             the_file.save()
             item.dbFileId.set(str(the_file.uuid))
-            logger.info("Created File for param %s" % item.objectName())
+            logger.info("Created File for param %s", item.objectName())
     except Exception as err:
         logger.exception("Exception harvesting %s", job_param_name, exc_info=err)
     return the_file
@@ -187,15 +181,13 @@ def create_file_use(job: models.Job, item: CDataFile, the_file: models.File, rol
         file_use.save()
     except Exception as err:
         logger.exception(
-            "Failed in making file use for %s job %s role %s"
-            % (
-                item.objectName(),
-                job.number,
-                role,
-            ),
+            "Failed in making file use for %s job %s role %s",
+            item.objectName(),
+            job.number,
+            role,
             exc_info=err,
         )
-    logger.info("Created FileUse for param %s" % item.objectName())
+    logger.info("Created FileUse for param %s", item.objectName())
 
 
 def make_file_uses(job: models.Job, item_dicts: List[CDataFile]):
@@ -208,35 +200,31 @@ def make_file_uses(job: models.Job, item_dicts: List[CDataFile]):
             file_uuid_str = str(file_uuid_member)
             if len(file_uuid_str.strip()) == 0:
                 logger.info(
-                    "dbFileId on parameter %s is zero length" % item.objectName()
+                    "dbFileId on parameter %s is zero length", item.objectName()
                 )
                 continue
             file_uuid = uuid.UUID(file_uuid_str)
         logger.debug(
-            "objectName [%s] iSet[%s] exists[%s] uuid_str[%s]"
-            % (
-                item.objectName(),
-                item.isSet(),
-                item.exists(),
-                file_uuid_str,
-            )
+            "objectName [%s] iSet[%s] exists[%s] uuid_str[%s]",
+            item.objectName(),
+            item.isSet(),
+            item.exists(),
+            file_uuid_str,
         )
         if item.isSet() and item.exists() and hasattr(item, "objectName"):
             the_file = models.File.objects.get(uuid=file_uuid)
             try:
                 file_use = models.FileUse.objects.get(file=the_file, job=job, role=role)
                 logging.error(
-                    "In trying to save [%s %s %s %s] found existing FileUse [%s %s %s %s]"
-                    % (
-                        the_file,
-                        job,
-                        role,
-                        item.objectName(),
-                        file_use.file,
-                        file_use.job,
-                        file_use.role,
-                        file_use.job_param_name,
-                    )
+                    "In trying to save [%s %s %s %s] found existing FileUse [%s %s %s %s]",
+                    the_file,
+                    job,
+                    role,
+                    item.objectName(),
+                    file_use.file,
+                    file_use.job,
+                    file_use.role,
+                    file_use.job_param_name,
                 )
             except models.FileUse.DoesNotExist:
                 try:
@@ -246,21 +234,20 @@ def make_file_uses(job: models.Job, item_dicts: List[CDataFile]):
                         role=role,
                         job_param_name=item.objectName(),
                     )
-                    logger.info("Created FileUse for parameter %s" % item.objectName())
+                    logger.info("Created FileUse for parameter %s", item.objectName())
                     fileUse.save()
                 except models.File.DoesNotExist as err:
                     logger.exception(
-                        "Failed finding file for new file_use %s" % file_uuid,
+                        "Failed finding file for new file_use %s",
+                        file_uuid,
                         exc_info=err,
                     )
                 except Exception as err:
                     logger.exception(
-                        "Different exception harvesting %s %s %s"
-                        % (
-                            job.number,
-                            role,
-                            item.objectName(),
-                        ),
+                        "Different exception harvesting %s %s %s",
+                        job.number,
+                        role,
+                        item.objectName(),
                         exc_info=err,
                     )
 
@@ -283,7 +270,7 @@ def glean_performance_indicators(container: CContainer, the_job: models.Job) -> 
             if value is None:
                 continue
 
-            job_value_key, created = models.JobValueKey.objects.get_or_create(
+            job_value_key, _ = models.JobValueKey.objects.get_or_create(
                 name=str(kpi_param_name), defaults={"description": str(kpi_param_name)}
             )
             try:
@@ -304,10 +291,8 @@ def glean_performance_indicators(container: CContainer, the_job: models.Job) -> 
                 kpi_object.save()
             except TypeError as err:
                 logger.exception(
-                    "Failed saving value %s for key %s"
-                    % (
-                        value,
-                        kpi_param_name,
-                    ),
+                    "Failed saving value %s for key %s",
+                    value,
+                    kpi_param_name,
                     exc_info=err,
                 )
