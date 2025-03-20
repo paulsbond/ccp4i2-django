@@ -164,7 +164,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
                 const match1 = /job_(\d+)$/.exec(child1.name);
                 const match2 = /job_(\d+)$/.exec(child2.name);
                 if (match1 && match2) {
-                  return parseInt(match1[1]) - parseInt(match2[1]);
+                  return parseInt(match2[1]) - parseInt(match1[1]);
                 }
                 if (match1) return -1;
                 if (match2) return 1;
