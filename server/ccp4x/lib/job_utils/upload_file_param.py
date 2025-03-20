@@ -2,8 +2,6 @@ import logging
 import pathlib
 import json
 import gemmi
-from typing import List
-from ccp4i2.core.CCP4Data import CData
 from ccp4i2.core.CCP4File import CDataFile
 from ccp4i2.core.CCP4XtalData import CMtzDataFile
 from django.utils.text import slugify
@@ -14,7 +12,6 @@ from core.CCP4XtalData import CMtzDataFile
 
 from .find_objects import find_object_by_path
 from .available_file_name_based_on import available_file_name_based_on
-from .get_job_container import get_job_container
 from .get_job_plugin import get_job_plugin
 from .gemmi_split_mtz import gemmi_split_mtz
 from .save_params_for_job import save_params_for_job
@@ -222,9 +219,13 @@ def gemmi_convert_to_mtz(dobj: CMtzDataFile, downloaded_file_path: pathlib.Path)
 def find_column_selections(data_object: CMtzDataFile, deduped_dest: pathlib.Path):
     data_object.setFullPath(str(deduped_dest))
     data_object.loadFile()
+    # Data object suitable columns depend on the contents of the file...
     contents = data_object.getFileContent()
+    # ...
     column_groups = contents.getColumnGroups()
     groups_dict = value_dict_for_object(column_groups)
+
+    possibilities = []
     if isinstance(data_object, CCP4XtalData.CObsDataFile):
         possibilities = [
             column_group
@@ -244,27 +245,10 @@ def find_column_selections(data_object: CMtzDataFile, deduped_dest: pathlib.Path
             if column_group["columnGroupType"] == "Phs"
         ]
     elif isinstance(data_object, CCP4XtalData.CMapCoeffsDataFile):
-        fs = {}
-        phis = {}
-        for group in groups_dict:
-            for column in group["columnList"]:
-                if column["columnType"] == "F":
-                    fs[group["dataset"]] = column
-                elif column["columnType"] == "P":
-                    phis[group["dataset"]] = column
-        possibilities = []
+        possibilities = handle_map_coeffs(groups_dict)
 
-        for key, f_column in fs.items():
-            if key in phis:
-                f_column["groupIndex"] = len(possibilities) + 1
-                phis[key]["groupIndex"] = len(possibilities) + 1
-                possibility = {
-                    "columnGroupType": "MapCoeffs",
-                    "contentFlag": 1,
-                    "dataset": key,
-                    "columnList": [f_column, phis[key]],
-                }
-                possibilities.append(possibility)
+    if len(possibilities) == 0:
+        return {"options": [], "originalName": deduped_dest.name}
 
     possibilities = sorted(possibilities, key=lambda example: -example["contentFlag"])
     for possibility in possibilities:
@@ -275,3 +259,29 @@ def find_column_selections(data_object: CMtzDataFile, deduped_dest: pathlib.Path
         possibility["columnPath"] = possibility_column_path
     # print("possibilities", possibilities)
     return {"options": possibilities, "originalName": deduped_dest.name}
+
+
+def handle_map_coeffs(groups_dict: dict):
+    fs = {}
+    phis = {}
+    for group in groups_dict:
+        for column in group["columnList"]:
+            if column["columnType"] == "F":
+                fs[group["dataset"]] = column
+            elif column["columnType"] == "P":
+                phis[group["dataset"]] = column
+    possibilities = []
+
+    for key, f_column in fs.items():
+        if key in phis:
+            f_column["groupIndex"] = len(possibilities) + 1
+            phis[key]["groupIndex"] = len(possibilities) + 1
+            possibility = {
+                "columnGroupType": "MapCoeffs",
+                "contentFlag": 1,
+                "dataset": key,
+                "columnList": [f_column, phis[key]],
+            }
+            possibilities.append(possibility)
+
+    return possibilities
