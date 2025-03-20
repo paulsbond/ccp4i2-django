@@ -21,7 +21,7 @@ export const FilePreviewDialog: React.FC<FilePreviewProps> = ({
       const asyncFunc = async () => {
         const fileContent = await doRetrieve(url, filename);
         var enc = new TextDecoder("utf-8");
-        console.log({ url, filename, enc: enc.decode(fileContent) });
+        //console.log({ url, filename, enc: enc.decode(fileContent) });
         setPreviewContent(enc.decode(fileContent));
       };
       asyncFunc();

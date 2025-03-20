@@ -118,7 +118,6 @@ export const JobMenu: React.FC = () => {
       ev.stopPropagation();
       const file = menuNode as DjangoFile;
       if (file) {
-        ev.stopPropagation();
         const composite_path = api.noSlashUrl(`files/${file.id}/download/`);
         doDownload(composite_path, file.name);
         setAnchorEl(null);
