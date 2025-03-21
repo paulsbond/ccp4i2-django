@@ -28,6 +28,7 @@ import { useJob } from "../../../utils";
 import { TaskInterfaceContext } from "../task-container";
 import { Job } from "../../../models";
 import { Line } from "react-chartjs-2";
+import { SimpleObjectTable } from "../../simple-object-table";
 
 export const ErrorTrigger: React.FC<{ item: any; job: Job }> = ({
   item,
@@ -115,22 +116,7 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
                 unmountOnExit
                 sx={{ p: 2 }}
               >
-                <Table>
-                  <TableBody>
-                    {Object.keys(errorInfoItem._qualifiers).map(
-                      (key: string) => (
-                        <TableRow key={key}>
-                          <th style={{ textAlign: "left" }}>{key}</th>
-                          <td>
-                            {Array.isArray(errorInfoItem._qualifiers[key])
-                              ? JSON.stringify(errorInfoItem._qualifiers[key])
-                              : errorInfoItem._qualifiers[key]}
-                          </td>
-                        </TableRow>
-                      )
-                    )}
-                  </TableBody>
-                </Table>
+                <SimpleObjectTable object={errorInfoItem._qualifiers} />
               </Collapse>
             </CardContent>
           </Card>

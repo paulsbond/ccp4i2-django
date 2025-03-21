@@ -15,6 +15,7 @@ import { CCP4i2ReportText } from "./CCP4i2ReportText";
 import { CCP4i2ReportReference } from "./CCP4i2ReportReference";
 import { CCP4i2ReportObjectGallery } from "./CCP4i2ReportObjectGallery";
 import { CCP4i2ApplicationOutputView } from "./CCP4i2ApplicationOutputView";
+import { CCP4i2ReportJobDetails } from "./CCP4i2ReportJobDetails";
 
 export interface CCP4i2ReportElementProps {
   iItem: Number;
@@ -34,6 +35,15 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
       if (["CCP4i2ReportFold"].includes(tagName)) {
         return (
           <CCP4i2ReportFold
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        );
+      } else if (["CCP4i2ReportJobDetails"].includes(tagName)) {
+        return (
+          <CCP4i2ReportJobDetails
             key={`${iItem}`}
             iItem={iItem}
             item={item}
