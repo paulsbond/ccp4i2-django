@@ -17,6 +17,7 @@ from .gemmi_split_mtz import gemmi_split_mtz
 from .save_params_for_job import save_params_for_job
 from .json_encoder import CCP4i2JsonEncoder
 from .value_dict_for_object import value_dict_for_object
+from .detect_file_type import detect_file_type
 from ...db import models
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -64,7 +65,8 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     # based on CDataFile
     initial_download_project_folder = (
         "CCP4_DOWNLOADED_FILES"
-        if isinstance(
+        if param_object.__class__.__name__ == "CDataFile"
+        or isinstance(
             param_object,
             (
                 CCP4XtalData.CMtzDataFile,
@@ -74,6 +76,14 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         else "CCP4_IMPORTED_FILES"
     )
     downloaded_file_path = download_file(job, files[0], initial_download_project_folder)
+    file_type = detect_file_type(downloaded_file_path)
+
+    logger.error(
+        "param_object is %s cls__name__ %s file_type %s",
+        param_object,
+        param_object.__class__.__name__,
+        file_type,
+    )
 
     if isinstance(
         param_object,
@@ -99,13 +109,16 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     param_object.loadFile()
     param_object.setContentFlag(reset=True)
     logger.debug("Content flag is %s", param_object.contentFlag)
-
+    try:
+        type = models.FileType.objects.get(name=param_object.QUALIFIERS["mimeTypeName"])
+    except models.FileType.DoesNotExist:
+        type = models.FileType.objects.get(name="Unknown")
     new_file = models.File(
         job=job,
         name=str(imported_file_path.name),
         directory=models.File.Directory.IMPORT_DIR,
         content=param_object.contentFlag,
-        type=models.FileType.objects.get(name=param_object.QUALIFIERS["mimeTypeName"]),
+        type=type,
         annotation=f"Imported from {files[0].name}",
         job_param_name=param_object.objectName(),
     )
