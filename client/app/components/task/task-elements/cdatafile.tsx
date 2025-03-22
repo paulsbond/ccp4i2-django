@@ -2,18 +2,13 @@ import {
   Autocomplete,
   AutocompleteChangeReason,
   Avatar,
-  Button,
   LinearProgress,
   Stack,
-  styled,
-  SxProps,
   TextField,
-  Typography,
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { CCP4i2TaskElementProps } from "./task-element";
 import { File as CCP4i2File, Job, nullFile, Project } from "../../../models";
-import { CDataFile } from "../../../cdata_types";
 import {
   ChangeEvent,
   ReactNode,
@@ -22,12 +17,10 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
-import { Folder, Language } from "@mui/icons-material";
 import { useJob } from "../../../utils";
-import { ErrorInfo, ErrorTrigger } from "./error-info";
+import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../task-container";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
@@ -42,6 +35,7 @@ const fileTypeMapping: { [key: string]: string } = {
   CUnmergedDataFile: "application/CCP4-unmerged-experimental",
   CPdbDataFile: "chemical/x-pdb",
   CAsuDataFile: "application/CCP4-asu-content",
+  CDataFile: "application/CCP4-data",
 };
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
@@ -52,29 +46,12 @@ export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   props
 ) => {
-  const { job, sx, infoContent, itemName } = props;
+  const { job, sx, itemName } = props;
   const api = useApi();
   const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
-  const {
-    errorInfoAnchor,
-    setErrorInfoAnchor,
-    errorInfoItem,
-    setErrorInfoItem,
-    inFlight,
-    setInFlight,
-    downloadDialogOpen,
-    setDownloadDialogOpen,
-    downloadItem,
-    setDownloadItem,
-  } = useContext(TaskInterfaceContext);
-  //return <Typography>"{itemName}",</Typography>;
+  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
 
-  const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
-    null
-  );
-  const validationOpen = Boolean(validationAnchor);
-  const progressRef = useRef<HTMLElement | null>(null);
   const [value, setValue] = useState<CCP4i2File>(nullFile);
 
   const { objectPath, qualifiers } = useMemo<{
@@ -86,18 +63,19 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     return { objectPath: null, qualifiers: null };
   }, [item]);
 
-  const { data: project_files, mutate: mutateFiles } = api.get_endpoint<
-    CCP4i2File[]
-  >({ type: "projects", id: job.project, endpoint: "files" });
+  const { data: project_files } = api.get_endpoint<CCP4i2File[]>({
+    type: "projects",
+    id: job.project,
+    endpoint: "files",
+  });
 
-  const { data: project_jobs, mutate: mutateJobs } = api.get_endpoint<Job[]>({
+  const { data: project_jobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: job.project,
     endpoint: "jobs",
   });
-  const { data: projects, mutate: mutateProjects } =
-    api.get<Project[]>("projects");
-  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
+  const { data: projects } = api.get<Project[]>("projects");
+  const { mutate: mutateDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
 
@@ -116,8 +94,12 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         const fileJob: Job | undefined = project_jobs?.find(
           (job: Job) => job.id == file.job
         );
-        if (fileJob) return file.type === fileType && !fileJob.parent;
-        return file.type === fileType;
+        if (fileJob)
+          return (
+            (file.type === fileType || fileType === "CCP4-data") &&
+            !fileJob.parent
+          );
+        return file.type === fileType || fileType === "CCP4-data";
       })
       .sort((a, b) => {
         return b.job - a.job;
@@ -293,5 +275,4 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       </Stack>
     )
   );
-  return;
 };
