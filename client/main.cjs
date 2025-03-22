@@ -3,10 +3,10 @@ const path = require("path");
 const next = require("next");
 const express = require("express");
 const { spawn } = require("child_process");
+const getPort = require("get-port");
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
 
-const NEXT_PORT = 3000;
 const PYTHON_SCRIPT = path.join(__dirname, "..", "server", "manage.py");
 let pythonProcess = null;
 let mainWindow;
@@ -24,7 +24,7 @@ const env = Object.assign({}, process.env, {
   PYTHONPATH: path.join(__dirname, "..", "server"),
 });
 
-const createWindow = () => {
+const createWindow = (port) => {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -34,7 +34,7 @@ const createWindow = () => {
     },
   });
 
-  mainWindow.loadURL(`http://localhost:${NEXT_PORT}`);
+  mainWindow.loadURL(`http://localhost:${port}`);
 
   mainWindow.on("closed", () => {
     mainWindow = null;
@@ -72,15 +72,21 @@ const createWindow = () => {
   });
 };
 
-nextApp.prepare().then(() => {
+nextApp.prepare().then(async () => {
+  const NEXT_PORT = await getPort();
   const server = express();
   server.all("*", (req, res) => nextHandler(req, res));
 
-  server.listen(NEXT_PORT, () => {
+  server.get("/config", (req, res) => {
+    res.json({ pythonApiPort: process.env.PYTHON_API_PORT });
+  });
+
+  server.listen(NEXT_PORT, async () => {
     console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
 
-    // 2️⃣ Start Python process
-    //pythonProcess = spawn(CCP4_PYTHON, [PYTHON_SCRIPT, "runserver"]);
+    // 2️⃣ Start Python process with dynamic port
+    const PYTHON_PORT = await getPort();
+    env.PYTHON_API_PORT = PYTHON_PORT;
     pythonProcess = spawn(CCP4_PYTHON, ["-m", "uvicorn", "asgi:application"], {
       env,
     });
@@ -99,7 +105,7 @@ nextApp.prepare().then(() => {
 
     // 3️⃣ Start Electron window
     app.whenReady().then(() => {
-      createWindow();
+      createWindow(NEXT_PORT);
     });
   });
 });
@@ -123,8 +129,9 @@ app.on("quit", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     // 3️⃣ Start Electron window
-    app.whenReady().then(() => {
-      createWindow();
+    app.whenReady().then(async () => {
+      const NEXT_PORT = await getPort();
+      createWindow(NEXT_PORT);
     });
   }
 });
