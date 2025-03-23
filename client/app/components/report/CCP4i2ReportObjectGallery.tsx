@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from "react";
 import $ from "jquery";
-import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
-import {
-  Autocomplete,
-  Grid2,
-  List,
-  ListItem,
-  Paper,
-  TextField,
-} from "@mui/material";
+import { Grid2, ListItem, Paper } from "@mui/material";
 
 import {
   CCP4i2ReportElement,

@@ -5,6 +5,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -36,8 +37,10 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"]
 }
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000"] if DEBUG else []
-
+NEXT_ADDRESS = os.environ.get("NEXT_ADDRESS", "http://localhost:3000")
+CORS_ALLOWED_ORIGINS = [NEXT_ADDRESS] if DEBUG else []
+CORS_ALLOW_ALL_ORIGINS = True
+print("CORS_ALLOWED_ORIGINS", CORS_ALLOWED_ORIGINS)
 ROOT_URLCONF = "ccp4x.api.urls"
 
 TEMPLATES = [

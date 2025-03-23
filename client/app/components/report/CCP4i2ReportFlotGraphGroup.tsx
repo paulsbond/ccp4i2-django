@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
 import $ from "jquery";
-import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
 import { Autocomplete, TextField } from "@mui/material";
 
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
@@ -56,12 +55,6 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
         const result = (
           <CCP4i2ApplicationOutputView key={`${iChild}`} output={tableNode} />
         );
-        /*<CCP4i2ReportFlotWidget
-          key={`${iChild}`}
-          iItem={iChild}
-          item={child}
-          job={props.job}
-        />*/
         return result;
       });
       return result;

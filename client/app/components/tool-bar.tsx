@@ -96,9 +96,11 @@ export default function ToolBar() {
         variant="outlined"
         startIcon={<Help />}
         onClick={() => {
-          window.open(
-            `https://ccp4i2.gitlab.io/rstdocs/tasks/${job?.task_name}/index.html`
-          );
+          if (window?.open) {
+            window.open(
+              `https://ccp4i2.gitlab.io/rstdocs/tasks/${job?.task_name}/index.html`
+            );
+          }
           //setShowHelp(true);
         }}
       >

@@ -153,12 +153,12 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   const { data: jobCharValues } = api.follow_endpoint<JobCharValue[]>({
     type: "projects",
     id: projectId,
-    endpoint: "job_char_values",
+    endpoint: "job_char_values/",
   });
   const { data: jobFloatValues } = api.follow_endpoint<JobFloatValue[]>({
     type: "projects",
     id: projectId,
-    endpoint: "job_float_values",
+    endpoint: "job_float_values/",
   });
   const { data: files } = api.get_endpoint<DjangoFile[]>({
     type: "projects",

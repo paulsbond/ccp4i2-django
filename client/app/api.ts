@@ -3,9 +3,9 @@ import $ from "jquery";
 import { prettifyXml } from "./utils";
 
 export function fullUrl(endpoint: string): string {
-  const url = new URL(endpoint, "http://127.0.0.1:8000");
-  if (url.pathname.charAt(url.pathname.length - 1) !== "/") url.pathname += "/";
-  return url.href;
+  let api_path = `/api/proxy/${endpoint}`;
+  if (api_path.charAt(api_path.length - 1) !== "/") api_path += "/";
+  return api_path;
 }
 
 export interface EndpointFetch {
@@ -131,8 +131,8 @@ export function useApi() {
   const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
   function noSlashUrl(endpoint: string): string {
-    const url = new URL(endpoint, "http://127.0.0.1:8000");
-    return url.href;
+    let api_path = `/api/proxy/${endpoint}`;
+    return api_path;
   }
 
   return {

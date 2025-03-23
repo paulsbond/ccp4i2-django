@@ -139,11 +139,11 @@ export const useProject = (projectId: number) => {
     api.get_endpoint<JobFloatValue[]>({
       type: "projects",
       id: projectId,
-      endpoint: "job_float_values",
+      endpoint: "job_float_values/",
     });
   const { data: jobCharValues, mutate: mutateJobCharValues } = api.get_endpoint<
     JobCharValue[]
-  >({ type: "projects", id: projectId, endpoint: "job_char_values" });
+  >({ type: "projects", id: projectId, endpoint: "job_char_values/" });
   return {
     project,
     mutateProject,

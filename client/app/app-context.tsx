@@ -1,5 +1,4 @@
 import { createContext } from "react";
-import { Job, Project } from "./models";
 
 interface CCP4i2Context {
   projectId?: number | null;

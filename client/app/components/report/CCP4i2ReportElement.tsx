@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import $ from "jquery";
 import { Job } from "../../models";
 
-import CCP4i2ReportFlotWidget from "./CCP4i2ReportFlotWidget";
 import { CCP4i2ReportFlotGraphGroup } from "./CCP4i2ReportFlotGraphGroup";
 import { CCP4i2ReportTable } from "./CCP4i2ReportTable";
 import { CCP4i2ReportInputOutputData } from "./CCP4i2ReportInputOutputData";
@@ -77,15 +76,6 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
         );
       } else if (["CCP4i2ReportFlotGraph"].includes(tagName)) {
         return <CCP4i2ApplicationOutputView output={item} />;
-        {
-          /*<CCP4i2ReportFlotWidget
-            key={`${iItem}`}
-            iItem={iItem}
-            item={item}
-            uniqueId={$(item).attr("key")}
-            job={job}
-          />*/
-        }
       } else if (
         ["CCP4i2ReportGeneric", "CCP4i2ReportGenericElement"].includes(tagName)
       ) {
