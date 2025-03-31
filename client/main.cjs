@@ -9,8 +9,39 @@ const {
 const path = require("path");
 const next = require("next");
 const express = require("express");
-const { spawn } = require("child_process");
+const { spawn, exec } = require("child_process");
 const { getPort } = require("get-port-please");
+// Here a routine to "source" the ccp4 environment
+
+// Set environment variable based on platform
+if (process.platform === "win32") {
+  process.env.CCP4 = process.env.CCP4 || "Windows_ccp4_location";
+} else if (process.platform === "darwin") {
+  process.env.CCP4 = process.env.CCP4 || "/Applications/ccp4-9";
+} else if (process.platform === "linux") {
+  process.env.CCP4 = process.env.CCP4 || "/usr/local/ccp4-9";
+} else {
+  process.env.CCP4 = process.env.CCP4 || "/usr/local/ccp4-9"; // Fallback for other platforms
+}
+// And here execute the rest of the setup shell script (need to look into windows)
+function runShellScript() {
+  return new Promise((resolve, reject) => {
+    if (["linux", "darwin"].includes(process.platform)) {
+      const setup_script = path.join(process.env.CCP4, "bin", "ccp4.setup-sh");
+      exec(`bash ${setup_script}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error executing script: ${error.message}`);
+          return reject(error);
+        }
+        if (stderr) {
+          console.warn(`Script stderr: ${stderr}`);
+        }
+        console.log(`Script stdout: ${stdout}`);
+        resolve(stdout);
+      });
+    }
+  });
+}
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
 
@@ -18,7 +49,6 @@ const isDev = !app.isPackaged; // ✅ Works in compiled builds
 if (app.isPackaged) {
   const asarDir = app.getAppPath();
   const resourcesDir = path.resolve(asarDir, ".."); // Resolve the parent directory of the app.asar file
-
   // Change the working directory to the Resources folder where .next is
   process.chdir(resourcesDir);
   console.log("Executing in directory:", resourcesDir); // Print the directory
@@ -28,20 +58,9 @@ const PYTHON_SCRIPT = path.join(__dirname, "..", "server", "manage.py");
 let pythonProcess = null;
 let mainWindow;
 
-// 1️⃣ Start the Next.js server
+// 1️⃣ Create the Next.js server
 const nextApp = next({ dev: isDev });
 const nextHandler = nextApp.getRequestHandler();
-
-// Set environment variable based on platform
-if (process.platform === "win32") {
-  process.env.CCP4 = "Windows_ccp4_location";
-} else if (process.platform === "darwin") {
-  process.env.CCP4 = process.env.CCP4 || "/Applications/ccp4-9";
-} else if (process.platform === "linux") {
-  process.env.CCP4 = "/usr/local/ccp4-9";
-} else {
-  process.env.CCP4 = "/usr/local/ccp4-9"; // Fallback for other platforms
-}
 
 const CCP4_PYTHON = path.join(process.env.CCP4, "bin", "ccp4-python");
 
@@ -108,6 +127,7 @@ getPort()
     NEXT_PORT = aPort;
     process.env.BACKEND_URL = `http://localhost:${UVICORN_PORT}`;
   })
+  .then(() => runShellScript())
   .then(() => nextApp.prepare())
   .then(async () => {
     const server = express();
