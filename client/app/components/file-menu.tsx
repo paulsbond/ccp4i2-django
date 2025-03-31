@@ -71,33 +71,34 @@ export default function FileMenu() {
           <ListItemText>Import project</ListItemText>
         </MenuItem>
         <Divider />
-        {projects
-          ?.sort((a: Project, b: Project) => {
-            const dateA = new Date(a.last_access);
-            const dateB = new Date(b.last_access);
-            return dateA.getTime() - dateB.getTime();
-          })
-          .slice(-10)
-          .reverse()
-          .map((project: Project) => (
-            <MenuItem
-              key={project.id}
-              onClick={async () => {
-                setAnchorEl(null);
-                const formData = new FormData();
-                const nowString = new Date().toISOString();
-                formData.set("last_access", nowString);
-                const result = await api
-                  .patch(`projects/${project.id}`, formData)
-                  .then(() => {
-                    mutateProjects();
-                  });
-                router.push(`/project/${project.id}`);
-              }}
-            >
-              {project.name} - {`${new Date(project.last_access)}`}
-            </MenuItem>
-          ))}
+        {Array.isArray(projects) &&
+          projects
+            .sort((a: Project, b: Project) => {
+              const dateA = new Date(a.last_access);
+              const dateB = new Date(b.last_access);
+              return dateA.getTime() - dateB.getTime();
+            })
+            .slice(-10)
+            .reverse()
+            .map((project: Project) => (
+              <MenuItem
+                key={project.id}
+                onClick={async () => {
+                  setAnchorEl(null);
+                  const formData = new FormData();
+                  const nowString = new Date().toISOString();
+                  formData.set("last_access", nowString);
+                  const result = await api
+                    .patch(`projects/${project.id}`, formData)
+                    .then(() => {
+                      mutateProjects();
+                    });
+                  router.push(`/project/${project.id}`);
+                }}
+              >
+                {project.name} - {`${new Date(project.last_access)}`}
+              </MenuItem>
+            ))}
         <MenuItem key="MoreProjects" onClick={handleClose}>
           More Projects
         </MenuItem>
