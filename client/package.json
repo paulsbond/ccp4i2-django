@@ -73,8 +73,15 @@
         "to": ".next"
       },
       {
-        "from": "node_modules",
-        "to": "node_modules",
+        "from": "node_modules/react",
+        "to": "node_modules/react",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/next",
+        "to": "node_modules/next",
         "filter": [
           "**/*"
         ]
