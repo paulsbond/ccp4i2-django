@@ -63,7 +63,7 @@ async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
 
   // Ensure the backend URL ends with a slash
   //console.log("req_url", req.url);
-  if (req.url.endsWith("/")) {
+  if (!targetUrl.endsWith("/")) {
     targetUrl += "/";
   }
 
