@@ -11,11 +11,18 @@ const next = require("next");
 const express = require("express");
 const { spawn, exec } = require("child_process");
 const { getPort } = require("get-port-please");
+
+//Way to say if launch fails
+function showErrorAndExit(errorMessage) {
+  dialog.showErrorBox("Failed to Start", errorMessage);
+  app.quit();
+}
+
 // Here a routine to "source" the ccp4 environment
 
 // Set environment variable based on platform
 if (process.platform === "win32") {
-  process.env.CCP4 = process.env.CCP4 || "Windows_ccp4_location";
+  process.env.CCP4 = process.env.CCP4 || "C:\\Program Files\\CCP4-9";
 } else if (process.platform === "darwin") {
   process.env.CCP4 = process.env.CCP4 || "/Applications/ccp4-9";
 } else if (process.platform === "linux") {
@@ -26,8 +33,13 @@ if (process.platform === "win32") {
 // And here execute the rest of the setup shell script (need to look into windows)
 function runShellScript() {
   return new Promise((resolve, reject) => {
-    if (["linux", "darwin"].includes(process.platform)) {
-      const setup_script = path.join(process.env.CCP4, "bin", "ccp4.setup-sh");
+    try {
+      let setup_script;
+      if (["linux", "darwin"].includes(process.platform)) {
+        setup_script = path.join(process.env.CCP4, "bin", "ccp4.setup-sh");
+      } else if (process.platform === "win32") {
+        setup_script = path.join(process.env.CCP4, "bin", "ccp4-setup.bat");
+      }
       exec(`bash ${setup_script}`, (error, stdout, stderr) => {
         if (error) {
           console.error(`Error executing script: ${error.message}`);
@@ -39,6 +51,12 @@ function runShellScript() {
         console.log(`Script stdout: ${stdout}`);
         resolve(stdout);
       });
+    } catch (error) {
+      console.error(`Error: ${error.message}`);
+      reject(error);
+      showErrorAndExit(
+        `Failed to execute setup script. Please check your CCP4 installation.`
+      );
     }
   });
 }
@@ -54,15 +72,12 @@ if (app.isPackaged) {
   console.log("Executing in directory:", resourcesDir); // Print the directory
 }
 
-const PYTHON_SCRIPT = path.join(__dirname, "..", "server", "manage.py");
 let pythonProcess = null;
 let mainWindow;
 
 // 1️⃣ Create the Next.js server
 const nextApp = next({ dev: isDev });
 const nextHandler = nextApp.getRequestHandler();
-
-const CCP4_PYTHON = path.join(process.env.CCP4, "bin", "ccp4-python");
 
 const env = Object.assign({}, process.env, {
   PYTHONPATH: path.join(__dirname, "..", "server"),
@@ -131,7 +146,6 @@ getPort()
   .then(() => nextApp.prepare())
   .then(async () => {
     const server = express();
-    console.log("ccp4x", { NEXT_PORT, UVICORN_PORT });
     server.get("/config", (req, res) => {
       const apiURL = `${req.protocol}://${
         req.get("host").split(":")[0]
@@ -142,7 +156,7 @@ getPort()
 
     server.listen(NEXT_PORT, async () => {
       console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
-
+      const CCP4_PYTHON = path.join(process.env.CCP4, "bin", "ccp4-python");
       env.UVICORN_PORT = UVICORN_PORT;
       env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
       // 2️⃣ Start Python process with dynamic port
