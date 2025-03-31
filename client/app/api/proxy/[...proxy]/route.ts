@@ -40,7 +40,7 @@ interface RequestInitWithDuplex extends RequestInit {
 }
 // Common handler for all HTTP methods
 async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
-  let backendBaseUrl = process.env.BACKEND_URL; // Default backend URL
+  let backendBaseUrl = process.env.BACKEND_URL || "http://localhost:8000"; // Default backend URL
 
   if (req.headers.get("x-backend-url")) {
     backendBaseUrl = req.headers.get("x-backend-url") as string;
@@ -77,7 +77,7 @@ async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
       targetUrl += "/";
     }
   }
-  console.log("targetUrl", targetUrl, "req_url", req.url);
+  //console.log("targetUrl", targetUrl, "req_url", req.url);
   try {
     // Clone the headers from the incoming request
     const headers = new Headers(req.headers);

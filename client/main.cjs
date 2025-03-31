@@ -1,4 +1,11 @@
-const { app, session, dialog, BrowserWindow } = require("electron");
+const {
+  app,
+  session,
+  dialog,
+  BrowserWindow,
+  Menu,
+  MenuItem,
+} = require("electron");
 const path = require("path");
 const next = require("next");
 const express = require("express");
@@ -7,6 +14,16 @@ const { getPort } = require("get-port-please");
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
 
+// Change the current working directory to the Resources folder
+if (app.isPackaged) {
+  const asarDir = app.getAppPath();
+  const resourcesDir = path.resolve(asarDir, ".."); // Resolve the parent directory of the app.asar file
+
+  // Change the working directory to the Resources folder where .next is
+  process.chdir(resourcesDir);
+  console.log("Executing in directory:", resourcesDir); // Print the directory
+}
+
 const PYTHON_SCRIPT = path.join(__dirname, "..", "server", "manage.py");
 let pythonProcess = null;
 let mainWindow;
@@ -14,11 +31,19 @@ let mainWindow;
 // 1️⃣ Start the Next.js server
 const nextApp = next({ dev: isDev });
 const nextHandler = nextApp.getRequestHandler();
-const CCP4_PYTHON = path.join(
-  process.env.CCP4 || "/Applications/ccp4-9",
-  "bin",
-  "ccp4-python"
-);
+
+// Set environment variable based on platform
+if (process.platform === "win32") {
+  process.env.CCP4 = "Windows_ccp4_location";
+} else if (process.platform === "darwin") {
+  process.env.CCP4 = process.env.CCP4 || "/Applications/ccp4-9";
+} else if (process.platform === "linux") {
+  process.env.CCP4 = "/usr/local/ccp4-9";
+} else {
+  process.env.CCP4 = "/usr/local/ccp4-9"; // Fallback for other platforms
+}
+
+const CCP4_PYTHON = path.join(process.env.CCP4, "bin", "ccp4-python");
 
 const env = Object.assign({}, process.env, {
   PYTHONPATH: path.join(__dirname, "..", "server"),
@@ -82,8 +107,8 @@ getPort()
   .then((aPort) => {
     NEXT_PORT = aPort;
     process.env.BACKEND_URL = `http://localhost:${UVICORN_PORT}`;
-    return nextApp.prepare();
   })
+  .then(() => nextApp.prepare())
   .then(async () => {
     const server = express();
     console.log("ccp4x", { NEXT_PORT, UVICORN_PORT });
@@ -124,12 +149,20 @@ getPort()
       // 3️⃣ Start Electron window
       app.whenReady().then(() => {
         createWindow(NEXT_PORT);
+        // Modify the default menu by adding a "New Window" option
+        const defaultMenu = Menu.getApplicationMenu();
+        addNewWindowMenuItem(defaultMenu, NEXT_PORT);
+        Menu.setApplicationMenu(defaultMenu);
       });
       app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {
           // 3️⃣ Start Electron window
           app.whenReady().then(async () => {
             createWindow(NEXT_PORT);
+            // Modify the default menu by adding a "New Window" option
+            const defaultMenu = Menu.getApplicationMenu();
+            addNewWindowMenuItem(defaultMenu, NEXT_PORT);
+            Menu.setApplicationMenu(defaultMenu);
           });
         }
       });
@@ -151,3 +184,23 @@ app.on("quit", () => {
     pythonProcess.kill();
   }
 });
+
+// Function to add "New Window" item to the default menu
+function addNewWindowMenuItem(menu, NEXT_PORT) {
+  // Find the File menu (usually at index 0)
+  const fileMenu = menu.items[0];
+  console.log("fileMenu", fileMenu.submenu.items);
+  // If fileMenu is found, insert a "New Window" item right after the "New Tab" or similar item
+  if (fileMenu) {
+    fileMenu.submenu.append(
+      new MenuItem({
+        label: "New Window",
+        accelerator: "CmdOrCtrl+N", // Optional: add a keyboard shortcut (Cmd+N / Ctrl+N)
+        click: () => {
+          createWindow(NEXT_PORT); // Create new window when this option is clicked
+        },
+      })
+    );
+  }
+  console.log("fileMenu", fileMenu.submenu.items);
+}
