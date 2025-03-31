@@ -60,10 +60,10 @@ async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
   // Ensure params.proxy is properly handled
   const path = params.proxy ? params.proxy.join("/") : "";
   let targetUrl = `${backendBaseUrl}${path}`;
-  console.log(`Forwarding request to ${targetUrl}`);
 
   // Ensure the backend URL ends with a slash
-  if (backendBaseUrl.endsWith("/")) {
+  //console.log("req_url", req.url);
+  if (req.url.endsWith("/")) {
     targetUrl += "/";
   }
 
@@ -72,7 +72,12 @@ async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
   if (searchParams) {
     targetUrl += `?${searchParams}`;
   }
-
+  if (["PATCH", "DELETE", "PUT", "POST"].includes(req.method)) {
+    if (!targetUrl.endsWith("/")) {
+      targetUrl += "/";
+    }
+  }
+  console.log("targetUrl", targetUrl, "req_url", req.url);
   try {
     // Clone the headers from the incoming request
     const headers = new Headers(req.headers);
