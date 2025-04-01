@@ -25,10 +25,17 @@ export default function NewProjectPage() {
   const { data: projects } = api.get<Project[]>("projects");
 
   function createProject() {
-    const body = { name: name };
-    api.post<Project>("projects", body).then((project) => {
-      router.push(`/project/${project.id}`);
-    });
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("directory", "__default__");
+    try {
+      api.post<Project>("projects", formData).then((project) => {
+        router.push(`/project/${project.id}`);
+      });
+    } catch (err) {
+      console.error("Error creating project:", err);
+      alert("Error creating project: " + err);
+    }
   }
 
   function defaultDirectory(name: string) {
