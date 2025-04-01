@@ -8,18 +8,18 @@ import { Project } from "./models";
 
 export default function ProjectsPage() {
   const api = useApi();
-  const { data: projects } = api.follow<Project[]>("projects", 2000);
+  const { data: projects } = api.follow<Project[]>("projects", 1000);
 
   return (
     <Container sx={{ my: 3 }}>
-      {projects ? (
-        <Stack spacing={2}>
-          <ProjectsToolbar />
+      <Stack spacing={2}>
+        <ProjectsToolbar />
+        {projects && projects.length > 0 ? (
           <ProjectsTable />
-        </Stack>
-      ) : (
-        <Skeleton variant="rectangular" width="100%" height={500} />
-      )}
+        ) : (
+          <Skeleton variant="rectangular" width="100%" height={500} />
+        )}
+      </Stack>
     </Container>
   );
 }
