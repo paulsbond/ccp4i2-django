@@ -7,6 +7,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from ccp4i2.pimple import MGQTmatplotlib
+
+# BASE_DIR is the directory where your Django project is located (containing manage.py)
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-xq@_ci4r3sl+1!3vt5xz5wurncfvfyq^$k5anjsi3+*wb)(5!v"
@@ -23,9 +27,11 @@ INSTALLED_APPS = [
     "ccp4x.api.config.ApiConfig",
     "ccp4x.db.config.DbConfig",
     "rest_framework",
+    "whitenoise",
 ]
 
 MIDDLEWARE = [
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Add WhiteNoise middleware
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -50,7 +56,7 @@ TEMPLATES = [
     },
 ]
 
-STATIC_URL = "static/"
+STATIC_URL = "/djangostatic/"
 MEDIA_URL = "files/"
 
 USER_DIR = Path.home().resolve() / ".ccp4x"
@@ -75,3 +81,19 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     )
 }
+
+# Static files settings
+STATIC_URL = "/djangostatic/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_DIRS = [
+    ("qticons", str(Path(MGQTmatplotlib.__file__).parent.parent / "qticons")),
+    ("svgicons", str(Path(MGQTmatplotlib.__file__).parent.parent / "svgicons")),
+]
+print(str(Path(MGQTmatplotlib.__file__).parent.parent / "qticons"), str(STATIC_ROOT))
+
+# Configure WhiteNoise for static file storage
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Optional compression and caching settings
+WHITENOISE_COMPRESSION = True
+WHITENOISE_MAX_AGE = 31536000
