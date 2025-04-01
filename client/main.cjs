@@ -69,7 +69,6 @@ if (app.isPackaged) {
   const resourcesDir = path.resolve(asarDir, ".."); // Resolve the parent directory of the app.asar file
   // Change the working directory to the Resources folder where .next is
   process.chdir(resourcesDir);
-  console.log("Executing in directory:", resourcesDir); // Print the directory
 }
 
 let pythonProcess = null;
@@ -223,7 +222,6 @@ app.on("quit", () => {
 function addNewWindowMenuItem(menu, NEXT_PORT) {
   // Find the File menu (usually at index 0)
   const fileMenu = menu.items[0];
-  console.log("fileMenu", fileMenu.submenu.items);
   // If fileMenu is found, insert a "New Window" item right after the "New Tab" or similar item
   if (fileMenu) {
     fileMenu.submenu.append(
@@ -236,5 +234,4 @@ function addNewWindowMenuItem(menu, NEXT_PORT) {
       })
     );
   }
-  console.log("fileMenu", fileMenu.submenu.items);
 }
