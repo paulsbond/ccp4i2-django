@@ -142,8 +142,10 @@ export function useApi() {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
 
-    follow: function <T>(endpoint: string) {
-      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval: 10000 });
+    follow: function <T>(endpoint: string, refreshInterval: number = 10000) {
+      return useSWR<T>(fullUrl(endpoint), fetcher, {
+        refreshInterval: refreshInterval,
+      });
     },
 
     get_endpoint: function <T>(endpointFetch: EndpointFetch) {
