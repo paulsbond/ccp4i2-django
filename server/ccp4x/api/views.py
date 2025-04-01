@@ -67,6 +67,8 @@ from ..lib.job_utils.upload_file_param import upload_file_param
 from ..lib.job_utils.get_job_container import get_job_container
 from ..lib.job_utils.json_for_job_container import json_for_job_container
 from django.http import JsonResponse
+from django.conf import settings
+from django.utils.text import slugify
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
 

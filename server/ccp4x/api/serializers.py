@@ -10,11 +10,19 @@ class ProjectSerializer(ModelSerializer):
         model = models.Project
         fields = "__all__"
 
-    def create(self, validated_data):
-        if "directory" not in validated_data:
-            validated_data["directory"] = str(
-                Path(settings.CCP4I2_PROJECTS_DIR) / slugify(validated_data["name"])
+    def validate(self, attrs):
+        if (
+            "directory" not in attrs
+            or not attrs["directory"]
+            or len(attrs["directory"]) == 0
+            or attrs["directory"] == "__default__"
+        ):
+            attrs["directory"] = str(
+                Path(settings.CCP4I2_PROJECTS_DIR) / slugify(attrs["name"])
             )
+        return super().validate(attrs)
+
+    def create(self, validated_data):
 
         Path(validated_data["directory"]).mkdir(parents=True)
 
