@@ -20,5 +20,5 @@ export const CCP4i2ReportJobDetails: React.FC<CCP4i2ReportElementProps> = (
     });
   }, [props.item, props.job]);
 
-  return props.item && <SimpleObjectTable object={object} />;
+  return props.item && <SimpleObjectTable sx={{ mb: 4 }} object={object} />;
 };
