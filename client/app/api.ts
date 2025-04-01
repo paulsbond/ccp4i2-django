@@ -198,6 +198,10 @@ export function useApi() {
         headers: headers,
         body: body,
       });
+      if (!response.ok) {
+        const errorText = await response.text(); // Or `res.json()` if the response is JSON
+        throw new Error(`Failed to fetch: ${response.status} - ${errorText}`);
+      }
       return response.json() as Promise<T>;
     },
 
