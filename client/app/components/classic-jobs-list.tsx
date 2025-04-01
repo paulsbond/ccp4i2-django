@@ -243,7 +243,9 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
               <CCP4i2JobAvatar job={job} />
             ) : file ? (
               <Avatar
-                src={`/qticons/${fileTypeIcon(file.type)}.png`}
+                src={`/api/proxy/djangostatic/qticons/${fileTypeIcon(
+                  file.type
+                )}.png`}
                 sx={{ height: "1.5rem", width: "1.5rem" }}
               />
             ) : (

@@ -223,8 +223,8 @@ const CCP4i2TaskCard: React.FC<CCP4i2TaskCardProps> = ({
           title={
             <>
               <Avatar
-                src={`/svgicons/${task[latestVersion].taskName}.svg`}
-                alt={`/qticons/${task[latestVersion].taskName}.png`}
+                src={`/api/proxy/djangostatic/svgicons/${task[latestVersion].taskName}.svg`}
+                alt={`/api/proxy/djangostatic/qticons/${task[latestVersion].taskName}.png`}
               />
               {task[latestVersion].shortTitle}
             </>

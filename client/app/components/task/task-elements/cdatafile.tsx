@@ -226,7 +226,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           my: 1,
         }}
       >
-        <Avatar src={`/qticons/${item._class.slice(1)}.png`} />
+        <Avatar
+          src={`/api/proxy/djangostatic/qticons/${item._class.slice(1)}.png`}
+        />
         <Autocomplete
           disabled={inFlight || job.status !== 1}
           sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
