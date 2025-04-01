@@ -93,6 +93,7 @@
     ]
   },
   "mac": {
-    "category": "public.app-category.productivity"
+    "category": "public.app-category.productivity",
+    "identity": "Apple Development: Martin Noble (ZM2T59XTLY)"
   }
 }
