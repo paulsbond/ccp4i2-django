@@ -47,8 +47,7 @@ export default function ProjectsTable() {
       )
       .sort(
         (a, b) =>
-          new Date(b.creation_time).getTime() -
-          new Date(a.creation_time).getTime()
+          new Date(b.last_access).getTime() - new Date(a.last_access).getTime()
       );
   }, [projects, query]);
 
