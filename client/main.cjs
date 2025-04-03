@@ -21,36 +21,36 @@ function showErrorAndExit(errorMessage) {
 // Here a routine to "source" the ccp4 environment
 
 // Set environment variable based on platform
+let CCP4Dir;
 if (process.platform === "win32") {
-  process.env.CCP4 = process.env.CCP4 || "C:\\Program Files\\CCP4-9";
+  CCP4Dir = process.env.CCP4 || "C:\\Program Files\\CCP4-9";
 } else if (process.platform === "darwin") {
-  process.env.CCP4 = process.env.CCP4 || "/Applications/ccp4-9";
+  CCP4Dir = process.env.CCP4 || "/Applications/ccp4-9";
 } else if (process.platform === "linux") {
-  process.env.CCP4 = process.env.CCP4 || "/usr/local/ccp4-9";
+  CCP4Dir = process.env.CCP4 || "/usr/local/ccp4-9";
 } else {
-  process.env.CCP4 = process.env.CCP4 || "/usr/local/ccp4-9"; // Fallback for other platforms
+  CCP4Dir = process.env.CCP4 || "/usr/local/ccp4-9"; // Fallback for other platforms
 }
+
 // And here execute the rest of the setup shell script (need to look into windows)
-function runShellScript() {
+async function runShellScript(CCP4Dir) {
   return new Promise((resolve, reject) => {
     try {
-      let setup_script;
-      if (["linux", "darwin"].includes(process.platform)) {
-        setup_script = path.join(process.env.CCP4, "bin", "ccp4.setup-sh");
-      } else if (process.platform === "win32") {
-        setup_script = path.join(process.env.CCP4, "bin", "ccp4-setup.bat");
-      }
-      exec(`bash ${setup_script}`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error executing script: ${error.message}`);
-          return reject(error);
+      let setup_script = path.join(CCP4Dir, "bin", "ccp4.setup-sh");
+      exec(
+        `./capture_env_changes.sh source ${setup_script}`,
+        (error, stdout, stderr) => {
+          if (error) {
+            console.error(`Error executing script: ${error.message}`);
+            return reject(error);
+          }
+          if (stderr) {
+            console.warn(`Script stderr: ${stderr}`);
+          }
+          console.log(`Script stdout: ${stdout}`);
+          resolve(stdout);
         }
-        if (stderr) {
-          console.warn(`Script stderr: ${stderr}`);
-        }
-        console.log(`Script stdout: ${stdout}`);
-        resolve(stdout);
-      });
+      );
     } catch (error) {
       console.error(`Error: ${error.message}`);
       reject(error);
@@ -77,10 +77,6 @@ let mainWindow;
 // 1️⃣ Create the Next.js server
 const nextApp = next({ dev: isDev });
 const nextHandler = nextApp.getRequestHandler();
-
-const env = Object.assign({}, process.env, {
-  PYTHONPATH: path.join(__dirname, "..", "server"),
-});
 
 const createWindow = (port) => {
   mainWindow = new BrowserWindow({
@@ -132,8 +128,10 @@ const createWindow = (port) => {
 
 let NEXT_PORT;
 let UVICORN_PORT;
+
 getPort()
   .then((aPort) => {
+    process.env.PYTHONPATH = path.join(__dirname, "..", "server");
     UVICORN_PORT = aPort;
     return getPort(UVICORN_PORT + 1);
   })
@@ -141,7 +139,14 @@ getPort()
     NEXT_PORT = aPort;
     process.env.BACKEND_URL = `http://localhost:${UVICORN_PORT}`;
   })
-  .then(() => runShellScript())
+  .then(async () => {
+    const stdout = await runShellScript(CCP4Dir);
+    const envChanges = JSON.parse(stdout);
+    for (const [key, value] of Object.entries(envChanges)) {
+      process.env[key] = value;
+    }
+    return Promise.resolve(true);
+  })
   .then(() => nextApp.prepare())
   .then(async () => {
     const server = express();
@@ -156,14 +161,14 @@ getPort()
     server.listen(NEXT_PORT, async () => {
       console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
       const CCP4_PYTHON = path.join(process.env.CCP4, "bin", "ccp4-python");
-      env.UVICORN_PORT = UVICORN_PORT;
-      env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
+      process.env.UVICORN_PORT = UVICORN_PORT;
+      process.env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
       // 2️⃣ Start Python process with dynamic port
       pythonProcess = spawn(
         CCP4_PYTHON,
         ["-m", "uvicorn", "asgi:application"],
         {
-          env,
+          env: process.env,
         }
       );
 

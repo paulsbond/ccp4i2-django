@@ -77,6 +77,14 @@
         "to": ".next"
       },
       {
+        "from": "capture_env_changes.sh",
+        "to": "capture_env_changes.sh"
+      },
+      {
+        "from": "capture_env_changes.bat",
+        "to": "capture_env_changes.bat"
+      },
+      {
         "from": "node_modules/react",
         "to": "node_modules/react",
         "filter": [
