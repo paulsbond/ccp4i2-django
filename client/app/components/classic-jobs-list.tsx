@@ -7,7 +7,7 @@ import {
   JobFloatValue,
 } from "../models";
 import { CCP4i2JobAvatar } from "./job-avatar";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { forwardRef, useCallback, useContext, useMemo, useState } from "react";
 import {
   RichTreeView,
   TreeItem2Content,
@@ -42,7 +42,7 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   parent = null,
   withSubtitles = false,
 }) => {
-  const [selectedItems, setSelectedItems] = React.useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [previewNode, setPreviewNode] = useState<
     JobWithChildren | DjangoFile | null
   >(null);
@@ -139,7 +139,7 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   );
 };
 
-const CustomTreeItem = React.forwardRef(function CustomTreeItem(
+const CustomTreeItem = forwardRef(function CustomTreeItem(
   { id, itemId, label, disabled, children }: TreeItem2Props,
   ref: React.Ref<HTMLLIElement>
 ) {
