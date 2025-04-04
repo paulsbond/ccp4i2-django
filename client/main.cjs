@@ -31,34 +31,63 @@ if (process.platform === "win32") {
 } else {
   CCP4Dir = process.env.CCP4 || "/usr/local/ccp4-9"; // Fallback for other platforms
 }
+process.env.CCP4 = CCP4Dir;
 
 // And here execute the rest of the setup shell script (need to look into windows)
 async function runShellScript(CCP4Dir) {
-  return new Promise((resolve, reject) => {
-    try {
-      let setup_script = path.join(CCP4Dir, "bin", "ccp4.setup-sh");
-      exec(
-        `./capture_env_changes.sh source ${setup_script}`,
-        (error, stdout, stderr) => {
-          if (error) {
-            console.error(`Error executing script: ${error.message}`);
-            return reject(error);
+  if (["linux", "darwin"].includes(process.platform)) {
+    return new Promise((resolve, reject) => {
+      try {
+        let setup_script = path.join(CCP4Dir, "bin", "ccp4.setup-sh");
+        exec(
+          `./capture_env_changes.sh source ${setup_script}`,
+          (error, stdout, stderr) => {
+            if (error) {
+              console.error(`Error executing script: ${error.message}`);
+              return reject(error);
+            }
+            if (stderr) {
+              console.warn(`Script stderr: ${stderr}`);
+            }
+            console.log(`Script stdout: ${stdout}`);
+            resolve(stdout);
           }
-          if (stderr) {
-            console.warn(`Script stderr: ${stderr}`);
+        );
+      } catch (error) {
+        console.error(`Error: ${error.message}`);
+        reject(error);
+        showErrorAndExit(
+          `Failed to execute setup script. Please check your CCP4 installation.`
+        );
+      }
+    });
+  } else {
+    return new Promise((resolve, reject) => {
+      try {
+        let setup_script = path.join(CCP4Dir, "ccp4.setup.bat");
+        exec(
+          `capture_env_changes.bat ${setup_script}`,
+          (error, stdout, stderr) => {
+            if (error) {
+              console.error(`Error executing script: ${error.message}`);
+              return reject(error);
+            }
+            if (stderr) {
+              console.warn(`Script stderr: ${stderr}`);
+            }
+            console.log(`Script stdout: ${stdout}`);
+            resolve(stdout);
           }
-          console.log(`Script stdout: ${stdout}`);
-          resolve(stdout);
-        }
-      );
-    } catch (error) {
-      console.error(`Error: ${error.message}`);
-      reject(error);
-      showErrorAndExit(
-        `Failed to execute setup script. Please check your CCP4 installation.`
-      );
-    }
-  });
+        );
+      } catch (error) {
+        console.error(`Error: ${error.message}`);
+        reject(error);
+        showErrorAndExit(
+          `Failed to execute setup script. Please check your CCP4 installation.`
+        );
+      }
+    });
+  }
 }
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
@@ -141,15 +170,26 @@ getPort()
   })
   .then(async () => {
     const stdout = await runShellScript(CCP4Dir);
-    const envChanges = JSON.parse(stdout);
-    for (const [key, value] of Object.entries(envChanges)) {
-      process.env[key] = value;
+    console.log({ stdout });
+    if (stdout) {
+      const envChanges = JSON.parse(stdout);
+      for (const [key, value] of Object.entries(envChanges)) {
+        process.env[key] = value;
+      }
     }
     return Promise.resolve(true);
   })
   .then(() => nextApp.prepare())
   .then(async () => {
     const server = express();
+    // Set the Content Security Policy header
+    server.use((req, res, next) => {
+      res.setHeader(
+        "Content-Security-Policy",
+        `default-src 'self'; connect-src http://localhost:${NEXT_PORT};`
+      );
+      next();
+    });
     server.get("/config", (req, res) => {
       const apiURL = `${req.protocol}://${
         req.get("host").split(":")[0]
