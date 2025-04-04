@@ -186,10 +186,11 @@ getPort()
     server.use((req, res, next) => {
       res.setHeader(
         "Content-Security-Policy",
-        `default-src 'self'; connect-src 'self' http://localhost:${NEXT_PORT}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval';`
+        `default-src 'self'; connect-src http://localhost:${NEXT_PORT}; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'`
       );
       next();
     });
+    //img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval';
     server.get("/config", (req, res) => {
       const apiURL = `${req.protocol}://${
         req.get("host").split(":")[0]
