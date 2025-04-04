@@ -1,5 +1,5 @@
 import { Box, Tab, Tabs } from "@mui/material";
-import React, { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useState, Children } from "react";
 
 export function a11yProps(index: Number) {
   return {
@@ -26,7 +26,7 @@ export const CCP4i2Tabs: React.FC<PropsWithChildren<CCP4i2TabsProps>> = ({
         }}
         aria-label="basic tabs example"
       >
-        {React.Children.map(children, (child: any, iChild) => (
+        {Children.map(children, (child: any, iChild) => (
           <Tab
             key={child.props.tab}
             label={child.props.tab}
@@ -34,7 +34,7 @@ export const CCP4i2Tabs: React.FC<PropsWithChildren<CCP4i2TabsProps>> = ({
           />
         ))}
       </Tabs>
-      {React.Children.map(children, (child: any, iChild) => (
+      {Children.map(children, (child: any, iChild) => (
         <CCP4i2TabPanel key={iChild} value={value} index={iChild}>
           {child.props.children}
         </CCP4i2TabPanel>
