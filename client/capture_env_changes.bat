@@ -1,53 +1,42 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: Store the original environment variables in a temporary file
-set temp_file=%temp%\original_env.txt
-set json_output={
-
-:: Capture the original environment variables
-for /f "tokens=*" %%A in ('set') do (
-    set var=%%A
-    set var_name=!var:*=!
-    set var_value=!var:*!=!
-    echo !var_name!=!var_value!>> %temp_file%
+:: Capture initial environment variables
+for /f "tokens=1,* delims==" %%A in ('set') do (
+    set "env_%%A=%%B"
 )
 
-:: Run the provided command (the user must pass a command to run)
-:: Suppress output of the command
+:: Run your command here (example: set a new env variable)
+:: Example: set NEW_VAR=example_value
+
 %* >nul 2>&1
 
-:: Capture the new environment variables after execution
-for /f "tokens=*" %%A in ('set') do (
-    set var=%%A
-    set var_name=!var:*=!
-    set var_value=!var:*!=!
-    
-    :: Check if the variable was in the original set
-    findstr /b /c:"!var_name!=" %temp_file% >nul
-    if errorlevel 1 (
-        :: This is a newly defined variable, add it to the JSON output
-        set json_output=!json_output!"!var_name!":"!var_value!", 
+:: Now, capture the environment variables again after execution
+set "json_output={"
+for /f "tokens=1,* delims==" %%A in ('set') do (
+    set "var_name=%%A"
+    set "var_value=%%B"
+    :: Check if this environment variable is new or changed
+    if not defined env_%%A (
+        :: This is a new variable
+        set "json_output=!json_output!\"%%A\":\"%%B\","
     ) else (
-        :: If the variable value has changed, add it to the JSON output
-        for /f "tokens=1,* delims==" %%B in ('findstr /b /c:"!var_name!=" %temp_file%') do (
-            if "%%C" neq "!var_value!" (
-                set json_output=!json_output!"!var_name!":"!var_value!", 
-            )
+        if "!env_%%A!" neq "%%B" (
+            :: This is a modified variable
+            set "json_output=!json_output!\"%%A\":\"%%B\","
+        )
+        else (
+            ::echo "Unchanged variable %%A"
         )
     )
 )
 
-:: Remove trailing comma if necessary
-set json_output=!json_output:~0,-1!
+:: Remove the trailing comma and close the JSON object
+if "!json_output:~-1!"=="," set "json_output=!json_output:~0,-1!"
+set "json_output=!json_output!}"
 
-:: Close the JSON object
-set json_output=!json_output!}
-
-:: Output the JSON
+:: Output the JSON result
 echo !json_output!
 
-:: Clean up
-del %temp_file%
-
 endlocal
+
