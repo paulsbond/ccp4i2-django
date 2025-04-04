@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import $ from "jquery";
 import { Job } from "../../models";
 

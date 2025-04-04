@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import $ from "jquery";
 import { Grid, Grid2 } from "@mui/material";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";

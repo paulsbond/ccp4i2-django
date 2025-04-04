@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import $ from "jquery";
 import { Collapse, Grid2, Toolbar, Typography } from "@mui/material";
 import { MyExpandMore } from "../expand-more";

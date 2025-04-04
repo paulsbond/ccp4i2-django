@@ -1,5 +1,5 @@
 import { Box, Tab, Tabs } from "@mui/material";
-import React, { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useState } from "react";
 
 export function a11yProps(index: Number) {
   return {

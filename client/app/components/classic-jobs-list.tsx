@@ -7,7 +7,7 @@ import {
   JobFloatValue,
 } from "../models";
 import { CCP4i2JobAvatar } from "./job-avatar";
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import {
   RichTreeView,
   TreeItem2Content,

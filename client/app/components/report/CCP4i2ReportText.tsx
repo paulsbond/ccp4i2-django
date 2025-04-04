@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import $ from "jquery";
 import { CCP4i2ReportElementProps, cssToDict } from "./CCP4i2ReportElement";
 

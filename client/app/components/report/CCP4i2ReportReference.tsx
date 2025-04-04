@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import $ from "jquery";
 import { Typography } from "@mui/material";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";

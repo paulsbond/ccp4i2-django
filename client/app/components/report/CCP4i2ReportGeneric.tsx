@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import $ from "jquery";
 import { CCP4i2RVAPITable } from "./CCP4i2RVAPITable";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
