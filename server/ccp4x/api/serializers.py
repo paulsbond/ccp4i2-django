@@ -5,6 +5,12 @@ from rest_framework.serializers import ModelSerializer, ValidationError
 from ..db import models
 
 
+class FileTypeSerializer(ModelSerializer):
+    class Meta:
+        model = models.FileType
+        fields = "__all__"
+
+
 class ProjectSerializer(ModelSerializer):
     class Meta:
         model = models.Project
