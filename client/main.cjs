@@ -11,7 +11,7 @@ const next = require("next");
 const express = require("express");
 const { spawn, exec } = require("child_process");
 const { getPort } = require("get-port-please");
-
+const { ccp4_setup_windows } = require("./ccp4_setup_windows.cjs");
 //Way to say if launch fails
 function showErrorAndExit(errorMessage) {
   dialog.showErrorBox("Failed to Start", errorMessage);
@@ -22,8 +22,10 @@ function showErrorAndExit(errorMessage) {
 
 // Set environment variable based on platform
 let CCP4Dir;
+let ccp4_python = "ccp4-python";
 if (process.platform === "win32") {
-  CCP4Dir = process.env.CCP4 || "C:\\Program Files\\CCP4-9";
+  CCP4Dir = process.env.CCP4 || "C:/Users/nmemn/CCP4-9/CCP4";
+  ccp4_python = "ccp4-python.bat";
 } else if (process.platform === "darwin") {
   CCP4Dir = process.env.CCP4 || "/Applications/ccp4-9";
 } else if (process.platform === "linux") {
@@ -169,12 +171,16 @@ getPort()
     process.env.BACKEND_URL = `http://localhost:${UVICORN_PORT}`;
   })
   .then(async () => {
-    const stdout = await runShellScript(CCP4Dir);
-    console.log({ stdout });
-    if (stdout) {
-      const envChanges = JSON.parse(stdout);
-      for (const [key, value] of Object.entries(envChanges)) {
-        process.env[key] = value;
+    if (process.platform === "win32") {
+      ccp4_setup_windows(CCP4Dir);
+    } else {
+      const stdout = await runShellScript(CCP4Dir);
+      console.log({ stdout });
+      if (stdout) {
+        const envChanges = JSON.parse(stdout);
+        for (const [key, value] of Object.entries(envChanges)) {
+          process.env[key] = value;
+        }
       }
     }
     return Promise.resolve(true);
@@ -201,15 +207,19 @@ getPort()
 
     server.listen(NEXT_PORT, async () => {
       console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
-      const CCP4_PYTHON = path.join(process.env.CCP4, "bin", "ccp4-python");
+      const CCP4_PYTHON = path.join(process.env.CCP4, "bin", ccp4_python);
+      //.replace(/\\/g, "/");
+      console.log({ CCP4_PYTHON });
       process.env.UVICORN_PORT = UVICORN_PORT;
       process.env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
+      //console.log(process.env);
       // 2️⃣ Start Python process with dynamic port
       pythonProcess = spawn(
         CCP4_PYTHON,
         ["-m", "uvicorn", "asgi:application"],
         {
           env: process.env,
+          shell: true,
         }
       );
 
