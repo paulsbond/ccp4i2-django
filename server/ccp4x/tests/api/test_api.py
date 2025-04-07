@@ -4,6 +4,7 @@ import json
 from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from ...db.import_i2xml import import_i2xml_from_file
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db import models
@@ -147,4 +148,23 @@ class CCP4i2TestCase(TestCase):
             {
                 "status": "Success",
             },
+        )
+
+    def test_file_upload(self):
+        clone_response = self.client.post(
+            "/jobs/1/clone/",
+        )
+        clone = clone_response.json()
+        print(clone)
+        # Create a sample file
+        file_content = b"Hello, this is a test file."
+        test_file = SimpleUploadedFile("testfile.pdb", file_content)
+
+        # Create the data to be sent in the request
+        data = {
+            "file": test_file,
+            "objectPath": "prosmart_refmac.inputData.XYZIN",
+        }
+        response = self.client.post(
+            f"/jobs/{clone['id']}/upload_file_param/", data, format="multipart"
         )
