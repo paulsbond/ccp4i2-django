@@ -3,6 +3,7 @@ import datetime
 import json
 import pathlib
 import os
+import platform
 from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
@@ -71,6 +72,21 @@ from django.conf import settings
 from django.utils.text import slugify
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
+
+
+class FileTypeViewSet(ModelViewSet):
+    """ProjectViewSet is a view set for handling project-related operations.
+    Methods:
+        files(request, pk=None):
+        jobs(request, pk=None):
+        job_float_values(request, pk=None):
+        job_char_values(request, pk=None):
+        tags(request, pk=None):
+    """
+
+    queryset = models.FileType.objects.all()
+    serializer_class = serializers.FileTypeSerializer
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
 
 class ProjectViewSet(ModelViewSet):
@@ -586,7 +602,13 @@ class JobViewSet(ModelViewSet):
             Response: A Response object containing the serialized job data.
         """
         try:
-            ccp4_python = str(pathlib.Path(os.environ["CCP4"]) / "bin" / "ccp4-python")
+            # Determine the program name based on the OS
+            ccp4_python_program = "ccp4-python"
+            if platform.system() == "Windows":
+                ccp4_python_program += ".bat"
+            ccp4_python = str(
+                pathlib.Path(os.environ["CCP4"]) / "bin" / ccp4_python_program
+            )
             manage_py = str(pathlib.Path(__file__).parent.parent.parent / "manage.py")
             job = models.Job.objects.get(id=pk)
             process = subprocess.Popen(
@@ -678,7 +700,7 @@ class JobViewSet(ModelViewSet):
 
         try:
             the_job = models.Job.objects.get(id=pk)
-            response_dict = digest_file(the_job, request.GET.get("object_path"))
+            response_dict = digest_file(the_job, request.GET.get("object_path")[:-1])
             return Response({"status": "Success", "digest": response_dict})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
