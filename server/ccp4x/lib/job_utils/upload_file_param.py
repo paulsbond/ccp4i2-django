@@ -99,7 +99,7 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     else:
         imported_file_path = downloaded_file_path
 
-    logger.error(
+    logger.info(
         "Final imported file destination is %s %s",
         imported_file_path,
         imported_file_path.name,
@@ -117,16 +117,20 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         job=job,
         name=str(imported_file_path.name),
         directory=models.File.Directory.IMPORT_DIR,
-        content=param_object.contentFlag,
         type=type,
         annotation=f"Imported from {files[0].name}",
         job_param_name=param_object.objectName(),
     )
     # Note deliberate explicit for != None instead of is not None
-    if param_object.subType != None:
+    try:
         new_file.sub_type = int(param_object.subType)
-    else:
+    except Exception:
         new_file.sub_type = 1
+    try:
+        contentFlag = int(param_object.contentFlag)
+        new_file.content = contentFlag
+    except Exception:
+        logging.error("Unsettable contentFlag on %s", param_object.objectName())
     new_file.save()
 
     new_file_import = models.FileImport(
