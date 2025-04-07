@@ -9,6 +9,8 @@ router.register("projects", views.ProjectViewSet)
 router.register("project-tags", views.ProjectTagViewSet)
 router.register("files", views.FileViewSet)
 router.register("jobs", views.JobViewSet)
+router.register("filetypes", views.FileTypeViewSet)
+
 
 urlpatterns = [
     path("", include(router.urls)),
