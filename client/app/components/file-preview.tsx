@@ -3,6 +3,7 @@ import { doRetrieve } from "../api";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { Editor } from "@monaco-editor/react";
 import { prettifyXml } from "../utils";
+import $ from "jquery";
 
 interface FilePreviewProps {
   url: string | null;
