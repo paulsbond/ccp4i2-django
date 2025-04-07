@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import os
 import xml.etree.ElementTree as ET
 
 from ccp4i2.core import CCP4Modules
@@ -79,7 +80,9 @@ def _input_files(job: Job):
         if path_flag == PATH_FLAG_JOB_DIR:
             input_file["relpath"] = str(
                 pathlib.Path("CCP4_JOBS")
-                / (str(file_use.file.job.directory).split("CCP4_JOBS/")[1])
+                / os.path.join(
+                    *[f"job_{number}" for number in file_use.file.job.number.split(".")]
+                )
             )
         elif path_flag == PATH_FLAG_IMPORT_DIR:
             input_file["relpath"] = "CCP4_IMPORTED_FILES"
@@ -109,8 +112,9 @@ def _output_files(job: Job):
             logger.error("Error in _get_output_files: %s", err)
             continue
         output_file["baseName"] = output_file["filename"]
-        output_file["relPath"] = output_file["relpath"] = str(
-            pathlib.Path("CCP4_JOBS") / (str(file.job.directory).split("CCP4_JOBS/")[1])
+        output_file["relpath"] = str(
+            pathlib.Path("CCP4_JOBS")
+            / os.path.join(*[f"job_{number}" for number in file.job.number.split(".")])
         )
         if output_file["pathflag"] == PATH_FLAG_IMPORT_DIR:
             output_file["relPath"] = "CCP4_IMPORTED_FILES"
