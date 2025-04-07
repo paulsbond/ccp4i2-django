@@ -65,9 +65,9 @@
     "files": [
       "public/**/*",
       "out/**/*",
-      "ccp4-master.cjs",
-      "ccp4-setup-sh.cjs",
-      "ccp4-setup-windows.cjs",
+      "ccp4i2-master.cjs",
+      "ccp4i2-setup-sh.cjs",
+      "ccp4i2-setup-windows.cjs",
       "package.json"
     ],
     "extraResources": [
