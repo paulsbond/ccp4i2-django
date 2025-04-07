@@ -1,6 +1,6 @@
 {
   "name": "ccp4x",
-  "main": "main.cjs",
+  "main": "ccp4i2-master.cjs",
   "type": "module",
   "version": "0.0.1",
   "description": "An overlay of Electron/NextJS (frontend) and Django (backend) for CCP4X",
@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "update": "npx npm-check-updates -u",
-    "start": "electron -r ts-node/register ./main.cjs",
+    "start": "electron -r ts-node/register ./ccp4i2-master.cjs",
     "start-uvicorn": "ts-node ./uvicorn.cjs",
     "electron-dev": "concurrently \"next dev\" \"npx ts-node ./node_modules/.bin/electron .\"",
     "electron-build": "next build && next export && npx ts-node/register ./node_modules/.bin/electron .",
@@ -65,8 +65,9 @@
     "files": [
       "public/**/*",
       "out/**/*",
-      "main.cjs",
-      "ccp4_setup_windows.cjs",
+      "ccp4-master.cjs",
+      "ccp4-setup-sh.cjs",
+      "ccp4-setup-windows.cjs",
       "package.json"
     ],
     "extraResources": [

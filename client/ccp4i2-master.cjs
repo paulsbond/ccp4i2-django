@@ -9,10 +9,10 @@ const {
 const path = require("path");
 const next = require("next");
 const express = require("express");
-const { spawn, exec } = require("child_process");
+const { spawn } = require("child_process");
 const { getPort } = require("get-port-please");
-const { ccp4_setup_windows } = require("./ccp4-setup-windows.cjs");
-const { ccp4_setup_sh } = require("./ccp4-setup-sh.cjs");
+const { ccp4_setup_windows } = require("./ccp4i2-setup-windows.cjs");
+const { ccp4_setup_sh } = require("./ccp4i2-setup-sh.cjs");
 
 //Way to say if launch fails
 function showErrorAndExit(errorMessage) {
@@ -54,8 +54,8 @@ let mainWindow;
 const nextApp = next({ dev: isDev });
 const nextHandler = nextApp.getRequestHandler();
 
-const createWindow = (port) => {
-  mainWindow = new BrowserWindow({
+const _createWindow = ({ url }) => {
+  const newWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
@@ -64,27 +64,20 @@ const createWindow = (port) => {
     },
   });
 
-  mainWindow.loadURL(`http://localhost:${port}`);
+  newWindow.loadURL(url);
 
-  mainWindow.on("closed", () => {
-    mainWindow = null;
+  newWindow.on("closed", () => {
+    if (newWindow == mainWindow) mainWindow = null;
   });
 
   // Intercept window.open and create a new Electron window instead
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    const newWin = new BrowserWindow({
-      width: 800,
-      height: 400,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
-    });
-
-    newWin.loadURL(url);
+  newWindow.webContents.setWindowOpenHandler(({ url }) => {
+    _createWindow({ url });
     return { action: "deny" }; // Prevent default behavior
   });
+};
 
+function installWillDownloadHandler() {
   // Intercept downloads
   session.defaultSession.on("will-download", async (event, item) => {
     // Ask the user where to save the file
@@ -100,7 +93,7 @@ const createWindow = (port) => {
       item.cancel(); // Cancel the download if no path was chosen
     }
   });
-};
+}
 
 startCCP4i2();
 
@@ -163,17 +156,19 @@ async function startCCP4i2() {
 
     // 3️⃣ Start Electron window
     app.whenReady().then(() => {
-      createWindow(NEXT_PORT);
+      installWillDownloadHandler();
+      _createWindow({ url: `http://localhost:${NEXT_PORT}` });
       // Modify the default menu by adding a "New Window" option
       const defaultMenu = Menu.getApplicationMenu();
       addNewWindowMenuItem(defaultMenu, NEXT_PORT);
       Menu.setApplicationMenu(defaultMenu);
     });
+
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         // 3️⃣ Start Electron window
         app.whenReady().then(async () => {
-          createWindow(NEXT_PORT);
+          _createWindow({ url: `http://localhost:${NEXT_PORT}` });
           // Modify the default menu by adding a "New Window" option
           const defaultMenu = Menu.getApplicationMenu();
           addNewWindowMenuItem(defaultMenu, NEXT_PORT);
@@ -183,6 +178,7 @@ async function startCCP4i2() {
     });
   });
 }
+
 // 4️⃣ Cleanup when Electron closes
 app.on("window-all-closed", () => {
   if (pythonProcess) {
@@ -210,7 +206,7 @@ function addNewWindowMenuItem(menu, NEXT_PORT) {
         label: "New Window",
         accelerator: "CmdOrCtrl+N", // Optional: add a keyboard shortcut (Cmd+N / Ctrl+N)
         click: () => {
-          createWindow(NEXT_PORT); // Create new window when this option is clicked
+          _createWindow({ url: `http://localhost:${NEXT_PORT}` }); // Create new window when this option is clicked
         },
       })
     );
