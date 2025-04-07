@@ -9,6 +9,7 @@
     "dev": "next dev",
     "update": "npx npm-check-updates -u",
     "start": "electron -r ts-node/register ./main.cjs",
+    "start-uvicorn": "ts-node ./uvicorn.cjs",
     "electron-dev": "concurrently \"next dev\" \"npx ts-node ./node_modules/.bin/electron .\"",
     "electron-build": "next build && next export && npx ts-node/register ./node_modules/.bin/electron .",
     "build": "next build && tsc && electron-builder",
