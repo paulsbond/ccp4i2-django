@@ -66,6 +66,7 @@
       "public/**/*",
       "out/**/*",
       "main.cjs",
+      "ccp4_setup_windows.cjs",
       "package.json"
     ],
     "extraResources": [
@@ -80,10 +81,6 @@
       {
         "from": "capture_env_changes.sh",
         "to": "capture_env_changes.sh"
-      },
-      {
-        "from": "capture_env_changes.bat",
-        "to": "capture_env_changes.bat"
       },
       {
         "from": "node_modules/react",
