@@ -220,6 +220,7 @@ getPort()
         {
           env: process.env,
           shell: true,
+          stdio: "inherit",
         }
       );
 
