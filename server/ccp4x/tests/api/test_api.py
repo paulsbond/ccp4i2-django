@@ -168,3 +168,7 @@ class CCP4i2TestCase(TestCase):
         response = self.client.post(
             f"/jobs/{clone['id']}/upload_file_param/", data, format="multipart"
         )
+        self.assertEqual(
+            response.json()["updated_item"]["_value"]["baseName"]["_value"],
+            "testfile.pdb",
+        )
