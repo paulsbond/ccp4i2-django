@@ -1,5 +1,6 @@
 import uuid
 import subprocess
+import platform
 from django.core.management.base import BaseCommand
 from ccp4x.db.models import Job, Project
 from ccp4x.lib.job_utils.run_job import run_job
@@ -45,9 +46,13 @@ class Command(BaseCommand):
             return
 
         if options["detach"]:
+            # Determine the program name based on the OS
+            ccp4_python_program = "ccp4-python"
+            if platform.system() == "Windows":
+                ccp4_python_program += ".bat"
             process = subprocess.Popen(
                 [
-                    "ccp4-python",
+                    ccp4_python_program,
                     "manage.py",
                     "run_job",
                     "-ju",
