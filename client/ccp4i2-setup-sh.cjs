@@ -34,7 +34,7 @@ function ccp4_setup_sh(CCP4Dir) {
   process.env.CCP4I_TOP = path.join(CCP4, "share", "ccp4i");
   process.env.MMCIFDIC = path.join(CCP4, "lib", "ccp4", "cif_mmdic.lib");
   process.env.CRANK = path.join(process.env.CCP4I_TOP, "crank");
-  process.env.CLIBD_MON = path.join(CCP4, "lib", "data", "monomers");
+  process.env.CLIBD_MON = path.join(CCP4, "lib", "data", "monomers", path.sep);
   process.env.CCP4_HELPDIR = path.join(CCP4, "help");
 
   // Check if CCP4 exists

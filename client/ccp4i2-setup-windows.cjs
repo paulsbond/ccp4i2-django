@@ -30,7 +30,7 @@ function ccp4_setup_windows(CCP4Dir) {
   process.env.CHTML = path.join(CCP4, "html");
   process.env.CINCL = path.join(CCP4, "include");
   process.env.CCP4I_TOP = path.join(CCP4, "share", "ccp4i");
-  process.env.CLIBD_MON = path.join(CCP4, "lib", "data", "monomers");
+  process.env.CLIBD_MON = path.join(CCP4, "lib", "data", "monomers", path.sep);
   process.env.MMCIFDIC = path.join(CCP4, "lib", "ccp4", "cif_mmdic.lib");
   process.env.CRANK = path.join(CCP4, "share", "ccp4i", "crank");
   process.env.CCP4_OPEN = "unknown";
