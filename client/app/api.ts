@@ -142,6 +142,12 @@ export function useApi() {
       return useSWR<T>(fullUrl(endpoint), fetcher);
     },
 
+    config: function <T>() {
+      return useSWR<T>("config", () => {
+        return fetch("/api/config").then((r) => r.json());
+      });
+    },
+
     follow: function <T>(endpoint: string, refreshInterval: number = 10000) {
       return useSWR<T>(fullUrl(endpoint), fetcher, {
         refreshInterval: refreshInterval,
