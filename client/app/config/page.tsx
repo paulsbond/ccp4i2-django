@@ -65,7 +65,7 @@ export const ConfigContent = () => {
     >
       <Stack spacing={2}>
         {config && (
-          <Table>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
                 <TableCell variant="head"> </TableCell>{" "}
@@ -103,19 +103,28 @@ export const ConfigContent = () => {
             </TableBody>
           </Table>
         )}
-        <Button
-          component="label"
-          variant="contained"
-          startIcon={<Folder />}
-          onClick={onLaunchBrowser}
-        ></Button>
-        <Button
-          key="start-uvicorn"
-          component="label"
-          variant="contained"
-          startIcon={<Folder />}
-          onClick={onStartUvicorn}
-        ></Button>
+        <Stack spacing={2} direction="row">
+          <Button
+            component="label"
+            variant="contained"
+            startIcon={<Folder />}
+            onClick={onLaunchBrowser}
+            sx={{ minWidth: 320 }}
+          >
+            Browse to find CCP4
+          </Button>
+          <Button
+            key="start-uvicorn"
+            component="label"
+            variant="contained"
+            startIcon={<Folder />}
+            onClick={onStartUvicorn}
+            sx={{ minWidth: 320 }}
+            disabled={!config?.CCP4Python.exists}
+          >
+            Launch CCP4i2
+          </Button>
+        </Stack>
       </Stack>
     </Container>
   );
