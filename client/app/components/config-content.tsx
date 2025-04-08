@@ -62,34 +62,34 @@ export const ConfigContent = () => {
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
-                <TableCell variant="head"> </TableCell>{" "}
+                <TableCell variant="head"> </TableCell>
                 <TableCell variant="head"> </TableCell>
                 <TableCell variant="head">Exists ?</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               <TableRow>
-                <TableCell variant="head">CCP4Dir</TableCell>{" "}
+                <TableCell variant="head">CCP4Dir</TableCell>
                 <TableCell variant="body">{config.CCP4Dir.path}</TableCell>
                 <TableCell variant="body">
                   {config.CCP4Dir.exists ? <Check /> : <Cancel />}
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell variant="head">CCP4Python</TableCell>{" "}
+                <TableCell variant="head">CCP4Python</TableCell>
                 <TableCell variant="body">{config.CCP4Python.path}</TableCell>
                 <TableCell variant="body">
                   {config.CCP4Python.exists ? <Check /> : <Cancel />}
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell variant="head">NEXT Port</TableCell>{" "}
+                <TableCell variant="head">NEXT Port</TableCell>
                 <TableCell variant="body" colSpan={3}>
                   {config.NEXT_PORT}
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell variant="head">Uvicorn Port</TableCell>{" "}
+                <TableCell variant="head">Uvicorn Port</TableCell>
                 <TableCell variant="body" colSpan={3}>
                   {config.UVICORN_PORT}
                 </TableCell>
