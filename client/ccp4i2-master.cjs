@@ -155,6 +155,7 @@ function startUvicorn(CCP4Dir, UVICORN_PORT, NEXT_PORT) {
     shell: true,
     //stdio: "inherit",
   });
+  console.log(`🚀 Uvicorn running on http://localhost:${UVICORN_PORT_PORT}`);
 
   pythonProcess.stdout.on("data", (data) => {
     console.log(`🐍 Python Output: ${data}`);
@@ -175,8 +176,7 @@ async function startCCP4i2() {
   const UVICORN_PORT = await getPort();
   const NEXT_PORT = await getPort(UVICORN_PORT + 1);
   process.env.PYTHONPATH = path.join(__dirname, "..", "server");
-  process.env.BACKEND_URL =
-    process.env.BACKEND_URL || `http://localhost:${UVICORN_PORT}`;
+  process.env.BACKEND_URL = `http://localhost:${UVICORN_PORT}`;
   await nextApp.prepare();
   const server = express();
   // Set the Content Security Policy header
@@ -210,6 +210,7 @@ async function startCCP4i2() {
   server.listen(NEXT_PORT, async () => {
     // 3️⃣ Start Electron window
     app.whenReady().then(() => {
+      console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
       installWillDownloadHandler();
       mainWindow = _createWindow({
         url: `http://localhost:${NEXT_PORT}/config`,
