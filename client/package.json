@@ -67,6 +67,7 @@
       "public/**/*",
       "out/**/*",
       "ccp4i2-master.cjs",
+      "preload.cjs",
       "ccp4i2-setup-sh.cjs",
       "ccp4i2-setup-windows.cjs",
       "package.json"
