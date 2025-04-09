@@ -155,7 +155,7 @@ function startUvicorn(CCP4Dir, UVICORN_PORT, NEXT_PORT) {
     shell: true,
     //stdio: "inherit",
   });
-  console.log(`🚀 Uvicorn running on http://localhost:${UVICORN_PORT_PORT}`);
+  console.log(`🚀 Uvicorn running on http://localhost:${UVICORN_PORT}`);
 
   pythonProcess.stdout.on("data", (data) => {
     console.log(`🐍 Python Output: ${data}`);
