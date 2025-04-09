@@ -180,11 +180,28 @@ async function startCCP4i2() {
   await nextApp.prepare();
   const server = express();
   // Set the Content Security Policy header
+  const csp = {
+    defaultSrc: "'self'",
+    connectSrc: `http://localhost:${NEXT_PORT} ws://localhost:${NEXT_PORT}`,
+    styleSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline'",
+    fontSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline'",
+    scriptSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'",
+    workerSrc: "'self' blob:",
+  };
+
+  const cspString = `
+    default-src ${csp.defaultSrc};
+    connect-src ${csp.connectSrc};
+    style-src ${csp.styleSrc};
+    font-src ${csp.fontSrc};
+    script-src ${csp.scriptSrc};
+    worker-src ${csp.workerSrc};
+  `
+    .replace(/\n\s+/g, " ")
+    .trim(); // Clean up whitespace
+
   server.use((req, res, next) => {
-    res.setHeader(
-      "Content-Security-Policy",
-      `default-src 'self'; connect-src http://localhost:${NEXT_PORT} ws://localhost:${NEXT_PORT}; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'`
-    );
+    res.setHeader("Content-Security-Policy", cspString);
     next();
   });
   //img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval';
