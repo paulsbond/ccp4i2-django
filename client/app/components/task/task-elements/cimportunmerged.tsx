@@ -38,11 +38,12 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   useAsyncEffect(async () => {
     if (
       fileDigest &&
+      oldFileDigest !== undefined &&
       JSON.stringify(fileDigest) !== JSON.stringify(oldFileDigest) && // Only if change
       item && //Only if item is known
       setParameter //Only if setParameter hook in place
     ) {
-      console.log({ fileDigest });
+      console.log({ fileDigest, oldFileDigest });
       //Here if the file Digest has changed
       if (fileDigest?.digest?.cell) {
         await setParameter({
