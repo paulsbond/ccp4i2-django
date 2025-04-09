@@ -11,7 +11,7 @@ export const CCP4i2ReportTable: React.FC<CCP4i2ReportElementProps> = (
 
   useEffect(() => {
     let newData: any[] = [];
-    let newColumns = [];
+    let newColumns: any[] = [];
 
     $(props.item)
       .find("tr")

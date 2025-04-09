@@ -1,4 +1,3 @@
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { ThemeProvider } from "@mui/material/styles";
 import { PropsWithChildren } from "react";
 import { DeleteDialogProvider } from "./components/delete-dialog";
@@ -14,13 +13,11 @@ export default function RootLayout(props: PropsWithChildren) {
   return (
     <html lang="en">
       <body>
-        <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <DeleteDialogProvider>
-              <CCP4i2App children={props.children} />
-            </DeleteDialogProvider>
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <ThemeProvider theme={theme}>
+          <DeleteDialogProvider>
+            <CCP4i2App children={props.children} />
+          </DeleteDialogProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

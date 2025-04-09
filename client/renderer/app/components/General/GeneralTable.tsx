@@ -93,7 +93,12 @@ export const GeneralTable = (props: GeneralTableProps) => {
                       ?.map((row, iRow) => {
                         let rowOfCells = props.columns
                           ?.map((column) => {
-                            let finalValue = null;
+                            let finalValue:
+                              | string
+                              | number
+                              | String
+                              | Number
+                              | null = null;
                             let renderedValue = null;
                             if (Object.keys(column).includes("render")) {
                               renderedValue = (column.render as Function)(
@@ -103,8 +108,7 @@ export const GeneralTable = (props: GeneralTableProps) => {
                               );
                               if (
                                 renderedValue === null ||
-                                typeof renderedValue === "string" ||
-                                renderedValue instanceof String
+                                typeof renderedValue === "string"
                               ) {
                                 finalValue = renderedValue;
                               }
@@ -184,7 +188,7 @@ export const GeneralTable = (props: GeneralTableProps) => {
               Object.keys(column).includes("searchable") &&
               column.searchable
             ) {
-              let finalValue = null;
+              let finalValue: string | number | String | Number | null = null;
               let renderedValue = null;
               if (Object.keys(column).includes("render")) {
                 renderedValue = (column.render as Function)(
@@ -194,8 +198,7 @@ export const GeneralTable = (props: GeneralTableProps) => {
                 );
                 if (
                   renderedValue === null ||
-                  typeof renderedValue === "string" ||
-                  renderedValue instanceof String
+                  typeof renderedValue === "string"
                 ) {
                   finalValue = renderedValue;
                 }

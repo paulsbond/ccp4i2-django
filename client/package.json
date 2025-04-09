@@ -1,27 +1,17 @@
 {
-  "name": "ccp4x",
-  "main": "ccp4i2-master.cjs",
+  "name": "electron-next-ts-starter",
   "type": "module",
-  "version": "0.0.1",
-  "description": "An overlay of Electron/NextJS (frontend) and Django (backend) for CCP4X",
-  "author": "PaulBond, Maritn Noble, Stuart McNicholas",
   "scripts": {
-    "dev": "next dev",
-    "update": "npx npm-check-updates -u",
-    "start": "electron -r ts-node/register ./ccp4i2-master.cjs",
-    "start-uvicorn": "ts-node ./uvicorn.cjs",
-    "electron-dev": "concurrently \"next dev\" \"npx ts-node ./node_modules/.bin/electron .\"",
-    "electron-build": "next build && next export && npx ts-node/register ./node_modules/.bin/electron .",
-    "build": "next build && tsc && electron-builder",
-    "package": "electron-builder",
-    "compile": "tsc"
+    "dev": "concurrently \"next dev ./renderer\" \"vite build --config vite.electron.config.ts --watch\" \"vite build --config vite.preload.config.ts --watch\"",
+    "build": "next build ./renderer && next export && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
+    "start": "electron dist/main.js"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "get-port-please": "^3.1.2",
-    "next": "^15.0.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "electron-store": "^9.0.0",
+    "express": "^5.1.0",
+    "jquery": "^3.7.1",
+    "next": "latest",
+    "react-dom": "latest"
   },
   "devDependencies": {
     "@emotion/cache": "^11.13.1",
@@ -39,70 +29,41 @@
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@types/xml2js": "^0.4.14",
+    "concurrently": "latest",
     "chart.js": "^4.4.8",
     "chartjs-plugin-annotation": "^3.1.0",
-    "concurrently": "^9.1.2",
-    "electron": "^35.0.1",
-    "electron-builder": "^25.1.8",
-    "electron-is-dev": "^3.0.1",
-    "faker": "^6.6.6",
-    "fs": "^0.0.1-security",
-    "jquery": "^3.7.1",
-    "jquery.flot": "^0.8.3",
-    "moorhen": "^0.16.3",
-    "mtz": "^0.1.0",
-    "pako": "^2.1.0",
+    "electron": "latest",
+    "electron-builder": "latest",
+    "install": "^0.13.0",
+    "npm": "^11.3.0",
+    "react": "^19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-resizable-panels": "^2.1.7",
-    "swr": "^2.2.5",
-    "ts-node": "^10.9.2",
-    "typescript": "5.6.3",
+    "swr": "^2.3.3",
+    "typescript": "latest",
     "uuid": "^11.0.5",
+    "vite": "latest",
     "xlsx": "^0.18.5",
-    "xml-js": "^1.6.11",
     "xml2js": "^0.6.2"
   },
   "build": {
+    "appId": "com.example.electronnext",
     "files": [
-      "public/**/*",
-      "out/**/*",
-      "ccp4i2-master.cjs",
-      "preload.cjs",
-      "ccp4i2-setup-sh.cjs",
-      "ccp4i2-setup-windows.cjs",
-      "package.json"
+      "dist/**",
+      "renderer/.next/**",
+      "renderer/public/**"
     ],
-    "extraResources": [
-      {
-        "from": "../server/",
-        "to": "server"
-      },
-      {
-        "from": ".next",
-        "to": ".next"
-      },
-      {
-        "from": "requirements.txt",
-        "to": "requirements.txt"
-      },
-      {
-        "from": "node_modules/react",
-        "to": "node_modules/react",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "node_modules/next",
-        "to": "node_modules/next",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ]
-  },
-  "mac": {
-    "category": "public.app-category.productivity",
-    "identity": "Apple Development: Martin Noble (ZM2T59XTLY)"
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }
