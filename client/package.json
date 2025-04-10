@@ -58,7 +58,9 @@
     "node_modules/next"
   ],
   "build": {
-    "appId": "com.example.electronnext",
+    "appId": "com.ccp4.ccp4i2-electron",
+    "productName": "ccp4i2-electron",
+    "icon": "assets/ccp4i2",
     "files": [
       "dist/**",
       "renderer/.next/**",
