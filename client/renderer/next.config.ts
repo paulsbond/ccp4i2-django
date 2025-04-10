@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
     ];
   },
   output: undefined,
+  distDir: ".next",
 };
 
 export default nextConfig;

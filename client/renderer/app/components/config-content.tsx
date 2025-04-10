@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import {
   Button,
   Container,
@@ -14,37 +15,46 @@ import { Cancel, Check, Folder } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export const ConfigContent = () => {
+export const ConfigContent: React.FC = () => {
   const api = useApi();
-  const router = useRouter();
   const [config, setConfig] = useState<any | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    // Make sure window.electron is available
-    if (window.electron) {
-      alert("Hello from the renderer process");
-      window.electron.sendMessage("get-config");
+    // Send a message to the main process to get the config
+    if (window.electronAPI) {
+      window.electronAPI.sendMessage("get-config");
       // Listen for messages from the main process
-      window.electron.onMessage(
+      window.electronAPI.onMessage(
         "message-from-main",
         (event: any, data: any) => {
-          console.log(data);
-          if (data.message === "locate-ccp4") {
+          if (data.message === "get-config") {
             setConfig(data.config);
           } else if (data.message === "start-uvicorn") {
             router.push("/");
           }
         }
       );
-    }
+    } else console.log("window.electron is not available");
   }, []);
 
   const onLaunchBrowser = async () => {
-    window.electron.sendMessage("locate-ccp4");
+    if (!window.electronAPI) {
+      console.error("Electron API is not available");
+      return;
+    }
+    console.log("Gonna send locate-ccp4");
+    console.log(window.electronAPI);
+    window.electronAPI.sendMessage("locate-ccp4");
   };
 
   const onStartUvicorn = async () => {
-    window.electron.sendMessage("start-uvicorn", {
+    if (!window.electronAPI) {
+      console.error("Electron API is not available");
+      return;
+    }
+
+    window.electronAPI.sendMessage("start-uvicorn", {
       ...config,
       CCP4Dir: config.CCP4Dir.path,
     });
