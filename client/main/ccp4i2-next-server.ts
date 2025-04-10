@@ -2,8 +2,8 @@ import next from "next";
 import path from "path";
 import express from "express";
 import { fileURLToPath } from "node:url";
-import { createServer } from "node:http";
-import { createProxyMiddleware } from "http-proxy-middleware";
+import { Server } from "node:http";
+//import { createProxyMiddleware } from "http-proxy-middleware";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -11,7 +11,7 @@ export const startNextServer = async (
   isDev: boolean,
   nextServerPort: number,
   djangoServerPort: number
-): Promise<express.Express> => {
+): Promise<Server> => {
   const nextApp = next({
     dev: isDev,
     dir: path.join(__dirname, "../renderer"), // this is your Next app root
@@ -65,9 +65,9 @@ export const startNextServer = async (
 
   server.use((req, res) => handle(req, res));
 
-  server.listen(nextServerPort, () => {
+  const serverInstance: Server = server.listen(nextServerPort, () => {
     console.log(`Next.js ready on http://localhost:${nextServerPort}`);
   });
 
-  return server;
+  return serverInstance;
 };
