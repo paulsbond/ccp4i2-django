@@ -7,6 +7,8 @@ import { startNextServer } from "./ccp4i2-next-server";
 import { installIpcHandlers } from "./ccp4i2-ipc";
 import { Server } from "node:http";
 import { installWillDownloadHandler } from "./ccp4i2-session";
+import { StoreSchema } from "../types/store";
+import { createWindow } from "./ccp4i2-create-window";
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
 
@@ -29,21 +31,6 @@ let nextServerPort: number | null = null;
 let nextServer: Server | null = null;
 let djangoServerPort: number | null = null;
 let djangoServer: any | null = null;
-
-const createWindow = async (port) => {
-  const newWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-
-  setTimeout(() => newWindow?.loadURL(`http://localhost:${port}/config`), 1500);
-  return newWindow;
-};
 
 const setDjangoServer = (server) => {
   if (djangoServer) {

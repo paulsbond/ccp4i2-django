@@ -1,5 +1,5 @@
 // types/store.d.ts or inline in your file
-interface StoreSchema {
+export interface StoreSchema {
   CCP4Dir: string;
   devMode: boolean;
 }
