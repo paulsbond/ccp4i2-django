@@ -6,8 +6,8 @@ export default defineConfig({
   build: {
     outDir: "dist",
     lib: {
-      entry: path.resolve(__dirname, "preload/index.ts"),
-      formats: ["es"],
+      entry: path.resolve(__dirname, "preload/index.cjs"),
+      formats: ["cjs"],
       fileName: () => "preload.js",
     },
     rollupOptions: {
@@ -21,6 +21,11 @@ export default defineConfig({
         "node:util",
         "node:os",
         "node:net",
+        "node:url",
+        "child_process",
+        "next",
+        "electron-store",
+        "detect-port",
         "child_process",
       ], // add more if needed
     },

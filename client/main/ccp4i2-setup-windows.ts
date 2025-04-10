@@ -1,11 +1,11 @@
-const fs = require("fs");
-const path = require("path");
-const os = require("os");
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 /**
  * Sets up the CCP4 environment variables.
  */
-function ccp4_setup_windows(CCP4Dir) {
+export function ccp4_setup_windows(CCP4Dir) {
   // Set CCP4 to the current directory
   let CCP4 = CCP4Dir;
   // Remove trailing backslash
@@ -56,7 +56,7 @@ function ccp4_setup_windows(CCP4Dir) {
     path.join(CCP4, "bin"),
     path.join(CCP4, "etc"),
     path.join(CCP4, "Scripts"),
-    process.env.PATH.replace("CCP4", "C__4"),
+    //process.env.PATH.replace("CCP4", "C__4"),
   ].join(path.delimiter);
   process.env.PATH = newPath;
 
@@ -113,6 +113,3 @@ function ccp4_setup_windows(CCP4Dir) {
   console.log(`CCP4: ${CCP4}`);
   console.log(`CCP4_SCR: ${process.env.CCP4_SCR}`);
 }
-
-// Export the function as a module
-module.exports = { ccp4_setup_windows };

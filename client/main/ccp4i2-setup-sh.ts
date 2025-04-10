@@ -1,9 +1,9 @@
-const fs = require("fs");
-const path = require("path");
-const os = require("os");
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 // Setting CCP4 directories and environment variables
-function ccp4_setup_sh(CCP4Dir) {
+export function ccp4_setup_sh(CCP4Dir) {
   const CCP4_MASTER = path.dirname(CCP4Dir);
   const CCP4 = CCP4Dir;
   const CCP4_SCR = path.join(
@@ -100,4 +100,3 @@ function ccp4_setup_sh(CCP4Dir) {
 
   console.log("CCP4 environment setup complete!");
 }
-module.exports = { ccp4_setup_sh };

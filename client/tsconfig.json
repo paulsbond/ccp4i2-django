@@ -8,9 +8,35 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@main/*": ["main/*"],
-      "@renderer/*": ["renderer/*"]
-    }
+      "@main/*": [
+        "main/*"
+      ],
+      "@renderer/*": [
+        "renderer/*"
+      ]
+    },
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
-  "include": ["renderer"]
+  "include": [
+    "renderer",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
