@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export const createWindow = async (port) => {
+export const createWindow = async (url: string) => {
   const newWindow = new BrowserWindow({
     width: 1000,
     height: 700,
@@ -15,10 +15,10 @@ export const createWindow = async (port) => {
   });
   // Intercept window.open and create a new Electron window instead
   newWindow.webContents.setWindowOpenHandler(({ url }) => {
-    createWindow(port);
+    createWindow(url);
     return { action: "deny" }; // Prevent default behavior
   });
 
-  setTimeout(() => newWindow?.loadURL(`http://localhost:${port}/config`), 1500);
+  setTimeout(() => newWindow?.loadURL(url), 1500);
   return newWindow;
 };

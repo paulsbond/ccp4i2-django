@@ -7,6 +7,27 @@ import { Server } from "node:http";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Starts a Next.js server with custom configurations, including a Content Security Policy (CSP)
+ * and optional proxying of API requests to a Django server.
+ *
+ * @param isDev - A boolean indicating whether the server is running in development mode.
+ * @param nextServerPort - The port number on which the Next.js server will listen.
+ * @param djangoServerPort - The port number of the Django server to proxy API requests to.
+ * @returns A promise that resolves to the created server instance.
+ *
+ * @remarks
+ * - The server sets a Content Security Policy (CSP) header to enhance security.
+ * - The `dir` option for the Next.js app is set to the `../renderer` directory relative to the current file.
+ * - The server uses Express.js to handle requests and apply middleware.
+ * - Proxying to the Django server is currently commented out but can be enabled by uncommenting the relevant code.
+ *
+ * @example
+ * ```typescript
+ * const server = await startNextServer(true, 3000, 8000);
+ * console.log("Server started successfully");
+ * ```
+ */
 export const startNextServer = async (
   isDev: boolean,
   nextServerPort: number,

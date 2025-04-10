@@ -1,6 +1,21 @@
 import { app, BrowserWindow, dialog } from "electron";
 import path from "path";
 
+/**
+ * Installs a handler for the "will-download" event on the provided Electron session.
+ * This handler intercepts download events, prompts the user to select a save location,
+ * and sets the file's save path accordingly. If the user cancels the save dialog,
+ * the download is canceled.
+ *
+ * @param session - The Electron session to attach the "will-download" event handler to.
+ *
+ * The handler performs the following steps:
+ * - Retrieves the browser window associated with the download.
+ * - Displays a save dialog to the user, defaulting to the Downloads folder.
+ * - Sets the file's save path to the user-selected location or cancels the download if no location is chosen.
+ *
+ * Note: If the browser window cannot be found, an error is logged, and the handler exits.
+ */
 export function installWillDownloadHandler(session: Electron.Session) {
   // Intercept downloads
   session.on("will-download", async (event, item, webContents) => {

@@ -9,6 +9,7 @@ import { Server } from "node:http";
 import { installWillDownloadHandler } from "./ccp4i2-session";
 import { StoreSchema } from "../types/store";
 import { createWindow } from "./ccp4i2-create-window";
+import { addNewWindowMenuItem } from "./ccp4i2-menu";
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
 
@@ -53,11 +54,14 @@ app
       setDjangoServer
     );
     installWillDownloadHandler(session.defaultSession);
+    addNewWindowMenuItem(nextServerPort);
     process.env.BACKEND_URL = `http://localhost:${djangoServerPort}`;
     nextServer = await startNextServer(isDev, nextServerPort, djangoServerPort);
   })
   .then(async () => {
-    mainWindow = await createWindow(nextServerPort);
+    mainWindow = await createWindow(
+      `http://localhost:${nextServerPort}/config`
+    );
     console.log({
       CCP4Dir: store.get("CCP4Dir"),
       djangoServerPort,
@@ -78,6 +82,6 @@ app.on("before-quit", () => {
 
 app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    mainWindow = await createWindow(nextServerPort);
+    mainWindow = await createWindow(`http://localhost:${nextServerPort}`);
   }
 });

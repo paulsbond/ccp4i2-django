@@ -9,7 +9,7 @@ export default defineConfig({
     target: "node18", // target Node, not browser
     ssr: true, // <== CRUCIAL: treat this as a server-side build
     rollupOptions: {
-      input: path.resolve(__dirname, "main/index.ts"),
+      input: path.resolve(__dirname, "main/ccp4i2-master.ts"),
       output: {
         entryFileNames: "main.js",
         format: "esm",

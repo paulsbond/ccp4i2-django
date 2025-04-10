@@ -7,6 +7,31 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Starts a Django server using Uvicorn and sets up the environment for the server.
+ * This function handles platform-specific configurations and spawns a Python process
+ * to run the Uvicorn server for the Django application.
+ *
+ * @param {string} CCP4Dir - The directory path to the CCP4 installation.
+ * @param {number} UVICORN_PORT - The port number on which the Uvicorn server will run.
+ * @param {number} NEXT_PORT - The port number on which the Next.js application is running.
+ * @returns {ChildProcess} The spawned Python process running the Uvicorn server.
+ *
+ * @remarks
+ * - On Windows, the function uses `ccp4-python.bat` and calls `ccp4_setup_windows`.
+ * - On other platforms, it uses `ccp4-python` and calls `ccp4_setup_sh`.
+ * - The function sets several environment variables, including `UVICORN_PORT`, `NEXT_ADDRESS`, and `PYTHONPATH`.
+ * - Logs are printed to the console for both standard output and error streams of the Python process.
+ * - The function ensures that the Python process is executed with the appropriate environment variables.
+ *
+ * @example
+ * ```typescript
+ * const pythonProcess = await startDjangoServer("/path/to/ccp4", 8000, 3000);
+ * pythonProcess.on("close", (code) => {
+ *   console.log(`Python process exited with code ${code}`);
+ * });
+ * ```
+ */
 export async function startDjangoServer(
   CCP4Dir: string,
   UVICORN_PORT: number,

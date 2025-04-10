@@ -6,7 +6,21 @@ import { dialog } from "electron";
 import path from "path";
 import { existsSync } from "node:fs";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
+import { StoreSchema } from "../types/store";
 
+/**
+ * Sets up IPC handlers for Electron's `ipcMain` to manage communication between
+ * the main process and renderer process. This function handles operations such as
+ * locating a valid CCP4 directory, starting a Django server, and retrieving configuration
+ * details.
+ *
+ * @param ipcMain - The Electron `IpcMain` instance used for inter-process communication.
+ * @param mainWindow - The main `BrowserWindow` instance of the application, or `null` if unavailable.
+ * @param store - A persistent store instance for managing application state.
+ * @param djangoServerPort - The port number on which the Django server will run.
+ * @param nextServerPort - The port number on which the Next.js server will run.
+ * @param setDjangoServer - A callback function to set the running Django server instance.
+ */
 export const installIpcHandlers = (
   ipcMain: Electron.IpcMain,
   mainWindow: BrowserWindow | null,
