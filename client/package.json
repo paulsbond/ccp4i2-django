@@ -5,8 +5,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "concurrently \"next dev\" \"vite --config vite.electron.config.ts\"",
-    "electron-dev": "next build && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.tselectron && dist/main.js",
-    "build": "next build && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
+    "electron-dev": "next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.tselectron && dist/main.js",
+    "build": "next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
     "start": "vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts&& electron dist/main.js",
     "package": "npm run build && electron-builder"
   },
@@ -69,10 +69,6 @@
       {
         "from": "../server/",
         "to": "server"
-      },
-      {
-        "from": ".next",
-        "to": ".next"
       },
       {
         "from": "requirements.txt",
