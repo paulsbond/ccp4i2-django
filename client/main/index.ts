@@ -49,6 +49,7 @@ app
   .then(async () => {
     nextServerPort = await detectPort(3000);
     djangoServerPort = await detectPort(nextServerPort + 1);
+    process.env.BACKEND_URL = `http://localhost:${djangoServerPort}`;
     nextServer = await startNextServer(isDev, nextServerPort, djangoServerPort);
   })
   .then(async () => {
@@ -110,7 +111,7 @@ ipcMain.on("locate-ccp4", (event, data) => {
               exists: existsSync(store.get("CCP4Dir")),
             },
             CCP4Python: {
-              path: path.join(store.get("CCP4Dir"), ccp4_python),
+              path: path.join(store.get("CCP4Dir"), "bin", ccp4_python),
               exists: existsSync(
                 path.join(store.get("CCP4Dir"), "bin", ccp4_python)
               ),
@@ -156,7 +157,7 @@ ipcMain.on("get-config", (event, data) => {
         exists: existsSync(store.get("CCP4Dir")),
       },
       CCP4Python: {
-        path: path.join(store.get("CCP4Dir"), ccp4_python),
+        path: path.join(store.get("CCP4Dir"), "bin", ccp4_python),
         exists: existsSync(path.join(store.get("CCP4Dir"), "bin", ccp4_python)),
       },
       UVICORN_PORT: djangoServerPort,
