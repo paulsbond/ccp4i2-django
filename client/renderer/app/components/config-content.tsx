@@ -11,30 +11,33 @@ import {
 } from "@mui/material";
 import { useApi } from "../api";
 import { Cancel, Check, Folder } from "@mui/icons-material";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export const ConfigContent = () => {
   const api = useApi();
-  const { data: config, mutate: mutate } = api.config<any>();
   const router = useRouter();
+  const [config, setConfig] = useState<any | null>(null);
+
   useEffect(() => {
     // Make sure window.electron is available
     if (window.electron) {
+      alert("Hello from the renderer process");
+      window.electron.sendMessage("get-config");
       // Listen for messages from the main process
       window.electron.onMessage(
         "message-from-main",
         (event: any, data: any) => {
           console.log(data);
           if (data.message === "locate-ccp4") {
-            mutate();
+            setConfig(data.config);
           } else if (data.message === "start-uvicorn") {
             router.push("/");
           }
         }
       );
     }
-  }, [config]);
+  }, []);
 
   const onLaunchBrowser = async () => {
     window.electron.sendMessage("locate-ccp4");

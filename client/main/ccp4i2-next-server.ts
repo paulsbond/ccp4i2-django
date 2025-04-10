@@ -2,10 +2,16 @@ import next from "next";
 import path from "path";
 import express from "express";
 import { fileURLToPath } from "node:url";
+import { createServer } from "node:http";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export const startNextServer = async (isDev: boolean, port: number) => {
+export const startNextServer = async (
+  isDev: boolean,
+  nextServerPort: number,
+  djangoServerPort: number
+): Promise<express.Express> => {
   const nextApp = next({
     dev: isDev,
     dir: path.join(__dirname, "../renderer"), // this is your Next app root
@@ -15,11 +21,10 @@ export const startNextServer = async (isDev: boolean, port: number) => {
 
   await nextApp.prepare();
 
-  const server = express();
   // Set the Content Security Policy header
   const csp = {
     defaultSrc: "'self'",
-    connectSrc: `http://localhost:${port} ws://localhost:${port}`,
+    connectSrc: `http://localhost:${nextServerPort} ws://localhost:${nextServerPort}`,
     styleSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline'",
     fontSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline'",
     scriptSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'",
@@ -37,12 +42,32 @@ export const startNextServer = async (isDev: boolean, port: number) => {
     .replace(/\n\s+/g, " ")
     .trim(); // Clean up whitespace
 
-  server.use((req, res, next) => {
+  //const server = createServer((req, res) => handle(req, res));
+  const server = express();
+
+  // Proxy Django API requests
+  /*
+  server.use(
+    "/api",
+    createProxyMiddleware({
+      target: `http://localhost:${djangoServerPort}`, // Your Django server URL
+      changeOrigin: true,
+      pathRewrite: {
+        "^/api": "", // Remove `/api` prefix when forwarding to Django
+      },
+    })
+  );
+*/
+  server.use((req, res, next_operator) => {
     res.setHeader("Content-Security-Policy", cspString);
-    next();
+    next_operator();
   });
 
-  server.listen(port, () => {
-    console.log(`Next.js ready on http://localhost:${port}`);
+  server.use((req, res) => handle(req, res));
+
+  server.listen(nextServerPort, () => {
+    console.log(`Next.js ready on http://localhost:${nextServerPort}`);
   });
+
+  return server;
 };

@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "path";
+import Express from "express";
 import Store from "electron-store";
 import detectPort from "detect-port";
 import { fileURLToPath } from "node:url";
@@ -18,11 +19,11 @@ if (!isDev) {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const store = new Store({ defaults: { theme: "light" } });
+const store = new Store({ defaults: { CCP4Dir: "/Applications/CCP4-9" } });
 
 let mainWindow: BrowserWindow | null = null;
 let nextServerPort: number | null = null;
-let nextServer: any | null = null;
+let nextServer: Express.Express | null = null;
 let djangoServerPort: number | null = null;
 let djangoServer: any | null = null;
 
@@ -38,28 +39,82 @@ const createWindow = async (port) => {
   });
 
   setTimeout(() => newWindow?.loadURL(`http://localhost:${port}/config`), 1500);
+  return newWindow;
 };
 
 app
   .whenReady()
   .then(async () => {
     nextServerPort = await detectPort(3000);
-    nextServer = await startNextServer(isDev, nextServerPort);
     djangoServerPort = await detectPort(nextServerPort + 1);
-    djangoServer = await startDjangoServer(
-      "/Applications/ccp4-9",
-      djangoServerPort,
-      nextServerPort
-    );
+    nextServer = await startNextServer(isDev, nextServerPort, djangoServerPort);
   })
-  .then(() => {
-    createWindow(nextServerPort);
+  .then(async () => {
+    mainWindow = await createWindow(nextServerPort);
+    console.log({
+      CCP4Dir: store.get("CCP4Dir"),
+      djangoServerPort,
+      nextServerPort,
+    });
   });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    app.quit();
+    djangoServer?.kill();
+  }
 });
 
 // IPC handler for preferences
 ipcMain.handle("get-theme", () => store.get("theme"));
 ipcMain.handle("set-theme", (_e, value) => store.set("theme", value));
+
+// IPC communication to trigger file dialog to locate a valid CCP4 directory
+ipcMain.on("locate-ccp4", (event, data) => {
+  if (!mainWindow) {
+    console.error("Main window is not available");
+    return;
+  }
+  dialog
+    .showOpenDialog(mainWindow, {
+      properties: ["openDirectory"],
+    })
+    .then((result) => {
+      if (!result.canceled) {
+        console.log("Selected directory:", result.filePaths);
+        event.reply("message-from-main", {
+          message: "locate-ccp4",
+          status: "Success",
+          CCP4Dir: result.filePaths[0],
+        });
+        const CCP4Dir = result.filePaths[0];
+        process.env.CCP4 = CCP4Dir;
+      }
+    });
+});
+
+// IPC communication to trigger file dialog to locate a valid CCP4 directory
+ipcMain.on("start-uvicorn", async (event, data) => {
+  console.log("start-uvicorn", data);
+  if (!djangoServerPort) return;
+  if (!nextServerPort) return;
+  djangoServer = await startDjangoServer(
+    store.get("CCP4Dir"),
+    djangoServerPort,
+    nextServerPort
+  );
+});
+
+// IPC communication to trigger file dialog to locate a valid CCP4 directory
+ipcMain.on("get-config", (event, data) => {
+  console.log("get-config", data);
+  event.reply("message-from-main", {
+    message: "get-config",
+    status: "Success",
+    config: {
+      CCP4Dir: store.get("CCP4Dir"),
+      UVICORN_PORT: djangoServerPort,
+      NEXT_PORT: nextServerPort,
+    },
+  });
+});
