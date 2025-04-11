@@ -41,6 +41,15 @@ const setDjangoServer = (server) => {
   djangoServer = server;
 };
 
+const getMainWindow = () => {
+  if (mainWindow) {
+    return mainWindow;
+  } else {
+    console.error("getMainWindow: Main window is not available");
+    return null;
+  }
+};
+
 app
   .whenReady()
   .then(async () => {
@@ -48,7 +57,7 @@ app
     djangoServerPort = await detectPort(nextServerPort + 1);
     installIpcHandlers(
       ipcMain,
-      mainWindow,
+      getMainWindow,
       store,
       djangoServerPort,
       nextServerPort,

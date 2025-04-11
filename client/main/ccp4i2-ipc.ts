@@ -23,7 +23,7 @@ import { StoreSchema } from "../types/store";
  */
 export const installIpcHandlers = (
   ipcMain: Electron.IpcMain,
-  mainWindow: BrowserWindow | null,
+  getMainWindow: () => BrowserWindow | null,
   store: Store<StoreSchema>,
   djangoServerPort: number,
   nextServerPort: number,
@@ -32,12 +32,14 @@ export const installIpcHandlers = (
 ) => {
   // IPC communication to trigger file dialog to locate a valid CCP4 directory
   ipcMain.on("locate-ccp4", (event, data) => {
+    const mainWindow: BrowserWindow | null = getMainWindow();
     if (!mainWindow) {
       console.error("Main window is not available");
       return;
     }
     const ccp4_python =
       platform() === "win32" ? "ccp4-python.bat" : "ccp4-python";
+
     dialog
       .showOpenDialog(mainWindow, {
         properties: ["openDirectory"],
