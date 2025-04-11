@@ -32,6 +32,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * });
  * ```
  */
+/**
+ * Starts the Django server using Uvicorn with the specified configuration.
+ *
+ * @param CCP4Dir - The path to the CCP4 directory.
+ * @param UVICORN_PORT - The port number for the Uvicorn server.
+ * @param NEXT_PORT - The port number for the Next.js server.
+ * @param isDev - A boolean flag indicating whether the server is running in development mode.
+ *                If `true`, the Python path is set to the development server directory.
+ *                If `false`, the Python path is set to the production server directory.
+ * @returns The spawned Python process running the Uvicorn server.
+ */
 export async function startDjangoServer(
   CCP4Dir: string,
   UVICORN_PORT: number,
