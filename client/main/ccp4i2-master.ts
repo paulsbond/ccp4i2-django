@@ -10,6 +10,7 @@ import { installWillDownloadHandler } from "./ccp4i2-session";
 import { StoreSchema } from "../types/store";
 import { createWindow } from "./ccp4i2-create-window";
 import { addNewWindowMenuItem } from "./ccp4i2-menu";
+import { setupZoomLevel } from "./ccp4i2-zoom";
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
 
@@ -24,7 +25,7 @@ if (!isDev) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const store = new Store<StoreSchema>({
-  defaults: { CCP4Dir: "/Applications/CCP4-9", devMode: false },
+  defaults: { CCP4Dir: "/Applications/CCP4-9", devMode: false, zoomLevel: -2 },
 });
 
 let mainWindow: BrowserWindow | null = null;
@@ -55,12 +56,14 @@ app
     );
     installWillDownloadHandler(session.defaultSession);
     addNewWindowMenuItem(nextServerPort);
+    setupZoomLevel(store);
     process.env.BACKEND_URL = `http://localhost:${djangoServerPort}`;
     nextServer = await startNextServer(isDev, nextServerPort, djangoServerPort);
   })
   .then(async () => {
     mainWindow = await createWindow(
-      `http://localhost:${nextServerPort}/config`
+      `http://localhost:${nextServerPort}/config`,
+      store
     );
     console.log({
       CCP4Dir: store.get("CCP4Dir"),
@@ -82,6 +85,9 @@ app.on("before-quit", () => {
 
 app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    mainWindow = await createWindow(`http://localhost:${nextServerPort}`);
+    mainWindow = await createWindow(
+      `http://localhost:${nextServerPort}`,
+      store
+    );
   }
 });
