@@ -35,7 +35,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export async function startDjangoServer(
   CCP4Dir: string,
   UVICORN_PORT: number,
-  NEXT_PORT: number
+  NEXT_PORT: number,
+  isDev: boolean = false
 ) {
   let ccp4_python = "ccp4-python";
   if (process.platform === "win32") {
@@ -50,7 +51,12 @@ export async function startDjangoServer(
   console.log({ CCP4_PYTHON });
   process.env.UVICORN_PORT = `${UVICORN_PORT}`;
   process.env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
-  process.env.PYTHONPATH = path.join(process.cwd(), "server");
+  if (isDev) {
+    process.env.PYTHONPATH = path.join(process.cwd(), "..", "server");
+  } else {
+    process.env.PYTHONPATH = path.join(process.cwd(), "server");
+  }
+  console.log(`🐍 Python Path: ${process.env.PYTHONPATH}`, process.cwd());
   //console.log(process.env);
   // 2️⃣ Start Python process with dynamic port
   const pythonProcess = spawn(

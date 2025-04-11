@@ -27,6 +27,7 @@ export const installIpcHandlers = (
   store: Store<StoreSchema>,
   djangoServerPort: number,
   nextServerPort: number,
+  isDev: boolean,
   setDjangoServer: (server: ChildProcessWithoutNullStreams) => void
 ) => {
   // IPC communication to trigger file dialog to locate a valid CCP4 directory
@@ -77,7 +78,8 @@ export const installIpcHandlers = (
     const djangoServer = await startDjangoServer(
       store.get("CCP4Dir"),
       djangoServerPort,
-      nextServerPort
+      nextServerPort,
+      isDev
     );
     setDjangoServer(djangoServer);
     event.reply("message-from-main", {

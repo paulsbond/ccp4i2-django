@@ -52,6 +52,7 @@ app
       store,
       djangoServerPort,
       nextServerPort,
+      isDev,
       setDjangoServer
     );
     installWillDownloadHandler(session.defaultSession);
