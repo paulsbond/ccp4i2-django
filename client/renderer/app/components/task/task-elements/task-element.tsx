@@ -121,6 +121,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CBlastDataFile":
       case "CDataFile":
       case "CUnmergedDataFile":
+      case "CCootHistoryDataFile":
       case "CMDLMolDataFile":
         return (
           <CSimpleDataFileElement
