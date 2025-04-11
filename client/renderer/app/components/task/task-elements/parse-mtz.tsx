@@ -121,6 +121,9 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
       }
     });
     setColumnOptions(options);
+    if (Object.keys(options).length > 0) {
+      setValue(options[Object.keys(options)[0]][0]);
+    }
   }, [allColumnNames]);
 
   const onAcceptClicked = useCallback(() => {
@@ -140,7 +143,7 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
           {Object.keys(columnOptions).map(
             (signature: string) =>
               columnOptions[signature].length > 0 && (
-                <Stack direction="row">
+                <Stack key="signature" direction="row">
                   <Typography variant="body1" sx={{ minWidth: "15rem", my: 3 }}>
                     {Object.keys(signatureMap).includes(signature)
                       ? //@ts-ignore
