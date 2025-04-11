@@ -81,8 +81,12 @@ export const startNextServer = async (
 */
   server.use((req, res, next_operator) => {
     res.setHeader("Content-Security-Policy", cspString);
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     next_operator();
   });
+
+  server.use(express.static(path.join(__dirname, "../renderer/public")));
 
   server.use((req, res) => handle(req, res));
 
