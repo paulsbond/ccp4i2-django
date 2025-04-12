@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { PropsWithChildren, useContext } from "react";
 import {
   Button,
   Container,
@@ -14,11 +14,13 @@ import { useApi } from "../api";
 import { Cancel, Check, Folder } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CCP4i2Context } from "../app-context";
 
 export const ConfigContent: React.FC = () => {
   const api = useApi();
   const [config, setConfig] = useState<any | null>(null);
   const router = useRouter();
+  const { devMode, setDevMode } = useContext(CCP4i2Context);
 
   useEffect(() => {
     // Send a message to the main process to get the config
@@ -30,6 +32,7 @@ export const ConfigContent: React.FC = () => {
         (event: any, data: any) => {
           if (data.message === "get-config") {
             setConfig(data.config);
+            setDevMode(data.config.devMode);
           } else if (data.message === "start-uvicorn") {
             router.push("/");
           }
@@ -108,6 +111,12 @@ export const ConfigContent: React.FC = () => {
                 </TableCell>
               </TableRow>
             </TableBody>
+            <TableRow>
+              <TableCell variant="head">Dev. mode</TableCell>
+              <TableCell variant="body" colSpan={3}>
+                {devMode ? <Check /> : <Cancel />}
+              </TableCell>
+            </TableRow>
           </Table>
         )}
         <Stack spacing={2} direction="row">

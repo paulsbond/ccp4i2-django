@@ -9,6 +9,8 @@ interface CCP4i2Context {
   setJobPanelSize?: (size: number) => void;
   cootModule?: any | null;
   setCootModule?: (module: any | null) => void;
+  devMode: boolean;
+  setDevMode: (devMode: boolean) => void;
 }
 export const CCP4i2Context = createContext<CCP4i2Context>({
   projectId: null,
@@ -19,4 +21,6 @@ export const CCP4i2Context = createContext<CCP4i2Context>({
   setJobPanelSize: () => {},
   cootModule: null,
   setCootModule: () => {},
+  devMode: true,
+  setDevMode: () => {},
 });

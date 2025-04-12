@@ -9,6 +9,7 @@ export const CCP4i2App = (props: PropsWithChildren) => {
   const [jobId, setJobId] = useState<number | null>(null);
   const [cootModule, setCootModule] = useState<any | null>(null);
   const [jobPanelSize, setJobPanelSize] = useState<number>(70);
+  const [devMode, setDevMode] = useState<boolean>(true);
 
   return (
     <CCP4i2Context.Provider
@@ -21,6 +22,8 @@ export const CCP4i2App = (props: PropsWithChildren) => {
         setCootModule,
         jobPanelSize,
         setJobPanelSize,
+        devMode,
+        setDevMode,
       }}
     >
       <CssBaseline />

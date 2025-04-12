@@ -7,6 +7,7 @@ import path from "path";
 import { existsSync } from "node:fs";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
 import { StoreSchema } from "../types/store";
+import { get } from "node:http";
 
 /**
  * Sets up IPC handlers for Electron's `ipcMain` to manage communication between
@@ -30,6 +31,30 @@ export const installIpcHandlers = (
   isDev: boolean,
   setDjangoServer: (server: ChildProcessWithoutNullStreams) => void
 ) => {
+  const getConfigResponse = () => {
+    const ccp4_python =
+      platform() === "win32" ? "ccp4-python.bat" : "ccp4-python";
+    return {
+      message: "get-config",
+      status: "Success",
+      config: {
+        CCP4Dir: {
+          path: store.get("CCP4Dir"),
+          exists: existsSync(store.get("CCP4Dir")),
+        },
+        CCP4Python: {
+          path: path.join(store.get("CCP4Dir"), "bin", ccp4_python),
+          exists: existsSync(
+            path.join(store.get("CCP4Dir"), "bin", ccp4_python)
+          ),
+        },
+        UVICORN_PORT: djangoServerPort,
+        NEXT_PORT: nextServerPort,
+        devMode: store.get("devMode") || false,
+      },
+    };
+  };
+
   // IPC communication to trigger file dialog to locate a valid CCP4 directory
   ipcMain.on("locate-ccp4", (event, data) => {
     const mainWindow: BrowserWindow | null = getMainWindow();
@@ -48,24 +73,7 @@ export const installIpcHandlers = (
         if (!result.canceled) {
           console.log("Selected directory:", result.filePaths);
           store.set("CCP4Dir", result.filePaths[0]);
-          event.reply("message-from-main", {
-            message: "get-config",
-            status: "Success",
-            config: {
-              CCP4Dir: {
-                path: store.get("CCP4Dir"),
-                exists: existsSync(store.get("CCP4Dir") || ""),
-              },
-              CCP4Python: {
-                path: path.join(store.get("CCP4Dir") || "", "bin", ccp4_python),
-                exists: existsSync(
-                  path.join(store.get("CCP4Dir") || "", "bin", ccp4_python)
-                ),
-              },
-              UVICORN_PORT: djangoServerPort,
-              NEXT_PORT: nextServerPort,
-            },
-          });
+          event.reply("message-from-main", getConfigResponse());
           const CCP4Dir = result.filePaths[0];
           process.env.CCP4 = CCP4Dir;
         }
@@ -93,26 +101,17 @@ export const installIpcHandlers = (
   // IPC communication to trigger file dialog to locate a valid CCP4 directory
   ipcMain.on("get-config", (event, data) => {
     console.log("get-config", data);
+    const response = getConfigResponse();
+    console.log("get-config response", response);
+    event.reply("message-from-main", response);
+  });
+
+  // IPC communication to trigger file dialog to locate a valid CCP4 directory
+  ipcMain.on("toggle-dev-mode", (event, data) => {
+    store.set("devMode", !store.get("devMode"));
     const ccp4_python =
       platform() === "win32" ? "ccp4-python.bat" : "ccp4-python";
-    console.log("ccp4_python", ccp4_python);
-    event.reply("message-from-main", {
-      message: "get-config",
-      status: "Success",
-      config: {
-        CCP4Dir: {
-          path: store.get("CCP4Dir"),
-          exists: existsSync(store.get("CCP4Dir")),
-        },
-        CCP4Python: {
-          path: path.join(store.get("CCP4Dir"), "bin", ccp4_python),
-          exists: existsSync(
-            path.join(store.get("CCP4Dir"), "bin", ccp4_python)
-          ),
-        },
-        UVICORN_PORT: djangoServerPort,
-        NEXT_PORT: nextServerPort,
-      },
-    });
+    console.log("ccp4_python", ccp4_python, store.get("devMode"));
+    event.reply("message-from-main", getConfigResponse());
   });
 };
