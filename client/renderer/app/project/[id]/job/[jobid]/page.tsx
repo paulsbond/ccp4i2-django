@@ -14,7 +14,6 @@ import {
   useProject,
 } from "../../../../utils";
 import ToolBar from "../../../../components/tool-bar";
-import { CCP4i2ApplicationOutputView } from "../../../../components/report/CCP4i2ApplicationOutputView";
 
 export default function JobPage({
   params,
@@ -24,6 +23,8 @@ export default function JobPage({
   const api = useApi();
   const { id, jobid } = use(params);
   const { project, jobs, mutateJobs } = useProject(parseInt(id));
+  const { devMode } = useContext(CCP4i2Context);
+
   const { data: validationJson } = api.get_validation({
     type: "jobs",
     id: parseInt(jobid),
@@ -71,24 +72,23 @@ export default function JobPage({
         <JobHeader job={job} mutateJobs={mutateJobs} />
         <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
           <Tab value={0} label="Task interface" />
-          <Tab value={1} label="Params as xml" />
-          <Tab value={2} label="Report as xml" />
+          {devMode && <Tab value={1} label="Params as xml" />}
+          {devMode && <Tab value={2} label="Report as xml" />}
           <Tab value={3} label="Report" />
-          <Tab value={4} label="Diagnostic xml" />
-          <Tab value={5} label="Def xml" />
-          <Tab value={6} label="Validation report" />
+          {devMode && <Tab value={4} label="Diagnostic xml" />}
+          {devMode && <Tab value={5} label="Def xml" />}
+          {devMode && <Tab value={6} label="Validation report" />}
           <Tab value={7} label="Job container" />
-          <Tab value={8} label="Report tables" />
         </Tabs>
         {tabValue == 0 && <TaskContainer />}
-        {tabValue == 1 && params_xml && (
+        {devMode && tabValue == 1 && params_xml && (
           <Editor
             height="calc(100vh - 15rem)"
             value={params_xml}
             language="xml"
           />
         )}
-        {tabValue == 2 && report_xml && (
+        {devMode && tabValue == 2 && report_xml && (
           <Editor
             height="calc(100vh - 15rem)"
             value={prettifyXml(report_xml)}
@@ -96,17 +96,17 @@ export default function JobPage({
           />
         )}
         {tabValue == 3 && jobid && <CCP4i2ReportXMLView />}
-        {tabValue == 4 && diagnostic_xml && (
+        {devMode && tabValue == 4 && diagnostic_xml && (
           <Editor
             height="calc(100vh - 15rem)"
             value={diagnostic_xml}
             language="xml"
           />
         )}
-        {tabValue == 5 && def_xml && (
+        {devMode && tabValue == 5 && def_xml && (
           <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
         )}
-        {tabValue == 6 && validation && (
+        {devMode && tabValue == 6 && validation && (
           <Editor
             height="calc(100vh - 15rem)"
             value={JSON.stringify(validation, null, 2)}
@@ -118,13 +118,6 @@ export default function JobPage({
             height="calc(100vh - 15rem)"
             value={JSON.stringify(container.container, null, 2)}
             language="json"
-          />
-        )}
-        {tabValue == 8 && report_xml && (
-          <CCP4i2ApplicationOutputView
-            output={
-              $(report_xml).find("ccp4_data, ns0\\:ccp4_data").toArray()[0]
-            }
           />
         )}
       </Container>
