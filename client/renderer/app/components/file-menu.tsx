@@ -27,6 +27,18 @@ export default function FileMenu() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+  const handleBrowser = () => {
+    const newWindow = window.open("http://localhost:3000");
+    setAnchorEl(null);
+    // Check if the window was successfully opened
+    if (newWindow) {
+      console.log("New window opened successfully!");
+    } else {
+      console.log(
+        "Failed to open new window. It might be blocked by a popup blocker."
+      );
+    }
+  };
 
   return (
     <>
@@ -106,7 +118,7 @@ export default function FileMenu() {
         <MenuItem key="CCP4i" onClick={handleClose}>
           View old CCP4i projects
         </MenuItem>
-        <MenuItem key="Browser" onClick={handleClose}>
+        <MenuItem key="Browser" onClick={handleBrowser}>
           Browser
         </MenuItem>
         <MenuItem key="Quit" onClick={handleClose}>
