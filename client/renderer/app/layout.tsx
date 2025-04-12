@@ -3,7 +3,6 @@ import { PropsWithChildren } from "react";
 import { DeleteDialogProvider } from "./components/delete-dialog";
 import theme from "./theme";
 import { CCP4i2App } from "./components/ccp4i2-app";
-
 export const metadata = {
   title: "CCP4",
   description: "Software for Macromolecular X-Ray Crystallography",
