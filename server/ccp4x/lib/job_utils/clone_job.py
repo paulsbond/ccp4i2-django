@@ -1,16 +1,13 @@
 import logging
-import uuid
 from pathlib import Path
 import datetime
 from pytz import timezone
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Container import CContainer
-from ccp4i2.core import CCP4File
 from ...db import models
 from ...db.ccp4i2_django_wrapper import using_django_pm
 from .save_params_for_job import save_params_for_job
-from .remove_container_default_values import remove_container_default_values
-from .unset_output_data import unset_output_data
+from .patch_output_file_paths import patch_output_file_paths
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
@@ -69,6 +66,7 @@ def clone_job(jobId: str = None):
     )
     new_job.save()
     # remove_container_default_values(the_job_plugin.container)
+    patch_output_file_paths(the_job_plugin, new_job)
     save_params_for_job(the_job_plugin, new_job)
     the_project.last_access = datetime.datetime.now(tz=timezone("UTC"))
     the_project.last_job_number = new_job.number

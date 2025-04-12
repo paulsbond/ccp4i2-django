@@ -3,11 +3,14 @@ import logging
 import uuid
 
 from ccp4i2.core import CCP4TaskManager
+from ccp4i2.core.CCP4Container import CContainer
 
 from ...db import models
 from ...db.ccp4i2_django_wrapper import using_django_pm
 from .remove_container_default_values import remove_container_default_values
 from .save_params_for_job import save_params_for_job
+from .patch_output_file_paths import patch_output_file_paths
+from .get_job_plugin import get_job_plugin
 
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -88,7 +91,7 @@ def create_job(
     plugin_class = task_manager.getPluginScriptClass(taskName)
     if saveParams:
         new_job_dir.mkdir(exist_ok=True, parents=True)
-    the_job_plugin = plugin_class(workDirectory=str(new_job_dir))
+    new_job_plugin = plugin_class(workDirectory=str(new_job_dir))
 
     if title is None:
         title = task_manager.getTitle(taskName)
@@ -104,10 +107,10 @@ def create_job(
     )
     logger.info("arg_dict %s", arg_dict)
     new_job = models.Job(**arg_dict)
-
     if saveParams:
-        remove_container_default_values(the_job_plugin.container)
-        save_params_for_job(the_job_plugin, new_job)
+        remove_container_default_values(new_job_plugin.container)
+        patch_output_file_paths(new_job_plugin, new_job)
+        save_params_for_job(new_job_plugin, new_job)
     new_job.save()
 
     return str(new_job.uuid)

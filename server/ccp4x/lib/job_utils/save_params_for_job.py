@@ -44,6 +44,7 @@ def save_params_for_job(
         CCP4Utils.backupFile(str(relocated_file_path), delete=False)
 
     f = CCP4File.CI2XmlDataFile(fullPath=(relocated_file_path))
+
     f.header = the_job_plugin.container.header
     f.header.function.set("PARAMS")
     f.header.projectName.set(the_job.project.name)
@@ -55,5 +56,6 @@ def save_params_for_job(
     f.header.userId.set(getpass.getuser())
     old_job_container: CCP4Container.CContainer = the_job_plugin.container
     # print("exclude_unset", exclude_unset)
+
     body_etree = old_job_container.getEtree(excludeUnset=exclude_unset)
     f.saveFile(bodyEtree=body_etree)

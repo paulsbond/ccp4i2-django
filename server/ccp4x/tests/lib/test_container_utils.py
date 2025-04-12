@@ -25,10 +25,13 @@ from ...lib.job_utils.find_objects import find_objects
 from ...lib.job_utils.load_nested_xml import load_nested_xml
 from ...lib.job_utils.validate_container import validate_container
 from ...lib.job_utils.clone_job import clone_job
+from ...lib.job_utils.create_job import create_job
 from ...lib.job_utils.json_for_job_container import json_for_job_container
 from ...lib.job_utils.get_task_tree import get_task_tree
 from ...lib.job_utils.ccp4i2_report import get_report_job_info
 from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
+from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
+from ...lib.job_utils.patch_output_file_paths import patch_output_file_paths
 
 
 @override_settings(
@@ -178,6 +181,19 @@ class CCP4i2TestCase(TestCase):
         split_mtz = gemmi.read_mtz_file(str(split_mtz_path))
         subprocess.call(["mtzdmp", str(beta_mtz), "10"])
         subprocess.call(["mtzdmp", str(split_mtz_path), "10"])
+
+    def test_create_coot_patch_file_paths(self):
+        job = Job.objects.get(project__name="refmac_gamma_test_0", number="1")
+        coot_job_uuid = create_job(
+            projectId=job.project.uuid, taskName="coot_rebuild", saveParams=True
+        )
+        the_job = Job.objects.get(uuid=coot_job_uuid)
+        the_job_plugin = get_job_plugin(the_job)
+
+        self.assertEqual(
+            str(the_job_plugin.container.outputData.XYZOUT[-1]),
+            "/Users/nmemn/Developer/ccp4x/CCP4I2_TEST_PROJECT_DIRECTORY/refmac_gamma_test_0/CCP4_JOBS/job_2/2_refmac_gamma_test_0__coot_rebuild_9.pdb",
+        )
 
 
 prosmart_defmac_xml = """<ns0:ccp4i2 xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns">
