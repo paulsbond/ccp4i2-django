@@ -3,14 +3,15 @@ import traceback
 
 from ccp4i2.core import CCP4TaskManager
 from ...db.ccp4i2_django_wrapper import using_django_pm
-from ...db.ccp4i2_django_db_handler import CCP4i2DjangoDbHandler
+
+# from ...db.ccp4i2_django_db_handler import CCP4i2DjangoDbHandler
 from ...db.models import Job
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 @using_django_pm
-def get_job_plugin(the_job: Job, parent=None, dbHandler: CCP4i2DjangoDbHandler = None):
+def get_job_plugin(the_job: Job, parent=None, dbHandler=None):
     """
     Retrieves and initializes a job plugin instance based on the provided job.
 
@@ -35,7 +36,7 @@ def get_job_plugin(the_job: Job, parent=None, dbHandler: CCP4i2DjangoDbHandler =
             workDirectory=str(the_job.directory), parent=parent, dbHandler=dbHandler
         )
     except Exception as err:
-        logger.exception("Error in get_job_plugin", exc_info=err)
+        logger.exception("Error in get_job_plugin was", exc_info=err)
         return None
 
     params_path = the_job.directory / "params.xml"
@@ -44,15 +45,14 @@ def get_job_plugin(the_job: Job, parent=None, dbHandler: CCP4i2DjangoDbHandler =
         params_path = the_job.directory / "input_params.xml"
         fallback_params_path = the_job.directory / "params.xml"
 
-    defFile = params_path
-    if not defFile.exists():
+    params_file = params_path
+    if not params_file.exists():
         # logger.info('No params.xml at %s', defFile)
-        defFile1 = fallback_params_path
-        if not defFile1.exists():
+        params_file = fallback_params_path
+        if not params_file.exists():
             # logger.info('No params.xml at %s', defFile1)
-            raise Exception("no defFile found")
-        defFile = defFile1
+            raise Exception("No params file found")
     pluginInstance.container.loadDataFromXml(
-        str(defFile), check=False, loadHeader=False
+        str(params_file), check=False, loadHeader=False
     )
     return pluginInstance
