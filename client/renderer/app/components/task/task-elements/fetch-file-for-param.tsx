@@ -79,24 +79,29 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
 
   const handleEbiCoordFetch = useCallback(async () => {
     if (identifier) {
-      const url = `https://www.ebi.ac.uk/pdbe/api/pdb/entry/files/${identifier.toLowerCase()}`;
-      const result = await fetch(url);
-      if (result.ok) {
-        const data = await result.json();
-        if (data && data[identifier.toLowerCase()]) {
-          const file = data[identifier.toLowerCase()];
-          let fetchURL = file.PDB.downloads
-            .filter((item: any) => item.label === "Archive mmCIF file")
-            .at(0).url;
-          const fileContent = await fetch(fetchURL);
-          if (fileContent.ok) {
-            const content = await fileContent.blob();
-            uploadFile(content, fetchURL.split("/").at(-1));
-            onClose();
+      try {
+        const url = `https://www.ebi.ac.uk/pdbe/api/pdb/entry/files/${identifier.toLowerCase()}`;
+        const result = await fetch(url);
+        if (result.ok) {
+          const data = await result.json();
+          if (data && data[identifier.toLowerCase()]) {
+            const file = data[identifier.toLowerCase()];
+            let fetchURL = file.PDB.downloads
+              .filter((item: any) => item.label === "Archive mmCIF file")
+              .at(0).url;
+            const fileContent = await fetch(fetchURL);
+            if (fileContent.ok) {
+              const content = await fileContent.blob();
+              uploadFile(content, fetchURL.split("/").at(-1));
+              onClose();
+            }
           }
+        } else {
+          console.log("FetchFileForParam handleFetch result", result);
         }
-      } else {
-        console.log("FetchFileForParam handleFetch result", result);
+      } catch (err) {
+        console.log("FetchFileForParam handleFetch error", err);
+        return;
       }
     }
   }, [identifier, uploadFile, onClose]);
@@ -168,6 +173,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         ) : (
           <Typography>No dowload modes</Typography>
         )}
+        {Error message}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
