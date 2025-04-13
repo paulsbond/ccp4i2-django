@@ -1,6 +1,7 @@
 from pathlib import Path
 from shutil import rmtree
 import json
+import logging
 from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
@@ -8,6 +9,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from ...db.import_i2xml import import_i2xml_from_file
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db import models
+
+logger = logging.getLogger(f"ccp4x::{__name__}")
 
 
 @override_settings(
@@ -172,3 +175,26 @@ class CCP4i2TestCase(TestCase):
             response.json()["updated_item"]["_value"]["baseName"]["_value"],
             "testfile.pdb",
         )
+
+    def test_project_upload(self):
+        # Create a sample file
+        test_file = None
+        try:
+            test_project_path = (
+                settings.BASE_DIR.parent.parent.parent
+                / "test101"
+                / "ProjectZips"
+                / "refmac_gamma_test_0.ccp4_project.zip"
+            )
+            test_file = open(test_project_path, "rb")
+        except Exception as err:
+            logger.error(f"Error opening test file: {err}")
+            file_content = b"Hello, this is a test file."
+            test_file = SimpleUploadedFile("testfile.pdb", file_content)
+
+        # Create the data to be sent in the request
+        data = {"file": test_file}
+        response = self.client.post(
+            "/projects/import_project/", data, format="multipart"
+        )
+        print(response)
