@@ -7,7 +7,7 @@ export default function ProjectsToolbar() {
   const router = useRouter();
 
   function importProjects() {
-    // TODO
+    router.push("/import-project");
   }
 
   return (

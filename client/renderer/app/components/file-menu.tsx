@@ -27,8 +27,22 @@ export default function FileMenu() {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
   const handleBrowser = () => {
     const newWindow = window.open("http://localhost:3000");
+    setAnchorEl(null);
+    // Check if the window was successfully opened
+    if (newWindow) {
+      console.log("New window opened successfully!");
+    } else {
+      console.log(
+        "Failed to open new window. It might be blocked by a popup blocker."
+      );
+    }
+  };
+
+  const handleImportProject = () => {
+    const newWindow = window.open("http://localhost:3000/import-project");
     setAnchorEl(null);
     // Check if the window was successfully opened
     if (newWindow) {
@@ -76,7 +90,7 @@ export default function FileMenu() {
           </ListItemIcon>
           <ListItemText>Export project</ListItemText>
         </MenuItem>
-        <MenuItem key="Import" onClick={handleClose}>
+        <MenuItem key="Import" onClick={handleImportProject}>
           <ListItemIcon>
             <Upload fontSize="small" />
           </ListItemIcon>
