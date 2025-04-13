@@ -1,9 +1,9 @@
 import { ccp4_setup_sh } from "./ccp4i2-setup-sh";
 import { ccp4_setup_windows } from "./ccp4i2-setup-windows";
-import path from "path";
-import os from "os";
-import { spawn } from "child_process";
+import path from "node:path";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -69,6 +69,22 @@ export async function startDjangoServer(
   }
   console.log(`🐍 Python Path: ${process.env.PYTHONPATH}`, process.cwd());
   //console.log(process.env);
+  const migrateEnv = { ...process.env };
+  const oldCWD = process.cwd();
+  const oldPythonPath = process.env.PYTHONPATH;
+  if (isDev) {
+    process.env.PYTHONPATH = path.join(process.cwd(), "..", "server");
+    process.chdir(path.join(process.cwd(), "..", "server"));
+  }
+  const migrateResult = execSync(`${CCP4_PYTHON} manage.py migrate`, {
+    env: migrateEnv,
+  });
+  if (isDev) {
+    process.env.PYTHONPATH = path.join(oldPythonPath);
+    process.chdir(path.join(oldCWD));
+  }
+  console.log(`🐍 Migrate result: ${migrateResult}`);
+
   // 2️⃣ Start Python process with dynamic port
   const pythonProcess = spawn(
     CCP4_PYTHON,
