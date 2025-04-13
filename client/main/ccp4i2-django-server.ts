@@ -79,10 +79,6 @@ export async function startDjangoServer(
   const migrateResult = execSync(`${CCP4_PYTHON} manage.py migrate`, {
     env: migrateEnv,
   });
-  if (isDev) {
-    process.env.PYTHONPATH = path.join(oldPythonPath);
-    process.chdir(path.join(oldCWD));
-  }
   console.log(`🐍 Migrate result: ${migrateResult}`);
 
   // 2️⃣ Start Python process with dynamic port
@@ -95,6 +91,11 @@ export async function startDjangoServer(
     }
   );
   console.log(`🚀 Uvicorn running on http://localhost:${UVICORN_PORT}`);
+
+  if (isDev) {
+    process.env.PYTHONPATH = path.join(oldPythonPath);
+    process.chdir(path.join(oldCWD));
+  }
 
   pythonProcess.stdout.on("data", (data) => {
     console.log(`🐍 Python Output: ${data}`);
