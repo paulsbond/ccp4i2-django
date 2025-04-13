@@ -193,7 +193,7 @@ class CCP4i2TestCase(TestCase):
             test_file = SimpleUploadedFile("testfile.pdb", file_content)
 
         # Create the data to be sent in the request
-        data = {"file": test_file}
+        data = {"files": [test_file]}
         response = self.client.post(
             "/projects/import_project/", data, format="multipart"
         )
