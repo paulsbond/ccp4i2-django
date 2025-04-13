@@ -104,6 +104,58 @@ class ProjectViewSet(ModelViewSet):
     parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     @action(
+        detail=False,
+        methods=["post"],
+        permission_classes=[],
+        parser_classes=[
+            JSONParser,
+            FormParser,
+            MultiPartParser,
+        ],  # Allow JSON and form data
+    )
+    def import_project(self, request):
+        uploaded_files = request.FILES.getlist("files")
+        if not uploaded_files:
+            return Response(
+                {"status": "Failed", "reason": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Define a secure, platform-independent storage path
+        secure_storage_dir = pathlib.Path(settings.MEDIA_ROOT) / "uploaded_files"
+        secure_storage_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save the file to the secure storage directory
+        for uploaded_file in uploaded_files:
+            if not uploaded_file.name.endswith(".zip"):
+                return Response(
+                    {"status": "Failed", "reason": "Invalid file type"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # Ensure the filename is safe
+            # if not uploaded_file.name.isalnum():
+            #    return Response(
+            #        {"status": "Failed", "reason": "Invalid file name"},
+            #        status=status.HTTP_400_BAD_REQUEST,
+            #    )
+            file_path = secure_storage_dir / slugify(uploaded_file.name)
+            with open(file_path, "wb") as destination:
+                for chunk in uploaded_file.chunks():
+                    destination.write(chunk)
+            try:
+                call_command("import_ccp4_project_zip", str(file_path), "--detach")
+            except Exception as e:
+                logger.exception(
+                    "Failed to import project from %s", file_path, exc_info=e
+                )
+                return Response(
+                    {"status": "Failed", "reason": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            logger.error("File uploaded and saved to %s", file_path)
+
+        return Response({"status": "Success"})
+
+    @action(
         detail=True,
         methods=["get"],
         permission_classes=[],
