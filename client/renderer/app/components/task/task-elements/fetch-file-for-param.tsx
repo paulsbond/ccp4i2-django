@@ -173,7 +173,6 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         ) : (
           <Typography>No dowload modes</Typography>
         )}
-        {Error message}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
