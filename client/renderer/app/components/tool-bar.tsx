@@ -131,7 +131,7 @@ export default function ToolBar() {
         </Button>
       )}
       <HelpIframe
-        url={`http://localhost:3000/help/html/tasks/${job?.task_name}/index.html`}
+        url={`/help/html/tasks/${job?.task_name}/index.html`}
         open={showHelp}
         handleClose={() => {
           setShowHelp(false);
