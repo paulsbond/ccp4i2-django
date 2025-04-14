@@ -67,6 +67,7 @@ from ..lib.job_utils.set_parameter import set_parameter
 from ..lib.job_utils.upload_file_param import upload_file_param
 from ..lib.job_utils.get_job_container import get_job_container
 from ..lib.job_utils.json_for_job_container import json_for_job_container
+from ..lib.job_utils.object_method import object_method
 from django.http import JsonResponse
 from django.conf import settings
 from django.utils.text import slugify
@@ -482,7 +483,7 @@ class FileViewSet(ModelViewSet):
 class JobViewSet(ModelViewSet):
     queryset = models.Job.objects.all()
     serializer_class = serializers.JobSerializer
-    parser_classes = [FormParser, MultiPartParser]
+    parser_classes = [FormParser, MultiPartParser, JSONParser]
     filterset_fields = ["project"]
 
     def destroy(self, request, *args, **kwargs):
@@ -495,6 +496,39 @@ class JobViewSet(ModelViewSet):
             return Response({"status": "Success"})
         except Http404:
             return Http404("Job not found")
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def object_method(self, request, pk=None):
+        """
+        Handles the request to execute a method on a job object.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            pk (int, optional): The primary key of the job.
+
+        Returns:
+            JsonResponse: A JSON response containing the status and the result of the method execution.
+        """
+        form_data = json.loads(request.body.decode("utf-8"))
+        job = models.Job.objects.get(id=pk)
+        object_path = form_data["object_path"]
+        method_name = form_data["method_name"]
+        args = form_data.get("args", [])
+        kwargs = form_data.get("kwargs", {})
+        try:
+            result = object_method(job, object_path, method_name, args, kwargs)
+            return JsonResponse({"status": "Success", "result": result})
+        except CCP4ErrorHandling.CException as err:
+            error_tree = getEtree(err)
+            ET.indent(error_tree, " ")
+            return JsonResponse(
+                {"status": "Failed", "reason": ET.tostring(error_tree).decode("utf-8")}
+            )
 
     @action(
         detail=True,
