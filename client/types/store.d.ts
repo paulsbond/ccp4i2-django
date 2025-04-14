@@ -3,4 +3,5 @@ export interface StoreSchema {
   CCP4Dir: string;
   zoomLevel: number;
   devMode: boolean;
+  CCP4I2_PROJECTS_DIR: string;
 }
