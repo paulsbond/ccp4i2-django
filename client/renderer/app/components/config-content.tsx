@@ -69,7 +69,7 @@ export const ConfigContent: React.FC = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        height: "100vh", // Full viewport height
+        height: "calc(100vh - 5rem)", // Full viewport height
         margin: 0, // Remove default margin
       }}
     >
@@ -96,6 +96,12 @@ export const ConfigContent: React.FC = () => {
                 <TableCell variant="body">{config.CCP4Python.path}</TableCell>
                 <TableCell variant="body">
                   {config.CCP4Python.exists ? <Check /> : <Cancel />}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell variant="head">CCP4I2_PROJECTS_DIR</TableCell>
+                <TableCell variant="body" colSpan={3}>
+                  {config.CCP4I2_PROJECTS_DIR}
                 </TableCell>
               </TableRow>
               <TableRow>
