@@ -8,6 +8,10 @@ declare global {
       channel: string,
       callback: (event: Electron.IpcRendererEvent, ...args: any[]) => void
     ) => typeof ipcRenderer.on;
+    removeMessageListener: (
+      channel: string,
+      callback: (event: Electron.IpcRendererEvent, ...args: any[]) => void
+    ) => typeof ipcRenderer.on;
     sendMessage: (channel: string, ...args: any[]) => typeof ipcRenderer.send;
   };
 }
