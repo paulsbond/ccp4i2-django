@@ -3,6 +3,7 @@ import React, { PropsWithChildren, useContext, useState } from "react";
 import {
   Button,
   Container,
+  Paper,
   Stack,
   Table,
   TableBody,
@@ -52,42 +53,48 @@ export const ImportProjectContent: React.FC = () => {
         margin: 0, // Remove default margin
       }}
     >
-      <Stack spacing={2}>
-        <Typography variant="h4" gutterBottom>
-          Import Project
-        </Typography>
-        <Stack spacing={2} direction="row">
-          <Button component="label" variant="contained" startIcon={<Upload />}>
-            <VisuallyHiddenInput type="file" multiple onChange={onChange} />
-          </Button>
-        </Stack>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>File</TableCell>
-              <TableCell>Processing</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {/* Map through the files and display their names and statuses */}
-            {/* Example static data for demonstration */}
-            {files.map((aFile, index) => (
-              <TableRow key={index}>
-                <TableCell>
-                  <Folder /> {aFile.name}
-                </TableCell>
-                <TableCell>
-                  {!uploading ? (
-                    <Check color="success" />
-                  ) : (
-                    <Cancel color="error" />
-                  )}
-                </TableCell>
+      <Paper sx={{ padding: 2, minWidth: "50rem" }}>
+        <Stack spacing={2}>
+          <Typography variant="h4" gutterBottom>
+            Import Project
+          </Typography>
+          <Stack spacing={2} direction="row">
+            <Button
+              component="label"
+              variant="contained"
+              startIcon={<Upload />}
+            >
+              <VisuallyHiddenInput type="file" multiple onChange={onChange} />
+            </Button>
+          </Stack>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>File</TableCell>
+                <TableCell>Processing</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Stack>
+            </TableHead>
+            <TableBody>
+              {/* Map through the files and display their names and statuses */}
+              {/* Example static data for demonstration */}
+              {files.map((aFile, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Folder /> {aFile.name}
+                  </TableCell>
+                  <TableCell>
+                    {!uploading ? (
+                      <Check color="success" />
+                    ) : (
+                      <Cancel color="error" />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Stack>
+      </Paper>
     </Container>
   );
 };
