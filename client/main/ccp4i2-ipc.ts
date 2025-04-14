@@ -3,7 +3,8 @@ import { startDjangoServer } from "./ccp4i2-django-server";
 import { platform } from "node:os";
 import Store from "electron-store";
 import { dialog } from "electron";
-import path from "path";
+import path from "node:path";
+import fs from "node:fs";
 import { existsSync } from "node:fs";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
 import { StoreSchema } from "../types/store";
@@ -51,6 +52,7 @@ export const installIpcHandlers = (
         UVICORN_PORT: djangoServerPort,
         NEXT_PORT: nextServerPort,
         devMode: store.get("devMode") || false,
+        CCP4I2_PROJECTS_DIR: store.get("CCP4I2_PROJECTS_DIR") || "",
       },
     };
   };
@@ -80,7 +82,39 @@ export const installIpcHandlers = (
       });
   });
 
-  // IPC communication to trigger file dialog to locate a valid CCP4 directory
+  // IPC communication to trigger file dialog to select parent directory for new projects
+  // and set the CCP4I2_PROJECTS_DIR in the store
+  ipcMain.on("check-file-exists", (event, data) => {
+    console.log("Checking for file-exists", data);
+    event.reply("message-from-main", {
+      message: "check-file-exists",
+      path: data.path,
+      exists: fs.existsSync(data.path),
+    });
+  });
+
+  // IPC communication to trigger file dialog to select parent directory for new projects
+  // and set the CCP4I2_PROJECTS_DIR in the store
+  ipcMain.on("locate-ccp4i2-project-directory", (event, data) => {
+    const mainWindow: BrowserWindow | null = getMainWindow();
+    if (!mainWindow) {
+      console.error("Main window is not available");
+      return;
+    }
+    dialog
+      .showOpenDialog(mainWindow, {
+        properties: ["openDirectory"],
+      })
+      .then((result) => {
+        if (!result.canceled) {
+          console.log("Selected directory:", result.filePaths);
+          store.set("CCP4I2_PROJECTS_DIR", result.filePaths[0]);
+          event.reply("message-from-main", getConfigResponse());
+        }
+      });
+  });
+
+  // IPC communication to trigger file dialog to start the uvicorn (django) server
   ipcMain.on("start-uvicorn", async (event, data) => {
     console.log("start-uvicorn", data);
     if (!djangoServerPort) return;
@@ -98,7 +132,7 @@ export const installIpcHandlers = (
     });
   });
 
-  // IPC communication to trigger file dialog to locate a valid CCP4 directory
+  // IPC communication to prompt reply with current config response
   ipcMain.on("get-config", (event, data) => {
     console.log("get-config", data);
     const response = getConfigResponse();
@@ -106,7 +140,7 @@ export const installIpcHandlers = (
     event.reply("message-from-main", response);
   });
 
-  // IPC communication to trigger file dialog to locate a valid CCP4 directory
+  // IPC communication to trigger file dialog to toggle the state of the developer mode
   ipcMain.on("toggle-dev-mode", (event, data) => {
     store.set("devMode", !store.get("devMode"));
     const ccp4_python =
