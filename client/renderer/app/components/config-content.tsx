@@ -3,7 +3,9 @@ import React, { PropsWithChildren, useCallback, useContext } from "react";
 import {
   Button,
   Container,
+  FormControlLabel,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -134,38 +136,34 @@ export const ConfigContent: React.FC = () => {
     });
   };
 
+  const onToggleDevMode = async (
+    ev: React.ChangeEvent<HTMLInputElement>
+  ): Promise<void> => {
+    if (!window?.electronAPI) {
+      console.error("Electron API is not available");
+      return;
+    }
+    window.electronAPI.sendMessage("toggle-dev-mode", {});
+    ev.preventDefault();
+    ev.stopPropagation();
+  };
+
   return (
-    <Container
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "calc(100vh - 5rem)", // Full viewport height
-        margin: 0, // Remove default margin
-      }}
-    >
+    <Container>
       <Stack spacing={2}>
         {config && (
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell variant="head"> </TableCell>
-                <TableCell variant="head"> </TableCell>
-                <TableCell variant="head">Exists ?</TableCell>
-                <TableCell variant="head"> </TableCell>
-              </TableRow>
-            </TableHead>
             <TableBody>
               <TableRow>
                 <TableCell variant="head">CCP4Dir</TableCell>
                 <TableCell variant="body">{config.CCP4Dir}</TableCell>
                 <TableCell variant="body">
-                  {existingFiles?.CCP4Dir ? "Y" : "N"}
+                  {existingFiles?.CCP4Dir ? <Check /> : <Cancel />}
                 </TableCell>
                 <TableCell variant="body">
                   <Button
                     component="label"
-                    variant="contained"
+                    variant="outlined"
                     startIcon={<Folder />}
                     onClick={onLaunchBrowser}
                     sx={{ minWidth: 320 }}
@@ -178,7 +176,7 @@ export const ConfigContent: React.FC = () => {
                 <TableCell variant="head">CCP4Python</TableCell>
                 <TableCell variant="body">{config.ccp4_python}</TableCell>
                 <TableCell variant="body">
-                  {existingFiles?.ccp4_python ? "Y" : "N"}
+                  {existingFiles?.ccp4_python ? <Check /> : <Cancel />}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -187,12 +185,12 @@ export const ConfigContent: React.FC = () => {
                   {config.CCP4I2_PROJECTS_DIR}
                 </TableCell>
                 <TableCell variant="body">
-                  {existingFiles?.CCP4I2_PROJECTS_DIR ? "Y" : "N"}
+                  {existingFiles?.CCP4I2_PROJECTS_DIR ? <Check /> : <Cancel />}
                 </TableCell>
                 <TableCell variant="body">
                   <Button
                     component="label"
-                    variant="contained"
+                    variant="outlined"
                     startIcon={<Folder />}
                     onClick={onSelectProjectsDir}
                     sx={{ minWidth: 320 }}
@@ -203,20 +201,45 @@ export const ConfigContent: React.FC = () => {
               </TableRow>
               <TableRow>
                 <TableCell variant="head">NEXT Port</TableCell>
-                <TableCell variant="body" colSpan={3}>
+                <TableCell
+                  variant="body"
+                  colSpan={3}
+                  sx={{ display: "flex", justifyContent: "center" }}
+                >
                   {config.NEXT_PORT}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell variant="head">Uvicorn Port</TableCell>
-                <TableCell variant="body" colSpan={3}>
+                <TableCell
+                  variant="body"
+                  colSpan={3}
+                  sx={{ display: "flex", justifyContent: "center" }}
+                >
                   {config.UVICORN_PORT}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell variant="head">Dev. mode</TableCell>
-                <TableCell variant="body" colSpan={3}>
-                  {devMode ? <Check /> : <Cancel />}
+                <TableCell
+                  variant="body"
+                  colSpan={3}
+                  sx={{ display: "flex", justifyContent: "center" }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={devMode}
+                        onChange={onToggleDevMode}
+                        name="devModeToggle"
+                        color="warning"
+                      />
+                    }
+                    label="Dev Mode"
+                  />
+                </TableCell>
+                <TableCell variant="body">
+                  <Button />
                 </TableCell>
               </TableRow>
             </TableBody>
