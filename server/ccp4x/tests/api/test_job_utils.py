@@ -13,6 +13,7 @@ from ...lib.job_utils.glean_job_files import glean_job_files
 from ...lib.job_utils.get_job_container import get_job_container
 from ...lib.job_utils.get_file_by_job_context import get_file_by_job_context
 from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
+from ...lib.job_utils.object_method import object_method
 
 
 @override_settings(
@@ -40,6 +41,13 @@ class CCP4i2TestCase(TestCase):
             / "test101"
             / "ProjectZips"
             / "molrep_test_0.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "bucc_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
         self.pm = CCP4i2DjangoProjectsManager()
@@ -151,3 +159,11 @@ class CCP4i2TestCase(TestCase):
         old_job = models.Job.objects.get(project__name="molrep_test_0", number="1")
         dependents = find_dependent_jobs(old_job)
         print(dependents)
+
+    def test_object_method(self):
+        the_project = models.Project.objects.get(name="bucc_test_0")
+        the_job = models.Job.objects.filter(project=the_project, parent=None).last()
+        result = object_method(
+            the_job, "buccaneer.inputData.ASUIN.fileContent", "molecularWeight"
+        )
+        self.assertAlmostEqual(result, 15107, delta=0.1)
