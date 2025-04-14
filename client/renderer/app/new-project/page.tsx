@@ -1,5 +1,6 @@
 "use client";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
+import path from "path";
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -20,14 +21,50 @@ export default function NewProjectPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [customDirectory, setCustomDirectory] = useState(false);
-  const [directory, setDirectory] = useState(defaultDirectory(""));
+  const [ccp4i2ProjectDirectory, setCcp4i2ProjectDirectory] = useState<string>(
+    "/home/user/CCP4X_PROJECTS"
+  );
+  const [directoryExists, setDirectoryExists] = useState(true);
+  const [electronAPIAvailable, setElectronAPIAvailable] =
+    useState<boolean>(false);
   const [tags, setTags] = useState<number[]>([]);
   const { data: projects } = api.get<Project[]>("projects");
+
+  useEffect(() => {
+    // Send a message to the main process to get the config
+    if (window.electronAPI) {
+      setElectronAPIAvailable(true);
+      window.electronAPI.sendMessage("get-config");
+      // Listen for messages from the main process
+      window.electronAPI.onMessage(
+        "message-from-main",
+        (event: any, data: any) => {
+          if (data.message === "get-config") {
+            setCcp4i2ProjectDirectory(data.config.CCP4I2_PROJECTS_DIR);
+          }
+          if (data.message === "check-file-exists") {
+            setDirectoryExists(data.exists);
+          }
+        }
+      );
+    } else console.log("window.electron is not available");
+  }, []);
+
+  const directory = useMemo(() => {
+    const result = path.join(
+      ccp4i2ProjectDirectory || "",
+      name.toLocaleLowerCase()
+    );
+    if (window.electronAPI) {
+      window.electronAPI.sendMessage("check-file-exists", { path: result });
+    }
+    return result;
+  }, [ccp4i2ProjectDirectory, name]);
 
   function createProject() {
     const formData = new FormData();
     formData.append("name", name);
-    formData.append("directory", "__default__");
+    formData.append("directory", customDirectory ? directory : "__default__");
     try {
       api.post<Project>("projects", formData).then((project) => {
         router.push(`/project/${project.id}`);
@@ -38,15 +75,8 @@ export default function NewProjectPage() {
     }
   }
 
-  function defaultDirectory(name: string) {
-    return `/home/user/CCP4X_PROJECTS/${name}`;
-  }
-
   function handleNameChange(event: ChangeEvent<HTMLInputElement>) {
     setName(event.target.value);
-    if (!customDirectory) {
-      setDirectory(defaultDirectory(event.target.value));
-    }
   }
 
   function handleCustomDirectoryChange(
@@ -55,11 +85,16 @@ export default function NewProjectPage() {
   ) {
     if (value !== null) {
       setCustomDirectory(value);
-      setDirectory(defaultDirectory(name));
     }
   }
 
-  function handleDirectoryChange() {}
+  function handleDirectoryChange() {
+    if (window.electronAPI) {
+      window.electronAPI.sendMessage("locate-ccp4i2-project-directory");
+    } else {
+      console.error("Electron API is not available");
+    }
+  }
 
   let nameError = "";
   if (name.length === 0) nameError = "Name is required";
@@ -69,14 +104,18 @@ export default function NewProjectPage() {
   else if (projects?.find((p) => p.name === name))
     nameError = "Name is already taken";
 
-  let directoryError = "";
-  if (customDirectory && directory.length === 0)
-    directoryError = "Directory is required";
+  const directoryError = useMemo(() => {
+    if (customDirectory && directory.length === 0)
+      return "Directory is required";
+    else if (directory.length > 0 && directoryExists)
+      return "Directory already exist";
+    return "";
+  }, [directoryExists, customDirectory, directory]);
 
   return (
     <Container maxWidth="sm" sx={{ my: 3 }}>
       <Stack spacing={2}>
-        <Typography variant="h4">New Project</Typography>
+        <Typography variant="h4">Create Project</Typography>
         <TextField
           label="Name"
           value={name}
@@ -94,14 +133,12 @@ export default function NewProjectPage() {
           <ToggleButton value={false}>Default Directory</ToggleButton>
           <ToggleButton value={true}>Custom Directory</ToggleButton>
         </ToggleButtonGroup>
-        {customDirectory && (
+        {customDirectory && electronAPIAvailable && (
           <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
             <TextField
-              label="Directory"
-              value={directory}
-              onChange={(event) => setDirectory(event.target.value)}
-              error={directoryError.length > 0}
-              helperText={directoryError}
+              label="Parent directory where the project directory will be created"
+              value={ccp4i2ProjectDirectory}
+              disabled={true}
               sx={{ flexGrow: 1 }}
               required
             />
@@ -114,6 +151,17 @@ export default function NewProjectPage() {
             </Button>
           </Stack>
         )}
+        <Stack direction="row">
+          <TextField
+            label="Resulting name for project directory"
+            value={directory}
+            disabled={true}
+            error={directoryError.length > 0}
+            helperText={directoryError}
+            sx={{ flexGrow: 1 }}
+          />
+        </Stack>
+
         <EditTags tags={tags} onChange={setTags} />
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button variant="outlined" onClick={() => router.push("/")}>
