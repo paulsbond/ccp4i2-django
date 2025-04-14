@@ -29,7 +29,7 @@ export default function FileMenu() {
   };
 
   const handleBrowser = () => {
-    const newWindow = window.open("http://localhost:3000");
+    const newWindow = window.open("/");
     setAnchorEl(null);
     // Check if the window was successfully opened
     if (newWindow) {
@@ -42,7 +42,7 @@ export default function FileMenu() {
   };
 
   const handleImportProject = () => {
-    const newWindow = window.open("http://localhost:3000/import-project");
+    const newWindow = window.open("/import-project");
     setAnchorEl(null);
     // Check if the window was successfully opened
     if (newWindow) {
