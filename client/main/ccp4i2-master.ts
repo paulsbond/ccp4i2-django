@@ -11,6 +11,7 @@ import { StoreSchema } from "../types/store";
 import { createWindow } from "./ccp4i2-create-window";
 import { addNewWindowMenuItem } from "./ccp4i2-menu";
 import { setupZoomLevel } from "./ccp4i2-zoom";
+import os from "os";
 
 const isDev = !app.isPackaged; // ✅ Works in compiled builds
 
@@ -24,8 +25,22 @@ if (!isDev) {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const getProjectsDir = () => {
+  const homeDir = os.homedir();
+  const isWindows = process.platform === "win32";
+  return isWindows
+    ? path.join(homeDir, "ccp4x", "CCP4X_PROJECTS")
+    : path.join(homeDir, ".ccp4x", "CCP4X_PROJECTS");
+};
+
 const store = new Store<StoreSchema>({
-  defaults: { CCP4Dir: "/Applications/CCP4-9", devMode: false, zoomLevel: -2 },
+  defaults: {
+    CCP4Dir: "/Applications/CCP4-9",
+    devMode: false,
+    zoomLevel: -2,
+    CCP4I2_PROJECTS_DIR: getProjectsDir(),
+  },
 });
 
 let mainWindow: BrowserWindow | null = null;
