@@ -33,27 +33,20 @@ export const installIpcHandlers = (
   setDjangoServer: (server: ChildProcessWithoutNullStreams) => void
 ) => {
   const getConfigResponse = () => {
-    const ccp4_python =
-      platform() === "win32" ? "ccp4-python.bat" : "ccp4-python";
+    const ccp4_python = path.join(
+      store.get("CCP4Dir") || "",
+      "bin",
+      platform() === "win32" ? "ccp4-python.bat" : "ccp4-python"
+    );
+    const config: any = store.store; // Retrieve all values from the electron-store
+    config.ccp4_python = ccp4_python;
+    config.UVICORN_PORT = djangoServerPort;
+    config.NEXT_PORT = nextServerPort;
+    console.log("get-config", config);
     return {
       message: "get-config",
       status: "Success",
-      config: {
-        CCP4Dir: {
-          path: store.get("CCP4Dir"),
-          exists: existsSync(store.get("CCP4Dir")),
-        },
-        CCP4Python: {
-          path: path.join(store.get("CCP4Dir"), "bin", ccp4_python),
-          exists: existsSync(
-            path.join(store.get("CCP4Dir"), "bin", ccp4_python)
-          ),
-        },
-        UVICORN_PORT: djangoServerPort,
-        NEXT_PORT: nextServerPort,
-        devMode: store.get("devMode") || false,
-        CCP4I2_PROJECTS_DIR: store.get("CCP4I2_PROJECTS_DIR") || "",
-      },
+      config,
     };
   };
 
