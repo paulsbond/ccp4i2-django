@@ -5,23 +5,31 @@ import Store from "electron-store";
 import { dialog } from "electron";
 import path from "node:path";
 import fs from "node:fs";
-import { existsSync } from "node:fs";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
 import { StoreSchema } from "../types/store";
-import { get } from "node:http";
 
 /**
- * Sets up IPC handlers for Electron's `ipcMain` to manage communication between
- * the main process and renderer process. This function handles operations such as
- * locating a valid CCP4 directory, starting a Django server, and retrieving configuration
- * details.
+ * Installs IPC handlers for communication between the Electron main process and renderer processes.
  *
- * @param ipcMain - The Electron `IpcMain` instance used for inter-process communication.
- * @param mainWindow - The main `BrowserWindow` instance of the application, or `null` if unavailable.
- * @param store - A persistent store instance for managing application state.
- * @param djangoServerPort - The port number on which the Django server will run.
- * @param nextServerPort - The port number on which the Next.js server will run.
- * @param setDjangoServer - A callback function to set the running Django server instance.
+ * @param ipcMain - The Electron IpcMain instance used to listen for IPC events.
+ * @param getMainWindow - A function that returns the main BrowserWindow instance or null if unavailable.
+ * @param store - An instance of the Electron Store used to persist application state.
+ * @param djangoServerPort - The port number for the Django server.
+ * @param nextServerPort - The port number for the Next.js server.
+ * @param isDev - A boolean indicating whether the application is running in development mode.
+ * @param setDjangoServer - A function to set the Django server process instance.
+ *
+ * @remarks
+ * This function sets up various IPC event listeners to handle tasks such as:
+ * - Locating the CCP4 directory.
+ * - Checking if a file exists.
+ * - Selecting a directory for CCP4I2 projects.
+ * - Starting the Uvicorn (Django) server.
+ * - Retrieving the current configuration.
+ * - Toggling developer mode.
+ * - Adjusting zoom levels (zoom in, zoom out, reset).
+ *
+ * Each IPC event listener performs specific actions and replies to the renderer process with the results.
  */
 export const installIpcHandlers = (
   ipcMain: Electron.IpcMain,
@@ -140,5 +148,31 @@ export const installIpcHandlers = (
       platform() === "win32" ? "ccp4-python.bat" : "ccp4-python";
     console.log("ccp4_python", ccp4_python, store.get("devMode"));
     event.reply("message-from-main", getConfigResponse());
+  });
+
+  ipcMain.on("zoom-in", (event, data) => {
+    console.log("Zooming in", data);
+    BrowserWindow.getAllWindows().forEach((win) => {
+      const current = win.webContents.getZoomLevel();
+      win.webContents.setZoomLevel(current + 1);
+      store.set("zoomLevel", current + 1);
+    });
+  });
+
+  ipcMain.on("zoom-out", (event, data) => {
+    console.log("Zooming out", data);
+    BrowserWindow.getAllWindows().forEach((win) => {
+      const current = win.webContents.getZoomLevel();
+      win.webContents.setZoomLevel(current - 1);
+      store.set("zoomLevel", current - 1);
+    });
+  });
+
+  ipcMain.on("zoom-reset", (event, data) => {
+    console.log("Zooming in", data);
+    BrowserWindow.getAllWindows().forEach((win) => {
+      win.webContents.setZoomLevel(0);
+      store.set("zoomLevel", 0);
+    });
   });
 };

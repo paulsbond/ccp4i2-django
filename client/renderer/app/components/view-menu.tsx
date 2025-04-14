@@ -20,13 +20,34 @@ export default function ViewMenu() {
     setAnchorEl(null);
   };
 
+  const handleZoomIn = () => {
+    if (typeof window !== "undefined" && window?.electronAPI) {
+      window.electronAPI.sendMessage("zoom-in", {});
+    }
+    handleClose();
+  };
+
+  const handleZoomOut = () => {
+    if (typeof window !== "undefined" && window?.electronAPI) {
+      window.electronAPI.sendMessage("zoom-out", {});
+    }
+    handleClose();
+  };
+
+  const handleZoomReset = () => {
+    if (typeof window !== "undefined" && window?.electronAPI) {
+      window.electronAPI.sendMessage("zoom-reset", {});
+    }
+    handleClose();
+  };
+
   return (
     <>
       <Button color="inherit" onClick={handleClick}>
         View
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleZoomIn}>
           <ListItemIcon>
             <ZoomIn fontSize="small" />
           </ListItemIcon>
@@ -35,7 +56,7 @@ export default function ViewMenu() {
             (Ctrl++)
           </Typography>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleZoomOut}>
           <ListItemIcon>
             <ZoomOut fontSize="small" />
           </ListItemIcon>
@@ -44,7 +65,7 @@ export default function ViewMenu() {
             (Ctrl+-)
           </Typography>
         </MenuItem>
-        <MenuItem onClick={handleClose}>
+        <MenuItem onClick={handleZoomReset}>
           <ListItemIcon>
             <YoutubeSearchedFor fontSize="small" />
           </ListItemIcon>
