@@ -39,6 +39,13 @@ export const CCP4i2JobAvatar: React.FC<CCP4i2JobAvatarProps> = ({ job }) => {
         width: "2rem",
         height: "2rem",
         backgroundColor: bgColor,
+        border: "2px dashed #1976d2",
+        padding: "4px",
+        cursor: "grab",
+        transition: "box-shadow 0.2s ease",
+        "&:hover": {
+          boxShadow: "0 0 0 3px rgba(25, 118, 210, 0.5)",
+        },
       }}
       src={`/api/proxy/djangostatic/svgicons/${job.task_name}.svg`}
       alt="User"

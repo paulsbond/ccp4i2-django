@@ -156,9 +156,6 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
   ref: React.Ref<HTMLLIElement>
 ) {
   const api = useApi();
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: itemId,
-  });
   const projectId = useContext(CCP4i2Context).projectId;
   const { data: jobs } = api.get_endpoint<Job[]>({
     type: "projects",
@@ -190,6 +187,11 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
   const job = jobs?.find((job) => job.uuid === itemId);
 
   const file = files?.find((file) => file.uuid === itemId);
+
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: itemId,
+    data: job ? job : file,
+  });
 
   const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
     useContext(JobMenuContext);
@@ -270,6 +272,13 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
                 sx={{
                   width: "2rem",
                   height: "2rem",
+                  border: "2px dashed #1976d2",
+                  padding: "4px",
+                  cursor: "grab",
+                  transition: "box-shadow 0.2s ease",
+                  "&:hover": {
+                    boxShadow: "0 0 0 3px rgba(25, 118, 210, 0.5)",
+                  },
                 }}
                 src={`/api/proxy/djangostatic/qticons/${fileTypeIcon(
                   file.type
