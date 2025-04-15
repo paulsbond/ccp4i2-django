@@ -259,6 +259,7 @@ export const useJob = (jobId: number | null | undefined) => {
           await mutateContainer();
           await mutateParams_xml();
           await mutateValidation();
+          return result;
         } else
           console.log(
             "Alert attempting to edit interface of task not in pending state"
@@ -276,8 +277,10 @@ export const useJob = (jobId: number | null | undefined) => {
 
     getTaskValue: useMemo(() => {
       return (param_name: string) => {
-        const item = itemsForName(param_name, container, false)[0];
-        return valueOfItem(item);
+        const item = container.lookup[param_name];
+        const result = valueOfItem(item);
+        console.log({ param_name, result, item });
+        return result;
       };
     }, [container]),
 
