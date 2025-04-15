@@ -133,7 +133,15 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
           getItemId={(jobOrFile) => jobOrFile.uuid}
           getItemLabel={getItemLabel}
           slots={{ item: CustomTreeItem }}
-          onSelectedItemsChange={handleSelectedItemsChange}
+          onSelectedItemsChange={(event, ids) => {
+            // Prevent selection when an item is opened
+            const closest = (event.target as Element).closest(
+              '[class*="-MuiTreeItem2-iconContainer"]'
+            );
+            if (event.type !== "click" || !closest) {
+              handleSelectedItemsChange(event, ids);
+            }
+          }}
         />
       )}
       <JobMenu />
