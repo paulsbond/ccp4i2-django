@@ -163,7 +163,14 @@ class CCP4i2TestCase(TestCase):
     def test_object_method(self):
         the_project = models.Project.objects.get(name="bucc_test_0")
         the_job = models.Job.objects.filter(project=the_project, parent=None).last()
-        result = object_method(
+        asuWeight = object_method(
             the_job, "buccaneer.inputData.ASUIN.fileContent", "molecularWeight"
         )
-        self.assertAlmostEqual(result, 15107, delta=0.1)
+        self.assertAlmostEqual(asuWeight, 15107, delta=0.1)
+        result = object_method(
+            the_job,
+            "buccaneer.inputData.F_SIGF.fileContent",
+            "matthewsCoeff",
+            kwargs={"molWt": asuWeight},
+        )
+        print(result)
