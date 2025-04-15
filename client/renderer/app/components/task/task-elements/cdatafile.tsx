@@ -24,6 +24,7 @@ import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../task-container";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
+import { useDroppable } from "@dnd-kit/core";
 
 const fileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -50,6 +51,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const api = useApi();
   const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
+  const { isOver, setNodeRef } = useDroppable({
+    id: itemName,
+    data: item,
+  });
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
 
   const [value, setValue] = useState<CCP4i2File>(nullFile);
@@ -217,10 +222,14 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   return (
     inferredVisibility && (
       <Stack
+        ref={setNodeRef}
         direction="row"
         sx={{
           border: "3px solid",
           borderColor: getValidationColor(item),
+          backgroundColor: isOver
+            ? "rgba(200, 255, 200, 0.5)"
+            : "rgba(255, 255, 255, 0.9)",
           borderRadius: "0.5rem",
           mx: 2,
           my: 1,
