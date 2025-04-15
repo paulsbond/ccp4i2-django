@@ -33,8 +33,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const tlsMode = getTaskValue("TLSMODE");
   const bfacSetUse = getTaskValue("BFACSETUSE");
   const wavelengthItem = getTaskItem("WAVELENGTH");
-  const MAP_SHARP = getTaskValue("MAPSHARP");
-  const MAP_SHARP_CUSTOM = getTaskItem("CUSTOM_MAPSHARP");
+  const MAP_SHARP = getTaskValue("MAP_SHARP");
+  const MAP_SHARP_CUSTOM = getTaskItem("MAP_SHARP_CUSTOM");
 
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
   const oldWavelengthItem = usePrevious<any>(wavelengthItem);
@@ -315,31 +315,23 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               key="MAP_SHARP"
             />
             <Grid2 container key="Sharpen row">
-              <Grid2 size={{ xs: 9 }} key="Col1">
+              <Grid2 size={{ xs: 6 }} key="Col1">
                 <CCP4i2TaskElement
                   {...props}
                   itemName="MAP_SHARP_CUSTOM"
                   qualifiers={{
                     guiLabel: "Use custom sharpening parameter (B-factor)",
                   }}
-                  visibility={() => {
-                    {
-                      return MAP_SHARP;
-                    }
-                  }}
+                  visibility={() => MAP_SHARP}
                   key="MAP_SHARP_CUSTOM"
                 />
               </Grid2>
-              <Grid2 size={{ xs: 3 }} key="Col2">
+              <Grid2 size={{ xs: 6 }} key="Col2">
                 <CCP4i2TaskElement
                   {...props}
                   itemName="BSHARP"
-                  qualifiers={{ guiLabel: " " }}
-                  visibility={() => {
-                    {
-                      return MAP_SHARP && MAP_SHARP_CUSTOM;
-                    }
-                  }}
+                  qualifiers={{ guiLabel: "B factor to use" }}
+                  visibility={() => MAP_SHARP && MAP_SHARP_CUSTOM}
                   key="BSHARP"
                 />
               </Grid2>
