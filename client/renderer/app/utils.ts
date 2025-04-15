@@ -187,11 +187,14 @@ export const useProject = (projectId: number) => {
  */
 const api = useApi();
 export const useJob = (jobId: number | null | undefined) => {
-  const { data: job, mutate: mutateJob } = api.follow_endpoint<Job>({
-    type: "jobs",
-    id: jobId,
-    endpoint: "",
-  });
+  const { data: job, mutate: mutateJob } = api.get_endpoint<Job>(
+    {
+      type: "jobs",
+      id: jobId,
+      endpoint: "",
+    },
+    10000
+  );
 
   const { data: container, mutate: mutateContainer } =
     api.get_wrapped_endpoint_json<any>({

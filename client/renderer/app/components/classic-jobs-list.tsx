@@ -60,13 +60,16 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
     endpoint: "jobs",
   };
   console.log("In component", { endpointFetch });
-  const { data: jobs } = api.follow_endpoint<Job[]>(endpointFetch);
+  const { data: jobs } = api.get_endpoint<Job[]>(endpointFetch, 10000);
 
-  const { data: files } = api.follow_endpoint<DjangoFile[]>({
-    type: "projects",
-    id: projectId,
-    endpoint: "files",
-  });
+  const { data: files } = api.get_endpoint<DjangoFile[]>(
+    {
+      type: "projects",
+      id: projectId,
+      endpoint: "files",
+    },
+    10000
+  );
 
   const decoratedJobs = useMemo<
     (JobWithChildren | DjangoFile)[] | undefined
@@ -150,16 +153,22 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
     id: projectId,
     endpoint: "jobs",
   });
-  const { data: jobCharValues } = api.follow_endpoint<JobCharValue[]>({
-    type: "projects",
-    id: projectId,
-    endpoint: "job_char_values/",
-  });
-  const { data: jobFloatValues } = api.follow_endpoint<JobFloatValue[]>({
-    type: "projects",
-    id: projectId,
-    endpoint: "job_float_values/",
-  });
+  const { data: jobCharValues } = api.get_endpoint<JobCharValue[]>(
+    {
+      type: "projects",
+      id: projectId,
+      endpoint: "job_char_values/",
+    },
+    10000
+  );
+  const { data: jobFloatValues } = api.get_endpoint<JobFloatValue[]>(
+    {
+      type: "projects",
+      id: projectId,
+      endpoint: "job_float_values/",
+    },
+    10000
+  );
   const { data: files } = api.get_endpoint<DjangoFile[]>({
     type: "projects",
     id: projectId,

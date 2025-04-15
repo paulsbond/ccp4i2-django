@@ -8,7 +8,7 @@ import { Project } from "./models";
 
 export default function ProjectsPage() {
   const api = useApi();
-  const { data: projects } = api.follow<Project[]>("projects", 1000);
+  const { data: projects } = api.get<Project[]>("projects", 1000);
 
   return (
     <Container sx={{ my: 3 }}>
