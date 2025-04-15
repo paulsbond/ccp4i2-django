@@ -138,8 +138,8 @@ export function useApi() {
   return {
     noSlashUrl,
 
-    get: function <T>(endpoint: string) {
-      return useSWR<T>(fullUrl(endpoint), fetcher);
+    get: function <T>(endpoint: string, refreshInterval: number = 0) {
+      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval });
     },
 
     config: function <T>() {
@@ -148,19 +148,12 @@ export function useApi() {
       });
     },
 
-    follow: function <T>(endpoint: string, refreshInterval: number = 10000) {
-      return useSWR<T>(fullUrl(endpoint), fetcher, {
-        refreshInterval: refreshInterval,
-      });
-    },
-
-    get_endpoint: function <T>(endpointFetch: EndpointFetch) {
-      return useSWR<T>(endpointFetch, endpoint_fetcher as any);
-    },
-
-    follow_endpoint: function <T>(endpointFetch: EndpointFetch) {
+    get_endpoint: function <T>(
+      endpointFetch: EndpointFetch,
+      refreshInterval: number = 0
+    ) {
       return useSWR<T>(endpointFetch, endpoint_fetcher as any, {
-        refreshInterval: 10000,
+        refreshInterval,
       });
     },
 
@@ -169,12 +162,6 @@ export function useApi() {
       refreshInterval: number = 0
     ) {
       return useSWR(endpointFetch, endpoint_xml_fetcher, { refreshInterval });
-    },
-
-    follow_endpoint_xml: function (endpointFetch: EndpointFetch) {
-      return useSWR(endpointFetch, endpoint_xml_fetcher, {
-        refreshInterval: 10000,
-      });
     },
 
     get_pretty_endpoint_xml: function (endpointFetch: EndpointFetch) {
