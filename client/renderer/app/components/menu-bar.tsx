@@ -71,7 +71,7 @@ export default function MenuBar() {
         <UtilMenu />
         <HelpMenu />
         <Typography sx={{ flexGrow: 1 }} />
-        {job && <Typography variant="h6">Job {job.number}</Typography>}
+        {job?.number && <Typography variant="h6">Job {job.number}</Typography>}
         {project && (
           <EditableTypography
             variant="h5"
