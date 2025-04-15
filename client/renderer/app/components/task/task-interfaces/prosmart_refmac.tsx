@@ -33,6 +33,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const tlsMode = getTaskValue("TLSMODE");
   const bfacSetUse = getTaskValue("BFACSETUSE");
   const wavelengthItem = getTaskItem("WAVELENGTH");
+  const MAP_SHARP = getTaskValue("MAPSHARP");
+  const MAP_SHARP_CUSTOM = getTaskItem("CUSTOM_MAPSHARP");
 
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
   const oldWavelengthItem = usePrevious<any>(wavelengthItem);
@@ -281,6 +283,96 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             </CContainerElement>
           </CContainerElement>
         </CCP4i2Tab>
+        <CCP4i2Tab tab="Output" key="Output">
+          <CContainerElement
+            key="Output options"
+            {...props}
+            itemName=""
+            qualifiers={{ guiLabel: "Output options" }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="OUTPUT_HYDROGENS"
+              qualifiers={{
+                guiLabel: "Output calculated riding hydrogens to file",
+              }}
+            />
+          </CContainerElement>
+          <CContainerElement
+            itemName=""
+            key="Map calculation"
+            {...props}
+            qualifiers={{ guiLabel: "Map calculation" }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="MAP_SHARP"
+              qualifiers={{
+                guiLabel: "Perform map sharpening when calculating maps",
+              }}
+              key="MAP_SHARP"
+            />
+            <Grid2 container key="Sharpen row">
+              <Grid2 size={{ xs: 9 }} key="Col1">
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="MAP_SHARP_CUSTOM"
+                  qualifiers={{
+                    guiLabel: "Use custom sharpening parameter (B-factor)",
+                  }}
+                  visibility={() => {
+                    {
+                      return MAP_SHARP;
+                    }
+                  }}
+                  key="MAP_SHARP_CUSTOM"
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 3 }} key="Col2">
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="BSHARP"
+                  qualifiers={{ guiLabel: " " }}
+                  visibility={() => {
+                    {
+                      return MAP_SHARP && MAP_SHARP_CUSTOM;
+                    }
+                  }}
+                  key="BSHARP"
+                />
+              </Grid2>
+            </Grid2>
+          </CContainerElement>
+          <CContainerElement
+            itemName=""
+            {...props}
+            qualifiers={{ guiLabel: "Validation and analysis" }}
+            containerHint="BlockLevel"
+            key="Validation"
+          >
+            <CCP4i2TaskElement
+              key={1}
+              {...props}
+              itemName="VALIDATE_BAVERAGE"
+              qualifiers={{ guiLabel: "Analyse B-factor distributions" }}
+            />
+            <CCP4i2TaskElement
+              key={2}
+              {...props}
+              itemName="VALIDATE_RAMACHANDRAN"
+              qualifiers={{ guiLabel: "Calculate Ramachandran plots" }}
+            />
+            <CCP4i2TaskElement
+              key={3}
+              {...props}
+              itemName="VALIDATE_MOLPROBITY"
+              qualifiers={{ guiLabel: "Run MolProbity to analyse geometry" }}
+            />
+          </CContainerElement>
+        </CCP4i2Tab>
+
         <CCP4i2Tab tab="Prosmart">
           <CCP4i2TaskElement
             {...props}
