@@ -14,6 +14,7 @@ from ...lib.job_utils.get_job_container import get_job_container
 from ...lib.job_utils.get_file_by_job_context import get_file_by_job_context
 from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ...lib.job_utils.object_method import object_method
+from ...db.project_json import project_json
 
 
 @override_settings(
@@ -173,4 +174,9 @@ class CCP4i2TestCase(TestCase):
             "matthewsCoeff",
             kwargs={"molWt": asuWeight},
         )
+        self.assertAlmostEqual(result["results"][0]["matth_coef"], 2.1, delta=0.1)
+
+    def test_project_json(self):
+        the_project = models.Project.objects.get(name="bucc_test_0")
+        result = project_json(the_project)
         print(result)
