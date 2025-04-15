@@ -1,15 +1,17 @@
-import { ReactNode, useContext, useMemo } from "react";
+import { ReactNode, useContext, useEffect, useMemo } from "react";
 import $ from "jquery";
 import { Paper, Skeleton } from "@mui/material";
 import { Job } from "../../models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
 import { CCP4i2Context } from "../../app-context";
+import { usePrevious } from "../../utils";
+import { Exo_2 } from "next/font/google";
 
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
   const { jobId } = useContext(CCP4i2Context);
-  const { data: job, mutate: mutateJob } = api.follow<Job>(`jobs/${jobId}`);
+  const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`, 2000);
   const { data: report_xml, mutate: mutateReportXml } = api.get_endpoint_xml(
     {
       type: "jobs",
@@ -18,6 +20,25 @@ export const CCP4i2ReportXMLView = () => {
     },
     job?.status == 3 || job?.status == 2 ? 5000 : 0
   );
+  const oldJob = usePrevious(job);
+
+  useEffect(() => {
+    console.log({ job, oldJob });
+    if (job && oldJob && job.status !== oldJob.status) {
+      if (job.status > 3) {
+        console.log("Job finished");
+        mutateReportXml(() => null); // Force re-fetch
+      }
+    }
+  }, [job, oldJob]);
+
+  useEffect(() => {
+    if (report_xml) {
+      console.log(report_xml);
+    } else {
+      console.log("No report xml");
+    }
+  }, [report_xml]);
 
   const reportContent = useMemo<ReactNode[] | null>(() => {
     if (!report_xml) return null;
