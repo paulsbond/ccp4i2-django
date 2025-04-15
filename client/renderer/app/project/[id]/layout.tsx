@@ -126,7 +126,25 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               )}
             </Paper>
           </Panel>
-          <PanelResizeHandle style={{ width: 5, backgroundColor: "black" }} />
+          <PanelResizeHandle
+            style={{
+              width: 10,
+              backgroundColor: "transparent",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "col-resize",
+            }}
+          >
+            <div
+              style={{
+                width: 4,
+                height: "50%",
+                backgroundColor: "gray",
+                borderRadius: 2,
+              }}
+            />
+          </PanelResizeHandle>
           <Panel
             defaultSize={70}
             minSize={20}
