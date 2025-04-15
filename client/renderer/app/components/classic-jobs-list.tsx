@@ -1,4 +1,4 @@
-import { Avatar, Button, Chip, Stack, Typography } from "@mui/material";
+import { Avatar, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { EndpointFetch, useApi } from "../api";
 import {
   Job,
@@ -31,6 +31,7 @@ import {
   JobMenuContext,
   JobWithChildren,
 } from "./job-menu";
+import { DndContext, useDraggable } from "@dnd-kit/core";
 
 interface ClassicJobListProps {
   projectId: number;
@@ -155,6 +156,9 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
   ref: React.Ref<HTMLLIElement>
 ) {
   const api = useApi();
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: itemId,
+  });
   const projectId = useContext(CCP4i2Context).projectId;
   const { data: jobs } = api.get_endpoint<Job[]>({
     type: "projects",
@@ -260,10 +264,16 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
               <CCP4i2JobAvatar job={job} />
             ) : file ? (
               <Avatar
+                ref={setNodeRef}
+                {...listeners}
+                {...attributes}
+                sx={{
+                  width: "2rem",
+                  height: "2rem",
+                }}
                 src={`/api/proxy/djangostatic/qticons/${fileTypeIcon(
                   file.type
                 )}.png`}
-                sx={{ height: "1.5rem", width: "1.5rem" }}
               />
             ) : (
               ""

@@ -1,11 +1,15 @@
 import { Avatar } from "@mui/material";
 import { Job } from "../models";
 import { useMemo } from "react";
+import { useDraggable } from "@dnd-kit/core";
 
 interface CCP4i2JobAvatarProps {
   job: Job;
 }
 export const CCP4i2JobAvatar: React.FC<CCP4i2JobAvatarProps> = ({ job }) => {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: job.id,
+  });
   const bgColor = useMemo(() => {
     switch (job?.status) {
       case 0:
@@ -28,8 +32,16 @@ export const CCP4i2JobAvatar: React.FC<CCP4i2JobAvatarProps> = ({ job }) => {
   }, [job]);
   return (
     <Avatar
-      sx={{ width: "1.5rem", height: "1.5rem", backgroundColor: bgColor }}
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      sx={{
+        width: "2rem",
+        height: "2rem",
+        backgroundColor: bgColor,
+      }}
       src={`/api/proxy/djangostatic/svgicons/${job.task_name}.svg`}
+      alt="User"
     />
   );
 };
