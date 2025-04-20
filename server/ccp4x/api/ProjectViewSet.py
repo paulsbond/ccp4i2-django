@@ -24,34 +24,6 @@ from ..lib.job_utils.get_task_tree import get_task_tree
 from ..lib.job_utils.create_task import create_task
 from ..lib.job_utils.preview_file import preview_file
 
-"""
-This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
-
-Classes:
-    ProjectViewSet(ModelViewSet): Handles CRUD operations and custom actions for Project model.
-        - files: Retrieves files associated with a project.
-        - jobs: Retrieves jobs associated with a project.
-        - job_float_values: Retrieves job float values associated with a project.
-        - job_char_values: Retrieves job char values associated with a project.
-        - tags: Retrieves tags associated with a project.
-
-    ProjectTagViewSet(ModelViewSet): Handles CRUD operations for ProjectTag model.
-
-    FileViewSet(ModelViewSet): Handles CRUD operations and custom actions for File model.
-        - by_uuid: Retrieves a file by its UUID.
-
-    JobViewSet(ModelViewSet): Handles CRUD operations and custom actions for Job model.
-        - params_xml: Retrieves the params.xml or input_params.xml file content for a job.
-        - report_xml: Generates and retrieves the report XML for a job.
-        - dependent_jobs: Retrieves jobs dependent on a given job.
-        - clone: Clones a job.
-        - run: Runs a job using a subprocess.
-        - diagnostic_xml: Retrieves the diagnostic.xml file content for a job.
-
-Logging:
-    Configured to log errors with the logger named "ccp4x:<module_name>".
-"""
-import subprocess
 from xml.etree import ElementTree as ET
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.viewsets import ModelViewSet
