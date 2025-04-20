@@ -7,10 +7,7 @@ import platform
 from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
-from django.http import FileResponse
-from django.core.management import call_command
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.parsers import MultiPartParser, JSONParser
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Container import CContainer
@@ -18,11 +15,8 @@ from core import CCP4ErrorHandling
 from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_file
-from ..lib.job_utils.list_project import list_project
 from ..lib.job_utils.validate_container import getEtree
-from ..lib.job_utils.get_task_tree import get_task_tree
-from ..lib.job_utils.create_task import create_task
-from ..lib.job_utils.preview_file import preview_file
+from ..lib.job_utils.set_input_by_context_job import set_input_by_context_job
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -91,6 +85,32 @@ class JobViewSet(ModelViewSet):
             return Response({"status": "Success"})
         except Http404:
             return Http404("Job not found")
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def set_context_job(self, request, pk=None):
+        try:
+            job = models.Job.objects.get(id=pk)
+            form_data = json.loads(request.body.decode("utf-8"))
+            context_job_uuid = form_data["context_job_uuid"]
+            set_input_by_context_job(str(job.uuid), context_job_uuid)
+            serializer = serializers.JobSerializer(job)
+            return JsonResponse({"status": "Success", "new_job": serializer.data})
+        except CCP4ErrorHandling.CException as err:
+            error_tree = getEtree(err)
+            ET.indent(error_tree, " ")
+            return JsonResponse(
+                {"status": "Failed", "reason": ET.tostring(error_tree).decode("utf-8")}
+            )
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return JsonResponse({"status": "Failed", "reason": str(err)})
+        except Exception as err:
+            return JsonResponse({"status": "Failed", "reason": str(err)})
 
     @action(
         detail=True,

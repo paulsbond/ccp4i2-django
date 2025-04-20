@@ -16,31 +16,22 @@ from .get_job_plugin import get_job_plugin
 from .save_params_for_job import save_params_for_job
 from .get_file_by_job_context import get_file_by_job_context
 from .find_objects import find_objects
+from typing import Optional
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
-def set_input_by_context_job(job_id: str = None, context_job_id: str = None):
-    """
-    Sets input data for a job based on the context of another job.
-    This function retrieves the job and its associated plugin, then finds and updates
-    input data files based on the context of a specified job. It ensures that the input
-    data files are correctly set with relevant information from the context job.
-
-    Args:
-        job_id (str): The UUID of the job for which input data is to be set.
-        context_job_id (str): The UUID of the context job from which input data is derived.
-
-    Raises:
-        AssertionError: If either `job_id` or `context_job_id` is None.
-        models.Job.DoesNotExist: If the job with the specified `job_id` does not exist.
-        models.File.DoesNotExist: If a file with the specified UUID does not exist.
-    """
+def set_input_by_context_job(
+    job_id: Optional[str] = None, context_job_id: Optional[str] = None
+):
 
     assert job_id is not None
-    assert context_job_id is not None
 
-    logger.debug(f"In set_input_by_context_job {job_id} {context_job_id}")
+    logger.error(
+        "In set_input_by_context_job for job_id %s context_job %s",
+        job_id,
+        context_job_id,
+    )
 
     job_uuid = uuid.UUID(job_id)
 
@@ -79,6 +70,9 @@ def set_input_by_context_job(job_id: str = None, context_job_id: str = None):
 
     dobj: CDataFile
     for dobj in dobj_list:
+        if context_job_id is None:
+            dobj.unSet()
+            continue
         file_id_list = get_file_by_job_context(
             contextJobId=context_job_id,
             fileType=dobj.qualifiers("mimeTypeName"),
