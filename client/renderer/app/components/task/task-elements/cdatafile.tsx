@@ -49,11 +49,16 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 ) => {
   const { job, sx, itemName } = props;
   const api = useApi();
-  const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
+  const {
+    getTaskItem,
+    setParameter,
+    getValidationColor,
+    fileItemToParameterArg,
+  } = useJob(job.id);
   const item = getTaskItem(itemName);
   const { isOver, setNodeRef } = useDroppable({
     id: itemName,
-    data: item,
+    data: { job, item },
   });
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
 
@@ -148,45 +153,19 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       value: CCP4i2File | null,
       reason: AutocompleteChangeReason
     ) => {
-      const setParameterArg: any = {
-        object_path: objectPath,
-      };
+      let setParameterArg: any = {};
+      if (!objectPath || !projects) return;
       if (reason === "clear" || value === nullFile) {
         setParameterArg.value = null;
+        setParameterArg.object_path = objectPath;
       } else if (value) {
         setValue(value);
-        setParameterArg.value = {
-          dbFileId: value.uuid.replace(/-/g, ""),
-          subType: value.sub_type,
-          contentFlag: value.content,
-          annotation: value.annotation,
-          baseName: value.name,
-        };
-        if (value.directory == 2) {
-          setParameterArg.value.relPath = "CCP4_IMPORTED_FILES";
-        }
-        if (job && project_jobs) {
-          const job_of_file = project_jobs?.find((the_job: Job) => {
-            return the_job.id === value.job;
-          });
-          if (job_of_file) {
-            if (value.directory == 1) {
-              const jobDir = job_of_file.number
-                .split(".")
-                .map((ele: string) => `job_${ele}`)
-                .join("/");
-              setParameterArg.value.relPath = `CCP4_JOBS/${jobDir}`;
-            }
-            if (projects) {
-              const project = projects?.find((the_project: Project) => {
-                return the_project.id === job_of_file.project;
-              });
-              if (project) {
-                setParameterArg.value.project = project.uuid.replace(/-/g, "");
-              }
-            }
-          }
-        }
+        setParameterArg = fileItemToParameterArg(
+          value,
+          objectPath,
+          project_jobs,
+          projects
+        );
       }
       setInFlight(true);
       await setParameter(setParameterArg);
