@@ -95,9 +95,10 @@ export const JobHeader: React.FC<JobHeaderProps> = ({
               }}
             />
           </Stack>
-          {project_jobs && (
+          {project_jobs && job?.status == 1 && (
             <Autocomplete
               onChange={handleContextJobChange}
+              disabled={job.status !== 1}
               options={project_jobs.filter((j: Job) => j.parent == null)}
               value={contextJob}
               renderInput={(params) => (
