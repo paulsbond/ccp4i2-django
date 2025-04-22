@@ -98,14 +98,55 @@ class ProjectViewSet(ModelViewSet):
                 logger.warning("Deleting job %s", last_job)
                 delete_job_and_dependents(last_job)
 
-            for root, dirs, files in os.walk(
-                instance.directory, topdown=False, followlinks=False
-            ):
-                for file in files:
-                    os.remove(os.path.join(root, file))
-                for directory in dirs:
-                    os.rmdir(os.path.join(root, directory))
-            os.rmdir(instance.directory)
+            # Attempt some security by using a defined list of subdirectories for deletion
+            for subdir in [
+                "CCP4_COOT",
+                "CCP4_IMPORTED_FILES",
+                "CCP4_JOBS",
+                "CCP4_PROJECT_FILES",
+                "CCP4_TMP",
+            ]:
+                subdir_path = os.path.join(instance.directory, subdir)
+                if os.path.exists(subdir_path):
+                    logger.error("Deleting subdirectory %s", subdir_path)
+                    # Definitely need to
+                    for root, dirs, files in os.walk(
+                        subdir_path, topdown=False, followlinks=False
+                    ):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                        for directory in dirs:
+                            dir_path = os.path.join(root, directory)
+                            try:
+                                os.rmdir(dir_path)
+                            except Exception as e:
+                                logger.warning(
+                                    "Failed to delete directory %s: %s", dir_path, e
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    "Failed to delete file %s: %s", file_path, e
+                                )
+                    os.rmdir(subdir_path)
+
+            # Attempt to delete any special files in the project directory
+            for special_file in [".DS_Store"]:
+                special_file_path = os.path.join(instance.directory, special_file)
+                if os.path.exists(special_file_path):
+                    logger.error("Deleting special file %s", special_file_path)
+                    try:
+                        os.remove(special_file_path)
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to delete file %s: %s", special_file_path, e
+                        )
+            # Attempt to delete the main project directory
+            try:
+                os.rmdir(instance.directory)
+            except Exception as e:
+                logger.warning(
+                    "Failed to delete project directory %s: %s", instance.directory, e
+                )
             instance.delete()
             logger.warning("Deleted project %s", instance)
 
