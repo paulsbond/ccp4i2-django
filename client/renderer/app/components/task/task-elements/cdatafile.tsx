@@ -84,7 +84,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     id: job.project,
     endpoint: "jobs",
   });
+
   const { data: projects } = api.get<Project[]>("projects");
+
   const { mutate: mutateDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
