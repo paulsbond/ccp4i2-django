@@ -81,7 +81,11 @@ export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
       }
     } else if (event.active.data?.current?.file) {
       const file = event.active.data.current.file as File;
-      if (!event.over.data?.current?.job) return;
+      if (
+        !event.over.data?.current?.job ||
+        event.over.data?.current?.job?.status !== 1
+      )
+        return;
       if (event.over.data?.current?.item) {
         if (!isValidDrop(file, event.over.data.current.item)) return;
         const job = event.over.data.current.job as Job;

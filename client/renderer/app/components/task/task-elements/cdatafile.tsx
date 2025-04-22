@@ -105,8 +105,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const isValidDrop = useMemo(() => {
     if (!active?.data?.current?.file) return false;
     if (!item) return false;
+    if (job?.status !== 1) return false;
     return (active.data.current?.file as CCP4i2File).type === fileType;
-  }, [active, item]);
+  }, [active, item, job]);
 
   if (!project_files || !project_jobs) return <LinearProgress />;
 
