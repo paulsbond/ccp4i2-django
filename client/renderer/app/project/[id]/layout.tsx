@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Avatar, Paper, Stack, Tab, Tabs } from "@mui/material";
+import { Paper, Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { CCP4i2Context } from "../../app-context";
 import { useApi } from "../../api";
@@ -15,7 +15,7 @@ import Script from "next/script";
 import { CCP4i2DirectoryViewer } from "../../components/directory_viewer";
 import { useProject } from "../../utils";
 import { ClassicJobList } from "../../components/classic-jobs-list";
-import { DndContext, DragOverlay } from "@dnd-kit/core";
+import { DraggableContext } from "../../components/draggable-context";
 
 const createArgs = {
   print(t: string) {
@@ -34,7 +34,7 @@ const createArgs = {
 };
 
 export interface ProjectLayoutProps extends PropsWithChildren {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; jobid: string }>;
 }
 
 export default function ProjectLayout(props: ProjectLayoutProps) {
@@ -42,9 +42,6 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
     useContext(CCP4i2Context);
   const api = useApi();
   const [tabValue, setTabValue] = useState(0);
-  const [activeDragItem, setActiveDragItem] = useState<string | number | null>(
-    null
-  );
   const { id } = use(props.params);
   const { project } = useProject(parseInt(id));
   const scriptElement = useRef<HTMLElement | null | undefined>(null);
@@ -70,19 +67,11 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
     setTabValue(value);
   };
 
-  const handleDragEnd = (event: any) => {
-    setActiveDragItem(null);
-    console.log("Drag end", event);
-  };
-
   return (
-    <DndContext
-      onDragEnd={handleDragEnd}
-      onDragStart={({ active }) => setActiveDragItem(active.id)}
-    >
+    <DraggableContext>
       <Stack
         spacing={2}
-        sx={{ height: "calc(100vh - 4rem)", paddingTop: "1rem" }}
+        sx={{ height: "calc(100vh - 4rem)", paddingTop: "1rem", width: "100%" }}
       >
         {true && (
           <Script
@@ -154,20 +143,6 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
           </Panel>
         </PanelGroup>
       </Stack>
-      <DragOverlay>
-        {activeDragItem ? (
-          <Avatar
-            src="/api/proxy/djangostatic/qticons/ccp4i2.png"
-            sx={{
-              width: 64,
-              height: 64,
-              boxShadow: 3,
-              opacity: 0.8,
-              pointerEvents: "none",
-            }}
-          />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+    </DraggableContext>
   );
 }

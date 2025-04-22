@@ -18,6 +18,7 @@ import { CCP4i2JobAvatar } from "./job-avatar";
 import { JobMenu, JobMenuContext, JobWithChildren } from "./job-menu";
 import { Menu } from "@mui/icons-material";
 import { useJob } from "../utils";
+import { useDroppable } from "@dnd-kit/core";
 
 interface JobHeaderProps {
   job: Job;
@@ -45,6 +46,10 @@ export const JobHeader: React.FC<JobHeaderProps> = ({
     type: "projects",
     id: job.project,
     endpoint: "jobs",
+  });
+  const { isOver, setNodeRef } = useDroppable({
+    id: `job_${job.id}`,
+    data: { job },
   });
 
   const handleContextJobChange = async (
@@ -76,11 +81,18 @@ export const JobHeader: React.FC<JobHeaderProps> = ({
         setPreviewNode,
       }}
     >
-      <Toolbar variant="regular" sx={{ backgroundColor: "#f0f0f0" }}>
+      <Toolbar
+        variant="regular"
+        ref={setNodeRef}
+        sx={{
+          backgroundColor: isOver ? "#e0e0e0" : "#f0f0f0",
+          border: isOver ? "2px dashed #1976d2" : "none",
+          transition: "background-color 0.3s, border 0.3s",
+        }}
+      >
         <CCP4i2JobAvatar job={job} />
         <Stack direction="column" spacing={1} sx={{ ml: 2 }}>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2">{job.status.name}</Typography>
             <Typography variant="h5" sx={{ ml: 2, mr: 2 }}>
               {job.number}
             </Typography>

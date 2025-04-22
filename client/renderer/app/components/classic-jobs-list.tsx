@@ -24,14 +24,14 @@ import {
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
-import { fileTypeMapping } from "./files-table";
 import {
   ClassicJobsListPreviewDialog,
   JobMenu,
   JobMenuContext,
   JobWithChildren,
 } from "./job-menu";
-import { DndContext, useDraggable } from "@dnd-kit/core";
+import { useDraggable } from "@dnd-kit/core";
+import { FileAvatar } from "./file-avatar";
 
 interface ClassicJobListProps {
   projectId: number;
@@ -60,7 +60,6 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
     id: projectId,
     endpoint: "jobs",
   };
-  console.log("In component", { endpointFetch });
   const { data: jobs } = api.get_endpoint<Job[]>(endpointFetch, 10000);
 
   const { data: files } = api.get_endpoint<DjangoFile[]>(
@@ -188,9 +187,9 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
 
   const file = files?.find((file) => file.uuid === itemId);
 
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: itemId,
-    data: job ? job : file,
+  const { attributes, listeners, setNodeRef } = useDraggable({
+    id: job ? `job_${itemId}` : `file_${itemId}`,
+    data: { job, file },
   });
 
   const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
@@ -234,12 +233,6 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
     status,
   } = useTreeItem2({ id, itemId, label, disabled, children, rootRef: ref });
 
-  const fileTypeIcon = (type: string) => {
-    return Object.keys(fileTypeMapping).includes(type)
-      ? fileTypeMapping[type]
-      : "ccp4";
-  };
-
   const jobTime =
     job && job.finish_time
       ? `Finished ${new Date(job.finish_time).toLocaleString()}`
@@ -263,26 +256,18 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
           </TreeItem2IconContainer>
           <Stack direction="row">
             {job ? (
-              <CCP4i2JobAvatar job={job} />
-            ) : file ? (
-              <Avatar
+              <CCP4i2JobAvatar
+                job={job}
                 ref={setNodeRef}
                 {...listeners}
                 {...attributes}
-                sx={{
-                  width: "2rem",
-                  height: "2rem",
-                  border: "2px dashed #1976d2",
-                  padding: "4px",
-                  cursor: "grab",
-                  transition: "box-shadow 0.2s ease",
-                  "&:hover": {
-                    boxShadow: "0 0 0 3px rgba(25, 118, 210, 0.5)",
-                  },
-                }}
-                src={`/api/proxy/djangostatic/qticons/${fileTypeIcon(
-                  file.type
-                )}.png`}
+              />
+            ) : file ? (
+              <FileAvatar
+                file={file}
+                ref={setNodeRef}
+                {...listeners}
+                {...attributes}
               />
             ) : (
               ""

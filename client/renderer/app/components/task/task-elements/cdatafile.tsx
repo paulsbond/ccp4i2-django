@@ -57,7 +57,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   } = useJob(job.id);
   const item = getTaskItem(itemName);
   const { isOver, setNodeRef } = useDroppable({
-    id: itemName,
+    id: `job_${job.uuid}_${itemName}`,
     data: { job, item },
   });
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);

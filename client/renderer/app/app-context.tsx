@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import { File, Job } from "./models";
 
 interface CCP4i2Context {
   projectId?: number | null;
@@ -11,6 +12,8 @@ interface CCP4i2Context {
   setCootModule?: (module: any | null) => void;
   devMode: boolean;
   setDevMode: (devMode: boolean) => void;
+  activeDragItem: Job | File | null;
+  setActiveDragItem: (item: Job | File | null) => void;
 }
 export const CCP4i2Context = createContext<CCP4i2Context>({
   projectId: null,
@@ -23,4 +26,6 @@ export const CCP4i2Context = createContext<CCP4i2Context>({
   setCootModule: () => {},
   devMode: true,
   setDevMode: () => {},
+  activeDragItem: null,
+  setActiveDragItem: () => {},
 });

@@ -3,6 +3,7 @@ import { PropsWithChildren, useEffect, useState } from "react";
 import { CCP4i2Context } from "../app-context";
 import { CssBaseline } from "@mui/material";
 import MenuBar from "./menu-bar";
+import { File, Job } from "../models";
 
 export const CCP4i2App = (props: PropsWithChildren) => {
   const [projectId, setProjectId] = useState<number | null>(null);
@@ -10,6 +11,7 @@ export const CCP4i2App = (props: PropsWithChildren) => {
   const [cootModule, setCootModule] = useState<any | null>(null);
   const [jobPanelSize, setJobPanelSize] = useState<number>(70);
   const [devMode, setDevMode] = useState<boolean>(true);
+  const [activeDragItem, setActiveDragItem] = useState<Job | File | null>(null);
 
   return (
     <CCP4i2Context.Provider
@@ -24,6 +26,8 @@ export const CCP4i2App = (props: PropsWithChildren) => {
         setJobPanelSize,
         devMode,
         setDevMode,
+        activeDragItem,
+        setActiveDragItem,
       }}
     >
       <CssBaseline />
