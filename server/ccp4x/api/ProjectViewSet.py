@@ -84,6 +84,37 @@ class ProjectViewSet(ModelViewSet):
     serializer_class = serializers.ProjectSerializer
     parser_classes = [JSONParser, FormParser, MultiPartParser]
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            logger.warning("Deleting project %s", instance)
+            while (
+                models.Job.objects.filter(project=instance, parent__isnull=True).count()
+                > 0
+            ):
+                last_job = models.Job.objects.filter(
+                    project=instance, parent__isnull=True
+                ).last()
+                logger.warning("Deleting job %s", last_job)
+                delete_job_and_dependents(last_job)
+
+            for root, dirs, files in os.walk(
+                instance.directory, topdown=False, followlinks=False
+            ):
+                for file in files:
+                    os.remove(os.path.join(root, file))
+                for directory in dirs:
+                    os.rmdir(os.path.join(root, directory))
+            os.rmdir(instance.directory)
+            instance.delete()
+            logger.warning("Deleted project %s", instance)
+
+            # Note I am adding a bit of body to the response because of an odd
+            # javascript feature which presents as network error if no body in response.
+            return Response({"status": "Success"})
+        except Http404:
+            return Http404("Job not found")
+
     @action(
         detail=False,
         methods=["post"],
