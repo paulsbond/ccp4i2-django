@@ -6,6 +6,8 @@ import { File, Job, Project } from "../models";
 import { useJob } from "../utils";
 import { useApi } from "../api";
 import { TaskInterfaceContext } from "./task/task-container";
+import { fileTypeMapping } from "./files-table";
+import { inverseFileTypeMapping } from "./task/task-elements/cdatafile";
 
 export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
   const { jobId } = useContext(CCP4i2Context);
@@ -18,6 +20,14 @@ export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
     useJob(jobId);
 
   const { activeDragItem, setActiveDragItem } = useContext(CCP4i2Context);
+
+  const { data: project_jobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: job?.project,
+    endpoint: "jobs",
+  });
+
+  const { data: projects } = api.get<Project[]>("projects");
 
   const setContextJob = useCallback(
     (job: Job, context_job: Job) => {
@@ -32,14 +42,6 @@ export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
     },
     [mutateContainer, api]
   );
-
-  const { data: project_jobs } = api.get_endpoint<Job[]>({
-    type: "projects",
-    id: job?.project,
-    endpoint: "jobs",
-  });
-
-  const { data: projects } = api.get<Project[]>("projects");
 
   const setFileByDrop = useCallback(
     async (job: Job, objectPath: string, file: File) => {
@@ -61,7 +63,15 @@ export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
     [project_jobs, projects, fileItemToParameterArg]
   );
 
+  const isValidDrop = (file: File, item: any) => {
+    console.log(file, item, file.type === inverseFileTypeMapping[item._class]);
+    if (!file) return false;
+    if (!item) return false;
+    return file.type === inverseFileTypeMapping[item._class];
+  };
+
   const handleDragEnd = async (event: any) => {
+    console.log(event);
     if (event.active.data?.current?.job) {
       const context_job = event.active.data.current.job as Job;
       if (!event.over.data?.current?.job) return;
@@ -73,6 +83,7 @@ export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
       const file = event.active.data.current.file as File;
       if (!event.over.data?.current?.job) return;
       if (event.over.data?.current?.item) {
+        if (!isValidDrop(file, event.over.data.current.item)) return;
         const job = event.over.data.current.job as Job;
         setFileByDrop(job, event.over.data?.current?.item._objectPath, file);
       }

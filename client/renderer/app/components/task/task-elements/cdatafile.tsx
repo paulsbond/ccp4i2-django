@@ -24,9 +24,9 @@ import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../task-container";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
-import { useDroppable } from "@dnd-kit/core";
+import { useDndContext, useDroppable } from "@dnd-kit/core";
 
-const fileTypeMapping: { [key: string]: string } = {
+export const inverseFileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
   CFreeRDataFile: "application/CCP4-mtz-freerflag",
   CMapCoeffsDataFile: "application/CCP4-mtz-map",
@@ -56,10 +56,14 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     fileItemToParameterArg,
   } = useJob(job.id);
   const item = getTaskItem(itemName);
+
   const { isOver, setNodeRef } = useDroppable({
     id: `job_${job.uuid}_${itemName}`,
     data: { job, item },
   });
+
+  const { active } = useDndContext();
+
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
 
   const [value, setValue] = useState<CCP4i2File>(nullFile);
@@ -93,10 +97,16 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 
   const fileType = useMemo<string | null>(() => {
     if (item?._class) {
-      return fileTypeMapping[item?._class];
+      return inverseFileTypeMapping[item?._class];
     }
     return null;
   }, [item]);
+
+  const isValidDrop = useMemo(() => {
+    if (!active?.data?.current?.file) return false;
+    if (!item) return false;
+    return (active.data.current?.file as CCP4i2File).type === fileType;
+  }, [active, item]);
 
   if (!project_files || !project_jobs) return <LinearProgress />;
 
@@ -209,8 +219,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           border: "3px solid",
           borderColor: getValidationColor(item),
           backgroundColor: isOver
-            ? "rgba(200, 255, 200, 0.5)"
-            : "rgba(255, 255, 255, 0.9)",
+            ? isValidDrop
+              ? "success.light"
+              : "error.light"
+            : "background.paper",
           borderRadius: "0.5rem",
           mx: 2,
           my: 1,
