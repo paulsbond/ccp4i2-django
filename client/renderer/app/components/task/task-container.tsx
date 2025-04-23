@@ -7,6 +7,7 @@ import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
 import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
 import AimlessPipeInterface from "./task-interfaces/aimless_pipe";
 import Crank2Interface from "./task-interfaces/crank2";
+import ModelcraftInterface from "./task-interfaces/modelcraft";
 import GenericInterface from "./task-interfaces/generic";
 import { useJob } from "../../utils";
 import { ErrorPopper } from "./task-elements/error-info";
@@ -57,6 +58,14 @@ export const TaskContainer = () => {
       case "prosmart_refmac":
         return (
           <ProsmartRefmacInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "modelcraft":
+        return (
+          <ModelcraftInterface
             {...{
               job,
             }}
