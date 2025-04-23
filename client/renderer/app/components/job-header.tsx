@@ -47,6 +47,7 @@ export const JobHeader: React.FC<JobHeaderProps> = ({
     id: job.project,
     endpoint: "jobs",
   });
+
   const { isOver, setNodeRef } = useDroppable({
     id: `job_${job.id}`,
     data: { job },
