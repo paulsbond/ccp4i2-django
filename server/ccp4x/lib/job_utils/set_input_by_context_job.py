@@ -27,7 +27,7 @@ def set_input_by_context_job(
 
     assert job_id is not None
 
-    logger.error(
+    logger.info(
         "In set_input_by_context_job for job_id %s context_job %s",
         job_id,
         context_job_id,
@@ -40,18 +40,26 @@ def set_input_by_context_job(
     the_container: CContainer = the_job_plugin.container
     input_data: CContainer = the_container.inputData
 
+    def cdata_func(item):
+        if isinstance(item, CCP4File.CDataFile):
+            return item.qualifiers("fromPreviousJob")
+        return False
+
     dobj_list = find_objects(
         input_data,
-        lambda item: isinstance(item, CCP4File.CDataFile)
-        and item.qualifiers("fromPreviousJob"),
+        cdata_func,
         multiple=True,
     )
 
     # Now find input data that is a list of files, add an item of such lists to the list of dObjs for which we need to set the input
+    def clist_func(item):
+        if isinstance(item, CCP4Data.CList):
+            return item.qualifiers("fromPreviousJob")
+        return False
+
     list_list = find_objects(
         input_data,
-        lambda item: isinstance(item, CCP4Data.CList)
-        and item.qualifiers("fromPreviousJob"),
+        clist_func,
         multiple=True,
     )
     a_list: CList
