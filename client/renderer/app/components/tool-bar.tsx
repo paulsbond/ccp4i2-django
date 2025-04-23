@@ -66,7 +66,7 @@ export default function ToolBar() {
       direction="row"
       spacing={2}
       useFlexGap
-      sx={{ flexWrap: "wrap", justifyContent: "center", px: 2 }}
+      sx={{ flexWrap: "wrap", justifyContent: "center", px: 2, mb: 1 }}
     >
       <Button
         variant="outlined"
