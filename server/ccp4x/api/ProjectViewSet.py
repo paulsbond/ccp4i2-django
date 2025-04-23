@@ -3,8 +3,6 @@ import datetime
 import json
 import pathlib
 import os
-import platform
-from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
 from django.http import FileResponse
@@ -12,34 +10,18 @@ from django.core.management import call_command
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, JSONParser
-from ccp4i2.core import CCP4TaskManager
-from ccp4i2.core.CCP4Container import CContainer
-from core import CCP4ErrorHandling
-from ..lib.job_utils.load_nested_xml import load_nested_xml
-from ..lib.job_utils.validate_container import validate_container
-from ..lib.job_utils.digest_file import digest_file
 from ..lib.job_utils.list_project import list_project
-from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.get_task_tree import get_task_tree
 from ..lib.job_utils.create_task import create_task
 from ..lib.job_utils.preview_file import preview_file
 
-from xml.etree import ElementTree as ET
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from . import serializers
 from ..db import models
-from ..lib.job_utils.ccp4i2_report import make_old_report
-from ..lib.job_utils.clone_job import clone_job
-from ..lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ..lib.job_utils.find_dependent_jobs import delete_job_and_dependents
-from ..lib.job_utils.set_parameter import set_parameter
-from ..lib.job_utils.upload_file_param import upload_file_param
-from ..lib.job_utils.get_job_container import get_job_container
-from ..lib.job_utils.json_for_job_container import json_for_job_container
-from ..lib.job_utils.object_method import object_method
 from django.http import JsonResponse
 from django.conf import settings
 from django.utils.text import slugify
