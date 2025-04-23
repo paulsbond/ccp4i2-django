@@ -30,7 +30,6 @@ from ...lib.job_utils.json_for_job_container import json_for_job_container
 from ...lib.job_utils.get_task_tree import get_task_tree
 from ...lib.job_utils.ccp4i2_report import get_report_job_info
 from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
-from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
 
 
 @override_settings(
