@@ -64,7 +64,7 @@ export const CCP4i2ReportXMLView = () => {
     return $(report_xml)
       .children()
       .children()
-      .map((iItem: Number, item: any) => {
+      .map((iItem: number, item: any) => {
         return (
           <CCP4i2ReportElement
             key={`${iItem}`}
