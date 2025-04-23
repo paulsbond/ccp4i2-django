@@ -14,6 +14,7 @@ import {
   useProject,
 } from "../../../../utils";
 import ToolBar from "../../../../components/tool-bar";
+import { JobCommentEditor } from "../../../../components/job-comment-editor";
 
 export default function JobPage({
   params,
@@ -78,7 +79,8 @@ export default function JobPage({
           {devMode && <Tab value={4} label="Diagnostic xml" />}
           {devMode && <Tab value={5} label="Def xml" />}
           {devMode && <Tab value={6} label="Validation report" />}
-          <Tab value={7} label="Job container" />
+          {devMode && <Tab value={7} label="Job container" />}
+          <Tab value={8} label="Comments" />
         </Tabs>
         {tabValue == 0 && <TaskContainer />}
         {devMode && tabValue == 1 && params_xml && (
@@ -119,6 +121,11 @@ export default function JobPage({
             value={JSON.stringify(container.container, null, 2)}
             language="json"
           />
+        )}
+        {tabValue == 8 && container && (
+          <>
+            <JobCommentEditor jobId={job.id} />
+          </>
         )}
       </Container>
     </>
