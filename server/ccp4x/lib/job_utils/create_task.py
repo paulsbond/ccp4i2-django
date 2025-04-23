@@ -27,15 +27,25 @@ def create_task(the_project: models.Project, arg: any):
     new_job_uuid = create_job(projectId=the_project.uuid, taskName=task_name)
     context_job_uuid = arg.get("context_job_uuid", None)
     new_job = models.Job.objects.get(uuid=new_job_uuid)
-    if context_job_uuid is None:
+
+    context_job = None
+    if context_job_uuid is not None:
+        try:
+            context_job = models.Job.objects.get(uuid=context_job_uuid)
+        except models.Job.DoesNotExist:
+            logger.warning("Context job %s does not exist", str(context_job_uuid))
+            context_job = None
+    else:
+        logger.debug("No context job provided, looking for the last one")
         context_job = (
             models.Job.objects.filter(parent__isnull=True, project=the_project)
             .exclude(id=new_job.id)
             .last()
         )
         logger.debug("Context job is %s", str(context_job))
-        if context_job is not None:
-            logger.debug("Context job selected is %s", context_job.number)
-            set_input_by_context_job(str(new_job_uuid), str(context_job.uuid))
-    new_job = models.Job.objects.get(uuid=new_job_uuid)
+
+    if context_job is not None:
+        logger.debug("Context job selected is %s", context_job.number)
+        set_input_by_context_job(str(new_job_uuid), str(context_job.uuid))
+
     return new_job
