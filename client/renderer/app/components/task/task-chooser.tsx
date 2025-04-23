@@ -18,6 +18,7 @@ import { CCP4i2Context } from "../../app-context";
 interface TaskTree {
   lookup: any;
   tree: any[];
+  iconLookup: any;
 }
 interface TastTreeResult {
   TaskTree: TaskTree;
@@ -29,6 +30,7 @@ interface CCP4i2TaskTreeFolderProps {
   category: [name: string, title: string, taskNames: string[]];
   searchText: string | null;
   taskTree: TaskTree;
+  iconLookup: any;
   onTaskSelect?: (taskName: string) => void;
 }
 interface CCP4i2TaskCardProps {
@@ -46,6 +48,7 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
     `projects/${projectId}/task_tree`
   );
   const taskTree = taskTreeResult?.task_tree;
+  const iconLookup = taskTreeResult?.task_tree?.iconLookup;
 
   useEffect(() => {
     console.log("taskTreeResult", taskTreeResult);
@@ -74,7 +77,7 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
           ) => (
             <CCP4i2TaskTreeFolder
               key={`${iCategory}`}
-              {...{ category, taskTree, searchText, onTaskSelect }}
+              {...{ category, taskTree, searchText, onTaskSelect, iconLookup }}
             />
           )
         )}
@@ -87,6 +90,7 @@ const CCP4i2TaskTreeFolder: React.FC<CCP4i2TaskTreeFolderProps> = ({
   category,
   searchText,
   taskTree,
+  iconLookup,
   onTaskSelect,
 }) => {
   const [tasksExpanded, setTasksExpanded] = useState<boolean>(false);
@@ -148,6 +152,16 @@ const CCP4i2TaskTreeFolder: React.FC<CCP4i2TaskTreeFolderProps> = ({
             py: 1,
             "& .MuiCardHeader-action": { alignSelf: "center", margin: 0 },
           }}
+          avatar={
+            <Avatar
+              src={
+                iconLookup
+                  ? `/api/proxy/djangostatic/${iconLookup[category[0]]}`
+                  : `/api/proxy/djangostatic/qticons/ccp4i2.png`
+              }
+              alt={`/api/proxy/djangostatic/qticons/ccp4i2.png`}
+            />
+          }
           title={category[1]}
           subheader={category[0]}
           action={
