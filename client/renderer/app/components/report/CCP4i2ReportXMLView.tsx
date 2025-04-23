@@ -1,6 +1,13 @@
 import { ReactNode, useCallback, useContext, useEffect, useMemo } from "react";
 import $ from "jquery";
-import { Button, Paper, Skeleton, Stack, Typography } from "@mui/material";
+import {
+  Avatar,
+  Button,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { Job } from "../../models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
@@ -99,27 +106,48 @@ export const CCP4i2ReportXMLView = () => {
         overflowY: "auto",
       }}
     >
-      {what_next?.Status === "Success" && what_next?.result.length > 0 && (
-        <Stack
-          direction="row"
-          sx={{ width: "100%", justifyContent: "space-between", p: 0 }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            What next?
-          </Typography>
-          {what_next.result.map((task: any) => (
-            <Button
-              variant="outlined"
-              sx={{ minWidth: "15rem" }}
-              onClick={() => {
-                handleTaskSelect(task.taskName);
-              }}
-            >
-              {task.shortTitle}
-            </Button>
-          ))}
-        </Stack>
-      )}
+      {what_next?.Status === "Success" &&
+        what_next?.result.length > 0 &&
+        job?.status == 6 && (
+          <Stack
+            direction="row"
+            sx={{
+              width: "100%",
+              justifyContent: "space-between",
+              p: 0,
+              position: "sticky",
+              bottom: 0,
+              backgroundColor: "white",
+              zIndex: 1,
+              borderTop: "1px solid #e0e0e0",
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              What next?
+            </Typography>
+            {what_next.result.map((task: any) => (
+              <Button
+                variant="outlined"
+                sx={{ minWidth: "15rem" }}
+                onClick={() => {
+                  handleTaskSelect(task.taskName);
+                }}
+              >
+                {" "}
+                <Avatar
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    mr: 1,
+                  }}
+                  src={`/api/proxy/djangostatic/svgicons/${task.taskName}.svg`}
+                  alt={`/api/proxy/djangostatic/qticons/${task.taskName}.png`}
+                />
+                {task.shortTitle}
+              </Button>
+            ))}
+          </Stack>
+        )}
       {reportContent}
     </Paper>
   );

@@ -17,7 +17,7 @@ import { CCP4i2ApplicationOutputView } from "./CCP4i2ApplicationOutputView";
 import { CCP4i2ReportJobDetails } from "./CCP4i2ReportJobDetails";
 
 export interface CCP4i2ReportElementProps {
-  iItem: Number;
+  iItem: number;
   item: HTMLElement | HTMLTableSectionElement;
   job: Job;
 }
