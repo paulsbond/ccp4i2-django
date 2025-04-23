@@ -9,8 +9,9 @@ import {
   TextField,
 } from "@mui/material";
 import { Info } from "@mui/icons-material";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { ErrorInfo } from "./error-info";
+import { TaskInterfaceContext } from "../task-container";
 
 const spacegroups = [
   "P1",
@@ -611,7 +612,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   const { setParameter, getTaskItem, getValidationColor } = useJob(job.id);
   const item = getTaskItem(itemName);
   const [value, setValue] = useState<string>("P 1");
-  const [inFlight, setInFlight] = useState(false);
+  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;

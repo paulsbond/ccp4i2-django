@@ -1,15 +1,20 @@
-import { SyntheticEvent, useCallback, useMemo, useState } from "react";
+import {
+  SyntheticEvent,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import {
   Autocomplete,
   AutocompleteChangeReason,
-  LinearProgress,
   Stack,
   TextField,
-  Typography,
 } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
-import { ErrorInfo, ErrorTrigger } from "./error-info";
+import { ErrorTrigger } from "./error-info";
+import { TaskInterfaceContext } from "../task-container";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
@@ -20,7 +25,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   //return <Typography>"{itemName}",</Typography>;
   const [value, setValue] = useState<string | number>(item._value);
 
-  const [inFlight, setInFlight] = useState(false);
+  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
     null
   );
@@ -87,8 +92,9 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
           }
         } catch (err) {
           alert(err);
+        } finally {
+          setInFlight(false);
         }
-        setInFlight(false);
       }
     },
     [type]
@@ -102,7 +108,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  const isDisabled = useMemo(() => job.status !== 1, [job]);
+  const isDisabled = useMemo(() => inFlight || job.status !== 1, [job]);
 
   const calculatedSx = useMemo(() => {
     return { minWidth: "20rem", py: 0, mb: 1, ...sx };
