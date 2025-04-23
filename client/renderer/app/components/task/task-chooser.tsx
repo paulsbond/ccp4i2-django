@@ -47,6 +47,10 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
   );
   const taskTree = taskTreeResult?.task_tree;
 
+  useEffect(() => {
+    console.log("taskTreeResult", taskTreeResult);
+  }, [taskTreeResult]);
+
   return (
     <Paper
       sx={{
@@ -130,9 +134,20 @@ const CCP4i2TaskTreeFolder: React.FC<CCP4i2TaskTreeFolderProps> = ({
           ev.stopPropagation();
           setTasksExpanded(!tasksExpanded);
         }}
+        sx={{
+          mb: 1,
+          ":hover": { boxShadow: 4 },
+        }}
       >
         <CardHeader
-          titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
+          slotProps={{
+            title: { variant: "body2", my: 0, py: 0 },
+            subheader: { variant: "caption", my: 0, py: 0 },
+          }}
+          sx={{
+            py: 1,
+            "& .MuiCardHeader-action": { alignSelf: "center", margin: 0 },
+          }}
           title={category[1]}
           subheader={category[0]}
           action={
@@ -150,7 +165,7 @@ const CCP4i2TaskTreeFolder: React.FC<CCP4i2TaskTreeFolderProps> = ({
           }
         />
         {(tasksExpanded || searchActive) && (
-          <CardContent>
+          <CardContent sx={{ py: 1 }}>
             <Collapse
               in={tasksExpanded || searchActive}
               timeout="auto"

@@ -294,7 +294,7 @@ export const JobMenu: React.FC = () => {
       <MenuItem key="Preview" onClick={handlePreviewFile}>
         <Preview /> Preview
       </MenuItem>
-      <MenuItem key="Preview" onClick={handlePreviewFileInTerminal}>
+      <MenuItem key="Terminal" onClick={handlePreviewFileInTerminal}>
         <Terminal /> Terminal
       </MenuItem>
       {menuNodeAsFile &&

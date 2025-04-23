@@ -1,6 +1,5 @@
 "use client";
 import { Container, Skeleton, Stack } from "@mui/material";
-import MenuBar from "./components/menu-bar";
 import ProjectsToolbar from "./components/projects-toolbar";
 import ProjectsTable from "./components/projects-table";
 import { useApi } from "./api";

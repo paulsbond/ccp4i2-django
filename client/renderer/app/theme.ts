@@ -19,18 +19,6 @@ const theme = createTheme({
         disableInteractive: true,
       },
     },
-
-    MuiCardHeader: {
-      styleOverrides: {
-        root: {
-          backgroundImage:
-            "linear-gradient(to bottom, #FFFFFF,rgb(230, 230, 230))",
-          color: "black",
-          paddingTop: 0,
-          paddingBottom: 0,
-        },
-      },
-    },
     MuiTableCell: {
       styleOverrides: {
         root: {
