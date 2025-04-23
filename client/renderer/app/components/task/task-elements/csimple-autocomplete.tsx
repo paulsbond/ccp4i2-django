@@ -108,7 +108,10 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  const isDisabled = useMemo(() => inFlight || job.status !== 1, [job]);
+  const isDisabled = useMemo(
+    () => inFlight || job.status !== 1,
+    [job, inFlight]
+  );
 
   const calculatedSx = useMemo(() => {
     return { minWidth: "20rem", py: 0, mb: 1, ...sx };

@@ -99,8 +99,9 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         }
       } catch (err) {
         console.log("Here's an", err);
+      } finally {
+        setInFlight(false);
       }
-      setInFlight(false);
     },
     [objectPath, value]
   );
