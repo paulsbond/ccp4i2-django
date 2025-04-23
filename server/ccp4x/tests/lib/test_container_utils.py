@@ -31,7 +31,6 @@ from ...lib.job_utils.get_task_tree import get_task_tree
 from ...lib.job_utils.ccp4i2_report import get_report_job_info
 from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
 from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
-from ...lib.job_utils.patch_output_file_paths import patch_output_file_paths
 
 
 @override_settings(
