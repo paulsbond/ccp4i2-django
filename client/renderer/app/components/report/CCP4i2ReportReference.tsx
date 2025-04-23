@@ -1,12 +1,10 @@
 import React from "react";
 import { Typography, Stack, Link } from "@mui/material";
+import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 
-interface CCP4i2ReportReferenceProps {
-  item: Element;
-}
-
-export const CCP4i2ReportReference: React.FC<CCP4i2ReportReferenceProps> = ({
+export const CCP4i2ReportReference: React.FC<CCP4i2ReportElementProps> = ({
   item,
+  iItem,
 }) => {
   const title = item.getAttribute("articleTitle") || "Untitled";
   const source = item.getAttribute("source") || "Unknown source";
@@ -30,7 +28,7 @@ export const CCP4i2ReportReference: React.FC<CCP4i2ReportReferenceProps> = ({
   return (
     <Stack spacing={0.5} sx={{ mb: 2 }}>
       <Typography variant="body2" fontWeight="bold">
-        {authors.length ? authors.join(", ") : "Unknown authors"}
+        {iItem} {authors.length ? authors.join(", ") : "Unknown authors"}
       </Typography>
       <Typography variant="body2" fontStyle="italic">
         <Link
