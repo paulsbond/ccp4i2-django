@@ -17,6 +17,7 @@ from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_file
 from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.set_input_by_context_job import set_input_by_context_job
+from ..lib.job_utils.get_job_plugin import get_job_plugin
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -62,6 +63,7 @@ from ..lib.job_utils.upload_file_param import upload_file_param
 from ..lib.job_utils.get_job_container import get_job_container
 from ..lib.job_utils.json_for_job_container import json_for_job_container
 from ..lib.job_utils.object_method import object_method
+from ..lib.job_utils.get_what_next import get_what_next
 from django.http import JsonResponse
 from django.conf import settings
 from django.utils.text import slugify
@@ -85,6 +87,23 @@ class JobViewSet(ModelViewSet):
             return Response({"status": "Success"})
         except Http404:
             return Http404("Job not found")
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def what_next(self, request, pk=None):
+        try:
+            job = models.Job.objects.get(id=pk)
+        except models.Job.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return JsonResponse({"status": "Failed", "reason": str(err)})
+        except Exception as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return JsonResponse({"status": "Failed", "reason": str(err)})
+        return JsonResponse(get_what_next(job))
 
     @action(
         detail=True,

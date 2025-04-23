@@ -13,6 +13,7 @@ from ...lib.job_utils.glean_job_files import glean_job_files
 from ...lib.job_utils.get_job_container import get_job_container
 from ...lib.job_utils.get_file_by_job_context import get_file_by_job_context
 from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
+from ...lib.job_utils.get_what_next import get_what_next
 from ...lib.job_utils.object_method import object_method
 from ...db.project_json import project_json
 
@@ -180,3 +181,32 @@ class CCP4i2TestCase(TestCase):
         the_project = models.Project.objects.get(name="bucc_test_0")
         result = project_json(the_project)
         print(result)
+
+    def test_what_next(self):
+        old_job = models.Job.objects.get(
+            project__name="refmac_gamma_test_0", number="1"
+        )
+        what_next = get_what_next(old_job)
+        self.assertDictEqual(
+            what_next,
+            {
+                "Status": "Success",
+                "result": [
+                    {
+                        "taskName": "prosmart_refmac",
+                        "shortTitle": "REFMAC5",
+                        "title": "Refinement - Refmacat/Refmac5",
+                    },
+                    {
+                        "taskName": "modelcraft",
+                        "shortTitle": "ModelCraft",
+                        "title": "Autobuild with ModelCraft, Buccaneer and Nautilus",
+                    },
+                    {
+                        "taskName": "coot_rebuild",
+                        "shortTitle": "COOT",
+                        "title": "Model building - COOT",
+                    },
+                ],
+            },
+        )
