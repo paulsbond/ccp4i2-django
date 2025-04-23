@@ -1,17 +1,24 @@
-import { ReactNode, useContext, useEffect, useMemo } from "react";
+import { ReactNode, useCallback, useContext, useEffect, useMemo } from "react";
 import $ from "jquery";
-import { Paper, Skeleton } from "@mui/material";
+import { Button, Paper, Skeleton, Stack, Typography } from "@mui/material";
 import { Job } from "../../models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
 import { CCP4i2Context } from "../../app-context";
-import { usePrevious } from "../../utils";
+import { useJob, usePrevious } from "../../utils";
 import { Exo_2 } from "next/font/google";
+import { useRouter } from "next/navigation";
 
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
   const { jobId } = useContext(CCP4i2Context);
-  const { data: job, mutate: mutateJob } = api.get<Job>(`jobs/${jobId}`, 2000);
+  const { job } = useJob(jobId);
+  const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: job?.project,
+    endpoint: "jobs",
+  });
+
   const { data: report_xml, mutate: mutateReportXml } = api.get_endpoint_xml(
     {
       type: "jobs",
@@ -20,7 +27,11 @@ export const CCP4i2ReportXMLView = () => {
     },
     job?.status == 3 || job?.status == 2 ? 5000 : 0
   );
+  const { data: what_next } = api.get<any>(`jobs/${job?.id}/what_next/`);
+
   const oldJob = usePrevious(job);
+
+  const router = useRouter();
 
   useEffect(() => {
     console.log({ job, oldJob });
@@ -59,6 +70,25 @@ export const CCP4i2ReportXMLView = () => {
       .toArray();
   }, [report_xml, job]);
 
+  const handleTaskSelect = useCallback(
+    async (task_name: string) => {
+      if (!job) return;
+      const created_job_result: any = await api.post(
+        `projects/${job.project}/create_task/`,
+        {
+          task_name,
+          context_job_uuid: job.uuid,
+        }
+      );
+      if (created_job_result?.status === "Success") {
+        const created_job: Job = created_job_result.new_job;
+        mutateJobs();
+        router.push(`/project/${job.project}/job/${created_job.id}`);
+      }
+    },
+    [job, mutateJobs]
+  );
+
   return !reportContent ? (
     <Skeleton />
   ) : (
@@ -69,6 +99,27 @@ export const CCP4i2ReportXMLView = () => {
         overflowY: "auto",
       }}
     >
+      {what_next?.Status === "Success" && what_next?.result.length > 0 && (
+        <Stack
+          direction="row"
+          sx={{ width: "100%", justifyContent: "space-between", p: 0 }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+            What next?
+          </Typography>
+          {what_next.result.map((task: any) => (
+            <Button
+              variant="outlined"
+              sx={{ minWidth: "15rem" }}
+              onClick={() => {
+                handleTaskSelect(task.taskName);
+              }}
+            >
+              {task.shortTitle}
+            </Button>
+          ))}
+        </Stack>
+      )}
       {reportContent}
     </Paper>
   );
