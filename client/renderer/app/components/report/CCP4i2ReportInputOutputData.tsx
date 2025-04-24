@@ -35,6 +35,9 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
   const [previewNode, setPreviewNode] = useState<
     JobWithChildren | DjangoFile | null
   >(null);
+  const [previewType, setPreviewType] = useState<
+    "json" | "xml" | "text" | null
+  >(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [menuNode, setMenuNode] = useState<
     Job | JobWithChildren | DjangoFile | null
@@ -78,6 +81,8 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
           setMenuNode,
           previewNode,
           setPreviewNode,
+          previewType,
+          setPreviewType,
         }}
       >
         <Toolbar
