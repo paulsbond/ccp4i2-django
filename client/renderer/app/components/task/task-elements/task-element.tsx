@@ -87,6 +87,8 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CSequenceString":
       case "CFilePath":
       case "COneWord":
+      case "CCrystalName":
+      case "CDatasetName":
         return (
           <CStringElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
@@ -123,6 +125,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CDataFile":
       case "CUnmergedDataFile":
       case "CCootHistoryDataFile":
+      case "CGenericReflDataFile":
       case "CMDLMolDataFile":
         return (
           <CSimpleDataFileElement
@@ -171,6 +174,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           />
         );
       case "CPdbEnsembleItem":
+      case "CSpaceGroupCell":
       case "CContainer":
         return (
           <CContainerElement
