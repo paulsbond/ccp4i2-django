@@ -423,6 +423,7 @@ class JobViewSet(ModelViewSet):
 
         try:
             the_job = models.Job.objects.get(id=pk)
+            logger.info("Digesting file %s", request.GET.get("object_path"))
             response_dict = digest_file(the_job, request.GET.get("object_path")[:-1])
             return Response({"status": "Success", "digest": response_dict})
         except (ValueError, models.Job.DoesNotExist) as err:
