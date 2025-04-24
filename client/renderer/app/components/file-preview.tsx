@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { doRetrieve } from "../api";
+import { doRetrieve, useApi } from "../api";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { Editor } from "@monaco-editor/react";
 import { prettifyXml } from "../utils";
@@ -47,6 +47,8 @@ export const FilePreviewDialog: React.FC<FilePreviewProps> = ({
             value={
               previewContent && filename.endsWith("xml")
                 ? prettifyXml($.parseXML(previewContent))
+                : filename.endsWith("json")
+                ? JSON.stringify(JSON.parse(previewContent), null, 2)
                 : previewContent
             }
             language={

@@ -22,28 +22,11 @@ import {
   Terminal,
 } from "@mui/icons-material";
 import { FilePreviewDialog } from "./file-preview";
+import { JobMenuContextData } from "./JobOrFileMenuContext";
 
 export interface JobWithChildren extends Job {
   children: (Job | DjangoFile)[];
 }
-
-export interface ContextProps {
-  previewNode: JobWithChildren | DjangoFile | null;
-  setPreviewNode: (node: JobWithChildren | DjangoFile | null) => void;
-  anchorEl: HTMLElement | null;
-  setAnchorEl: (element: HTMLElement | null) => void;
-  menuNode: Job | JobWithChildren | DjangoFile | null;
-  setMenuNode: (node: Job | JobWithChildren | DjangoFile | null) => void;
-}
-
-export const JobMenuContext = createContext<ContextProps>({
-  previewNode: null,
-  setPreviewNode: () => {},
-  anchorEl: null,
-  setAnchorEl: () => {},
-  menuNode: null,
-  setMenuNode: () => {},
-});
 
 export const JobMenu: React.FC = () => {
   const {
@@ -53,12 +36,14 @@ export const JobMenu: React.FC = () => {
     setMenuNode,
     previewNode,
     setPreviewNode,
-  } = useContext(JobMenuContext);
+    previewType,
+    setPreviewType,
+  } = useContext(JobMenuContextData);
   const api = useApi();
   const router = useRouter();
   const deleteDialog = useDeleteDialog();
 
-  const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
+  const { data: jobs, mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: (menuNode as Job)?.project,
     endpoint: "jobs",
@@ -133,6 +118,20 @@ export const JobMenu: React.FC = () => {
       const file = menuNode as DjangoFile;
       if (file) {
         setPreviewNode(file);
+        setPreviewType("text");
+        setAnchorEl(null);
+      }
+    },
+    [menuNode]
+  );
+
+  const handlePreviewFileDigest = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      const file = menuNode as DjangoFile;
+      if (file) {
+        setPreviewNode(file);
+        setPreviewType("digest");
         setAnchorEl(null);
       }
     },
@@ -319,35 +318,55 @@ export const JobMenu: React.FC = () => {
             <Preview /> HKLVIEW
           </MenuItem>
         )}
+      {menuNodeAsFile && (
+        <MenuItem key="DIGEST" onClick={handlePreviewFileDigest}>
+          <Preview /> DIGEST
+        </MenuItem>
+      )}
       <ClassicJobsListPreviewDialog />
     </Menu>
   );
 };
 
 export const ClassicJobsListPreviewDialog: React.FC = () => {
-  const { previewNode, setPreviewNode } = useContext(JobMenuContext);
+  const { previewNode, setPreviewNode, previewType, setPreviewType } =
+    useContext(JobMenuContextData);
   const { noSlashUrl } = useApi();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!previewNode) return;
     if (!(previewNode as DjangoFile).name) return;
+    console.log(previewNode);
     const djangoFile = previewNode as DjangoFile;
-    if (previewNode) {
+    if (previewNode && previewType === "text") {
       const composite_path = fullUrl(`files/${djangoFile.id}/download/`);
       setPreviewUrl(composite_path);
+    } else if (previewNode && previewType === "digest") {
+      const composite_path = fullUrl(
+        `jobs/${djangoFile.job}/digest_output/?job_param_name=${djangoFile.job_param_name}/`
+      );
+      setPreviewUrl(composite_path);
     }
-  }, [previewNode, noSlashUrl]);
+  }, [previewNode, noSlashUrl, previewType]);
 
   useEffect(() => {
     if (!previewUrl) setPreviewNode(null);
   }, [previewUrl]);
 
+  const fileName = useMemo(() => {
+    if (previewType === "digest") {
+      return "digest.json";
+    } else {
+      return (previewNode as DjangoFile)?.name;
+    }
+  }, [previewNode, previewType]);
+
   return (
     previewNode && (
       <FilePreviewDialog
         url={previewUrl}
-        filename={(previewNode as DjangoFile).name}
+        filename={fileName}
         setUrl={setPreviewUrl}
       />
     )

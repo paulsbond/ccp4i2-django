@@ -22,9 +22,9 @@ import { File as DjangoFile, Job } from "../../models";
 import {
   ClassicJobsListPreviewDialog,
   JobMenu,
-  JobMenuContext,
   JobWithChildren,
 } from "../job-menu";
+import { JobMenuContext, JobMenuContextData } from "../JobOrFileMenuContext";
 //import { fileTypeMapping } from "../files-table";
 
 export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
@@ -32,16 +32,6 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
 ) => {
   const [fileUUIDs, setFileUUIDs] = useState<string[]>([]);
   const [expanded, setExpanded] = useState(true);
-  const [previewNode, setPreviewNode] = useState<
-    JobWithChildren | DjangoFile | null
-  >(null);
-  const [previewType, setPreviewType] = useState<
-    "json" | "xml" | "text" | null
-  >(null);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuNode, setMenuNode] = useState<
-    Job | JobWithChildren | DjangoFile | null
-  >(null);
 
   useEffect(() => {
     if (!props.item) return;
@@ -73,18 +63,7 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
 
   return (
     <>
-      <JobMenuContext.Provider
-        value={{
-          anchorEl,
-          setAnchorEl,
-          menuNode,
-          setMenuNode,
-          previewNode,
-          setPreviewNode,
-          previewType,
-          setPreviewType,
-        }}
-      >
+      <JobMenuContext>
         <Toolbar
           variant="dense"
           sx={{
@@ -122,7 +101,7 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
         </Collapse>
         <JobMenu />
         <ClassicJobsListPreviewDialog />
-      </JobMenuContext.Provider>
+      </JobMenuContext>
     </>
   );
 };
@@ -136,7 +115,7 @@ const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
     `files/${props.uuid}/by_uuid/`
   );
   const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
-    useContext(JobMenuContext);
+    useContext(JobMenuContextData);
 
   const fileTypeIcon = useMemo(() => {
     if (!file?.type) return "ccp4";

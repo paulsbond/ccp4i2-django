@@ -13,32 +13,23 @@ import { Job, File as DjangoFile } from "../models";
 import EditableTypography from "./editable-typography";
 import { useApi } from "../api";
 import { KeyedMutator } from "swr";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { CCP4i2JobAvatar } from "./job-avatar";
-import { JobMenu, JobMenuContext, JobWithChildren } from "./job-menu";
+import { JobMenu, JobWithChildren } from "./job-menu";
 import { Menu } from "@mui/icons-material";
 import { useJob } from "../utils";
 import { useDroppable } from "@dnd-kit/core";
+import { JobMenuContext, JobMenuContextData } from "./JobOrFileMenuContext";
 
 interface JobHeaderProps {
   job: Job;
   mutateJobs: KeyedMutator<Job[]>;
   mutateJob?: KeyedMutator<Job>;
 }
-export const JobHeader: React.FC<JobHeaderProps> = ({
-  job,
-  mutateJobs,
-  mutateJob,
-}) => {
-  const api = useApi();
-  const [previewNode, setPreviewNode] = useState<
-    JobWithChildren | DjangoFile | null
-  >(null);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuNode, setMenuNode] = useState<
-    Job | JobWithChildren | DjangoFile | null
-  >(null);
+export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
   const [contextJob, setContextJob] = useState<Job | null>(null);
+  const { setAnchorEl, setMenuNode } = useContext(JobMenuContextData);
+  const api = useApi();
 
   const { container, mutateContainer } = useJob(job.id);
 
@@ -72,16 +63,7 @@ export const JobHeader: React.FC<JobHeaderProps> = ({
   if (!job) return <LinearProgress />;
 
   return (
-    <JobMenuContext.Provider
-      value={{
-        anchorEl,
-        setAnchorEl,
-        menuNode,
-        setMenuNode,
-        previewNode,
-        setPreviewNode,
-      }}
-    >
+    <>
       <Toolbar
         variant="regular"
         ref={setNodeRef}
@@ -159,6 +141,6 @@ export const JobHeader: React.FC<JobHeaderProps> = ({
         </Button>
       </Toolbar>
       <JobMenu />
-    </JobMenuContext.Provider>
+    </>
   );
 };

@@ -27,11 +27,11 @@ import { useRouter } from "next/navigation";
 import {
   ClassicJobsListPreviewDialog,
   JobMenu,
-  JobMenuContext,
   JobWithChildren,
 } from "./job-menu";
 import { useDraggable } from "@dnd-kit/core";
 import { FileAvatar } from "./file-avatar";
+import { JobMenuContext, JobMenuContextData } from "./JobOrFileMenuContext";
 
 interface ClassicJobListProps {
   projectId: number;
@@ -44,13 +44,6 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   withSubtitles = false,
 }) => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [previewNode, setPreviewNode] = useState<
-    JobWithChildren | DjangoFile | null
-  >(null);
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuNode, setMenuNode] = useState<
-    Job | JobWithChildren | DjangoFile | null
-  >(null);
 
   const navigate = useRouter();
   const api = useApi();
@@ -115,16 +108,7 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   );
 
   return (
-    <JobMenuContext.Provider
-      value={{
-        anchorEl,
-        setAnchorEl,
-        menuNode,
-        setMenuNode,
-        previewNode,
-        setPreviewNode,
-      }}
-    >
+    <JobMenuContext>
       {decoratedJobs && (
         <RichTreeView
           items={decoratedJobs || []}
@@ -146,7 +130,7 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
       )}
       <JobMenu />
       <ClassicJobsListPreviewDialog />
-    </JobMenuContext.Provider>
+    </JobMenuContext>
   );
 };
 
@@ -193,7 +177,7 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
   });
 
   const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
-    useContext(JobMenuContext);
+    useContext(JobMenuContextData);
 
   const kpiContent = useMemo(() => {
     return (
