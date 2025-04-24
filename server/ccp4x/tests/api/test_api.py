@@ -6,6 +6,7 @@ from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from ccp4i2.core import CCP4Container
 from ...db.import_i2xml import import_i2xml_from_file
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db import models
@@ -198,3 +199,36 @@ class CCP4i2TestCase(TestCase):
             "/projects/import_project/", data, format="multipart"
         )
         print(response)
+
+    def test_mmcif_file_upload(self):
+        project = models.Project.objects.last()
+        create_response = self.client.post(
+            f"/projects/{project.id}/create_task/",
+            {"task_name": "import_merged"},
+            content_type="application/json; charset=utf-8",
+        )
+        import_merged_task = create_response.json()
+        mmcif_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "mdm2"
+            / "4hg7-sf.cif"
+        )
+        print(mmcif_path, mmcif_path.exists())
+        with open(mmcif_path, "rb") as mmcif_file:
+            # Create the data to be sent in the request
+            data = {
+                "file": mmcif_file,
+                "objectPath": "import_merged.inputData.HKLIN",
+            }
+            response = self.client.post(
+                f"/jobs/{import_merged_task['new_job']['id']}/upload_file_param/",
+                data,
+                format="multipart",
+            )
+            digest_url = f"/jobs/{import_merged_task['new_job']['id']}/digest/?object_path=import_merged.inputData.HKLIN/"
+            digest_response = self.client.get(
+                digest_url, content_type="application/json; charset=utf-8"
+            )
+            digest = digest_response.json()
+            print(digest)
