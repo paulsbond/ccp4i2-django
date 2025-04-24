@@ -10,6 +10,9 @@ const roboto = Roboto({
 });
 
 const theme = createTheme({
+  palette: {
+    success: { main: "rgb(64, 123, 67)", light: "rgb(112, 173, 114)" },
+  },
   typography: {
     fontFamily: roboto.style.fontFamily,
   },
@@ -26,7 +29,7 @@ const theme = createTheme({
             {
               props: { variant: "head" },
               style: {
-                backgroundColor: "rgb(179,208,216)",
+                backgroundColor: "rgb(123, 198, 219)",
                 paddingTop: 0,
                 paddingBottom: 0,
               },
@@ -42,9 +45,6 @@ const theme = createTheme({
         },
       },
     },
-  },
-  palette: {
-    success: { main: "rgb(64, 123, 67)", light: "rgb(112, 173, 114)" },
   },
 });
 
