@@ -24,14 +24,10 @@ import {
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
-import {
-  ClassicJobsListPreviewDialog,
-  JobMenu,
-  JobWithChildren,
-} from "./job-menu";
+import { JobMenu, JobMenuContext, JobWithChildren } from "./job-context-menu";
 import { useDraggable } from "@dnd-kit/core";
 import { FileAvatar } from "./file-avatar";
-import { JobMenuContext, JobMenuContextData } from "./JobOrFileMenuContext";
+import { FileMenuContext } from "./file-context-menu";
 
 interface ClassicJobListProps {
   projectId: number;
@@ -108,29 +104,25 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   );
 
   return (
-    <JobMenuContext>
-      {decoratedJobs && (
-        <RichTreeView
-          items={decoratedJobs || []}
-          isItemEditable={(item) => true}
-          experimentalFeatures={{ labelEditing: true }}
-          getItemId={(jobOrFile) => jobOrFile.uuid}
-          getItemLabel={getItemLabel}
-          slots={{ item: CustomTreeItem }}
-          onSelectedItemsChange={(event, ids) => {
-            // Prevent selection when an item is opened
-            const closest = (event.target as Element).closest(
-              '[class*="-MuiTreeItem2-iconContainer"]'
-            );
-            if (event.type !== "click" || !closest) {
-              handleSelectedItemsChange(event, ids);
-            }
-          }}
-        />
-      )}
-      <JobMenu />
-      <ClassicJobsListPreviewDialog />
-    </JobMenuContext>
+    decoratedJobs && (
+      <RichTreeView
+        items={decoratedJobs || []}
+        isItemEditable={(item) => true}
+        experimentalFeatures={{ labelEditing: true }}
+        getItemId={(jobOrFile) => jobOrFile.uuid}
+        getItemLabel={getItemLabel}
+        slots={{ item: CustomTreeItem }}
+        onSelectedItemsChange={(event, ids) => {
+          // Prevent selection when an item is opened
+          const closest = (event.target as Element).closest(
+            '[class*="-MuiTreeItem2-iconContainer"]'
+          );
+          if (event.type !== "click" || !closest) {
+            handleSelectedItemsChange(event, ids);
+          }
+        }}
+      />
+    )
   );
 };
 
@@ -176,8 +168,8 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
     data: { job, file },
   });
 
-  const { anchorEl, setAnchorEl, menuNode, setMenuNode } =
-    useContext(JobMenuContextData);
+  const { setJobMenuAnchorEl, setJob } = useContext(JobMenuContext);
+  const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
 
   const kpiContent = useMemo(() => {
     return (
@@ -282,8 +274,13 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
             variant="outlined"
             onClick={(ev) => {
               ev.stopPropagation();
-              setAnchorEl(ev.currentTarget);
-              setMenuNode(job || file || null);
+              if (job) {
+                setJobMenuAnchorEl(ev.currentTarget);
+                setJob(job || null);
+              } else if (file) {
+                setFileMenuAnchorEl(ev.currentTarget);
+                setFile(file || null);
+              }
             }}
           >
             <MenuIcon fontSize="small" />

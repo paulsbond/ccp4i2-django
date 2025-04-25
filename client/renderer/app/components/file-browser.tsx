@@ -29,7 +29,6 @@ import {
 } from "@mui/icons-material";
 import { CCP4i2Context } from "../app-context";
 import { doDownload, useApi } from "../api";
-import { FilePreviewDialog } from "./file-preview";
 import { Project } from "../models";
 
 interface FileNode {

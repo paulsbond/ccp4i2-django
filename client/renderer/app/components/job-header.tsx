@@ -15,11 +15,10 @@ import { useApi } from "../api";
 import { KeyedMutator } from "swr";
 import { useContext, useMemo, useState } from "react";
 import { CCP4i2JobAvatar } from "./job-avatar";
-import { JobMenu, JobWithChildren } from "./job-menu";
+import { JobMenu, JobMenuContext, JobWithChildren } from "./job-context-menu";
 import { Menu } from "@mui/icons-material";
 import { useJob } from "../utils";
 import { useDroppable } from "@dnd-kit/core";
-import { JobMenuContext, JobMenuContextData } from "./JobOrFileMenuContext";
 
 interface JobHeaderProps {
   job: Job;
@@ -28,7 +27,7 @@ interface JobHeaderProps {
 }
 export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
   const [contextJob, setContextJob] = useState<Job | null>(null);
-  const { setAnchorEl, setMenuNode } = useContext(JobMenuContextData);
+  const { setJobMenuAnchorEl, setJob } = useContext(JobMenuContext);
   const api = useApi();
 
   const { container, mutateContainer } = useJob(job.id);
@@ -133,8 +132,8 @@ export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
           variant="outlined"
           onClick={(ev) => {
             ev.stopPropagation();
-            setAnchorEl(ev.currentTarget);
-            setMenuNode(job);
+            setJobMenuAnchorEl(ev.currentTarget);
+            setJob(job);
           }}
         >
           <Menu />
