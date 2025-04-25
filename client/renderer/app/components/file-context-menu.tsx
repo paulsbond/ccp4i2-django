@@ -98,8 +98,11 @@ export const FileMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
-        //setPreviewNode(file);
-        //setPreviewType("digest");
+        setContentSpecification({
+          url: `jobs/${file.job}/digest_param_file/?job_param_name=${file.job_param_name}`,
+          title: file.name,
+          language: "json",
+        });
         setFileMenuAnchorEl(null);
       }
     },

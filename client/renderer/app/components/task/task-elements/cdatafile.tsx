@@ -2,6 +2,7 @@ import {
   Autocomplete,
   AutocompleteChangeReason,
   Avatar,
+  Button,
   LinearProgress,
   Stack,
   TextField,
@@ -25,6 +26,8 @@ import { TaskInterfaceContext } from "../task-container";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
 import { useDndContext, useDroppable } from "@dnd-kit/core";
+import { FileMenuContext } from "../../file-context-menu";
+import { Menu } from "@mui/icons-material";
 
 export const inverseFileTypeMapping: { [key: string]: string } = {
   CObsDataFile: "application/CCP4-mtz-observed",
@@ -128,6 +131,8 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         return b.job - a.job;
       });
   }, [project_files, project_jobs, fileType]);
+
+  const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
 
   useEffect(() => {
     if (objectPath && fileOptions && item) {
@@ -276,6 +281,22 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
             item={item}
           />
         )}
+        {value && (
+          <Button
+            size="small"
+            sx={{ my: 1, mr: 2 }}
+            variant="outlined"
+            onClick={(ev) => {
+              ev.stopPropagation();
+              ev.preventDefault();
+              setFileMenuAnchorEl(ev.currentTarget);
+              setFile(value);
+            }}
+          >
+            <Menu fontSize="small" />
+          </Button>
+        )}
+
         <ErrorTrigger {...{ item, job }} />
       </Stack>
     )

@@ -436,6 +436,37 @@ class JobViewSet(ModelViewSet):
         permission_classes=[],
         serializer_class=serializers.JobSerializer,
     )
+    def digest_param_file(self, request, pk=None):
+        job_param_name = request.GET.get("job_param_name")
+        object_path = job_param_name[:-1]
+        try:
+            the_job = models.Job.objects.get(id=pk)
+            the_file = models.File.objects.get(
+                job=the_job, job_param_name=job_param_name[:-1]
+            )
+            imports = models.FileImport.objects.filter(file=the_file)
+            is_import = imports.count() > 0
+            if is_import:
+                object_path = f"{the_job.task_name}.inputData.{job_param_name[:-1]}"
+            else:
+                object_path = f"{the_job.task_name}.outputData.{job_param_name[:-1]}"
+            response_dict = digest_file(the_job, object_path)
+            return Response({"status": "Success", "digest": response_dict})
+        except (ValueError, models.Job.DoesNotExist) as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
+        except Exception as err:
+            logging.exception(
+                "Failed to digest file %s %s", pk, object_path, exc_info=err
+            )
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
     def def_xml(self, request, pk=None):
         """
         Retrieve the def XML file for a given job.

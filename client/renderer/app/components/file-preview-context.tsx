@@ -55,15 +55,15 @@ const FilePreviewDialog: React.FC = () => {
           );
           var enc = new TextDecoder("utf-8");
           setPreviewContent(enc.decode(fileContent));
-        } else if (contentSpecification.url.includes("/digest/")) {
-          const fileContent = await fetch(contentSpecification.url).then(
-            (response) => {
-              if (!response.ok) {
-                throw new Error("Network response was not ok");
-              }
-              return response.json();
+        } else if (contentSpecification.url.includes("/digest_param_file/")) {
+          const fileContent = await fetch(
+            fullUrl(contentSpecification.url)
+          ).then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
             }
-          );
+            return response.json();
+          });
           setPreviewContent(JSON.stringify(fileContent, null, 2));
         }
       };
