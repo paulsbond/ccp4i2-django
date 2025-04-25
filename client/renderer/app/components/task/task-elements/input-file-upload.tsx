@@ -23,7 +23,7 @@ export const InputFileUpload: React.FC<InputFileUploadProps> = ({
       variant="outlined"
       tabIndex={-1}
       size="small"
-      startIcon={<Folder />}
+      startIcon={<Folder fontSize="small" />}
       sx={sx}
     >
       <VisuallyHiddenInput

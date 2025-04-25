@@ -176,6 +176,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       if (reason === "clear" || value === nullFile) {
         setParameterArg.value = null;
         setParameterArg.object_path = objectPath;
+        setValue(nullFile);
       } else if (value) {
         setValue(value);
         setParameterArg = fileItemToParameterArg(
@@ -262,41 +263,82 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           )}
           title={objectPath || item._className || "Title"}
         />
-        <InputFileUpload
-          sx={{ my: 1, mr: 2 }}
-          disabled={inFlight || job.status !== 1}
-          accept={item._qualifiers.fileExtensions
-            .map((ext: string) => `.${ext}`)
-            .join(",")}
-          handleFileChange={handleFileChange}
-        />
-        {item?._qualifiers?.downloadModes?.length > 0 && (
-          <InputFileFetch
-            sx={{ my: 1, mr: 2 }}
-            disabled={inFlight || job.status !== 1}
-            accept={item._qualifiers.fileExtensions
-              .map((ext: string) => `.${ext}`)
-              .join(",")}
-            handleFileChange={handleFileChange}
-            item={item}
-          />
-        )}
-        {value && (
-          <Button
-            size="small"
-            sx={{ my: 1, mr: 2 }}
-            variant="outlined"
-            onClick={(ev) => {
-              ev.stopPropagation();
-              ev.preventDefault();
-              setFileMenuAnchorEl(ev.currentTarget);
-              setFile(value);
-            }}
-          >
-            <Menu fontSize="small" />
-          </Button>
-        )}
-
+        <Stack direction="row">
+          {job.status == 1 && (
+            <InputFileUpload
+              sx={{
+                my: 1,
+                borderRadius: "0",
+                "&:first-of-type": {
+                  borderTopLeftRadius: "0.5rem",
+                  borderBottomLeftRadius: "0.5rem",
+                },
+                "&:last-of-type": {
+                  borderTopRightRadius: "0.5rem",
+                  borderBottomRightRadius: "0.5rem",
+                },
+              }}
+              disabled={inFlight || job.status !== 1}
+              accept={item._qualifiers.fileExtensions
+                .map((ext: string) => `.${ext}`)
+                .join(",")}
+              handleFileChange={handleFileChange}
+            />
+          )}
+          {item?._qualifiers?.downloadModes?.length > 0 && job.status == 1 && (
+            <InputFileFetch
+              sx={{
+                my: 1,
+                borderRadius: "0",
+                "&:first-of-type": {
+                  borderTopLeftRadius: "0.5rem",
+                  borderBottomLeftRadius: "0.5rem",
+                },
+                "&:last-of-type": {
+                  borderTopRightRadius: "0.5rem",
+                  borderBottomRightRadius: "0.5rem",
+                },
+              }}
+              disabled={inFlight || job.status !== 1}
+              accept={item._qualifiers.fileExtensions
+                .map((ext: string) => `.${ext}`)
+                .join(",")}
+              handleFileChange={handleFileChange}
+              item={item}
+            />
+          )}
+          {value && value != nullFile && (
+            <>
+              <Button
+                disabled={false}
+                component="label"
+                role={undefined}
+                variant="outlined"
+                tabIndex={-1}
+                size="small"
+                startIcon={<Menu fontSize="small" />}
+                sx={{
+                  my: 1,
+                  borderRadius: "0",
+                  "&:first-of-type": {
+                    borderTopLeftRadius: "0.5rem",
+                    borderBottomLeftRadius: "0.5rem",
+                  },
+                  "&:last-of-type": {
+                    borderTopRightRadius: "0.5rem",
+                    borderBottomRightRadius: "0.5rem",
+                  },
+                }}
+                onClick={(ev) => {
+                  ev.stopPropagation();
+                  ev.preventDefault();
+                  setFileMenuAnchorEl(ev.currentTarget);
+                  setFile(value);
+                }}
+              ></Button>
+            </>
+          )}
+        </Stack>
         <ErrorTrigger {...{ item, job }} />
       </Stack>
     )

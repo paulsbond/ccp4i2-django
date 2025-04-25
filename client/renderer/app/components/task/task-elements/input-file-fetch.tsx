@@ -26,7 +26,7 @@ export const InputFileFetch: React.FC<InputFileFetchProps> = ({
       variant="outlined"
       tabIndex={-1}
       size="small"
-      startIcon={<Language />}
+      startIcon={<Language fontSize="small" />}
       sx={sx}
       onClick={(ev: any) => {
         ev.stopPropagation();
