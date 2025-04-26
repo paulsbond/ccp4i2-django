@@ -30,6 +30,7 @@ import {
 import { CCP4i2Context } from "../app-context";
 import { doDownload, useApi } from "../api";
 import { Project } from "../models";
+import { FilePreviewContext } from "./file-preview-context";
 
 interface FileNode {
   id: string;
@@ -78,7 +79,6 @@ export const FileTree: React.FC<FileTreeProps> = ({ data }) => {
         {Array.isArray(data) &&
           data.map((item) => <TreeNode key={item.name} node={item} />)}
       </List>
-      <FileBrowserPreviewDialog />
       <FileMenu />
     </FileBrowserContext.Provider>
   );
@@ -89,6 +89,9 @@ interface TreeNodeProps {
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
+  const { contentSpecification, setContentSpecification } =
+    useContext(FilePreviewContext);
+
   const [isOpen, setIsOpen] = useState(false);
   const {
     anchorEl,
@@ -105,7 +108,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
   };
 
   const handleMenuOpen = (ev: any) => {
-    console.log("opening menu");
     setAnchorEl(ev.currentTarget);
     setMenuNode(node);
     ev.stopPropagation();
@@ -180,8 +182,10 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
 };
 
 const FileMenu: React.FC = () => {
-  const { setPreviewNode, anchorEl, setAnchorEl, menuNode } =
-    useContext(FileBrowserContext);
+  const { anchorEl, setAnchorEl, menuNode } = useContext(FileBrowserContext);
+  const { contentSpecification, setContentSpecification } =
+    useContext(FilePreviewContext);
+
   const { noSlashUrl, post, postNoSlash, get } = useApi();
   const { projectId } = useContext(CCP4i2Context);
   const { data: project } = get<Project>(`projects/${projectId}`);
@@ -204,8 +208,22 @@ const FileMenu: React.FC = () => {
 
   const handlePreview = useCallback(
     async (ev: SyntheticEvent) => {
+      if (!menuNode) return;
       ev.stopPropagation();
-      setPreviewNode(menuNode);
+      const composite_path = noSlashUrl(
+        `projects/${projectId}/project_file?path=${encodeURIComponent(
+          menuNode.path
+        )}`
+      );
+      setContentSpecification({
+        url: composite_path,
+        title: menuNode.name || "Preview",
+        language: menuNode.name.endsWith(".json")
+          ? "json"
+          : menuNode.name.endsWith(".xml")
+          ? "xml"
+          : "text",
+      });
       setAnchorEl(null);
     },
     [menuNode]
@@ -337,39 +355,6 @@ const FileBrowser: React.FC = () => {
       <h2 style={{ fontSize: "1.25rem", marginBottom: 16 }}>File Browser</h2>
       <FileTree data={fileTree} />
     </div>
-  );
-};
-
-const FileBrowserPreviewDialog: React.FC = () => {
-  const { projectId } = useContext(CCP4i2Context);
-  const { previewNode, setPreviewNode } = useContext(FileBrowserContext);
-  const { noSlashUrl } = useApi();
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (previewNode?.type !== "file") return;
-    if (previewNode) {
-      const composite_path = noSlashUrl(
-        `projects/${projectId}/project_file?path=${encodeURIComponent(
-          previewNode.path
-        )}`
-      );
-      setPreviewUrl(composite_path);
-    }
-  }, [projectId, previewNode, noSlashUrl]);
-
-  useEffect(() => {
-    if (!previewUrl) setPreviewNode(null);
-  }, [previewUrl]);
-
-  return (
-    previewNode && (
-      <FilePreviewDialog
-        url={previewUrl}
-        filename={previewNode.path}
-        setUrl={setPreviewUrl}
-      />
-    )
   );
 };
 

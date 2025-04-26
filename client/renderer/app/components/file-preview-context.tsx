@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { Editor } from "@monaco-editor/react";
 import { prettifyXml } from "../utils";
 import { createContext } from "react";
+import $ from "jquery";
 
 export interface EditorContentSpecification {
   url: string;
@@ -58,13 +59,23 @@ const FilePreviewDialog: React.FC = () => {
         } else if (contentSpecification.url.includes("/digest_param_file/")) {
           const fileContent = await fetch(
             fullUrl(contentSpecification.url)
-          ).then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
-          });
-          setPreviewContent(JSON.stringify(fileContent, null, 2));
+          ).then((response) => response.arrayBuffer());
+          var enc = new TextDecoder("utf-8");
+          const fileText = enc.decode(fileContent);
+          if (contentSpecification.language === "json")
+            setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
+          else if (contentSpecification.language === "xml")
+            setPreviewContent(prettifyXml($.parseXML(fileText)));
+        } else if (contentSpecification.url.includes("/project_file")) {
+          const fileContent = await fetch(contentSpecification.url).then(
+            (response) => response.arrayBuffer()
+          );
+          var enc = new TextDecoder("utf-8");
+          const fileText = enc.decode(fileContent);
+          if (contentSpecification.language === "json")
+            setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
+          else if (contentSpecification.language === "xml")
+            setPreviewContent(prettifyXml($.parseXML(fileText)));
         }
       };
       asyncFunc();

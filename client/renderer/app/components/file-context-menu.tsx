@@ -113,7 +113,6 @@ export const FileMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
-        console.log("Handling preview in coot", file);
         api.post<any>(`files/${file.id}/preview/`, { viewer: "coot" });
         setFileMenuAnchorEl(null);
       }
@@ -125,7 +124,6 @@ export const FileMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
-        console.log("Handling preview in hklview", file);
         api.post<any>(`files/${file.id}/preview/`, { viewer: "hklview" });
         setFileMenuAnchorEl(null);
       }
@@ -137,7 +135,6 @@ export const FileMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
-        console.log("Handling preview in CCP4MG", file);
         api.post<any>(`files/${file.id}/preview/`, { viewer: "ccp4mg" });
         setFileMenuAnchorEl(null);
       }
@@ -149,7 +146,6 @@ export const FileMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
-        console.log("Handling preview in terminal", file);
         api.post<any>(`files/${file.id}/preview/`, { viewer: "terminal" });
         setFileMenuAnchorEl(null);
       }
