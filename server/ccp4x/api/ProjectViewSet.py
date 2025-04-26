@@ -90,7 +90,7 @@ class ProjectViewSet(ModelViewSet):
             ]:
                 subdir_path = os.path.join(instance.directory, subdir)
                 if os.path.exists(subdir_path):
-                    logger.error("Deleting subdirectory %s", subdir_path)
+                    logger.warning("Deleting subdirectory %s", subdir_path)
                     # Definitely need to
                     for root, dirs, files in os.walk(
                         subdir_path, topdown=False, followlinks=False
@@ -115,7 +115,7 @@ class ProjectViewSet(ModelViewSet):
             for special_file in [".DS_Store"]:
                 special_file_path = os.path.join(instance.directory, special_file)
                 if os.path.exists(special_file_path):
-                    logger.error("Deleting special file %s", special_file_path)
+                    logger.warning("Deleting special file %s", special_file_path)
                     try:
                         os.remove(special_file_path)
                     except Exception as e:
@@ -186,7 +186,7 @@ class ProjectViewSet(ModelViewSet):
                     {"status": "Failed", "reason": str(e)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-            logger.error("File uploaded and saved to %s", file_path)
+            logger.warning("File uploaded and saved to %s", file_path)
 
         return Response({"status": "Success"})
 
@@ -380,6 +380,7 @@ class ProjectViewSet(ModelViewSet):
         """
         the_project = models.Project.objects.get(pk=pk)
         file_path = request.GET.get("path")
+        logger.info("File path %s", file_path)
         composite_path: pathlib.Path = pathlib.Path(the_project.directory) / file_path
         if pathlib.Path(the_project.directory) not in composite_path.resolve().parents:
             raise Http404("Unacceptable file")
