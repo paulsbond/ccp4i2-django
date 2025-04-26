@@ -109,6 +109,21 @@ export const FileMenu: React.FC = () => {
     [file]
   );
 
+  const handlePreviewDbInfo = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (file) {
+        setContentSpecification({
+          url: `files/${file.id}/`,
+          title: file.name,
+          language: "json",
+        });
+        setFileMenuAnchorEl(null);
+      }
+    },
+    [file]
+  );
+
   const handlePreviewFileInCoot = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
@@ -168,6 +183,11 @@ export const FileMenu: React.FC = () => {
       <MenuItem key="Terminal" onClick={handlePreviewFileInTerminal}>
         <Terminal /> Terminal
       </MenuItem>
+      {file && (
+        <MenuItem key="DbInfo" onClick={handlePreviewDbInfo}>
+          <Preview /> DbInfo
+        </MenuItem>
+      )}
       {file &&
         ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(file.type) && (
           <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>

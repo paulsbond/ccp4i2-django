@@ -66,6 +66,7 @@ const FilePreviewDialog: React.FC = () => {
             setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
           else if (contentSpecification.language === "xml")
             setPreviewContent(prettifyXml($.parseXML(fileText)));
+          else setPreviewContent(fileText);
         } else if (contentSpecification.url.includes("/project_file")) {
           const fileContent = await fetch(contentSpecification.url).then(
             (response) => response.arrayBuffer()
@@ -76,6 +77,18 @@ const FilePreviewDialog: React.FC = () => {
             setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
           else if (contentSpecification.language === "xml")
             setPreviewContent(prettifyXml($.parseXML(fileText)));
+          else setPreviewContent(fileText);
+        } else {
+          const fileContent = await fetch(
+            fullUrl(contentSpecification.url)
+          ).then((response) => response.arrayBuffer());
+          var enc = new TextDecoder("utf-8");
+          const fileText = enc.decode(fileContent);
+          if (contentSpecification.language === "json")
+            setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
+          else if (contentSpecification.language === "xml")
+            setPreviewContent(prettifyXml($.parseXML(fileText)));
+          else setPreviewContent(fileText);
         }
       };
       asyncFunc();
