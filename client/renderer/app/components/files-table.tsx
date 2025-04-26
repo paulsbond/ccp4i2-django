@@ -27,6 +27,7 @@ export const fileTypeMapping: any = {
   "application/CCP4-unmerged-experimental": "UnmergedDataFile",
   "chemical/x-pdb": "PdbDataFile",
   "application/CCP4-asu-content": "AsuDataFile",
+  "application/CCP4-generic-reflections": "GenericReflDataFile",
 };
 
 export default function FilesTable({

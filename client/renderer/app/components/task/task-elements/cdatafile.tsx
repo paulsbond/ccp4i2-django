@@ -40,6 +40,7 @@ export const inverseFileTypeMapping: { [key: string]: string } = {
   CPdbDataFile: "chemical/x-pdb",
   CAsuDataFile: "application/CCP4-asu-content",
   CDataFile: "application/CCP4-data",
+  CGenericReflDataFile: "application/CCP4-generic-reflections",
 };
 
 export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
@@ -80,7 +81,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     return { objectPath: null, qualifiers: null };
   }, [item]);
 
-  const { data: project_files } = api.get_endpoint<CCP4i2File[]>({
+  const { data: project_files, mutate: mutateFiles } = api.get_endpoint<
+    CCP4i2File[]
+  >({
     type: "projects",
     id: job.project,
     endpoint: "files",
@@ -120,12 +123,21 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         const fileJob: Job | undefined = project_jobs?.find(
           (job: Job) => job.id == file.job
         );
+        console.log(file.type, fileType);
         if (fileJob)
           return (
-            (file.type === fileType || fileType === "CCP4-data") &&
+            (file.type === fileType ||
+              fileType === "CCP4-data" ||
+              (file.type === "application/CCP4-generic-reflections" &&
+                fileType === "application/CCP4-mtz-observed")) &&
             !fileJob.parent
           );
-        return file.type === fileType || fileType === "CCP4-data";
+        return (
+          file.type === fileType ||
+          fileType === "CCP4-data" ||
+          (file.type === "application/CCP4-generic-reflections" &&
+            fileType === "application/CCP4-mtz-observed")
+        );
       })
       .sort((a, b) => {
         return b.job - a.job;
