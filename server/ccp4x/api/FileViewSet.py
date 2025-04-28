@@ -50,6 +50,20 @@ class FileViewSet(ModelViewSet):
 
     @action(
         detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def download_by_uuid(self, request, pk=None):
+        try:
+            the_file = models.File.objects.get(uuid=pk)
+            return FileResponse(open(the_file.path, "rb"), filename=the_file.name)
+        except models.File.DoesNotExist as err:
+            logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
         methods=["post"],
         permission_classes=[],
         serializer_class=serializers.FileSerializer,
