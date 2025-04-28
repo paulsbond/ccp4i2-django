@@ -65,17 +65,25 @@ def set_parameter_container(
             value,
         )
     elif isinstance(object_element, CCP4XtalData.CSpaceGroup):
-        status, corrected_spacegroup = (
-            CCP4XtalData.CSymmetryManager().spaceGroupValidity(str(value))
-        )
+        symMan = CCP4XtalData.CSymmetryManager()
+        symMan.loadSymLib()
+        status, corrected_spacegroup = symMan.spaceGroupValidity(str(value))
         if corrected_spacegroup == value:
             pass
         elif isinstance(corrected_spacegroup, list):
             value = corrected_spacegroup[0]
         else:
             value = corrected_spacegroup
-
-    object_element.set(value)
+    try:
+        object_element.set(value)
+    except Exception as err:
+        logger.exception(
+            "Failed to set parameter %s with value %s",
+            object_element.objectName(),
+            value,
+            exc_info=err,
+        )
+        raise
     logger.info(
         "Setting parameter %s to %s",
         object_element.objectPath(),
