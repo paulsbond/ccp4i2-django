@@ -76,6 +76,7 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   }, [file, cootModule]);
 
   useEffect(() => {
+    if (!item) return;
     const sortedColumnNames: any = {};
     const options: any = {};
     Object.keys(allColumnNames).forEach((label) => {
@@ -84,7 +85,10 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
         sortedColumnNames[columnType] = [];
       sortedColumnNames[columnType].push(label);
     });
-    const signatures = [...item._qualifiers.correctColumns];
+    const signatures =
+      item?._class === "CGenericReflDataFile"
+        ? ["KMKM", "GLGL", "JQ", "FQ"]
+        : [...item._qualifiers.correctColumns];
     signatures.forEach((signature) => {
       const signatureOptions: string[][] = [];
       let iOption = 0;
@@ -124,7 +128,7 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
     if (Object.keys(options).length > 0) {
       setValue(options[Object.keys(options)[0]][0]);
     }
-  }, [allColumnNames]);
+  }, [allColumnNames, item]);
 
   const onAcceptClicked = useCallback(() => {
     if (handleAccept) handleAccept(value);

@@ -11,12 +11,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskValue, getTaskItem } = useJob(job.id);
+  const { getTaskItem } = useJob(job.id);
 
-  const chooseModeValue = getTaskValue("CHOOSE_MODE");
-  const modeValue = getTaskValue("MODE");
-  const aimlessRefValue = getTaskValue("REFERENCE_FOR_AIMLESS");
-  const reference_datasetValue = getTaskValue("REFERENCE_DATASET");
+  const { value: chooseModeValue } = getTaskItem("CHOOSE_MODE");
+  const { value: modeValue } = getTaskItem("MODE");
+  const { value: aimlessRefValue } = getTaskItem("REFERENCE_FOR_AIMLESS");
+  const { value: reference_datasetValue } = getTaskItem("REFERENCE_DATASET");
 
   return (
     <CCP4i2Tabs {...props}>
@@ -117,12 +117,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 );
               }}
             />
-            <CAltSpaceGroupElement
+            <CCP4i2TaskElement
               {...props}
               key="CHOOSE_SPACEGROUP"
               itemName="CHOOSE_SPACEGROUP"
               qualifiers={{
-                ...getTaskItem("CHOOSE_SPACEGROUP")._qualifiers,
+                ...getTaskItem("CHOOSE_SPACEGROUP").item._qualifiers,
                 guiLabel: "Spacegroup to choose",
               }}
               visibility={() => {

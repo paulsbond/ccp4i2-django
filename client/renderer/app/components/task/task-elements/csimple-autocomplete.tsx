@@ -8,6 +8,9 @@ import {
 import {
   Autocomplete,
   AutocompleteChangeReason,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
 } from "@mui/material";
@@ -15,13 +18,14 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../task-container";
+import { get } from "jquery";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
   const { itemName, job, type, sx, qualifiers } = props;
   const { getTaskItem, getValidationColor } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
   const [value, setValue] = useState<string | number>(item._value);
 
@@ -100,6 +104,32 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     [type]
   );
 
+  const handleSelectRadio = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.currentTarget.value;
+      if (value) {
+        setValue(value);
+        const setParameterArg = {
+          object_path: item._objectPath,
+          value: value,
+        };
+        console.log({ setParameterArg });
+        setInFlight(true);
+        try {
+          const result: any = await setParameter(setParameterArg);
+          if (result?.status === "Failed") {
+            setValue(item._value);
+          }
+        } catch (err) {
+          alert(err);
+        } finally {
+          setInFlight(false);
+        }
+      }
+    },
+    [type]
+  );
+
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
     if (typeof props.visibility === "function") {
@@ -131,29 +161,53 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     enumerators &&
     labels && (
       <Stack direction="row" sx={{ mb: 2 }}>
-        <Autocomplete
-          disabled={isDisabled}
-          sx={calculatedSx}
-          value={value}
-          onChange={handleSelect}
-          getOptionLabel={getOptionLabel}
-          options={enumerators}
-          size="small"
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              error={getValidationColor(item) === "error.light"}
+        {qualifiers?.guiMode === "multiLineRadio" ||
+        qualifiers?.guiMode === "radio" ? (
+          <RadioGroup
+            row={qualifiers?.guiMode === "radio"}
+            value={value}
+            onChange={handleSelectRadio}
+            sx={calculatedSx}
+          >
+            <FormControlLabel
+              control={<></>}
               label={guiLabel}
-              size="small"
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                  disableAnimation: true,
-                },
-              }}
+              sx={{ marginRight: 2 }}
             />
-          )}
-        />
+            {enumerators.map((enumerator: string, index: number) => (
+              <FormControlLabel
+                key={index}
+                value={enumerator}
+                control={<Radio size="small" />}
+                label={getOptionLabel(enumerator)}
+              />
+            ))}
+          </RadioGroup>
+        ) : (
+          <Autocomplete
+            disabled={isDisabled}
+            sx={calculatedSx}
+            value={value}
+            onChange={handleSelect}
+            getOptionLabel={getOptionLabel}
+            options={enumerators}
+            size="small"
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                error={getValidationColor(item) === "error.light"}
+                label={guiLabel}
+                size="small"
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                    disableAnimation: true,
+                  },
+                }}
+              />
+            )}
+          />
+        )}
         <ErrorTrigger {...{ item, job }} />
       </Stack>
     )

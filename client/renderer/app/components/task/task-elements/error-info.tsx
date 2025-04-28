@@ -65,7 +65,7 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
     setErrorInfoItem,
     errorInfoItem,
   } = useContext(TaskInterfaceContext);
-  const { getTaskItem, getValidationColor, getErrors } = useJob(job.id);
+  const { getValidationColor, getErrors } = useJob(job.id);
   const fieldErrors = errorInfoItem ? getErrors(errorInfoItem) : null;
   useEffect(() => {
     console.log("errorInfoItem", errorInfoItem, errorInfoAnchor);

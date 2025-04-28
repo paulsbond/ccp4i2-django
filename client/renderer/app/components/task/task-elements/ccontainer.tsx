@@ -38,7 +38,7 @@ export const CContainerElement: React.FC<
     elementSx,
   } = props;
   const { getTaskItem } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
   const [visibilityPrompt, setVisibilityPrompt] = useState<number>(0);
   const visibilityPromptRef = useRef<number>(0);
 
@@ -68,7 +68,7 @@ export const CContainerElement: React.FC<
   const calculatedContent = useMemo(() => {
     return childNames.map((childName: string) => {
       const childObjectPath = `${item._objectPath}.${childName}`;
-      const childItem = getTaskItem(childObjectPath);
+      const { item: childItem } = getTaskItem(childObjectPath);
       return (
         <Grid2 key={childObjectPath} size={size}>
           <CCP4i2TaskElement
@@ -85,20 +85,20 @@ export const CContainerElement: React.FC<
 
   return containerHint === "FolderLevel" || containerHint === "BlockLevel"
     ? inferredVisibility && (
-        <Card sx={{ mb: 1 }}>
+        <Card sx={{ mb: 1, p: 1 }}>
           {qualifiers.guiLabel && (
             <CardHeader
               title={qualifiers.guiLabel}
-              sx={{ my: 0 }}
-              titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
+              sx={{ my: 0, py: 0 }}
+              slotProps={{ title: { variant: "h6", my: 0, py: 0 } }}
               action={item && <ErrorInfo {...props} />}
             />
           )}
-          <CardContent>
+          <CardContent sx={{ py: 0.5, px: 1 }}>
             {children}
-            {/*The container might have content explicitly provided in the task intrface*/}
-            <Grid2 container>{calculatedContent}</Grid2>
-            {/*Or inferred if it is rendering a task container item*/}
+            <Grid2 container spacing={0.5}>
+              {calculatedContent}
+            </Grid2>
           </CardContent>
         </Card>
       )

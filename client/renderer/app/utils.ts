@@ -169,8 +169,7 @@ export const useProject = (projectId: number) => {
  *
  * @property useAsyncEffect - A function to run an asynchronous effect with dependencies.
  * @property setParameter - A function to set a parameter for the job if it is in a pending state.
- * @property getTaskItem - A function to get a task item by its parameter name.
- * @property getTaskValue - A function to get the value of a task item by its parameter name.
+ * @property getTaskItem - A function to get a task item and value by its parameter name.
  * @property getValidationColor - A function to get the validation color for a given item.
  * @property getErrors - A function to get validation errors for a given item.
  * @property container - The container data for the job.
@@ -271,17 +270,11 @@ export const useJob = (jobId: number | null | undefined) => {
 
     getTaskItem: useMemo(() => {
       return (param_name: string) => {
-        if (param_name?.length == 0) return null;
-        return container.lookup[param_name];
-      };
-    }, [container]),
-
-    getTaskValue: useMemo(() => {
-      return (param_name: string) => {
-        const item = container.lookup[param_name];
-        const result = valueOfItem(item);
-        console.log({ param_name, result, item });
-        return result;
+        if (param_name?.length == 0) return { item: null, value: null };
+        return {
+          item: container.lookup[param_name],
+          value: valueOfItem(container.lookup[param_name]),
+        };
       };
     }, [container]),
 
@@ -298,6 +291,7 @@ export const useJob = (jobId: number | null | undefined) => {
 
     getFileDigest: useMemo(() => {
       return (objectPath: string) => {
+        //console.log("Inside getFileDigest");
         return api.digest<any>(
           `jobs/${job?.id}/digest?object_path=${objectPath}`
         );

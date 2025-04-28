@@ -26,7 +26,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     container,
     useAsyncEffect,
   } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;
     return null;

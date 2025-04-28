@@ -8,6 +8,7 @@ import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
 import AimlessPipeInterface from "./task-interfaces/aimless_pipe";
 import Crank2Interface from "./task-interfaces/crank2";
 import ModelcraftInterface from "./task-interfaces/modelcraft";
+import ImportMergedInterface from "./task-interfaces/import_merged";
 import GenericInterface from "./task-interfaces/generic";
 import { useJob } from "../../utils";
 import { ErrorPopper } from "./task-elements/error-info";
@@ -66,6 +67,14 @@ export const TaskContainer = () => {
       case "modelcraft":
         return (
           <ModelcraftInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "import_merged":
+        return (
+          <ImportMergedInterface
             {...{
               job,
             }}

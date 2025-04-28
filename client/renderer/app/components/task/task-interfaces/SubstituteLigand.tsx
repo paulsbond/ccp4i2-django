@@ -7,7 +7,7 @@ import { CContainerElement } from "../task-elements/ccontainer";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskValue } = useJob(job.id);
+  const { getTaskItem } = useJob(job.id);
   const { data: container, mutate: mutateContainer } =
     api.get_wrapped_endpoint_json<any>({
       type: "jobs",
@@ -15,8 +15,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       endpoint: "container",
     });
 
-  const ligandAs = getTaskValue("LIGANDAS");
-  const obsAs = getTaskValue("OBSAS");
+  const { value: ligandAs } = getTaskItem("LIGANDAS");
+  const { value: obsAs } = getTaskItem("OBSAS");
 
   return (
     <>

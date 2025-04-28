@@ -9,7 +9,6 @@ import { CContainerElement } from "../task-elements/ccontainer";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskValue } = useJob(job.id);
 
   return (
     <>

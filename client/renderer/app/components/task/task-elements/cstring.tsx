@@ -11,5 +11,11 @@ export const CStringElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  return inferredVisibility && <CSimpleElement {...props} type="text" />;
+  return (
+    inferredVisibility && (
+      <>
+        <CSimpleElement {...props} type="text" />
+      </>
+    )
+  );
 };

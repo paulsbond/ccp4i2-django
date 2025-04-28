@@ -29,7 +29,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
   const { getTaskItem, setParameter } = useJob(job.id);
   const { projectId } = useContext(CCP4i2Context);
   const { project } = projectId ? useProject(projectId) : {};
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
 
   const guiLabel = useMemo<string>(() => {
     return qualifiers?.guiLabel

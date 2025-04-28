@@ -18,7 +18,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
     container,
     useAsyncEffect,
   } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
 
   return (
     <Card sx={{ border: "3px solid", borderColor: getValidationColor(item) }}>
@@ -37,7 +37,8 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   sx={{ my: 0, py: 0, minWidth: "10rem" }}
                   itemName={`${item._objectPath}.${key}`}
                   qualifiers={{
-                    ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
+                    ...getTaskItem(`${item._objectPath}.${key}`).item
+                      ._qualifiers,
                     guiLabel: key,
                     onlyEnumerators: true,
                   }}
@@ -52,7 +53,8 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   sx={{ my: 0, py: 0, minWidth: "10rem" }}
                   itemName={`${item._objectPath}.${key}`}
                   qualifiers={{
-                    ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
+                    ...getTaskItem(`${item._objectPath}.${key}`).item
+                      ._qualifiers,
                     guiLabel: key,
                   }}
                 />
@@ -65,7 +67,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                 sx={{ my: 0, py: 0, minWidth: "calc(100% - 4rem)", mr: 2 }}
                 itemName={`${item._objectPath}.${key}`}
                 qualifiers={{
-                  ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
+                  ...getTaskItem(`${item._objectPath}.${key}`).item._qualifiers,
                   guiLabel: key,
                   multiLine: true,
                 }}
@@ -79,7 +81,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                 sx={{ my: 0, py: 0 }}
                 itemName={`${item._objectPath}.${key}`}
                 qualifiers={{
-                  ...getTaskItem(`${item._objectPath}.${key}`)._qualifiers,
+                  ...getTaskItem(`${item._objectPath}.${key}`).item._qualifiers,
                   guiLabel: key,
                   multiLine: true,
                   mimeTypeName: "application/CCP4-seq",

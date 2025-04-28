@@ -20,7 +20,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const { itemName, job, type, sx, qualifiers } = props;
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
   const { getTaskItem, getValidationColor } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
 
   const inputRef = useRef<HTMLElement | null>(null);

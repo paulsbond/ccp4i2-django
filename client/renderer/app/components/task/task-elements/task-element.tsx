@@ -53,7 +53,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  const item = getTaskItem(props.itemName);
+  const { item } = getTaskItem(props.itemName);
   const the_uuid = uuid4();
 
   const qualifiers = useMemo<any>(() => {

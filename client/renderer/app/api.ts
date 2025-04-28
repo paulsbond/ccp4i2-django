@@ -124,7 +124,10 @@ const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
 };
 
 const digest_fetcher = (url: string) => {
-  return fetch(url).then((r) => r.json());
+  return fetch(url).then((r) => {
+    //console.log(r);
+    return r.json();
+  });
 };
 
 export function useApi() {
@@ -177,7 +180,10 @@ export function useApi() {
     },
 
     digest: function <T>(endpoint: string) {
-      return useSWR<T>(fullUrl(endpoint), digest_fetcher);
+      //console.log(endpoint);
+      const result = useSWR<T>(fullUrl(endpoint), digest_fetcher);
+      //console.log(result.data);
+      return result;
     },
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {
@@ -219,7 +225,7 @@ export function useApi() {
 
     delete: async function (endpoint: string): Promise<void> {
       const result = await fetch(fullUrl(endpoint), { method: "DELETE" });
-      console.log(result);
+      //console.log(result);
     },
 
     patch: async function <T>(endpoint: string, body: any = {}): Promise<T> {

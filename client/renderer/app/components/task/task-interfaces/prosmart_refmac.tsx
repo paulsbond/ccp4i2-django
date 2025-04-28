@@ -16,25 +16,21 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const {
-    getTaskValue,
-    setParameter,
-    useAsyncEffect,
-    getTaskItem,
-    getFileDigest,
-  } = useJob(job.id);
+  const { setParameter, useAsyncEffect, getTaskItem, getFileDigest } = useJob(
+    job.id
+  );
 
   const { data: F_SIGFDigest } = getFileDigest(
     "prosmart_refmac.inputData.F_SIGF"
   );
-  const refinementMode = getTaskValue("REFINEMENT_MODE");
-  const solventAdvanced = getTaskValue("SOLVENT_ADVANCED");
-  const solventMaskType = getTaskValue("SOLVENT_MASK_TYPE");
-  const tlsMode = getTaskValue("TLSMODE");
-  const bfacSetUse = getTaskValue("BFACSETUSE");
-  const wavelengthItem = getTaskItem("WAVELENGTH");
-  const MAP_SHARP = getTaskValue("MAP_SHARP");
-  const MAP_SHARP_CUSTOM = getTaskItem("MAP_SHARP_CUSTOM");
+  const { value: refinementMode } = getTaskItem("REFINEMENT_MODE");
+  const { value: solventAdvanced } = getTaskItem("SOLVENT_ADVANCED");
+  const { value: solventMaskType } = getTaskItem("SOLVENT_MASK_TYPE");
+  const { value: tlsMode } = getTaskItem("TLSMODE");
+  const { value: bfacSetUse } = getTaskItem("BFACSETUSE");
+  const { item: wavelengthItem } = getTaskItem("WAVELENGTH");
+  const { value: MAP_SHARP } = getTaskItem("MAP_SHARP");
+  const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
 
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
   const oldWavelengthItem = usePrevious<any>(wavelengthItem);

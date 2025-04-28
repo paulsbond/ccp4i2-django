@@ -8,8 +8,8 @@ import { CContainerElement } from "../task-elements/ccontainer";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskValue } = useJob(job.id);
-  const USE_MODEL_PHASES = getTaskValue("USE_MODEL_PHASES");
+  const { getTaskItem } = useJob(job.id);
+  const { value: USE_MODEL_PHASES } = getTaskItem("USE_MODEL_PHASES");
 
   return (
     <>

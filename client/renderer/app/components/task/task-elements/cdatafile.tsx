@@ -59,7 +59,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     getValidationColor,
     fileItemToParameterArg,
   } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
 
   const { isOver, setNodeRef } = useDroppable({
     id: `job_${job.uuid}_${itemName}`,
@@ -123,7 +123,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         const fileJob: Job | undefined = project_jobs?.find(
           (job: Job) => job.id == file.job
         );
-        console.log(file.type, fileType);
+        //console.log(file.type, fileType);
         if (fileJob)
           return (
             (file.type === fileType ||

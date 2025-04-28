@@ -11,7 +11,7 @@ export interface CCP4i2CSimpleElementProps extends CCP4i2TaskElementProps {
 export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
   const { itemName, job, qualifiers } = props;
   const { getTaskItem } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
 
   const patchedQualifiers = useMemo(() => {
     if (item?._qualifiers) {

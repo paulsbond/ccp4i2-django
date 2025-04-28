@@ -14,7 +14,7 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   const { job, itemName } = props;
   const api = useApi();
   const { getTaskItem } = useJob(job.id);
-  const item = getTaskItem(itemName);
+  const { item } = getTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
