@@ -1,7 +1,7 @@
 import $ from "jquery";
 import { useCallback, useMemo } from "react";
 import { useEffect, useRef } from "react";
-import { useApi } from "./api";
+import { fullUrl, useApi } from "./api";
 import {
   Job,
   JobCharValue,
@@ -186,6 +186,7 @@ export const useProject = (projectId: number) => {
  * @property mutateDef_xml - A function to mutate the definition XML data.
  */
 const api = useApi();
+
 export const useJob = (jobId: number | null | undefined) => {
   const { data: job, mutate: mutateJob } = api.get_endpoint<Job>(
     {
@@ -274,9 +275,25 @@ export const useJob = (jobId: number | null | undefined) => {
         return {
           item: container.lookup[param_name],
           value: valueOfItem(container.lookup[param_name]),
+          update: async (value: any) => {
+            if (
+              JSON.stringify({
+                value: valueOfItem(container.lookup[param_name]),
+              }) === JSON.stringify({ value })
+            )
+              return false;
+            if (job?.status != 1) return false;
+            return fetch(fullUrl(`jobs/${job.id}/set_parameter`), {
+              method: "POST",
+              body: JSON.stringify({
+                object_path: container.lookup[param_name]._objectPath,
+                value: value,
+              }),
+            });
+          },
         };
       };
-    }, [container]),
+    }, [container, job]),
 
     getValidationColor: useMemo(() => {
       return (item: any) => {
