@@ -9,7 +9,7 @@ import {
   TextField,
 } from "@mui/material";
 import { Info } from "@mui/icons-material";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ErrorInfo } from "./error-info";
 import { TaskInterfaceContext } from "../task-container";
 import { SpaceGroup, spaceGroups } from "../../../spacegroups";
@@ -19,7 +19,7 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { job, itemName, qualifiers } = props;
   const { setParameter, getTaskItem, getValidationColor } = useJob(job.id);
-  const { item, value: stringValue } = getTaskItem(itemName);
+  const { item, value: stringValue, update } = getTaskItem(itemName);
   const [value, setValue] = useState<SpaceGroup | undefined>(spaceGroups[0]);
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
 
@@ -35,10 +35,6 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
     if (stringValue)
       setValue(spaceGroups.find((sg: SpaceGroup) => sg.name === stringValue));
   }, [stringValue]);
-
-  useEffect(() => {
-    console.log(spaceGroups);
-  }, []);
 
   const handleInputChanged = async (arg: SpaceGroup) => {
     setValue(arg);
