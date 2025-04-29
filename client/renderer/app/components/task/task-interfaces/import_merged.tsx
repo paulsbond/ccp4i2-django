@@ -36,6 +36,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   const { update: setHKLIN_OBS_COLUMNS } = getTaskItem("HKLIN_OBS_COLUMNS");
 
+  const { update: setHKLIN_OBS_CONTENT_FLAG } = getTaskItem(
+    "HKLIN_OBS_CONTENT_FLAG"
+  );
+
   const { value: HKLIN_FORMATValue, update: updateHKLIN_FORMAT } =
     getTaskItem("HKLIN_FORMAT");
 
@@ -141,29 +145,50 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //returned signature
   const handleAccept = useCallback(
     async (signature: string) => {
-      if (setHKLIN_OBS_COLUMNS) {
-        const match = signature.match(/\[([^\]]+)\]/);
-        console.log({ match });
-        if (match) {
-          await setHKLIN_OBS_COLUMNS(match[1]);
+      if (!setHKLIN_OBS_CONTENT_FLAG) return;
+      if (!setHKLIN_OBS_COLUMNS) return;
+      if (!setHKLINFile) return;
+      if (!HKLINFile) return;
+      const match = signature.match(/\[([^\]]+)\]/);
+      console.log({ match });
+      if (match) {
+        await setHKLIN_OBS_COLUMNS(match[1]);
+        const columnNames = match[1].split(",").map((name) => name.trim());
+        const columnTypes = columnNames.map(
+          (name) =>
+            HKLINDigest?.digest?.listOfColumns.find(
+              (col: { columnLabel: string }) => col.columnLabel === name
+            )?.columnType
+        );
+        const signature = columnTypes.join("");
+        const contentFlag = ["KMKM", "GLGL", "JQ", "FQ"].indexOf(signature);
+        if (contentFlag > -1) {
+          await setHKLIN_OBS_CONTENT_FLAG(contentFlag);
         }
       }
-      if (HKLINFile) {
-        const formData = new FormData();
-        if (signature && signature.trim().length > 0) {
-          formData.append("column_selector", signature);
-          formData.append("objectPath", HKLIN_OBSItem._objectPath);
-          formData.append("file", HKLINFile, HKLINFile.name);
-          const uploadResult = await api.post<Job>(
-            `jobs/${job.id}/upload_file_param`,
-            formData
-          );
-          setHKLINFile(null);
-          mutateContainer();
-        }
+      const formData = new FormData();
+      if (signature && signature.trim().length > 0) {
+        formData.append("column_selector", signature);
+        formData.append("objectPath", HKLIN_OBSItem._objectPath);
+        formData.append("file", HKLINFile, HKLINFile.name);
+        const uploadResult = await api.post<Job>(
+          `jobs/${job.id}/upload_file_param`,
+          formData
+        );
+        setHKLINFile(null);
+        mutateContainer();
+        mutateValidation();
       }
     },
-    [job, HKLINFile, HKLIN_OBSItem, setHKLIN_OBS_COLUMNS]
+    [
+      job,
+      HKLINFile,
+      HKLIN_OBSItem,
+      setHKLIN_OBS_COLUMNS,
+      setHKLIN_OBS_CONTENT_FLAG,
+      setHKLINFile,
+      HKLINDigest,
+    ]
   );
 
   return (
@@ -387,13 +412,22 @@ const MtzPanel: React.FC<MmcifPanelProps> = (props) => {
         qualifiers={{ guiLabel: "Parsed MTZ file" }}
         disabled={() => true}
       />
-      <CCP4i2TaskElement
-        {...props}
-        key="HKLIN_OBS_COLUMNS"
-        itemName="HKLIN_OBS_COLUMNS"
-        qualifiers={{ guiLabel: "Selected columns" }}
-        disabled={() => true}
-      />
+      <Stack direction="row">
+        <CCP4i2TaskElement
+          {...props}
+          key="HKLIN_OBS_CONTENT_FLAG"
+          itemName="HKLIN_OBS_CONTENT_FLAG"
+          qualifiers={{ guiLabel: "Content flag" }}
+          disabled={() => false}
+        />
+        <CCP4i2TaskElement
+          {...props}
+          key="HKLIN_OBS_COLUMNS"
+          itemName="HKLIN_OBS_COLUMNS"
+          qualifiers={{ guiLabel: "Columns" }}
+          disabled={() => false}
+        />
+      </Stack>
     </Paper>
   );
 };
