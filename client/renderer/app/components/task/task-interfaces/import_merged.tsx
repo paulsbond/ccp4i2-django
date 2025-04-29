@@ -10,7 +10,7 @@ import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import { ParseMtz } from "../task-elements/parse-mtz";
 import { Job } from "../../../models";
-import { Grid2 } from "@mui/material";
+import { Grid2, Paper, Stack } from "@mui/material";
 import { useState } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -25,118 +25,96 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     endpoint: "container",
   });
 
-  const { item: HKLINItem } = getTaskItem("HKLIN");
+  const { item: HKLINItem, value: HKLINValue } = getTaskItem("HKLIN");
+
+  const oldHKLINValue = usePrevious(HKLINValue);
 
   const { data: HKLINDigest } = getFileDigest(HKLINItem?._objectPath);
 
   const { item: HKLIN_OBSItem, value: HKLIN_OBSValue } =
     getTaskItem("HKLIN_OBS");
 
-  const OldHKLINDigest: any = usePrevious(HKLINDigest);
+  const { update: updateSPACEGROUP } = getTaskItem("SPACEGROUP");
 
-  const { item: SPACEGROUPItem, value: SPACEGROUPValue } =
-    getTaskItem("SPACEGROUP");
+  const { update: updateUNITCELL } = getTaskItem("UNITCELL");
 
-  const { item: UNITCELLItem, value: UNITCELLValue } = getTaskItem("UNITCELL");
+  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
 
-  const { item: WAVELENGTHItem, value: WAVELENGTHValue } =
-    getTaskItem("WAVELENGTH");
-
-  const { item: HKLIN_FORMATItem, value: HKLIN_FORMATValue } =
+  const { value: HKLIN_FORMATValue, update: updateHKLIN_FORMAT } =
     getTaskItem("HKLIN_FORMAT");
 
-  const HKLIN_OBSSet = useMemo(() => {
-    return Boolean(HKLIN_OBSValue?.baseName || HKLIN_OBSValue?.dbFileId);
-  }, [HKLIN_OBSValue]);
-
-  const HKLIN_fileName = useMemo<string | null>(() => {
-    if (HKLINItem?._value?.baseName) {
-      return HKLINItem._value.baseName._value;
-    }
-    return null;
-  }, [HKLINItem]);
-
-  const HKLIN_dbFileId = useMemo<string | null>(() => {
-    if (HKLINItem?._value?.baseName) {
-      return HKLINItem._value.dbFileId._value;
-    }
-    return null;
-  }, [HKLINItem]);
-
-  //Here handle a case where a new MTZ file is uploaded as HKLIN
+  //Here handle a case where a new MTZ or mmcif file is uploaded as HKLIN
   useEffect(() => {
-    const asyncFunc = async () => {
-      if (!HKLINDigest) return;
-      if (!HKLIN_fileName) return;
-      if (!setParameter) return;
+    if (
+      !HKLINDigest?.digest ||
+      Object.keys(HKLINDigest?.digest).length == 0 ||
+      !updateSPACEGROUP ||
+      !updateWAVELENGTH ||
+      !updateHKLIN_FORMAT ||
+      !updateUNITCELL
+    )
+      return;
 
-      if (JSON.stringify(HKLINDigest) !== JSON.stringify(OldHKLINDigest)) {
-        if (HKLINDigest?.digest?.format === "mtz") {
-          if (!HKLIN_OBSSet) {
-            const downloadURL = `files/${HKLIN_dbFileId}/download_by_uuid/`;
-            const retrievedFile = await doRetrieve(
-              fullUrl(downloadURL),
-              HKLINItem._value.baseName._value
-            );
-            const blob = new Blob([retrievedFile], {
-              type: "application/CCP4-mtz-file",
-            });
-            const file = new File([blob], HKLIN_fileName, {
-              type: "application/CCP4-mtz-file",
-            });
-            setHKLINFile(file);
-          }
-        }
-        let parametersChanged = false;
-        if (SPACEGROUPValue !== HKLINDigest.digest.spaceGroup) {
-          const setParameterArg = {
-            value: HKLINDigest.digest.spaceGroup.replace(/\s+/g, ""),
-            object_path: SPACEGROUPItem._objectPath,
-          };
-          await setParameter(setParameterArg);
-          parametersChanged = true;
-        }
-        if (WAVELENGTHValue !== HKLINDigest.digest.wavelength) {
-          await setParameter({
-            value: HKLINDigest.digest.wavelength,
-            object_path: WAVELENGTHItem._objectPath,
-          });
-          parametersChanged = true;
-        }
-        if (HKLIN_FORMATValue !== HKLINDigest.digest.format.toUpperCase()) {
-          await setParameter({
-            value: HKLINDigest.digest.format.toUpperCase(),
-            object_path: HKLIN_FORMATItem._objectPath,
-          });
-          parametersChanged = true;
-        }
-        if (
-          JSON.stringify(UNITCELLValue) !==
-          JSON.stringify(HKLINDigest.digest.cell)
-        ) {
-          await setParameter({
-            value: HKLINDigest.digest.cell,
-            object_path: UNITCELLItem._objectPath,
-          });
-          parametersChanged = true;
-        }
-        if (parametersChanged) {
-          await mutateContainer();
-        }
+    const asyncFunc = async () => {
+      let parametersChanged = false;
+      {
+        const result = await updateSPACEGROUP(
+          HKLINDigest.digest.spaceGroup.replace(/\s+/g, "")
+        );
+        parametersChanged = parametersChanged || Boolean(result);
+      }
+      if (HKLINDigest.digest.wavelength) {
+        //Note some ancient MTZ files lack a wavelength
+        const result = await updateWAVELENGTH(HKLINDigest.digest.wavelength);
+        parametersChanged = parametersChanged || Boolean(result);
+      }
+      {
+        const result = await updateHKLIN_FORMAT(
+          HKLINDigest.digest.format.toUpperCase()
+        );
+        parametersChanged = parametersChanged || Boolean(result);
+      }
+      {
+        const result = await updateUNITCELL(HKLINDigest.digest.cell);
+        parametersChanged = parametersChanged || Boolean(result);
+      }
+      if (parametersChanged) {
+        await mutateContainer();
       }
     };
     asyncFunc();
   }, [
     HKLINDigest,
-    OldHKLINDigest,
-    HKLIN_OBSSet,
-    HKLIN_fileName,
-    SPACEGROUPValue,
-    SPACEGROUPItem,
-    UNITCELLValue,
-    UNITCELLItem,
-    setParameter,
+    updateSPACEGROUP,
+    updateWAVELENGTH,
+    updateHKLIN_FORMAT,
+    updateUNITCELL,
   ]);
+
+  useEffect(() => {
+    if (!HKLINValue?.dbFileId || !HKLINValue?.baseName || !oldHKLINValue)
+      return;
+    if (JSON.stringify(HKLINValue) === JSON.stringify(oldHKLINValue)) return;
+    const asyncFunc = async () => {
+      alert(
+        "Spotted updated HKLIN" +
+          JSON.stringify(HKLINValue) +
+          JSON.stringify(oldHKLINValue)
+      );
+      const downloadURL = fullUrl(
+        `files/${HKLINValue.dbFileId}/download_by_uuid/`
+      );
+      const arrayBuffer = await doRetrieve(downloadURL, HKLINValue.baseName);
+      const blob = new Blob([arrayBuffer], {
+        type: "application/CCP4-mtz-file",
+      });
+      const file = new File([blob], HKLINValue.baseName, {
+        type: "application/CCP4-mtz-file",
+      });
+      setHKLINFile(file);
+    };
+    asyncFunc();
+  }, [HKLINValue]);
 
   const handleAccept = useCallback(
     async (signature: string) => {
@@ -198,6 +176,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                   />
                 </Grid2>
               </Grid2>
+              <CCP4i2TaskElement
+                {...props}
+                key="WAVELENGTH"
+                itemName="WAVELENGTH"
+                qualifiers={{ guiLabel: "Wavelength" }}
+              />
             </CContainerElement>
             <CCP4i2TaskElement
               {...props}
@@ -205,7 +189,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="HKLIN_FORMAT"
               qualifiers={{ guiLabel: "HKLIN format" }}
             />
-            {HKLINDigest?.digest?.format === "mtz" && (
+            {HKLIN_FORMATValue === "MTZ" && (
               <CCP4i2TaskElement
                 {...props}
                 key="HKLIN_OBS"
@@ -213,7 +197,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 qualifiers={{ guiLabel: "Parsed MTZ file" }}
               />
             )}
-            {HKLINDigest?.digest?.format === "mmcif" && (
+            {HKLIN_FORMATValue === "MMCIF" && (
               <>
                 <MmcifPanel {...props} itemName="" digest={HKLINDigest} />
               </>
@@ -242,21 +226,104 @@ interface MmcifPanelProps extends CCP4i2TaskElementProps {
 
 const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
   const { digest, job } = props;
+  const { setParameter, getTaskItem } = useJob(job.id);
+  const { value: MMCIF_SELECTED_BLOCKValue } = getTaskItem(
+    "MMCIF_SELECTED_BLOCK"
+  );
+  const oldMMCIF_SELECTED_BLOCKValue = usePrevious(MMCIF_SELECTED_BLOCKValue);
+
+  const {
+    item: MMCIF_SELECTED_ISINTENSITYItem,
+    value: MMCIF_SELECTED_ISINTENSITYValue,
+  } = getTaskItem("MMCIF_SELECTED_ISINTENSITY");
+
+  const {
+    item: MMCIF_SELECTED_COLUMNSItem,
+    value: MMCIF_SELECTED_COLUMNSValue,
+  } = getTaskItem("MMCIF_SELECTED_COLUMNS");
+
+  const { item: MMCIF_SELECTED_INFOItem, value: MMCIF_SELECTED_INFOValue } =
+    getTaskItem("MMCIF_SELECTED_INFO");
+
+  useEffect(() => {
+    const asyncFunc = async () => {
+      if (!digest) return;
+      if (!setParameter) return;
+      if (!MMCIF_SELECTED_BLOCKValue) return;
+      if (MMCIF_SELECTED_BLOCKValue === oldMMCIF_SELECTED_BLOCKValue) return;
+      if (digest?.digest?.rblock_infos) {
+        const selectedBlock = digest.digest.rblock_infos.find(
+          (info: { bname: string }) => info.bname === MMCIF_SELECTED_BLOCKValue
+        );
+        if (selectedBlock) {
+          const newColumns =
+            selectedBlock.labelsets?.columnsets[0]?.columnlabels?.join(", ");
+          if (newColumns !== MMCIF_SELECTED_COLUMNSValue) {
+            await setParameter({
+              object_path: `${MMCIF_SELECTED_COLUMNSItem._objectPath}`,
+              value: newColumns,
+            });
+          }
+          const isIntensity = selectedBlock.info?.includes("I") ? 1 : -1;
+          if (isIntensity !== MMCIF_SELECTED_ISINTENSITYValue) {
+            await setParameter({
+              object_path: `${MMCIF_SELECTED_ISINTENSITYItem._objectPath}`,
+              value: isIntensity,
+            });
+          }
+          const blockInfo = `${selectedBlock.info}\nhkl list type: ${selectedBlock.hklcheckformat}\nHighest resolution: ${selectedBlock.highres}`;
+          if (isIntensity !== MMCIF_SELECTED_INFOValue) {
+            await setParameter({
+              object_path: `${MMCIF_SELECTED_INFOItem._objectPath}`,
+              value: blockInfo,
+            });
+          }
+        }
+      }
+    };
+    asyncFunc();
+  }, [MMCIF_SELECTED_BLOCKValue, digest, setParameter]);
+
   return (
     digest?.digest?.rblock_infos && (
-      <CCP4i2TaskElement
-        {...props}
-        key="MMCIF_SELECTED_BLOCK"
-        itemName="MMCIF_SELECTED_BLOCK"
-        qualifiers={{
-          guiLabel: "Selected block",
-          guiMode: "multiLineRadio",
-          onlyEnumerators: true,
-          enumerators: digest.digest.rblock_infos.map(
-            (info: { bname: string }) => info.bname
-          ),
-        }}
-      />
+      <>
+        <Paper sx={{ border: "1px solid black", px: 2, py: 1, mb: 2 }}>
+          <CCP4i2TaskElement
+            {...props}
+            key="MMCIF_SELECTED_BLOCK"
+            itemName="MMCIF_SELECTED_BLOCK"
+            qualifiers={{
+              guiLabel: "Selected block",
+              guiMode: "multiLineRadio",
+              onlyEnumerators: true,
+              enumerators: digest.digest.rblock_infos.map(
+                (info: { bname: string }) => info.bname
+              ),
+            }}
+          />
+          <pre>{MMCIF_SELECTED_INFOValue}</pre>
+        </Paper>
+        <Stack direction={"row"} spacing={2} sx={{ mb: 2 }}>
+          <CCP4i2TaskElement
+            {...props}
+            sx={{ width: "100%" }}
+            key="MMCIF_SELECTED_COLUMNS"
+            itemName="MMCIF_SELECTED_COLUMNS"
+            qualifiers={{
+              guiLabel: "Selected columns",
+            }}
+          />
+          <CCP4i2TaskElement
+            {...props}
+            sx={{ width: "100%" }}
+            key="MMCIF_SELECTED_ISINTENSITY"
+            itemName="MMCIF_SELECTED_ISINTENSITY"
+            qualifiers={{
+              guiLabel: "Selected is intensity",
+            }}
+          />
+        </Stack>
+      </>
     )
   );
 };
