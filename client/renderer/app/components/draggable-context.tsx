@@ -59,6 +59,7 @@ export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
       setInFlight(true);
       await setParameter(setParameterArg);
       await mutateContainer();
+      setInFlight(false);
     },
     [project_jobs, projects, fileItemToParameterArg]
   );
