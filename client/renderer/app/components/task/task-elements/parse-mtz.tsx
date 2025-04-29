@@ -61,11 +61,17 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
           const fileName = `File_${uuid4()}`;
           const byteArray = new Uint8Array(fileContent as ArrayBuffer);
           cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
+          //try {
           const header_info = cootModule.get_mtz_columns(fileName);
           cootModule.FS_unlink(`./${fileName}`);
           const newColumns: { [colType: string]: string } = {};
           for (let ih = 0; ih < header_info.size(); ih += 2) {
             newColumns[header_info.get(ih + 1)] = header_info.get(ih);
+          }
+          //Check for succesful parsing of mtz file:
+          if (Object.keys(newColumns).length === 0) {
+            console.error("Error parsing MTZ file");
+            if (handleCancel) handleCancel();
           }
           setAllColumnNames(newColumns);
         }
@@ -137,7 +143,7 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   return (
     <>
       <SimpleDialog
-        open={file != null}
+        open={file != null && allColumnNames?.length > 0}
         onClose={() => {
           setFiles(null);
         }}
