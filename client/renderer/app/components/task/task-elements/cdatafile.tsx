@@ -58,6 +58,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     setParameter,
     getValidationColor,
     fileItemToParameterArg,
+    mutateContainer,
   } = useJob(job.id);
   const { item } = getTaskItem(itemName);
 
@@ -201,6 +202,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       setInFlight(true);
       await setParameter(setParameterArg);
       mutateDigest();
+      mutateContainer();
       setInFlight(false);
     },
     [job, objectPath, project_jobs, projects]
