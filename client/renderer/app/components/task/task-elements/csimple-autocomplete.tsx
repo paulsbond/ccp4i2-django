@@ -139,12 +139,13 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   }, [props.visibility]);
 
   const disabled = useMemo(() => {
-    if (!props.disabled) return inFlight || job.status !== 1;
+    if (typeof props.disabled === "undefined")
+      return inFlight || job.status !== 1;
     if (typeof props.disabled === "function") {
       return props.disabled() || inFlight || job.status !== 1;
     }
     return props.disabled || inFlight || job.status !== 1;
-  }, [props.disabled]);
+  }, [props.disabled, inFlight, job]);
 
   const calculatedSx = useMemo(() => {
     return { minWidth: "20rem", py: 0, mb: 1, ...sx };

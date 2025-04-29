@@ -153,7 +153,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   );
 
   const disabled = useMemo(() => {
-    if (!props.disabled) return inFlight || job.status != 1;
+    if (typeof props.disabled === "undefined")
+      return inFlight || job.status != 1;
     if (typeof props.disabled === "function") {
       return props.disabled() || inFlight || job.status != 1;
     }
