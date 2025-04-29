@@ -122,7 +122,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               key="CHOOSE_SPACEGROUP"
               itemName="CHOOSE_SPACEGROUP"
               qualifiers={{
-                ...getTaskItem("CHOOSE_SPACEGROUP").item._qualifiers,
                 guiLabel: "Spacegroup to choose",
               }}
               visibility={() => {
