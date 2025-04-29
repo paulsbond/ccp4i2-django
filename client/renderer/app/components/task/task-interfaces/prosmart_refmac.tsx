@@ -5,6 +5,7 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
+import { useCallback, useEffect } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -28,34 +29,35 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { value: solventMaskType } = getTaskItem("SOLVENT_MASK_TYPE");
   const { value: tlsMode } = getTaskItem("TLSMODE");
   const { value: bfacSetUse } = getTaskItem("BFACSETUSE");
-  const { item: wavelengthItem } = getTaskItem("WAVELENGTH");
+  const { update: updateWAVELENGTH, value: wavelength } =
+    getTaskItem("WAVELENGTH");
   const { value: MAP_SHARP } = getTaskItem("MAP_SHARP");
   const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
 
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
-  const oldWavelengthItem = usePrevious<any>(wavelengthItem);
+  const oldWavelength = usePrevious<any>(wavelength);
 
-  useAsyncEffect(async () => {
-    if (
-      F_SIGFDigest &&
-      JSON.stringify(F_SIGFDigest) !== JSON.stringify(oldFileDigest) && // Only if change
-      setParameter //Only if setParameter hook in place
-    ) {
-      console.log(F_SIGFDigest);
-      //Here if the file Digest has changed
-      if (
-        F_SIGFDigest?.digest?.wavelengths &&
-        F_SIGFDigest?.digest?.wavelengths.at(-1) &&
-        F_SIGFDigest?.digest?.wavelengths.at(-1) < 9 &&
-        !oldWavelengthItem?._value
-      ) {
-        await setParameter({
-          object_path: `${wavelengthItem._objectPath}`,
-          value: F_SIGFDigest.digest.wavelengths.at(-1),
-        });
-      }
-    }
-  }, [F_SIGFDigest, setParameter, wavelengthItem]);
+  const handleF_SIGFDigestChanged = useCallback(
+    (digest: any) => {
+      if (!updateWAVELENGTH) return;
+      if (!digest || JSON.stringify(digest) === JSON.stringify(oldFileDigest))
+        return;
+      if (!job || job.status != 1) return;
+      const asyncFunc = async () => {
+        console.log(digest);
+        //Here if the file Digest has changed
+        if (digest?.digest?.wavelengths?.at(-1) < 9) {
+          await updateWAVELENGTH(digest.digest.wavelengths.at(-1));
+        }
+      };
+      asyncFunc();
+    },
+    [updateWAVELENGTH, job]
+  );
+
+  useEffect(() => {
+    handleF_SIGFDigestChanged(F_SIGFDigest);
+  }, [F_SIGFDigest]);
 
   return (
     <Paper>
