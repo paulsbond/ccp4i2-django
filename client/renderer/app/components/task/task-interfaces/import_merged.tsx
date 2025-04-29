@@ -10,20 +10,15 @@ import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import { ParseMtz } from "../task-elements/parse-mtz";
 import { Job } from "../../../models";
-import { Grid2, Paper, Stack } from "@mui/material";
+import { Grid2, Paper, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getFileDigest, getTaskItem } = useJob(job.id);
-  //@ts-ignore
+  const { getFileDigest, getTaskItem, mutateContainer, mutateValidation } =
+    useJob(job.id);
   const [HKLINFile, setHKLINFile] = useState<File | null>(null);
-  const { mutate: mutateContainer } = api.get_wrapped_endpoint_json<any>({
-    type: "jobs",
-    id: props.job.id,
-    endpoint: "container",
-  });
 
   const { item: HKLINItem, value: HKLINValue } = getTaskItem("HKLIN");
 
@@ -39,84 +34,120 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
 
+  const { update: setHKLIN_OBS_COLUMNS } = getTaskItem("HKLIN_OBS_COLUMNS");
+
   const { value: HKLIN_FORMATValue, update: updateHKLIN_FORMAT } =
     getTaskItem("HKLIN_FORMAT");
 
-  //Here handle a case where a new MTZ or mmcif file is uploaded as HKLIN
-  useEffect(() => {
-    if (
-      !HKLINDigest?.digest ||
-      Object.keys(HKLINDigest?.digest).length == 0 ||
-      !updateSPACEGROUP ||
-      !updateWAVELENGTH ||
-      !updateHKLIN_FORMAT ||
-      !updateUNITCELL
-    )
-      return;
+  // Define a useCallback which is what will be called when the file digest changes.
+  //This is wrapped in a useCallback, since it will include calls to methods that will be defined dynamically
+  // and we do not want the actual function to be called when those methods are updated (hence not symply put into the useEffect)
+  const handleDigestChanged = useCallback(
+    (digest: any) => {
+      if (
+        !digest ||
+        Object.keys(digest.digest).length == 0 ||
+        !updateSPACEGROUP ||
+        !updateWAVELENGTH ||
+        !updateHKLIN_FORMAT ||
+        !updateUNITCELL ||
+        job?.status != 1
+      )
+        return;
 
+      const asyncFunc = async () => {
+        let parametersChanged = false;
+        {
+          const result = await updateSPACEGROUP(
+            digest.digest.spaceGroup.replace(/\s+/g, "")
+          );
+          parametersChanged = parametersChanged || Boolean(result);
+        }
+        if (digest.digest.wavelength) {
+          //Note some ancient MTZ files lack a wavelength
+          const result = await updateWAVELENGTH(digest.digest.wavelength);
+          parametersChanged = parametersChanged || Boolean(result);
+        }
+        {
+          const result = await updateHKLIN_FORMAT(
+            digest.digest.format.toUpperCase()
+          );
+          parametersChanged = parametersChanged || Boolean(result);
+        }
+        {
+          const result = await updateUNITCELL(digest.digest.cell);
+          parametersChanged = parametersChanged || Boolean(result);
+        }
+        if (parametersChanged) {
+          await mutateContainer();
+          await mutateValidation;
+        }
+      };
+      return asyncFunc();
+    },
+    [updateSPACEGROUP, updateWAVELENGTH, updateHKLIN_FORMAT, updateUNITCELL]
+  );
+
+  //And here the simple useEffect
+  useEffect(() => {
+    if (!handleDigestChanged) return;
     const asyncFunc = async () => {
-      let parametersChanged = false;
-      {
-        const result = await updateSPACEGROUP(
-          HKLINDigest.digest.spaceGroup.replace(/\s+/g, "")
-        );
-        parametersChanged = parametersChanged || Boolean(result);
-      }
-      if (HKLINDigest.digest.wavelength) {
-        //Note some ancient MTZ files lack a wavelength
-        const result = await updateWAVELENGTH(HKLINDigest.digest.wavelength);
-        parametersChanged = parametersChanged || Boolean(result);
-      }
-      {
-        const result = await updateHKLIN_FORMAT(
-          HKLINDigest.digest.format.toUpperCase()
-        );
-        parametersChanged = parametersChanged || Boolean(result);
-      }
-      {
-        const result = await updateUNITCELL(HKLINDigest.digest.cell);
-        parametersChanged = parametersChanged || Boolean(result);
-      }
-      if (parametersChanged) {
-        await mutateContainer();
-      }
+      await handleDigestChanged(HKLINDigest);
     };
     asyncFunc();
-  }, [
-    HKLINDigest,
-    updateSPACEGROUP,
-    updateWAVELENGTH,
-    updateHKLIN_FORMAT,
-    updateUNITCELL,
-  ]);
+  }, [HKLINDigest]);
 
+  //Here handle a case where a new MTZ or mmcif file is uploaded as HKLIN. As before, first calculate the callback using useCallback
+  const handleHKLINFileChange = useCallback(
+    async (hklinValue) => {
+      if (
+        !hklinValue?.dbFileId ||
+        !hklinValue?.baseName ||
+        !oldHKLINValue ||
+        job?.status != 1
+      )
+        return;
+      if (JSON.stringify(hklinValue) === JSON.stringify(oldHKLINValue)) return;
+      const asyncFunc = async () => {
+        const downloadURL = fullUrl(
+          `files/${hklinValue.dbFileId}/download_by_uuid/`
+        );
+        const arrayBuffer = await doRetrieve(downloadURL, hklinValue.baseName);
+        const blob = new Blob([arrayBuffer], {
+          type: "application/CCP4-mtz-file",
+        });
+        const file = new File([blob], hklinValue.baseName, {
+          type: "application/CCP4-mtz-file",
+        });
+        setHKLINFile(file);
+      };
+      return asyncFunc();
+    },
+    [setHKLINFile, oldHKLINValue]
+  );
+
+  //And then a simple useEffect
   useEffect(() => {
-    if (!HKLINValue?.dbFileId || !HKLINValue?.baseName || !oldHKLINValue)
-      return;
-    if (JSON.stringify(HKLINValue) === JSON.stringify(oldHKLINValue)) return;
     const asyncFunc = async () => {
-      alert(
-        "Spotted updated HKLIN" +
-          JSON.stringify(HKLINValue) +
-          JSON.stringify(oldHKLINValue)
-      );
-      const downloadURL = fullUrl(
-        `files/${HKLINValue.dbFileId}/download_by_uuid/`
-      );
-      const arrayBuffer = await doRetrieve(downloadURL, HKLINValue.baseName);
-      const blob = new Blob([arrayBuffer], {
-        type: "application/CCP4-mtz-file",
-      });
-      const file = new File([blob], HKLINValue.baseName, {
-        type: "application/CCP4-mtz-file",
-      });
-      setHKLINFile(file);
+      if (HKLINValue) {
+        await handleHKLINFileChange(HKLINValue);
+      }
     };
     asyncFunc();
   }, [HKLINValue]);
 
+  //Here a useeffect that will fetch the HKLIN file from the server and attempt to select columns frr it
+  //succeeding (of course) only if the file is a MTZ file. If succesful, the accepted column labels are parsed form the
+  //returned signature
   const handleAccept = useCallback(
     async (signature: string) => {
+      if (setHKLIN_OBS_COLUMNS) {
+        const match = signature.match(/\[([^\]]+)\]/);
+        console.log({ match });
+        if (match) {
+          await setHKLIN_OBS_COLUMNS(match[1]);
+        }
+      }
       if (HKLINFile) {
         const formData = new FormData();
         if (signature && signature.trim().length > 0) {
@@ -132,7 +163,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         }
       }
     },
-    [job, HKLINFile, HKLIN_OBSItem]
+    [job, HKLINFile, HKLIN_OBSItem, setHKLIN_OBS_COLUMNS]
   );
 
   return (
@@ -183,25 +214,19 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 qualifiers={{ guiLabel: "Wavelength" }}
               />
             </CContainerElement>
-            <CCP4i2TaskElement
-              {...props}
-              key="HKLIN_FORMAT"
-              itemName="HKLIN_FORMAT"
-              qualifiers={{ guiLabel: "HKLIN format" }}
-            />
-            {HKLIN_FORMATValue === "MTZ" && (
+            {false && (
               <CCP4i2TaskElement
                 {...props}
-                key="HKLIN_OBS"
-                itemName="HKLIN_OBS"
-                qualifiers={{ guiLabel: "Parsed MTZ file" }}
-                disabled={() => true}
+                key="HKLIN_FORMAT"
+                itemName="HKLIN_FORMAT"
+                qualifiers={{ guiLabel: "HKLIN format" }}
               />
             )}
+            {HKLIN_FORMATValue === "MTZ" && (
+              <MtzPanel {...props} itemName="" digest={HKLINDigest} />
+            )}
             {HKLIN_FORMATValue === "MMCIF" && (
-              <>
-                <MmcifPanel {...props} itemName="" digest={HKLINDigest} />
-              </>
+              <MmcifPanel {...props} itemName="" digest={HKLINDigest} />
             )}
             <CCP4i2TaskElement {...props} itemName="FREERFLAG" />
           </CContainerElement>
@@ -227,8 +252,9 @@ interface MmcifPanelProps extends CCP4i2TaskElementProps {
 }
 
 const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
+  const api = useApi();
   const { digest, job } = props;
-  const { setParameter, getTaskItem } = useJob(job.id);
+  const { getTaskItem, mutateContainer, mutateValidation } = useJob(job.id);
   const { value: MMCIF_SELECTED_BLOCKValue } = getTaskItem(
     "MMCIF_SELECTED_BLOCK"
   );
@@ -245,49 +271,65 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
   const { value: MMCIF_SELECTED_INFOValue, update: setMMCIF_SELECTED_INFO } =
     getTaskItem("MMCIF_SELECTED_INFO");
 
-  useEffect(() => {
-    if (!digest?.digest?.rblock_infos) return;
-    if (
-      !setMMCIF_SELECTED_COLUMNS ||
-      !setMMCIF_SELECTED_ISINTENSITY ||
-      !setMMCIF_SELECTED_INFO
-    )
-      return;
-    if (MMCIF_SELECTED_BLOCKValue === oldMMCIF_SELECTED_BLOCKValue) return;
-    const asyncFunc = async () => {
-      if (digest?.digest?.rblock_infos) {
-        const selectedBlock = digest.digest.rblock_infos.find(
-          (info: { bname: string }) => info.bname === MMCIF_SELECTED_BLOCKValue
-        );
-        if (selectedBlock) {
-          const newColumns =
-            selectedBlock.labelsets?.columnsets[0]?.columnlabels?.join(", ");
-          await setMMCIF_SELECTED_COLUMNS(newColumns);
-          const isIntensity = selectedBlock.info?.includes("I") ? 1 : -1;
-          await setMMCIF_SELECTED_ISINTENSITY(isIntensity);
-          const blockInfo = `${selectedBlock.info}\nhkl list type: ${selectedBlock.hklcheckformat}\nHighest resolution: ${selectedBlock.highres}`;
-          await setMMCIF_SELECTED_INFO(blockInfo);
+  const handleSelectedBlockChange = useCallback(
+    async (mmcifSelectedBlockName) => {
+      if (!digest?.digest?.rblock_infos || job?.status != 1) return;
+      if (
+        !setMMCIF_SELECTED_COLUMNS ||
+        !setMMCIF_SELECTED_ISINTENSITY ||
+        !setMMCIF_SELECTED_INFO
+      )
+        return;
+      if (mmcifSelectedBlockName === oldMMCIF_SELECTED_BLOCKValue) return;
+      if (!digest?.digest?.format || digest?.digest?.format !== "mmcif") return;
+      const asyncFunc = async () => {
+        if (digest?.digest?.rblock_infos) {
+          const selectedBlock = digest.digest.rblock_infos.find(
+            (info: { bname: string }) => info.bname === mmcifSelectedBlockName
+          );
+          if (selectedBlock) {
+            const newColumns =
+              selectedBlock.labelsets?.columnsets[0]?.columnlabels?.join(", ");
+            await setMMCIF_SELECTED_COLUMNS(newColumns);
+            const isIntensity = selectedBlock.info?.includes("I") ? 1 : -1;
+            await setMMCIF_SELECTED_ISINTENSITY(isIntensity);
+            const blockInfo = `${selectedBlock.info}\nhkl list type: ${selectedBlock.hklcheckformat}\nHighest resolution: ${selectedBlock.highres}`;
+            await setMMCIF_SELECTED_INFO(blockInfo);
+          }
+        } else {
+          await setMMCIF_SELECTED_COLUMNS("");
+          await setMMCIF_SELECTED_ISINTENSITY("");
+          await setMMCIF_SELECTED_INFO("");
         }
-      } else {
-        await setMMCIF_SELECTED_COLUMNS("");
-        await setMMCIF_SELECTED_ISINTENSITY("");
-        await setMMCIF_SELECTED_INFO("");
-      }
+        mutateContainer();
+        mutateValidation();
+      };
+      asyncFunc();
+    },
+    [
+      oldMMCIF_SELECTED_BLOCKValue,
+      digest,
+      setMMCIF_SELECTED_COLUMNS,
+      setMMCIF_SELECTED_ISINTENSITY,
+      setMMCIF_SELECTED_INFO,
+    ]
+  );
+
+  useEffect(() => {
+    if (!handleSelectedBlockChange) return;
+    const asyncFunc = async () => {
+      await handleSelectedBlockChange(MMCIF_SELECTED_BLOCKValue);
     };
     asyncFunc();
-  }, [
-    MMCIF_SELECTED_BLOCKValue,
-    oldMMCIF_SELECTED_BLOCKValue,
-    digest,
-    setMMCIF_SELECTED_COLUMNS,
-    setMMCIF_SELECTED_ISINTENSITY,
-    setMMCIF_SELECTED_INFO,
-  ]);
+  }, [MMCIF_SELECTED_BLOCKValue]);
 
   return (
     digest?.digest?.rblock_infos && (
       <>
         <Paper sx={{ border: "1px solid black", px: 2, py: 1, mb: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Mmcif file information
+          </Typography>
           <CCP4i2TaskElement
             {...props}
             key="MMCIF_SELECTED_BLOCK"
@@ -302,29 +344,57 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
             }}
           />
           <pre>{MMCIF_SELECTED_INFOValue}</pre>
+          <Stack direction={"row"} spacing={2} sx={{ mb: 2 }}>
+            <CCP4i2TaskElement
+              {...props}
+              sx={{ width: "100%" }}
+              key="MMCIF_SELECTED_COLUMNS"
+              itemName="MMCIF_SELECTED_COLUMNS"
+              qualifiers={{
+                guiLabel: "Selected columns",
+              }}
+              disabled={true}
+            />
+            <CCP4i2TaskElement
+              {...props}
+              sx={{ width: "100%" }}
+              key="MMCIF_SELECTED_ISINTENSITY"
+              itemName="MMCIF_SELECTED_ISINTENSITY"
+              qualifiers={{
+                guiLabel: "Selected is intensity",
+              }}
+              disabled={true}
+            />
+          </Stack>
         </Paper>
-        <Stack direction={"row"} spacing={2} sx={{ mb: 2 }}>
-          <CCP4i2TaskElement
-            {...props}
-            sx={{ width: "100%" }}
-            key="MMCIF_SELECTED_COLUMNS"
-            itemName="MMCIF_SELECTED_COLUMNS"
-            qualifiers={{
-              guiLabel: "Selected columns",
-            }}
-          />
-          <CCP4i2TaskElement
-            {...props}
-            sx={{ width: "100%" }}
-            key="MMCIF_SELECTED_ISINTENSITY"
-            itemName="MMCIF_SELECTED_ISINTENSITY"
-            qualifiers={{
-              guiLabel: "Selected is intensity",
-            }}
-          />
-        </Stack>
       </>
     )
+  );
+};
+
+const MtzPanel: React.FC<MmcifPanelProps> = (props) => {
+  const { digest, job } = props;
+  const { getTaskItem } = useJob(job.id);
+  return (
+    <Paper sx={{ border: "1px solid black", px: 2, py: 1, mb: 2 }}>
+      <Typography variant="h6" gutterBottom>
+        MTZ file information
+      </Typography>
+      <CCP4i2TaskElement
+        {...props}
+        key="HKLIN_OBS"
+        itemName="HKLIN_OBS"
+        qualifiers={{ guiLabel: "Parsed MTZ file" }}
+        disabled={() => true}
+      />
+      <CCP4i2TaskElement
+        {...props}
+        key="HKLIN_OBS_COLUMNS"
+        itemName="HKLIN_OBS_COLUMNS"
+        qualifiers={{ guiLabel: "Selected columns" }}
+        disabled={() => true}
+      />
+    </Paper>
   );
 };
 
