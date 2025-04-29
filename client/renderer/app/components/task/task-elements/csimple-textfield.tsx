@@ -152,10 +152,13 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     [type, value]
   );
 
-  const isDisabled = useMemo(
-    () => inFlight || job.status !== 1,
-    [job, inFlight]
-  );
+  const disabled = useMemo(() => {
+    if (!props.disabled) return inFlight || job.status !== 1;
+    if (typeof props.disabled === "function") {
+      return props.disabled() || inFlight || job.status !== 1;
+    }
+    return props.disabled || inFlight || job.status !== 1;
+  }, [props.disabled]);
 
   return (
     inferredVisibility && (
@@ -163,7 +166,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         <TextField
           multiline={multiLine}
           inputRef={inputRef}
-          disabled={isDisabled}
+          disabled={disabled}
           size="small"
           sx={compositedSx}
           slotProps={calculatedSlotProps}

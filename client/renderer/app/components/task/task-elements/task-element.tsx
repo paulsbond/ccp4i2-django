@@ -26,6 +26,7 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
   sx?: SxProps<Theme>;
   pathOfItem?: (item: HTMLElement) => string;
   visibility?: boolean | (() => boolean);
+  disabled?: boolean | (() => boolean);
   qualifiers?: any;
 }
 

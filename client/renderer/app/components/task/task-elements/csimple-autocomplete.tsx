@@ -138,10 +138,13 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  const isDisabled = useMemo(
-    () => inFlight || job.status !== 1,
-    [job, inFlight]
-  );
+  const disabled = useMemo(() => {
+    if (!props.disabled) return inFlight || job.status !== 1;
+    if (typeof props.disabled === "function") {
+      return props.disabled() || inFlight || job.status !== 1;
+    }
+    return props.disabled || inFlight || job.status !== 1;
+  }, [props.disabled]);
 
   const calculatedSx = useMemo(() => {
     return { minWidth: "20rem", py: 0, mb: 1, ...sx };
@@ -178,14 +181,14 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
               <FormControlLabel
                 key={index}
                 value={enumerator}
-                control={<Radio size="small" />}
+                control={<Radio size="small" disabled={disabled} />}
                 label={getOptionLabel(enumerator)}
               />
             ))}
           </RadioGroup>
         ) : (
           <Autocomplete
-            disabled={isDisabled}
+            disabled={disabled}
             sx={calculatedSx}
             value={value}
             onChange={handleSelect}

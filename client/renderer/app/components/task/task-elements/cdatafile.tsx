@@ -231,6 +231,14 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     if (props.setFiles) props.setFiles(ev.currentTarget.files);
   };
 
+  const disabled = useMemo(() => {
+    if (!props.disabled) return inFlight || job.status !== 1;
+    if (typeof props.disabled === "function") {
+      return props.disabled() || inFlight || job.status !== 1;
+    }
+    return props.disabled || inFlight || job.status !== 1;
+  }, [props.disabled]);
+
   return (
     inferredVisibility && (
       <Stack
@@ -253,7 +261,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           src={`/api/proxy/djangostatic/qticons/${item._class.slice(1)}.png`}
         />
         <Autocomplete
-          disabled={inFlight || job.status !== 1}
+          disabled={disabled}
           sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
           size="small"
           value={value}
@@ -292,7 +300,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
                   borderBottomRightRadius: "0.5rem",
                 },
               }}
-              disabled={inFlight || job.status !== 1}
+              disabled={disabled}
               accept={item._qualifiers.fileExtensions
                 .map((ext: string) => `.${ext}`)
                 .join(",")}
@@ -313,7 +321,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
                   borderBottomRightRadius: "0.5rem",
                 },
               }}
-              disabled={inFlight || job.status !== 1}
+              disabled={disabled}
               accept={item._qualifiers.fileExtensions
                 .map((ext: string) => `.${ext}`)
                 .join(",")}
