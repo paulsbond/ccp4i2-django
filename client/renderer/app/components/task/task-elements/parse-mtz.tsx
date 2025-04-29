@@ -143,7 +143,11 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   return (
     <>
       <SimpleDialog
-        open={file != null && allColumnNames?.length > 0}
+        open={
+          file != null &&
+          allColumnNames &&
+          Object.keys(allColumnNames).length > 0
+        }
         onClose={() => {
           setFiles(null);
         }}
