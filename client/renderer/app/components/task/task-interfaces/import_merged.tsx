@@ -16,7 +16,7 @@ import { useState } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getFileDigest, getTaskItem, setParameter } = useJob(job.id);
+  const { getFileDigest, getTaskItem } = useJob(job.id);
   //@ts-ignore
   const [HKLINFile, setHKLINFile] = useState<File | null>(null);
   const { mutate: mutateContainer } = api.get_wrapped_endpoint_json<any>({
@@ -31,8 +31,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   const { data: HKLINDigest } = getFileDigest(HKLINItem?._objectPath);
 
-  const { item: HKLIN_OBSItem, value: HKLIN_OBSValue } =
-    getTaskItem("HKLIN_OBS");
+  const { item: HKLIN_OBSItem } = getTaskItem("HKLIN_OBS");
 
   const { update: updateSPACEGROUP } = getTaskItem("SPACEGROUP");
 
@@ -120,16 +119,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     async (signature: string) => {
       if (HKLINFile) {
         const formData = new FormData();
-        if (signature && signature.trim().length > 0)
+        if (signature && signature.trim().length > 0) {
           formData.append("column_selector", signature);
-        formData.append("objectPath", HKLIN_OBSItem._objectPath);
-        formData.append("file", HKLINFile, HKLINFile.name);
-        const uploadResult = await api.post<Job>(
-          `jobs/${job.id}/upload_file_param`,
-          formData
-        );
-        setHKLINFile(null);
-        mutateContainer();
+          formData.append("objectPath", HKLIN_OBSItem._objectPath);
+          formData.append("file", HKLINFile, HKLINFile.name);
+          const uploadResult = await api.post<Job>(
+            `jobs/${job.id}/upload_file_param`,
+            formData
+          );
+          setHKLINFile(null);
+          mutateContainer();
+        }
       }
     },
     [job, HKLINFile, HKLIN_OBSItem]
@@ -195,6 +195,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 key="HKLIN_OBS"
                 itemName="HKLIN_OBS"
                 qualifiers={{ guiLabel: "Parsed MTZ file" }}
+                disabled={() => true}
               />
             )}
             {HKLIN_FORMATValue === "MMCIF" && (
@@ -202,6 +203,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 <MmcifPanel {...props} itemName="" digest={HKLINDigest} />
               </>
             )}
+            <CCP4i2TaskElement {...props} itemName="FREERFLAG" />
           </CContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>
@@ -232,25 +234,27 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
   );
   const oldMMCIF_SELECTED_BLOCKValue = usePrevious(MMCIF_SELECTED_BLOCKValue);
 
-  const {
-    item: MMCIF_SELECTED_ISINTENSITYItem,
-    value: MMCIF_SELECTED_ISINTENSITYValue,
-  } = getTaskItem("MMCIF_SELECTED_ISINTENSITY");
+  const { update: setMMCIF_SELECTED_ISINTENSITY } = getTaskItem(
+    "MMCIF_SELECTED_ISINTENSITY"
+  );
 
-  const {
-    item: MMCIF_SELECTED_COLUMNSItem,
-    value: MMCIF_SELECTED_COLUMNSValue,
-  } = getTaskItem("MMCIF_SELECTED_COLUMNS");
+  const { update: setMMCIF_SELECTED_COLUMNS } = getTaskItem(
+    "MMCIF_SELECTED_COLUMNS"
+  );
 
-  const { item: MMCIF_SELECTED_INFOItem, value: MMCIF_SELECTED_INFOValue } =
+  const { value: MMCIF_SELECTED_INFOValue, update: setMMCIF_SELECTED_INFO } =
     getTaskItem("MMCIF_SELECTED_INFO");
 
   useEffect(() => {
+    if (!digest?.digest?.rblock_infos) return;
+    if (
+      !setMMCIF_SELECTED_COLUMNS ||
+      !setMMCIF_SELECTED_ISINTENSITY ||
+      !setMMCIF_SELECTED_INFO
+    )
+      return;
+    if (MMCIF_SELECTED_BLOCKValue === oldMMCIF_SELECTED_BLOCKValue) return;
     const asyncFunc = async () => {
-      if (!digest) return;
-      if (!setParameter) return;
-      if (!MMCIF_SELECTED_BLOCKValue) return;
-      if (MMCIF_SELECTED_BLOCKValue === oldMMCIF_SELECTED_BLOCKValue) return;
       if (digest?.digest?.rblock_infos) {
         const selectedBlock = digest.digest.rblock_infos.find(
           (info: { bname: string }) => info.bname === MMCIF_SELECTED_BLOCKValue
@@ -258,31 +262,27 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
         if (selectedBlock) {
           const newColumns =
             selectedBlock.labelsets?.columnsets[0]?.columnlabels?.join(", ");
-          if (newColumns !== MMCIF_SELECTED_COLUMNSValue) {
-            await setParameter({
-              object_path: `${MMCIF_SELECTED_COLUMNSItem._objectPath}`,
-              value: newColumns,
-            });
-          }
+          await setMMCIF_SELECTED_COLUMNS(newColumns);
           const isIntensity = selectedBlock.info?.includes("I") ? 1 : -1;
-          if (isIntensity !== MMCIF_SELECTED_ISINTENSITYValue) {
-            await setParameter({
-              object_path: `${MMCIF_SELECTED_ISINTENSITYItem._objectPath}`,
-              value: isIntensity,
-            });
-          }
+          await setMMCIF_SELECTED_ISINTENSITY(isIntensity);
           const blockInfo = `${selectedBlock.info}\nhkl list type: ${selectedBlock.hklcheckformat}\nHighest resolution: ${selectedBlock.highres}`;
-          if (isIntensity !== MMCIF_SELECTED_INFOValue) {
-            await setParameter({
-              object_path: `${MMCIF_SELECTED_INFOItem._objectPath}`,
-              value: blockInfo,
-            });
-          }
+          await setMMCIF_SELECTED_INFO(blockInfo);
         }
+      } else {
+        await setMMCIF_SELECTED_COLUMNS("");
+        await setMMCIF_SELECTED_ISINTENSITY("");
+        await setMMCIF_SELECTED_INFO("");
       }
     };
     asyncFunc();
-  }, [MMCIF_SELECTED_BLOCKValue, digest, setParameter]);
+  }, [
+    MMCIF_SELECTED_BLOCKValue,
+    oldMMCIF_SELECTED_BLOCKValue,
+    digest,
+    setMMCIF_SELECTED_COLUMNS,
+    setMMCIF_SELECTED_ISINTENSITY,
+    setMMCIF_SELECTED_INFO,
+  ]);
 
   return (
     digest?.digest?.rblock_infos && (
