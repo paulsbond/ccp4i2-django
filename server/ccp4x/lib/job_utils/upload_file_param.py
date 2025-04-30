@@ -18,6 +18,7 @@ from .save_params_for_job import save_params_for_job
 from .json_encoder import CCP4i2JsonEncoder
 from .value_dict_for_object import value_dict_for_object
 from .detect_file_type import detect_file_type
+from .set_parameter import set_parameter
 from ...db import models
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -39,7 +40,7 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         )
         logger.warning("Upload will replace existing file [%s]", existing_file.path)
         try:
-            (existing_file.path / existing_file.name).unlink()
+            existing_file.path.unlink()
         except Exception as err:
             logger.exception("Problem replacing [%s]", existing_file.path, exc_info=err)
         try:
@@ -138,7 +139,9 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     )
     new_file_import.save()
 
-    param_object.set(
+    set_parameter(
+        job,
+        object_path,
         {
             "project": str(job.project.uuid).replace("-", ""),
             "baseName": new_file.name,
@@ -146,11 +149,9 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
             "annotation": new_file.annotation,
             "dbFileId": str(new_file.uuid).replace("-", ""),
             "subType": new_file.sub_type,
-            # "contentFlag": new_file.content,
-        }
+        },
     )
 
-    save_params_for_job(the_job_plugin=plugin, the_job=job)
     return json.loads(json.dumps(param_object, cls=CCP4i2JsonEncoder))
 
 
