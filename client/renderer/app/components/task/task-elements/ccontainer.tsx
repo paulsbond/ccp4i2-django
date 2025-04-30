@@ -83,23 +83,40 @@ export const CContainerElement: React.FC<
     });
   }, [item, elementSx, childNames]);
 
-  return containerHint === "FolderLevel" || containerHint === "BlockLevel"
-    ? inferredVisibility && (
-        <Card>
-          {qualifiers.guiLabel && (
-            <CardHeader
-              variant="primary"
-              title={qualifiers.guiLabel}
-              action={item && <ErrorInfo {...props} />}
-            />
-          )}
-          <CardContent>
-            {children}
-            <Grid2 container spacing={0.5}>
-              {calculatedContent}
-            </Grid2>
-          </CardContent>
-        </Card>
-      )
-    : inferredVisibility && <div>{children} </div>;
+  return containerHint === "FolderLevel" ? (
+    inferredVisibility && (
+      <Card>
+        {qualifiers.guiLabel && (
+          <CardHeader
+            variant="primary"
+            title={qualifiers.guiLabel}
+            action={item && <ErrorInfo {...props} />}
+          />
+        )}
+        <CardContent>
+          {children}
+          <Grid2 container spacing={0.5}>
+            {calculatedContent}
+          </Grid2>
+        </CardContent>
+      </Card>
+    )
+  ) : containerHint === "BlockLevel" ? (
+    <Card>
+      {qualifiers.guiLabel && (
+        <CardHeader
+          title={qualifiers.guiLabel}
+          action={item && <ErrorInfo {...props} />}
+        />
+      )}
+      <CardContent>
+        {children}
+        <Grid2 container spacing={0.5}>
+          {calculatedContent}
+        </Grid2>
+      </CardContent>
+    </Card>
+  ) : (
+    inferredVisibility && <div>{children} </div>
+  );
 };
