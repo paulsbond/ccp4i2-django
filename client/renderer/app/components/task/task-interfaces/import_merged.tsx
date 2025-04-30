@@ -152,12 +152,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //succeeding (of course) only if the file is a MTZ file. If succesful, the accepted column labels are parsed form the
   //returned signature
   const handleAccept = useCallback(
-    async (signature: string) => {
+    async (columnPath: string) => {
       if (!setHKLIN_OBS_CONTENT_FLAG) return;
       if (!setHKLIN_OBS_COLUMNS) return;
       if (!setHKLINFile) return;
       if (!HKLINFile) return;
-      const match = signature.match(/\[([^\]]+)\]/);
+      const match = columnPath.match(/\[([^\]]+)\]/);
       console.log({ match });
       if (match) {
         await setHKLIN_OBS_COLUMNS(match[1]);
@@ -169,14 +169,16 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             )?.columnType
         );
         const signature = columnTypes.join("");
+        console.log({ signature, columnPath, columnNames });
         const contentFlag = ["KMKM", "GLGL", "JQ", "FQ"].indexOf(signature);
+        console.log({ signature, contentFlag, columnPath, columnNames });
         if (contentFlag > -1) {
-          await setHKLIN_OBS_CONTENT_FLAG(contentFlag);
+          await setHKLIN_OBS_CONTENT_FLAG(contentFlag + 1);
         }
       }
       const formData = new FormData();
-      if (signature && signature.trim().length > 0) {
-        formData.append("column_selector", signature);
+      if (columnPath && columnPath.trim().length > 0) {
+        formData.append("column_selector", columnPath);
         formData.append("objectPath", HKLIN_OBSItem._objectPath);
         formData.append("file", HKLINFile, HKLINFile.name);
         const uploadResult = await api.post<Job>(

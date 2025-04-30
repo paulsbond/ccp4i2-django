@@ -6,6 +6,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   Typography,
@@ -16,6 +19,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useReducer,
   useState,
 } from "react";
 import { v4 as uuid4 } from "uuid";
@@ -50,8 +54,30 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   const [allColumnNames, setAllColumnNames] = useState<{ [key: string]: any }>(
     []
   );
-  const [value, setValue] = useState<string>("");
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+
+  const handleChangeGroup = useCallback(
+    (event: SyntheticEvent<Element, Event>, newValue: string | null) => {
+      setSelectedGroup(newValue);
+    },
+    []
+  );
+
   const { cootModule } = useContext(CCP4i2Context);
+
+  const valuesReducer = (
+    state: { [key: string]: string },
+    action: { type: string; signature: string; value: string }
+  ) => {
+    switch (action.type) {
+      case "SET_VALUE":
+        return { ...state, [action.signature]: action.value };
+      default:
+        return state;
+    }
+  };
+
+  const [values, dispatch] = useReducer(valuesReducer, {});
 
   useEffect(() => {
     const asyncFunc = async () => {
@@ -61,14 +87,12 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
           const fileName = `File_${uuid4()}`;
           const byteArray = new Uint8Array(fileContent as ArrayBuffer);
           cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
-          //try {
           const header_info = cootModule.get_mtz_columns(fileName);
           cootModule.FS_unlink(`./${fileName}`);
           const newColumns: { [colType: string]: string } = {};
           for (let ih = 0; ih < header_info.size(); ih += 2) {
             newColumns[header_info.get(ih + 1)] = header_info.get(ih);
           }
-          //Check for succesful parsing of mtz file:
           if (Object.keys(newColumns).length === 0) {
             console.error("Error parsing MTZ file");
             if (handleCancel) handleCancel();
@@ -132,13 +156,23 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
     });
     setColumnOptions(options);
     if (Object.keys(options).length > 0) {
-      setValue(options[Object.keys(options)[0]][0]);
+      const initialValues: { [key: string]: string } = {};
+      Object.keys(options).forEach((signature) => {
+        initialValues[signature] = options[signature][0];
+      });
+      Object.entries(initialValues).forEach(([signature, value]) => {
+        dispatch({ type: "SET_VALUE", signature, value });
+      });
+      setSelectedGroup(Object.keys(options)[0]);
     }
   }, [allColumnNames, item]);
 
   const onAcceptClicked = useCallback(() => {
-    if (handleAccept) handleAccept(value);
-  }, [value, handleAccept]);
+    if (selectedGroup) {
+      //alert(JSON.stringify(values[selectedGroup]));
+      if (handleAccept) handleAccept(values[selectedGroup]);
+    }
+  }, [values, handleAccept, selectedGroup]);
 
   return (
     <>
@@ -151,43 +185,62 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
         onClose={() => {
           setFiles(null);
         }}
+        slotProps={{
+          paper: {
+            sx: { width: "80%", maxWidth: "none" },
+          },
+        }}
       >
         <DialogTitle>{item?._objectPath}</DialogTitle>
         <DialogContent>
-          {Object.keys(columnOptions).map(
-            (signature: string) =>
-              columnOptions[signature].length > 0 && (
-                <Stack key="signature" direction="row">
-                  <Typography variant="body1" sx={{ minWidth: "15rem", my: 3 }}>
-                    {Object.keys(signatureMap).includes(signature)
-                      ? //@ts-ignore
-                        signatureMap[signature]
-                      : signature}
-                  </Typography>
-                  <Autocomplete
-                    options={columnOptions[signature]}
-                    value={value}
-                    onChange={(
-                      event: SyntheticEvent<Element, Event>,
-                      value: any | null,
-                      reason: AutocompleteChangeReason
-                    ) => {
-                      setValue(value);
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        sx={{ my: 2, minWidth: "20rem" }}
-                        {...params}
-                        label="Columns"
-                      />
-                    )}
-                  />
-                </Stack>
-              )
-          )}
+          <RadioGroup value={selectedGroup} onChange={handleChangeGroup}>
+            {Object.keys(columnOptions).map(
+              (signature: string, index: number) =>
+                columnOptions[signature].length > 0 && (
+                  <Stack key={signature} direction="row">
+                    <FormControlLabel
+                      sx={{ minWidth: "20rem" }}
+                      key={index}
+                      value={signature}
+                      control={<Radio size="small" />}
+                      label={
+                        Object.keys(signatureMap).includes(signature)
+                          ? //@ts-ignore
+                            signatureMap[signature]
+                          : signature
+                      }
+                    />
+                    <Autocomplete
+                      options={columnOptions[signature]}
+                      value={values[signature] || ""}
+                      onChange={(
+                        event: SyntheticEvent<Element, Event>,
+                        value: any | null,
+                        reason: AutocompleteChangeReason
+                      ) => {
+                        dispatch({
+                          type: "SET_VALUE",
+                          signature,
+                          value: value || "",
+                        });
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          sx={{ my: 2, minWidth: "20rem" }}
+                          {...params}
+                          label="Columns"
+                        />
+                      )}
+                    />
+                  </Stack>
+                )
+            )}
+          </RadioGroup>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onAcceptClicked}>OK</Button>
+          <Button disabled={!Boolean(selectedGroup)} onClick={onAcceptClicked}>
+            OK
+          </Button>
           <Button
             onClick={(ev) => {
               if (handleCancel) handleCancel();
