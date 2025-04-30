@@ -85,16 +85,14 @@ export const CContainerElement: React.FC<
 
   return containerHint === "FolderLevel" || containerHint === "BlockLevel"
     ? inferredVisibility && (
-        <Card sx={{ mb: 1, p: 1 }}>
+        <Card>
           {qualifiers.guiLabel && (
             <CardHeader
               title={qualifiers.guiLabel}
-              sx={{ my: 0, py: 0 }}
-              slotProps={{ title: { variant: "h6", my: 0, py: 0 } }}
               action={item && <ErrorInfo {...props} />}
             />
           )}
-          <CardContent sx={{ py: 0.5, px: 1 }}>
+          <CardContent>
             {children}
             <Grid2 container spacing={0.5}>
               {calculatedContent}

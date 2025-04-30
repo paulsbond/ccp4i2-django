@@ -45,6 +45,26 @@ const theme = createTheme({
         },
       },
     },
+    MuiCardHeader: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          py: 1,
+          my: 1,
+          fontWeight: "bold",
+          backgroundColor: theme.palette.primary.main, // Use the primary color
+          color: theme.palette.primary.contrastText,
+        }),
+      },
+      defaultProps: {
+        disableTypography: false,
+        titleTypographyProps: {
+          variant: "body1",
+        },
+        subheaderTypographyProps: {
+          variant: "subtitle2",
+        },
+      },
+    },
   },
 });
 

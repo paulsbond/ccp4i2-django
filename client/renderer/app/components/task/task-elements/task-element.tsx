@@ -19,6 +19,7 @@ import { CReindexOperatorElement } from "./creindexoperator";
 import { CRangeElement } from "./crange";
 import { v4 as uuid4 } from "uuid";
 import { CAsuContentSeqElement } from "./casucontentseq";
+import { CPdbEnsembleItemElement } from "./cpdbensembleitem";
 
 export interface CCP4i2TaskElementProps extends PropsWithChildren {
   job: Job;
@@ -177,6 +178,13 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           />
         );
       case "CPdbEnsembleItem":
+        return (
+          <CPdbEnsembleItemElement
+            key={the_uuid}
+            {...props}
+            qualifiers={qualifiers}
+          />
+        );
       case "CSpaceGroupCell":
       case "CContainer":
         return (

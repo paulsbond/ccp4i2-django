@@ -33,6 +33,10 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     endpoint: "validation",
   });
 
+  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
+    `jobs/${job.id}/digest?object_path=${item._objectPath}`
+  );
+
   const { mutate: mutateFiles } = api.get<File[]>(
     `projects/${job.project}/files`
   );
@@ -64,6 +68,7 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       mutateFiles();
       mutateContainer();
       mutateValidation();
+      mutateDigest();
     }
   }, [job, item, selectedFiles]);
 

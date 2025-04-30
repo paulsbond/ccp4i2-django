@@ -75,6 +75,7 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
         }}
       >
         <MyExpandMore
+          sx={{ color: "primary.contrastText" }}
           expand={expanded}
           onClick={(ev) => {
             ev.stopPropagation();

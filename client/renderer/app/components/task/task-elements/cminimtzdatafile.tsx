@@ -39,7 +39,7 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     `projects/${job.project}/files`
   );
 
-  const { data: fileDigest } = api.digest<any>(
+  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
 
@@ -75,6 +75,7 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
         mutateFiles();
         mutateContainer();
         mutateValidation();
+        mutateDigest();
       }
     },
     [job, item, selectedFiles]

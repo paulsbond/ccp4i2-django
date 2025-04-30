@@ -111,13 +111,13 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
 
   return (
     inferredVisibility && (
-      <Card sx={{ mb: 1 }}>
+      <Card>
         <CardHeader
-          titleTypographyProps={{ variant: "h6", my: 0, py: 0 }}
           title={<>{guiLabel}</>}
           action={
             <>
               <MyExpandMore
+                sx={{ color: "primary.contrastText" }}
                 expand={expanded}
                 onClick={(ev) => {
                   ev.stopPropagation();
@@ -129,7 +129,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
                 <ExpandMoreIcon />
               </MyExpandMore>
               <Button disabled={!(job.status == 1)} onClick={extendListItem}>
-                <Add />
+                <Add sx={{ color: "primary.contrastText" }} />
               </Button>
             </>
           }

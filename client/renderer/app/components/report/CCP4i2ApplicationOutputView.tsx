@@ -126,7 +126,12 @@ export const CCP4i2ApplicationOutputView: React.FC<
             selectedPlot &&
             allPlots.length > 0 && (
               <Autocomplete
-                sx={{ mt: 1, mb: 1, px: 0, py: 0 }}
+                sx={{
+                  mt: 1,
+                  mb: 1,
+                  px: 0,
+                  py: 0,
+                }}
                 options={allPlots}
                 getOptionKey={(option) => allPlots.indexOf(option)}
                 getOptionLabel={(option) => option.title || "Unnamed plot"}
