@@ -74,6 +74,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           {...props}
           itemName=""
           containerHint="BlockLevel"
+          size={{ xs: 12 }}
           qualifiers={{ guiLabel: "Additional geomtery dictionaries" }}
         >
           <CCP4i2TaskElement

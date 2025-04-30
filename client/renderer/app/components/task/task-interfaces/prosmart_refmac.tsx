@@ -173,6 +173,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               qualifiers={{ guiLabel: "Custom parameters" }}
               containerHint="BlockLevel"
               key="Custom parameters"
+              size={{ xs: 4 }}
+              elementSx={{ my: 0, py: 0, minWidth: "5rem" }}
               visibility={() => {
                 return solventMaskType === "EXPLICIT" && solventAdvanced;
               }}
@@ -212,7 +214,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             containerHint="BlockLevel"
           >
             <Grid2 container key="row1">
-              <Grid2 size={{ xs: 12 }} key="col1">
+              <Grid2 size={{ xs: 6 }} key="col1">
                 <CCP4i2TaskElement
                   {...props}
                   itemName="TLSMODE"
@@ -221,7 +223,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                   }}
                 />
               </Grid2>
-              <Grid2 size={{ xs: 12 }} key="col12">
+              <Grid2 size={{ xs: 6 }} key="col12">
                 <CCP4i2TaskElement
                   {...props}
                   itemName="NTLSCYCLES"
@@ -250,7 +252,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 visibility={() => tlsMode === "FILE"}
               />
               <Grid2 container key="row1">
-                <Grid2 size={{ xs: 12 }} key="col1">
+                <Grid2 size={{ xs: 6 }} key="col1">
                   <CCP4i2TaskElement
                     {...props}
                     itemName="BFACSETUSE"
@@ -259,7 +261,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                     }}
                   />
                 </Grid2>
-                <Grid2 size={{ xs: 12 }} key="col2">
+                <Grid2 size={{ xs: 6 }} key="col2">
                   <CCP4i2TaskElement
                     {...props}
                     itemName="BFACSET"
@@ -340,6 +342,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             {...props}
             qualifiers={{ guiLabel: "Validation and analysis" }}
             containerHint="BlockLevel"
+            size={{ xs: 4 }}
+            elementSx={{ minWidth: "8rem" }}
             key="Validation"
           >
             <CCP4i2TaskElement

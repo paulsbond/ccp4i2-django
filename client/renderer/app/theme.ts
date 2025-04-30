@@ -77,7 +77,7 @@ const theme = createTheme({
       defaultProps: {
         disableTypography: false,
         titleTypographyProps: {
-          variant: "n6",
+          variant: "h6",
         },
         subheaderTypographyProps: {
           variant: "subtitle2",

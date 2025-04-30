@@ -6,6 +6,7 @@ export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => (
     {...props}
     qualifiers={props.qualifiers}
     size={{ xs: 4 }}
+    containerHint="RowLevel"
     elementSx={{ my: 0, py: 0, minWidth: "5rem" }}
   />
 );

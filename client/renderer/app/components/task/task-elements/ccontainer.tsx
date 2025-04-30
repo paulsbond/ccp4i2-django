@@ -2,15 +2,26 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Collapse,
   Grid2,
   GridSize,
+  Paper,
+  Stack,
   SxProps,
   Typography,
 } from "@mui/material";
-import { PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  PropsWithChildren,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
+import { MyExpandMore } from "../../expand-more";
+import { ExpandMore } from "@mui/icons-material";
 
 interface SizeProps {
   xs?: GridSize | null;
@@ -21,7 +32,8 @@ interface SizeProps {
 }
 interface CContainerElementProps extends CCP4i2TaskElementProps {
   size?: SizeProps;
-  containerHint?: "FolderLevel" | "BlockLevel";
+  initiallyOpen?: boolean;
+  containerHint?: "FolderLevel" | "BlockLevel" | "RowLevel";
   elementSx?: SxProps;
 }
 export const CContainerElement: React.FC<
@@ -32,15 +44,17 @@ export const CContainerElement: React.FC<
     itemName,
     children,
     containerHint = "FolderLevel",
+    initiallyOpen = true,
     visibility,
     qualifiers,
-    size = { xs: 12 },
+    size = { xl: 12 },
     elementSx,
   } = props;
   const { getTaskItem } = useJob(job.id);
   const { item } = getTaskItem(itemName);
   const [visibilityPrompt, setVisibilityPrompt] = useState<number>(0);
   const visibilityPromptRef = useRef<number>(0);
+  const [open, setOpen] = useState(initiallyOpen);
 
   const inferredVisibility = useMemo(() => {
     if (!visibility) return true;
@@ -66,57 +80,93 @@ export const CContainerElement: React.FC<
   }, [item]);
 
   const calculatedContent = useMemo(() => {
-    return childNames.map((childName: string) => {
-      const childObjectPath = `${item._objectPath}.${childName}`;
-      const { item: childItem } = getTaskItem(childObjectPath);
-      return (
-        <Grid2 key={childObjectPath} size={size}>
-          <CCP4i2TaskElement
-            key={childObjectPath}
-            {...props}
-            sx={elementSx}
-            itemName={childObjectPath}
-            qualifiers={{ ...childItem._qualifiers }}
-          />
+    return (
+      item && (
+        <Grid2 container spacing={0} key={item._objectPath}>
+          {childNames.map((childName: string) => {
+            const childObjectPath = `${item._objectPath}.${childName}`;
+            const { item: childItem } = getTaskItem(childObjectPath);
+            return (
+              <Grid2 key={childObjectPath} size={size}>
+                <CCP4i2TaskElement
+                  key={childObjectPath}
+                  {...props}
+                  sx={elementSx}
+                  itemName={childObjectPath}
+                  qualifiers={{ ...childItem._qualifiers }}
+                />
+              </Grid2>
+            );
+          })}
         </Grid2>
-      );
-    });
+      )
+    );
   }, [item, elementSx, childNames]);
 
-  return containerHint === "FolderLevel" ? (
-    inferredVisibility && (
-      <Card>
-        {qualifiers.guiLabel && (
+  const griddedChildren = useMemo(() => {
+    if (children) {
+      return (
+        <Grid2 container spacing={0} sx={{ mt: 1 }}>
+          {React.Children.map(children, (child) => {
+            return <Grid2 size={size}>{child}</Grid2>;
+          })}
+        </Grid2>
+      );
+    }
+    return null;
+  }, [children]);
+
+  return containerHint === "FolderLevel"
+    ? inferredVisibility && (
+        <Card>
           <CardHeader
             variant="primary"
             title={qualifiers.guiLabel}
-            action={item && <ErrorInfo {...props} />}
+            onClick={(ev) => {
+              ev.stopPropagation();
+              setOpen(!open);
+            }}
+            action={
+              <Stack direction="row">
+                <MyExpandMore
+                  expand={open}
+                  aria-expanded={open}
+                  aria-label="show more"
+                >
+                  <ExpandMore sx={{ color: "primary.contrastText" }} />
+                </MyExpandMore>
+                {item && <ErrorInfo {...props} />}
+              </Stack>
+            }
           />
-        )}
-        <CardContent>
-          {children}
-          <Grid2 container spacing={0.5}>
-            {calculatedContent}
-          </Grid2>
-        </CardContent>
-      </Card>
-    )
-  ) : containerHint === "BlockLevel" ? (
-    <Card>
-      {qualifiers.guiLabel && (
-        <CardHeader
-          title={qualifiers.guiLabel}
-          action={item && <ErrorInfo {...props} />}
-        />
-      )}
-      <CardContent>
-        {children}
-        <Grid2 container spacing={0.5}>
+          <CardContent>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              {calculatedContent}
+              {griddedChildren}
+            </Collapse>
+          </CardContent>
+        </Card>
+      )
+    : containerHint === "BlockLevel"
+    ? inferredVisibility && (
+        <Paper>
+          <Typography variant="h6" noWrap component="div">
+            {qualifiers.guiLabel}
+          </Typography>
+          {calculatedContent} {griddedChildren}
+        </Paper>
+      )
+    : containerHint == "RowLevel"
+    ? inferredVisibility && (
+        <Stack direction="row">
           {calculatedContent}
-        </Grid2>
-      </CardContent>
-    </Card>
-  ) : (
-    inferredVisibility && <div>{children} </div>
-  );
+          {griddedChildren}
+        </Stack>
+      )
+    : inferredVisibility && (
+        <div>
+          {calculatedContent}
+          {griddedChildren}
+        </div>
+      );
 };

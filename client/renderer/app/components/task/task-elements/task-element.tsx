@@ -20,6 +20,14 @@ import { CRangeElement } from "./crange";
 import { v4 as uuid4 } from "uuid";
 import { CAsuContentSeqElement } from "./casucontentseq";
 import { CPdbEnsembleItemElement } from "./cpdbensembleitem";
+import { Breakpoint } from "@mui/system";
+type ResponsiveStyleValue<T> =
+  | T
+  | Array<T | null>
+  | Partial<Record<Breakpoint, T>>;
+
+type GridSize = number | "auto" | boolean;
+type ResponsiveGridSize = ResponsiveStyleValue<GridSize>;
 
 export interface CCP4i2TaskElementProps extends PropsWithChildren {
   job: Job;

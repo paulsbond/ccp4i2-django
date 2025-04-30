@@ -3,14 +3,15 @@ import { CCP4i2Context } from "../../app-context";
 import { useApi } from "../../api";
 import { Job } from "../../models";
 import { CircularProgress, LinearProgress, Paper, Popper } from "@mui/material";
-import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
-import ServalcatPipeInterface from "./task-interfaces/servalcat_pipe";
-import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
 import AimlessPipeInterface from "./task-interfaces/aimless_pipe";
 import Crank2Interface from "./task-interfaces/crank2";
-import ModelcraftInterface from "./task-interfaces/modelcraft";
-import ImportMergedInterface from "./task-interfaces/import_merged";
 import GenericInterface from "./task-interfaces/generic";
+import ImportMergedInterface from "./task-interfaces/import_merged";
+import ModelcraftInterface from "./task-interfaces/modelcraft";
+import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
+import PhaserSimpleInterface from "./task-interfaces/phaser_simple";
+import ServalcatPipeInterface from "./task-interfaces/servalcat_pipe";
+import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
 import { useJob } from "../../utils";
 import { ErrorPopper } from "./task-elements/error-info";
 import { FetchFileForParam } from "./task-elements/fetch-file-for-param";
@@ -84,6 +85,14 @@ export const TaskContainer = () => {
       case "SubstituteLigand":
         return (
           <SubstituteLigandInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "phaser_simple":
+        return (
+          <PhaserSimpleInterface
             {...{
               job,
             }}
