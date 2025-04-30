@@ -177,6 +177,33 @@ class CCP4i2TestCase(TestCase):
             "testfile.pdb",
         )
 
+    def test_pdb_item_file_upload(self):
+        project = models.Project.objects.last()
+        create_response = self.client.post(
+            f"/projects/{project.id}/create_task/",
+            {"task_name": "phaser_simple"},
+            content_type="application/json; charset=utf-8",
+        )
+        print(create_response.json())
+        # Create a sample file
+        file_content = b"Hello, this is a test file."
+        test_file = SimpleUploadedFile("testfile.pdb", file_content)
+
+        # Create the data to be sent in the request
+        data = {
+            "file": test_file,
+            "objectPath": "phaser_simple.inputData.ENSEMBLES[0].pdbItemList[0].structure",
+        }
+        response = self.client.post(
+            f"/jobs/{create_response.json()['new_job']['id']}/upload_file_param/",
+            data,
+            format="multipart",
+        )
+        self.assertEqual(
+            response.json()["updated_item"]["_value"]["baseName"]["_value"],
+            "testfile.pdb",
+        )
+
     def test_project_upload(self):
         # Create a sample file
         test_file = None
