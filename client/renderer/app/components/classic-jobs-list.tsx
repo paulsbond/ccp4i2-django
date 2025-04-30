@@ -63,19 +63,21 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   const decoratedJobs = useMemo<
     (JobWithChildren | DjangoFile)[] | undefined
   >(() => {
-    return jobs
-      ?.filter((job) => job.parent === parent)
-      .map((job) => {
-        const childJobs: (Job | DjangoFile)[] = jobs.filter(
-          (childJob) => childJob.parent === job.id
-        );
-        const childFiles = files?.filter((file) => file.job === job.id);
-        return {
-          ...job,
-          children: childJobs.concat(childFiles || []),
-        };
-      })
-      .reverse();
+    return jobs && jobs.filter
+      ? jobs
+          .filter((job) => job.parent === parent)
+          .map((job) => {
+            const childJobs: (Job | DjangoFile)[] = jobs.filter(
+              (childJob) => childJob.parent === job.id
+            );
+            const childFiles = files?.filter((file) => file.job === job.id);
+            return {
+              ...job,
+              children: childJobs.concat(childFiles || []),
+            };
+          })
+          .reverse()
+      : [];
   }, [jobs, files]);
 
   const getItemLabel = useCallback(
