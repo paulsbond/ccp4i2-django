@@ -200,10 +200,15 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         );
       }
       setInFlight(true);
-      await setParameter(setParameterArg);
-      mutateDigest();
-      mutateContainer();
-      setInFlight(false);
+      try {
+        await setParameter(setParameterArg);
+      } catch (err) {
+        alert(err);
+      } finally {
+        setInFlight(false);
+        mutateDigest();
+        mutateContainer();
+      }
     },
     [job, objectPath, project_jobs, projects]
   );
@@ -238,7 +243,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       return props.disabled() || inFlight || job.status !== 1;
     }
     return props.disabled || inFlight || job.status !== 1;
-  }, [props.disabled]);
+  }, [props.disabled, inFlight, job]);
 
   return (
     inferredVisibility && (
