@@ -55,8 +55,8 @@ const theme = createTheme({
             {
               props: { variant: "primary" },
               style: ({ theme }) => ({
-                py: 1,
-                my: 1,
+                py: 0,
+                my: 0,
                 fontWeight: "bold",
                 backgroundColor: theme.palette.primary.main, // Use the primary color
                 color: theme.palette.primary.contrastText,
