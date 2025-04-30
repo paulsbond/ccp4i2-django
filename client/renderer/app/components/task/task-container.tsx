@@ -4,6 +4,7 @@ import { useApi } from "../../api";
 import { Job } from "../../models";
 import { CircularProgress, LinearProgress, Paper, Popper } from "@mui/material";
 import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
+import ServalcatPipeInterface from "./task-interfaces/servalcat_pipe";
 import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
 import AimlessPipeInterface from "./task-interfaces/aimless_pipe";
 import Crank2Interface from "./task-interfaces/crank2";
@@ -99,6 +100,14 @@ export const TaskContainer = () => {
       case "crank2":
         return (
           <Crank2Interface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "servalcat_pipe":
+        return (
+          <ServalcatPipeInterface
             {...{
               job,
             }}

@@ -62,17 +62,27 @@ const theme = createTheme({
                 color: theme.palette.primary.contrastText,
               }),
             },
+            {
+              props: { variant: "secondary" },
+              style: ({ theme }) => ({
+                py: 0,
+                my: 0,
+                fontWeight: "bolder",
+                color: "rgb(34, 97, 124)",
+              }),
+            },
           ],
         },
       },
       defaultProps: {
         disableTypography: false,
         titleTypographyProps: {
-          variant: "body1",
+          variant: "n6",
         },
         subheaderTypographyProps: {
           variant: "subtitle2",
         },
+        variant: "secondary",
       },
     },
   },
