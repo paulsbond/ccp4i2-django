@@ -44,16 +44,26 @@ const theme = createTheme({
           ],
         },
       },
+      defaultProps: {
+        variant: "body", // Default variant if none is specified
+      },
     },
     MuiCardHeader: {
       styleOverrides: {
-        root: ({ theme }) => ({
-          py: 1,
-          my: 1,
-          fontWeight: "bold",
-          backgroundColor: theme.palette.primary.main, // Use the primary color
-          color: theme.palette.primary.contrastText,
-        }),
+        root: {
+          variants: [
+            {
+              props: { variant: "primary" },
+              style: ({ theme }) => ({
+                py: 1,
+                my: 1,
+                fontWeight: "bold",
+                backgroundColor: theme.palette.primary.main, // Use the primary color
+                color: theme.palette.primary.contrastText,
+              }),
+            },
+          ],
+        },
       },
       defaultProps: {
         disableTypography: false,

@@ -10,7 +10,15 @@ import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import { ParseMtz } from "../task-elements/parse-mtz";
 import { Job } from "../../../models";
-import { Grid2, Paper, Stack, Typography } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Grid2,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useState } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -208,37 +216,35 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="HKLIN"
               qualifiers={{ guiLabel: "Reflections" }}
             />
-            <CContainerElement
-              itemName=""
-              key="Enter additional"
-              {...props}
-              containerHint="BlockLevel"
-              qualifiers={{ guiLabel: "Enter additional information" }}
-            >
-              <Grid2 container spacing={2}>
-                <Grid2 size={{ xs: 6, md: 4 }}>
-                  <CCP4i2TaskElement
-                    {...props}
-                    key="SPACEGROUP"
-                    itemName="SPACEGROUP"
-                    qualifiers={{ guiLabel: "Space group" }}
-                  />
+            <Card>
+              <CardHeader variant="primary" title="Additional information" />
+              <CardContent>
+                <Grid2 container direction="row" sx={{ mb: 2 }} spacing={2}>
+                  <Grid2 size={{ xs: 6, md: 4 }}>
+                    <CCP4i2TaskElement
+                      {...props}
+                      key="SPACEGROUP"
+                      itemName="SPACEGROUP"
+                      qualifiers={{ guiLabel: "Space group" }}
+                    />
+                  </Grid2>
+                  <Grid2 size={{ xs: 6, md: 8 }}>
+                    <CCP4i2TaskElement
+                      {...props}
+                      key="UNITCELL"
+                      itemName="UNITCELL"
+                    />
+                  </Grid2>
                 </Grid2>
-                <Grid2 size={{ xs: 6, md: 8 }}>
-                  <CCP4i2TaskElement
-                    {...props}
-                    key="UNITCELL"
-                    itemName="UNITCELL"
-                  />
-                </Grid2>
-              </Grid2>
-              <CCP4i2TaskElement
-                {...props}
-                key="WAVELENGTH"
-                itemName="WAVELENGTH"
-                qualifiers={{ guiLabel: "Wavelength" }}
-              />
-            </CContainerElement>
+                <CCP4i2TaskElement
+                  {...props}
+                  key="WAVELENGTH"
+                  itemName="WAVELENGTH"
+                  qualifiers={{ guiLabel: "Wavelength" }}
+                />
+              </CardContent>
+            </Card>
+
             {false && (
               <CCP4i2TaskElement
                 {...props}
@@ -351,47 +357,47 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
   return (
     digest?.digest?.rblock_infos && (
       <>
-        <Paper sx={{ border: "1px solid black", px: 2, py: 1, mb: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Mmcif file information
-          </Typography>
-          <CCP4i2TaskElement
-            {...props}
-            key="MMCIF_SELECTED_BLOCK"
-            itemName="MMCIF_SELECTED_BLOCK"
-            qualifiers={{
-              guiLabel: "Selected block",
-              guiMode: "multiLineRadio",
-              onlyEnumerators: true,
-              enumerators: digest.digest.rblock_infos.map(
-                (info: { bname: string }) => info.bname
-              ),
-            }}
-          />
-          <pre>{MMCIF_SELECTED_INFOValue}</pre>
-          <Stack direction={"row"} spacing={2} sx={{ mb: 2 }}>
+        <Card>
+          <CardHeader variant="primary" title="Mmcif file information" />
+          <CardContent>
             <CCP4i2TaskElement
               {...props}
-              sx={{ width: "100%" }}
-              key="MMCIF_SELECTED_COLUMNS"
-              itemName="MMCIF_SELECTED_COLUMNS"
+              key="MMCIF_SELECTED_BLOCK"
+              itemName="MMCIF_SELECTED_BLOCK"
               qualifiers={{
-                guiLabel: "Selected columns",
+                guiLabel: "Selected block",
+                guiMode: "multiLineRadio",
+                onlyEnumerators: true,
+                enumerators: digest.digest.rblock_infos.map(
+                  (info: { bname: string }) => info.bname
+                ),
               }}
-              disabled={true}
             />
-            <CCP4i2TaskElement
-              {...props}
-              sx={{ width: "100%" }}
-              key="MMCIF_SELECTED_ISINTENSITY"
-              itemName="MMCIF_SELECTED_ISINTENSITY"
-              qualifiers={{
-                guiLabel: "Selected is intensity",
-              }}
-              disabled={true}
-            />
-          </Stack>
-        </Paper>
+            <pre>{MMCIF_SELECTED_INFOValue}</pre>
+            <Stack direction={"row"} spacing={2} sx={{ mb: 2 }}>
+              <CCP4i2TaskElement
+                {...props}
+                sx={{ width: "100%" }}
+                key="MMCIF_SELECTED_COLUMNS"
+                itemName="MMCIF_SELECTED_COLUMNS"
+                qualifiers={{
+                  guiLabel: "Selected columns",
+                }}
+                disabled={true}
+              />
+              <CCP4i2TaskElement
+                {...props}
+                sx={{ width: "100%" }}
+                key="MMCIF_SELECTED_ISINTENSITY"
+                itemName="MMCIF_SELECTED_ISINTENSITY"
+                qualifiers={{
+                  guiLabel: "Selected is intensity",
+                }}
+                disabled={true}
+              />
+            </Stack>
+          </CardContent>
+        </Card>
       </>
     )
   );

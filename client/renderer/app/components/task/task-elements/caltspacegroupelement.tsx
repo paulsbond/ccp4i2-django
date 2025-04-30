@@ -60,9 +60,9 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
         }}
       >
         <CardHeader
+          variant="primary"
           title={qualifiers?.guiLabel}
-          sx={{ backgroundColor: getValidationColor(item) }}
-          slotProps={{ title: { variant: "h6", my: 0, py: 0 } }}
+          sx={{ borderColor: getValidationColor(item) }}
           action={<ErrorInfo {...props} />}
         />
         <CardContent sx={{ my: 0, py: 0 }}>

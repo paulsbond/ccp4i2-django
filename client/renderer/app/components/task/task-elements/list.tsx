@@ -113,6 +113,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
     inferredVisibility && (
       <Card>
         <CardHeader
+          variant="primary"
           title={<>{guiLabel}</>}
           action={
             <>

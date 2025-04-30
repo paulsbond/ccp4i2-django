@@ -88,6 +88,7 @@ export const CContainerElement: React.FC<
         <Card>
           {qualifiers.guiLabel && (
             <CardHeader
+              variant="primary"
               title={qualifiers.guiLabel}
               action={item && <ErrorInfo {...props} />}
             />

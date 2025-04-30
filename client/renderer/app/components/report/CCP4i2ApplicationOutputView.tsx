@@ -119,7 +119,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
 
   return (
     <>
-      <Card>
+      <Card variant="outlined">
         <CardHeader
           title={
             allPlots &&
@@ -127,8 +127,6 @@ export const CCP4i2ApplicationOutputView: React.FC<
             allPlots.length > 0 && (
               <Autocomplete
                 sx={{
-                  mt: 1,
-                  mb: 1,
                   px: 0,
                   py: 0,
                 }}
