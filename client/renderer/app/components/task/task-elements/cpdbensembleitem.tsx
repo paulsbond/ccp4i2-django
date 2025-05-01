@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { ErrorInfo } from "./error-info";
 import { useMemo } from "react";
+import { CSimpleDataFileElement } from "./csimpledatafile";
 
 export const CPdbEnsembleItemElement: React.FC<CCP4i2TaskElementProps> = (
   props
@@ -27,43 +28,36 @@ export const CPdbEnsembleItemElement: React.FC<CCP4i2TaskElementProps> = (
   }, [props.visibility]);
 
   return (
-    inferredVisibility && (
-      <Paper
+    inferredVisibility &&
+    item && (
+      <CSimpleDataFileElement
+        {...props}
         sx={{
           border: "3px solid",
           borderColor: getValidationColor(item),
-          pt: 2,
+        }}
+        itemName={`${item._objectPath}.structure`}
+        qualifiers={{
+          guiLabel: "Coordinates",
         }}
       >
-        {item && (
-          <Stack direction="column" spacing={0}>
-            <CCP4i2TaskElement
-              {...props}
-              sx={{ my: 1 }}
-              itemName={`${item._objectPath}.structure`}
-              qualifiers={{
-                guiLabel: "Coordinates",
-              }}
-            />
-            <Stack direction="row" spacing={2}>
-              <CCP4i2TaskElement
-                {...props}
-                sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                itemName={`${item._objectPath}.identity_to_target`}
-                qualifiers={{ guiLabel: "Identity" }}
-              />
-              <CCP4i2TaskElement
-                {...props}
-                sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                itemName={`${item._objectPath}.rms_to_target`}
-                qualifiers={{
-                  guiLabel: "Rms",
-                }}
-              />
-            </Stack>
-          </Stack>
-        )}
-      </Paper>
+        <Stack direction="row" spacing={2}>
+          <CCP4i2TaskElement
+            {...props}
+            sx={{ my: 0, py: 0, minWidth: "10rem" }}
+            itemName={`${item._objectPath}.identity_to_target`}
+            qualifiers={{ guiLabel: "Identity" }}
+          />
+          <CCP4i2TaskElement
+            {...props}
+            sx={{ my: 0, py: 0, minWidth: "10rem" }}
+            itemName={`${item._objectPath}.rms_to_target`}
+            qualifiers={{
+              guiLabel: "Rms",
+            }}
+          />
+        </Stack>
+      </CSimpleDataFileElement>
     )
   );
 };

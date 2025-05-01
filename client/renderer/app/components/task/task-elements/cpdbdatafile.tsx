@@ -35,8 +35,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 
   return (
     inferredVisibility && (
-      <Stack direction="column">
-        <CSimpleDataFileElement {...props} />
+      <CSimpleDataFileElement {...props}>
         <CCP4i2TaskElement
           {...props}
           itemName={selectionItemName}
@@ -45,7 +44,7 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
             guiLabel: "Selection string",
           }}
         />
-      </Stack>
+      </CSimpleDataFileElement>
     )
   );
 };

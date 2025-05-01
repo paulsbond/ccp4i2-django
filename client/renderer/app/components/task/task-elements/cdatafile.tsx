@@ -12,6 +12,7 @@ import { CCP4i2TaskElementProps } from "./task-element";
 import { File as CCP4i2File, Job, nullFile, Project } from "../../../models";
 import {
   ChangeEvent,
+  PropsWithChildren,
   ReactNode,
   SyntheticEvent,
   useCallback,
@@ -43,7 +44,9 @@ export const inverseFileTypeMapping: { [key: string]: string } = {
   CGenericReflDataFile: "application/CCP4-generic-reflections",
 };
 
-export interface CCP4i2DataFileElementProps extends CCP4i2TaskElementProps {
+export interface CCP4i2DataFileElementProps
+  extends CCP4i2TaskElementProps,
+    PropsWithChildren {
   setFileContent?: (fileContent: ArrayBuffer | null | string | File) => void;
   setFiles?: (files: FileList | null) => void;
   infoContent?: ReactNode;
@@ -248,8 +251,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   return (
     inferredVisibility && (
       <Stack
-        ref={setNodeRef}
-        direction="row"
         sx={{
           border: "3px solid",
           borderColor: getValidationColor(item),
@@ -262,89 +263,40 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           mx: 2,
           my: 1,
         }}
+        direction="column"
       >
-        <Avatar
-          src={`/api/proxy/djangostatic/qticons/${item._class.slice(1)}.png`}
-        />
-        <Autocomplete
-          disabled={disabled}
-          sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
-          size="small"
-          value={value}
-          onChange={handleSelect}
-          options={fileOptions?.concat([nullFile]) || []}
-          getOptionLabel={getOptionLabel}
-          getOptionKey={(option) => `${option.uuid}`}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              error={getValidationColor(item) === "error.light"}
-              slotProps={{
-                inputLabel: {
-                  shrink: true,
-                  disableAnimation: true,
-                },
-              }}
-              label={guiLabel}
-              size="small"
-            />
-          )}
-          title={objectPath || item._className || "Title"}
-        />
-        <Stack direction="row">
-          {job.status == 1 && (
-            <InputFileUpload
-              sx={{
-                my: 1,
-                borderRadius: "0",
-                "&:first-of-type": {
-                  borderTopLeftRadius: "0.5rem",
-                  borderBottomLeftRadius: "0.5rem",
-                },
-                "&:last-of-type": {
-                  borderTopRightRadius: "0.5rem",
-                  borderBottomRightRadius: "0.5rem",
-                },
-              }}
-              disabled={disabled}
-              accept={item._qualifiers.fileExtensions
-                .map((ext: string) => `.${ext}`)
-                .join(",")}
-              handleFileChange={handleFileChange}
-            />
-          )}
-          {item?._qualifiers?.downloadModes?.length > 0 && job.status == 1 && (
-            <InputFileFetch
-              sx={{
-                my: 1,
-                borderRadius: "0",
-                "&:first-of-type": {
-                  borderTopLeftRadius: "0.5rem",
-                  borderBottomLeftRadius: "0.5rem",
-                },
-                "&:last-of-type": {
-                  borderTopRightRadius: "0.5rem",
-                  borderBottomRightRadius: "0.5rem",
-                },
-              }}
-              disabled={disabled}
-              accept={item._qualifiers.fileExtensions
-                .map((ext: string) => `.${ext}`)
-                .join(",")}
-              handleFileChange={handleFileChange}
-              item={item}
-            />
-          )}
-          {value && value != nullFile && (
-            <>
-              <Button
-                disabled={false}
-                component="label"
-                role={undefined}
-                variant="outlined"
-                tabIndex={-1}
+        <Stack ref={setNodeRef} direction="row">
+          <Avatar
+            src={`/api/proxy/djangostatic/qticons/${item._class.slice(1)}.png`}
+          />
+          <Autocomplete
+            disabled={disabled}
+            sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
+            size="small"
+            value={value}
+            onChange={handleSelect}
+            options={fileOptions?.concat([nullFile]) || []}
+            getOptionLabel={getOptionLabel}
+            getOptionKey={(option) => `${option.uuid}`}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                error={getValidationColor(item) === "error.light"}
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                    disableAnimation: true,
+                  },
+                }}
+                label={guiLabel}
                 size="small"
-                startIcon={<Menu fontSize="small" />}
+              />
+            )}
+            title={objectPath || item._className || "Title"}
+          />
+          <Stack direction="row">
+            {job.status == 1 && (
+              <InputFileUpload
                 sx={{
                   my: 1,
                   borderRadius: "0",
@@ -357,17 +309,71 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
                     borderBottomRightRadius: "0.5rem",
                   },
                 }}
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  ev.preventDefault();
-                  setFileMenuAnchorEl(ev.currentTarget);
-                  setFile(value);
-                }}
-              ></Button>
-            </>
-          )}
+                disabled={disabled}
+                accept={item._qualifiers.fileExtensions
+                  .map((ext: string) => `.${ext}`)
+                  .join(",")}
+                handleFileChange={handleFileChange}
+              />
+            )}
+            {item?._qualifiers?.downloadModes?.length > 0 &&
+              job.status == 1 && (
+                <InputFileFetch
+                  sx={{
+                    my: 1,
+                    borderRadius: "0",
+                    "&:first-of-type": {
+                      borderTopLeftRadius: "0.5rem",
+                      borderBottomLeftRadius: "0.5rem",
+                    },
+                    "&:last-of-type": {
+                      borderTopRightRadius: "0.5rem",
+                      borderBottomRightRadius: "0.5rem",
+                    },
+                  }}
+                  disabled={disabled}
+                  accept={item._qualifiers.fileExtensions
+                    .map((ext: string) => `.${ext}`)
+                    .join(",")}
+                  handleFileChange={handleFileChange}
+                  item={item}
+                />
+              )}
+            {value && value != nullFile && (
+              <>
+                <Button
+                  disabled={false}
+                  component="label"
+                  role={undefined}
+                  variant="outlined"
+                  tabIndex={-1}
+                  size="small"
+                  startIcon={<Menu fontSize="small" />}
+                  sx={{
+                    my: 1,
+                    borderRadius: "0",
+                    "&:first-of-type": {
+                      borderTopLeftRadius: "0.5rem",
+                      borderBottomLeftRadius: "0.5rem",
+                    },
+                    "&:last-of-type": {
+                      borderTopRightRadius: "0.5rem",
+                      borderBottomRightRadius: "0.5rem",
+                    },
+                  }}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    setFileMenuAnchorEl(ev.currentTarget);
+                    setFile(value);
+                  }}
+                ></Button>
+              </>
+            )}
+          </Stack>
+          <ErrorTrigger {...{ item, job }} />
         </Stack>
-        <ErrorTrigger {...{ item, job }} />
+        {props.children}
       </Stack>
     )
   );
