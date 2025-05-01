@@ -110,6 +110,7 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     param_object.loadFile()
     param_object.setContentFlag(reset=True)
     logger.debug("Content flag is %s", param_object.contentFlag)
+
     try:
         type = models.FileType.objects.get(name=param_object.QUALIFIERS["mimeTypeName"])
     except models.FileType.DoesNotExist:
@@ -131,7 +132,8 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         contentFlag = int(param_object.contentFlag)
         new_file.content = contentFlag
     except Exception:
-        logging.error("Unsettable contentFlag on %s", param_object.objectName())
+        new_file.content = 0
+        logging.warning("Unsettable contentFlag on %s", param_object.objectName())
     new_file.save()
 
     new_file_import = models.FileImport(
