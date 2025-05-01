@@ -12,6 +12,7 @@ import ProsmartRefmacInterface from "./task-interfaces/prosmart_refmac";
 import PhaserSimpleInterface from "./task-interfaces/phaser_simple";
 import ServalcatPipeInterface from "./task-interfaces/servalcat_pipe";
 import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
+import ProvideAsuContentsInterface from "./task-interfaces/ProvideAsuContents";
 import { useJob } from "../../utils";
 import { ErrorPopper } from "./task-elements/error-info";
 import { FetchFileForParam } from "./task-elements/fetch-file-for-param";
@@ -101,6 +102,14 @@ export const TaskContainer = () => {
       case "aimless_pipe":
         return (
           <AimlessPipeInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "ProvideAsuContents":
+        return (
+          <ProvideAsuContentsInterface
             {...{
               job,
             }}
