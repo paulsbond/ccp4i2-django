@@ -31,17 +31,42 @@ import { FileMenuContext } from "../../file-context-menu";
 import { Menu } from "@mui/icons-material";
 
 export const inverseFileTypeMapping: { [key: string]: string } = {
-  CObsDataFile: "application/CCP4-mtz-observed",
-  CFreeRDataFile: "application/CCP4-mtz-freerflag",
-  CMapCoeffsDataFile: "application/CCP4-mtz-map",
-  CPhsDataFile: "application/CCP4-mtz-phases",
-  CDictDataFile: "application/refmac-dictionary",
-  CCootHistoryDataFile: "application/coot-script",
-  CUnmergedDataFile: "application/CCP4-unmerged-experimental",
+  CDataFile: "Unknown",
+  CSeqDataFile: "application/CCP4-seq",
   CPdbDataFile: "chemical/x-pdb",
-  CAsuDataFile: "application/CCP4-asu-content",
-  CDataFile: "application/CCP4-data",
+  C: "Dummy",
+  CMtzDataFile: "application/CCP4-unmerged-mtz",
+  CUnmergedDataFile: "application/CCP4-unmerged-experimental",
+  CMapDataFile: "application/CCP4-map",
+  CDictDataFile: "application/refmac-dictionary",
+  CTLSDataFile: "application/refmac-TLS",
+  CFreeRDataFile: "application/CCP4-mtz-freerflag",
+  CObsDataFile: "application/CCP4-mtz-observed",
+  CPhsDataFile: "application/CCP4-mtz-phases",
+  CMapCoeffsDataFile: "application/CCP4-mtz-map",
+  CSeqAlignDataFile: "application/CCP4-seqalign",
+  CMiniMtzDataFile: "application/CCP4-mtz-mini",
+  CCootHistoryDataFile: "application/coot-script",
+  CRefmacRestraintsDataFile: "application/refmac-external-restraints",
+  CSceneDataFile: "application/CCP4-scene",
+  CShelxFADataFile: "application/CCP4-shelx-FA",
+  CPhaserSolDataFile: "application/phaser-sol",
+  CMDLMolDataFile: "chemical/x-mdl-molfile",
+  CImosflmXmlDataFile: "application/iMosflm-xml",
+  CImageFile: "application/CCP4-image",
   CGenericReflDataFile: "application/CCP4-generic-reflections",
+  CHhpredDataFile: "application/HHPred-alignments",
+  CBlastDataFile: "application/Blast-alignments",
+  CEnsemblePdbDataFile: "chemical/x-pdb-ensemble",
+  CAsuDataFile: "application/CCP4-asu-content",
+  CDialsJsonFile: "application/dials-jfile",
+  CDialsPickleFile: "application/dials-pfile",
+  CPhaserRFileDataFile: "application/phaser-rfile",
+  CRefmacKeywordFile: "application/refmac-keywords",
+  CPDFDataFile: "application/x-pdf",
+  CPostscriptDataFile: "application/postscript",
+  CEBIValidationXMLDataFile: "application/EBI-validation-xml",
+  CMmcifReflDataFile: "chemical/x-cif",
 };
 
 export interface CCP4i2DataFileElementProps
@@ -131,14 +156,14 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         if (fileJob)
           return (
             (file.type === fileType ||
-              fileType === "CCP4-data" ||
+              fileType === "application/CCP4-data" ||
               (file.type === "application/CCP4-generic-reflections" &&
                 fileType === "application/CCP4-mtz-observed")) &&
             !fileJob.parent
           );
         return (
           file.type === fileType ||
-          fileType === "CCP4-data" ||
+          fileType === "application/CCP4-data" ||
           (file.type === "application/CCP4-generic-reflections" &&
             fileType === "application/CCP4-mtz-observed")
         );
