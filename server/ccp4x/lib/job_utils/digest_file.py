@@ -141,14 +141,22 @@ def digest_file(the_file: models.File):
         return {"status": "Failed", "reason": "File type not supported for digest"}
 
     mimetype_index = FILETYPES_TEXT.index(mimetype)
+    logger.debug("mimetype_index %s", mimetype_index)
     if mimetype_index >= len(FILETYPES_CLASS):
         return {"status": "Failed", "reason": "File type not supported for digest"}
     class_name = FILETYPES_CLASS[mimetype_index]
+    logger.debug("class_name %s", class_name)
     data_manager: CCP4DataManager.CDataManager = CCP4DataManager.CDataManager()
     the_class = data_manager.getClass(f"C{class_name}")
     if the_class is None:
         return {"status": "Failed", "reason": "File type not supported for digest"}
-    file_object = the_class(str(the_file.path))
+    logger.debug("the_class %s", the_class)
+    try:
+        file_object = the_class()
+        file_object.setFullPath(str(the_file.path))
+    except Exception as err:
+        logger.exception("Error creating file object %s", the_file, exc_info=err)
+        return {"status": "Failed", "reason": str(err), "digest": {}}
     return digest_file_object(file_object)
 
 
