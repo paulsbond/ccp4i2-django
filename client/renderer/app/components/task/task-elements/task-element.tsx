@@ -98,6 +98,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CFilePath":
       case "COneWord":
       case "CCrystalName":
+      case "CRangeSelection":
       case "CDatasetName":
         return (
           <CStringElement key={the_uuid} {...props} qualifiers={qualifiers} />
@@ -172,7 +173,6 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         return (
           <CEnsembleElement key={the_uuid} {...props} qualifiers={qualifiers} />
         );
-      case "CRangeSelection":
       case "CFloatRange":
         return (
           <CRangeElement key={the_uuid} {...props} qualifiers={qualifiers} />
