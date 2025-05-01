@@ -125,7 +125,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   }, [props.visibility]);
 
   const compositedSx = useMemo(() => {
-    return { minWidth: "20rem", py: 0, my: 0, ...sx };
+    return { minWidth: "20rem", ...sx };
   }, [sx]);
 
   const calculatedTitle = useMemo(

@@ -48,6 +48,23 @@ const theme = createTheme({
         variant: "body", // Default variant if none is specified
       },
     },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          marginTop: "0.5rem", // Add a gap of 0.5rem at the top
+          marginBottom: "0.5rem",
+        },
+      },
+    },
+    MuiAutocomplete: {
+      styleOverrides: {
+        root: {
+          marginTop: "0.5rem", // Add a gap of 0.5rem at the top
+          marginBottom: "0.5rem",
+        },
+      },
+    },
+    MuiIcon: { styleOverrides: { root: { mx: 0, my: 0 } } },
     MuiCardHeader: {
       styleOverrides: {
         root: {
@@ -55,8 +72,8 @@ const theme = createTheme({
             {
               props: { variant: "primary" },
               style: ({ theme }) => ({
-                py: 0,
-                my: 0,
+                paddingTop: theme.spacing(0.5),
+                paddingBottom: theme.spacing(0.5),
                 fontWeight: "bold",
                 backgroundColor: theme.palette.primary.main, // Use the primary color
                 color: theme.palette.primary.contrastText,
@@ -65,8 +82,8 @@ const theme = createTheme({
             {
               props: { variant: "secondary" },
               style: ({ theme }) => ({
-                py: 0,
-                my: 0,
+                paddingTop: theme.spacing(0.5),
+                paddingBottom: theme.spacing(0.5),
                 fontWeight: "bolder",
                 color: "rgb(34, 97, 124)",
               }),

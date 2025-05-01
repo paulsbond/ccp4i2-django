@@ -148,7 +148,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   }, [props.disabled, inFlight, job]);
 
   const calculatedSx = useMemo(() => {
-    return { minWidth: "20rem", py: 0, mb: 1, ...sx };
+    return { minWidth: "20rem", ...sx };
   }, [sx]);
 
   const getOptionLabel = useCallback(
