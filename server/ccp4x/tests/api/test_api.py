@@ -259,3 +259,12 @@ class CCP4i2TestCase(TestCase):
             )
             digest = digest_response.json()
             print(digest)
+
+    def test_digest_file(self):
+        file = models.File.objects.first()
+        digest_url = f"/files/{file.id}/digest/"
+        digest_response = self.client.get(
+            digest_url, content_type="application/json; charset=utf-8"
+        )
+        digest = digest_response.json()
+        print(digest)

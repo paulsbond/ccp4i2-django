@@ -7,6 +7,7 @@ from core import CCP4ModelData
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4XtalData import CGenericReflDataFile
 from ccp4i2.core.CCP4ModelData import CPdbDataFile
+from ccp4i2.core import CCP4DataManager
 from ccp4i2.core.CCP4File import CDataFile
 from ccp4i2.core.CCP4File import CDataFile
 from ccp4i2.pipelines.import_merged.script import mmcifutils
@@ -14,8 +15,90 @@ from .find_objects import find_objects, find_object_by_path
 from .get_job_container import get_job_container
 from .json_encoder import CCP4i2JsonEncoder
 from .value_dict_for_object import value_dict_for_object
+from ...db import models
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
+
+FILETYPES_TEXT = [
+    "Unknown",
+    "application/CCP4-seq",
+    "chemical/x-pdb",
+    "MultiPDB",
+    "application/CCP4-mtz",
+    "application/CCP4-unmerged-mtz",
+    "application/CCP4-unmerged-experimental",
+    "application/CCP4-map",
+    "application/refmac-dictionary",
+    "application/refmac-TLS",
+    "application/CCP4-mtz-freerflag",
+    "application/CCP4-mtz-observed",
+    "application/CCP4-mtz-phases",
+    "application/CCP4-mtz-map",
+    "Dummy",
+    "application/CCP4-seqalign",
+    "application/CCP4-mtz-mini",
+    "application/coot-script",
+    "application/refmac-external-restraints",
+    "application/CCP4-scene",
+    "application/CCP4-shelx-FA",
+    "application/phaser-sol",
+    "chemical/x-mdl-molfile",
+    "application/iMosflm-xml",
+    "application/CCP4-image",
+    "application/CCP4-generic-reflections",
+    "application/HHPred-alignments",
+    "application/Blast-alignments",
+    "chemical/x-pdb-ensemble",
+    "application/CCP4-asu-content",
+    "application/dials-jfile",
+    "application/dials-pfile",
+    "application/phaser-rfile",
+    "application/refmac-keywords",
+    "application/x-pdf",
+    "application/postscript",
+    "application/EBI-validation-xml",
+    "chemical/x-cif",
+]
+FILETYPES_CLASS = [
+    "DataFile",
+    "SeqDataFile",
+    "PdbDataFile",
+    "",
+    "MtzDataFile",
+    "MtzDataFile",
+    "UnmergedDataFile",
+    "MapDataFile",
+    "DictDataFile",
+    "TLSDataFile",
+    "FreeRDataFile",
+    "ObsDataFile",
+    "PhsDataFile",
+    "MapCoeffsDataFile",
+    "",
+    "SeqAlignDataFile",
+    "MiniMtzDataFile",
+    "CootHistoryDataFile",
+    "RefmacRestraintsDataFile",
+    "SceneDataFile",
+    "ShelxFADataFile",
+    "PhaserSolDataFile",
+    "MDLMolDataFile",
+    "ImosflmXmlDataFile",
+    "ImageFile",
+    "GenericReflDataFile",
+    "HhpredDataFile",
+    "BlastDataFile",
+    "EnsemblePdbDataFile",
+    "AsuDataFile",
+    "DialsJsonFile",
+    "DialsPickleFile",
+    "PhaserRFileDataFile",
+    "RefmacKeywordFile",
+    "PDFDataFile",
+    "PostscriptDataFile",
+    "EBIValidationXMLDataFile",
+    "MmcifReflDataFile",
+]
 
 
 def is_basic_type(obj):
@@ -50,6 +133,23 @@ def flatten_instance(obj):
     else:
         # fallback: use repr to avoid exceptions
         return repr(obj)
+
+
+def digest_file(the_file: models.File):
+    mimetype = the_file.type.pk
+    if mimetype not in FILETYPES_TEXT:
+        return {"status": "Failed", "reason": "File type not supported for digest"}
+
+    mimetype_index = FILETYPES_TEXT.index(mimetype)
+    if mimetype_index >= len(FILETYPES_CLASS):
+        return {"status": "Failed", "reason": "File type not supported for digest"}
+    class_name = FILETYPES_CLASS[mimetype_index]
+    data_manager: CCP4DataManager.CDataManager = CCP4DataManager.CDataManager()
+    the_class = data_manager.getClass(f"C{class_name}")
+    if the_class is None:
+        return {"status": "Failed", "reason": "File type not supported for digest"}
+    file_object = the_class(str(the_file.path))
+    return digest_file_object(file_object)
 
 
 def digest_param_file(the_job, object_path):

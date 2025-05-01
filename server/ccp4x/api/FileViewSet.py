@@ -3,6 +3,7 @@ from django.http import FileResponse
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser
 from ..lib.job_utils.preview_file import preview_file
+from ..lib.job_utils.digest_file import digest_file
 from xml.etree import ElementTree as ET
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.viewsets import ModelViewSet
@@ -58,6 +59,21 @@ class FileViewSet(ModelViewSet):
         try:
             the_file = models.File.objects.get(uuid=pk)
             return FileResponse(open(the_file.path, "rb"), filename=the_file.name)
+        except models.File.DoesNotExist as err:
+            logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def digest(self, request, pk=None):
+        try:
+            the_file = models.File.objects.get(id=pk)
+            result = digest_file(the_file)
+            return Response(result)
         except models.File.DoesNotExist as err:
             logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
