@@ -14,7 +14,7 @@ from ccp4i2.core.CCP4Container import CContainer
 from core import CCP4ErrorHandling
 from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
-from ..lib.job_utils.digest_file import digest_file
+from ..lib.job_utils.digest_file import digest_param_file
 from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.set_input_by_context_job import set_input_by_context_job
 from ..lib.job_utils.get_job_plugin import get_job_plugin
@@ -424,7 +424,9 @@ class JobViewSet(ModelViewSet):
         try:
             the_job = models.Job.objects.get(id=pk)
             logger.info("Digesting file %s", request.GET.get("object_path"))
-            response_dict = digest_file(the_job, request.GET.get("object_path")[:-1])
+            response_dict = digest_param_file(
+                the_job, request.GET.get("object_path")[:-1]
+            )
             return Response({"status": "Success", "digest": response_dict})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
@@ -450,7 +452,7 @@ class JobViewSet(ModelViewSet):
                 object_path = f"{the_job.task_name}.inputData.{job_param_name[:-1]}"
             else:
                 object_path = f"{the_job.task_name}.outputData.{job_param_name[:-1]}"
-            response_dict = digest_file(the_job, object_path)
+            response_dict = digest_param_file(the_job, object_path)
             return Response({"status": "Success", "digest": response_dict})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
