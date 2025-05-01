@@ -11,7 +11,8 @@ const roboto = Roboto({
 
 const theme = createTheme({
   palette: {
-    success: { main: "rgb(64, 123, 67)", light: "rgb(112, 173, 114)" },
+    success: { main: "rgb(64, 123, 67)", light: "rgb(193, 226, 214)" },
+    primary: { main: "rgb(123, 198, 219)", contrastText: "rgb(0, 0, 0)" },
   },
   typography: {
     fontFamily: roboto.style.fontFamily,
@@ -94,7 +95,7 @@ const theme = createTheme({
       defaultProps: {
         disableTypography: false,
         titleTypographyProps: {
-          variant: "h6",
+          variant: "body1",
         },
         subheaderTypographyProps: {
           variant: "subtitle2",
