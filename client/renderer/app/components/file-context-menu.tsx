@@ -99,7 +99,7 @@ export const FileMenu: React.FC = () => {
       ev.stopPropagation();
       if (file) {
         setContentSpecification({
-          url: `jobs/${file.job}/digest_param_file/?job_param_name=${file.job_param_name}`,
+          url: `files/${file.id}/digest/`,
           title: file.name,
           language: "json",
         });
