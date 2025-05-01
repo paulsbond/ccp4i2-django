@@ -3,26 +3,14 @@ import {
   useCallback,
   useContext,
   createContext,
-  useMemo,
-  useEffect,
   useState,
   PropsWithChildren,
 } from "react";
-import { Job, File as DjangoFile } from "../models";
-import { doDownload, fullUrl, useApi } from "../api";
-import { useRouter } from "next/navigation";
-import { useDeleteDialog } from "./delete-dialog";
-import { List, ListItem, Menu, MenuItem, Paper, Toolbar } from "@mui/material";
-import { CCP4i2JobAvatar } from "./job-avatar";
-import {
-  CopyAll,
-  Delete,
-  Download,
-  Preview,
-  RunCircle,
-  Terminal,
-} from "@mui/icons-material";
+import { doDownload, useApi } from "../api";
+import { Menu, MenuItem } from "@mui/material";
+import { Download, Preview, Terminal } from "@mui/icons-material";
 import { FilePreviewContext } from "./file-preview-context";
+import { File as DjangoFile } from "../models";
 
 interface FileMenuContextProps {
   fileMenuAnchorEl: HTMLElement | null;
@@ -62,7 +50,7 @@ export const FileMenuContextProvider: React.FC<PropsWithChildren> = ({
 };
 
 export const FileMenu: React.FC = () => {
-  const { fileMenuAnchorEl, setFileMenuAnchorEl, file, setFile } =
+  const { fileMenuAnchorEl, setFileMenuAnchorEl, file } =
     useContext(FileMenuContext);
   const api = useApi();
   const { setContentSpecification } = useContext(FilePreviewContext);
