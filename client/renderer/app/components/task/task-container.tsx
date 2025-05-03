@@ -13,6 +13,7 @@ import PhaserSimpleInterface from "./task-interfaces/phaser_simple";
 import ServalcatPipeInterface from "./task-interfaces/servalcat_pipe";
 import SubstituteLigandInterface from "./task-interfaces/SubstituteLigand";
 import ProvideAsuContentsInterface from "./task-interfaces/ProvideAsuContents";
+import ProvideSequenceInterface from "./task-interfaces/ProvideSequence";
 import { useJob } from "../../utils";
 import { ErrorPopper } from "./task-elements/error-info";
 import { FetchFileForParam } from "./task-elements/fetch-file-for-param";
@@ -27,8 +28,8 @@ interface TaskInterfaceContextProps {
   setErrorInfoItem: (item: any) => void;
   inFlight: any | null;
   setInFlight: (item: any) => void;
-  downloadItem?: any | null;
-  setDownloadItem: (item: any) => void;
+  downloadItemParams?: any | null;
+  setDownloadItemParams: (item: any) => void;
   downloadDialogOpen?: boolean;
   setDownloadDialogOpen?: (valie: boolean) => void;
 }
@@ -39,8 +40,8 @@ export const TaskInterfaceContext = createContext<TaskInterfaceContextProps>({
   setErrorInfoItem: (item: any) => {},
   inFlight: null,
   setInFlight: (item: any) => {},
-  downloadItem: null,
-  setDownloadItem: (item: any) => {},
+  downloadItemParams: null,
+  setDownloadItemParams: (item: any) => {},
   downloadDialogOpen: false,
   setDownloadDialogOpen: (value: boolean) => {},
 });
@@ -52,7 +53,9 @@ export const TaskContainer = () => {
   const [errorInfoAnchor, setErrorInfoAnchor] = useState<Element | null>(null);
   const [errorInfoItem, setErrorInfoItem] = useState<any | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);
-  const [downloadItem, setDownloadItem] = useState<any | null>(null);
+  const [downloadItemParams, setDownloadItemParams] = useState<any | null>(
+    null
+  );
   const [downloadDialogOpen, setDownloadDialogOpen] = useState<boolean>(false);
 
   const taskInterface = useMemo(() => {
@@ -115,6 +118,14 @@ export const TaskContainer = () => {
             }}
           />
         );
+      case "ProvideSequence":
+        return (
+          <ProvideSequenceInterface
+            {...{
+              job,
+            }}
+          />
+        );
       case "crank2":
         return (
           <Crank2Interface
@@ -159,8 +170,8 @@ export const TaskContainer = () => {
         setInFlight,
         downloadDialogOpen,
         setDownloadDialogOpen,
-        downloadItem,
-        setDownloadItem,
+        downloadItemParams,
+        setDownloadItemParams,
       }}
     >
       <Paper
@@ -186,7 +197,7 @@ export const TaskContainer = () => {
         <CircularProgress size={150} thickness={4} />
       </Popper>
       <FetchFileForParam
-        item={downloadItem}
+        itemParams={downloadItemParams}
         open={downloadDialogOpen}
         onClose={() => {
           setDownloadDialogOpen(false);

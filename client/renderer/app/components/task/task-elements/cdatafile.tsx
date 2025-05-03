@@ -101,14 +101,17 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
 
   const [value, setValue] = useState<CCP4i2File>(nullFile);
 
-  const { objectPath, qualifiers } = useMemo<{
-    objectPath: string | null;
-    qualifiers: any | null;
-  }>(() => {
-    if (item)
-      return { objectPath: item._objectPath, qualifiers: item._qualifiers };
-    return { objectPath: null, qualifiers: null };
-  }, [item]);
+  const { _objectPath: objectPath, _qualifiers: itemQualifiers } = item || {
+    _objectPath: null,
+    _qualifiers: null,
+  };
+
+  const qualifiers = useMemo(() => {
+    if (itemQualifiers) {
+      return { ...itemQualifiers, ...props?.qualifiers };
+    }
+    return null;
+  }, [itemQualifiers]);
 
   const { data: project_files, mutate: mutateFiles } = api.get_endpoint<
     CCP4i2File[]
@@ -156,14 +159,14 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         if (fileJob)
           return (
             (file.type === fileType ||
-              fileType === "application/CCP4-data" ||
+              fileType === "Unknown" ||
               (file.type === "application/CCP4-generic-reflections" &&
                 fileType === "application/CCP4-mtz-observed")) &&
             !fileJob.parent
           );
         return (
           file.type === fileType ||
-          fileType === "application/CCP4-data" ||
+          fileType === "Unknown" ||
           (file.type === "application/CCP4-generic-reflections" &&
             fileType === "application/CCP4-mtz-observed")
         );
@@ -335,35 +338,32 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
                   },
                 }}
                 disabled={disabled}
-                accept={item._qualifiers.fileExtensions
+                accept={qualifiers?.fileExtensions
                   .map((ext: string) => `.${ext}`)
                   .join(",")}
                 handleFileChange={handleFileChange}
               />
             )}
-            {item?._qualifiers?.downloadModes?.length > 0 &&
-              job.status == 1 && (
-                <InputFileFetch
-                  sx={{
-                    my: 1,
-                    borderRadius: "0",
-                    "&:first-of-type": {
-                      borderTopLeftRadius: "0.5rem",
-                      borderBottomLeftRadius: "0.5rem",
-                    },
-                    "&:last-of-type": {
-                      borderTopRightRadius: "0.5rem",
-                      borderBottomRightRadius: "0.5rem",
-                    },
-                  }}
-                  disabled={disabled}
-                  accept={item._qualifiers.fileExtensions
-                    .map((ext: string) => `.${ext}`)
-                    .join(",")}
-                  handleFileChange={handleFileChange}
-                  item={item}
-                />
-              )}
+            {qualifiers?.downloadModes?.length > 0 && job.status == 1 && (
+              <InputFileFetch
+                sx={{
+                  my: 1,
+                  borderRadius: "0",
+                  "&:first-of-type": {
+                    borderTopLeftRadius: "0.5rem",
+                    borderBottomLeftRadius: "0.5rem",
+                  },
+                  "&:last-of-type": {
+                    borderTopRightRadius: "0.5rem",
+                    borderBottomRightRadius: "0.5rem",
+                  },
+                }}
+                disabled={disabled}
+                modes={qualifiers.downloadModes}
+                handleFileChange={handleFileChange}
+                item={item}
+              />
+            )}
             {value && value != nullFile && (
               <>
                 <Button

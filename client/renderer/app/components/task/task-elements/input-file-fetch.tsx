@@ -6,7 +6,7 @@ import { Language } from "@mui/icons-material";
 interface InputFileFetchProps {
   handleFileChange: (ev: ChangeEvent<HTMLInputElement>) => void;
   disabled: boolean;
-  accept: string;
+  modes?: string[];
   item?: any;
   sx?: SxProps;
 }
@@ -14,8 +14,9 @@ export const InputFileFetch: React.FC<InputFileFetchProps> = ({
   disabled,
   sx,
   item,
+  modes,
 }) => {
-  const { setDownloadDialogOpen, setDownloadItem } =
+  const { setDownloadDialogOpen, setDownloadItemParams } =
     useContext(TaskInterfaceContext);
 
   return (
@@ -30,9 +31,10 @@ export const InputFileFetch: React.FC<InputFileFetchProps> = ({
       sx={sx}
       onClick={(ev: any) => {
         ev.stopPropagation();
-        console.log(item);
         if (setDownloadDialogOpen) setDownloadDialogOpen(true);
-        if (setDownloadItem) setDownloadItem(item);
+        const arg = { item, modes };
+        console.log({ arg });
+        if (setDownloadItemParams) setDownloadItemParams({ item, modes });
       }}
     />
   );

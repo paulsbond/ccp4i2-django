@@ -45,7 +45,7 @@ export const startNextServer = async (
   // Set the Content Security Policy header
   const csp = {
     defaultSrc: "'self'",
-    connectSrc: `http://localhost:${nextServerPort} ws://localhost:${nextServerPort} https://www.ebi.ac.uk https://pubmed.ncbi.nlm.nih.gov`,
+    connectSrc: `http://localhost:${nextServerPort} ws://localhost:${nextServerPort} https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov`,
     styleSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline'",
     fontSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline'",
     scriptSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'",

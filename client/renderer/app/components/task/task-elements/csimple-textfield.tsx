@@ -113,7 +113,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   }, [objectPath, qualifiers]);
 
   const multiLine = useMemo<boolean>(() => {
-    return qualifiers.multiLine;
+    return Boolean(qualifiers?.guiMode === "multiLine");
   }, [qualifiers]);
 
   const inferredVisibility = useMemo(() => {

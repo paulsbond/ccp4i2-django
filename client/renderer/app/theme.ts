@@ -11,8 +11,12 @@ const roboto = Roboto({
 
 const theme = createTheme({
   palette: {
-    success: { main: "rgb(64, 123, 67)", light: "rgb(193, 226, 214)" },
-    primary: { main: "rgb(123, 198, 219)", contrastText: "rgb(0, 0, 0)" },
+    success: { main: "rgb(70, 164, 75)", light: "rgb(193, 226, 214)" },
+    primary: {
+      main: "rgb(123, 198, 219)",
+      dark: "rgb(71, 113, 125)",
+      contrastText: "rgb(0, 0, 0)",
+    },
   },
   typography: {
     fontFamily: roboto.style.fontFamily,
@@ -86,7 +90,7 @@ const theme = createTheme({
                 paddingTop: theme.spacing(0.5),
                 paddingBottom: theme.spacing(0.5),
                 fontWeight: "bolder",
-                color: "rgb(34, 97, 124)",
+                color: "theme.palette.primary.dark",
               }),
             },
           ],

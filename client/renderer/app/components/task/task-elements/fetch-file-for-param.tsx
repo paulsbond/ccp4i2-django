@@ -10,22 +10,33 @@ import {
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { Job } from "../../../models";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../../app-context";
 import { useJob } from "../../../utils";
 import { v4 as uuid4 } from "uuid";
 
 interface FetchFileForParamProps {
-  item: any;
+  itemParams: any;
   open: boolean;
   onClose: () => void;
 }
 export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
-  item,
+  itemParams,
   open,
   onClose,
 }) => {
   const api = useApi();
+
+  const { item, modes } = useMemo(() => {
+    //alert(JSON.stringify(itemParams));
+    return itemParams ? itemParams : { item: null, modes: null };
+  }, [itemParams]);
+
+  const downloadModes: string[] = useMemo(
+    () => modes || item?._qualifiers?.downloadModes || [],
+    [item, modes]
+  );
+
   const { jobId, cootModule } = useContext(CCP4i2Context);
   const { job } = useJob(jobId);
 
@@ -53,15 +64,12 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   const [mode, setMode] = useState<string | null>(null);
 
   const [identifier, setIdentifier] = useState<string | null>(null);
-  useEffect(() => {
-    setMode(item?._qualifiers?.downloadModes?.at(0) || "");
-  }, [item]);
 
   const uploadFile = useCallback(
     async (fileBlob: Blob, fileName: string) => {
       if (job) {
         const formData = new FormData();
-        formData.append("objectPath", item._objectPath);
+        formData.append("objectPath", itemParams.item._objectPath);
         formData.append("file", fileBlob, fileName);
         const uploadResult = await api.post<Job>(
           `jobs/${job.id}/upload_file_param`,
@@ -74,7 +82,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         mutateValidation();
       }
     },
-    [item, job]
+    [itemParams, job]
   );
 
   const handleEbiCoordFetch = useCallback(async () => {
@@ -130,12 +138,31 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
     }
   }, [identifier, uploadFile, onClose]);
 
+  const handleUniprotFastaFetch = useCallback(async () => {
+    if (identifier) {
+      const url = `/api/proxy/uniprot/${identifier.toUpperCase()}.fasta`;
+      const result = await fetch(url);
+      if (result.ok) {
+        const data = await result.text();
+        const content = new Blob([data], {
+          type: "text/plain",
+        });
+        uploadFile(content, `${identifier.toUpperCase()}.fasta`);
+        onClose();
+      } else {
+        console.log("FetchFileForParam handleFetch result", result);
+      }
+    }
+  }, [identifier, uploadFile, onClose]);
+
   const handleFetch = useCallback(async () => {
     if (mode) {
       if (mode === "ebiPdb") {
         handleEbiCoordFetch();
       } else if (mode === "ebiSFs") {
         handleEbiSFsFetch();
+      } else if (mode === "uniprotFasta") {
+        handleUniprotFastaFetch();
       }
     }
   }, [mode, identifier]);
@@ -147,8 +174,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         Fetch value for {item?._objectPath?.split(".").at(-1)} from internet
       </DialogTitle>
       <DialogContent>
-        {item?._qualifiers?.downloadModes?.length &&
-        item?._qualifiers?.downloadModes?.length > 0 ? (
+        {downloadModes?.length && downloadModes?.length > 0 ? (
           <>
             <Autocomplete
               sx={{ width: "30rem", mt: 2 }}
@@ -156,7 +182,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
               renderInput={(params) => (
                 <TextField {...params} label="Download mode" />
               )}
-              options={item?._qualifiers?.downloadModes}
+              options={downloadModes}
               onChange={(event, newValue) => {
                 setMode(newValue);
               }}
@@ -171,7 +197,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
             />
           </>
         ) : (
-          <Typography>No dowload modes</Typography>
+          <Typography>nload modes</Typography>
         )}
       </DialogContent>
       <DialogActions>

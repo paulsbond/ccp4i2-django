@@ -169,7 +169,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
                       qualifiers={{
                         ...props.qualifiers,
                         guiLabel: "Batch range(s) to exclude",
-                        multiLine: true,
+                        guiMode: "multiLine",
                       }}
                     />
                   </Grid2>

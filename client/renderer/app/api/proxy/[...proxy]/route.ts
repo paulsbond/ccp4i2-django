@@ -59,6 +59,33 @@ async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
 
   // Ensure params.proxy is properly handled
   const path = params.proxy ? params.proxy.join("/") : "";
+
+  if (params?.proxy?.at(0) === "uniprot") {
+    let targetUrl = `https://www.uniprot.org/${path}`;
+    //console.log("uniprot targetUrl", targetUrl);
+    try {
+      const res = await fetch(targetUrl);
+      if (!res.ok) {
+        return NextResponse.json(
+          { error: "Failed to fetch from UniProt" },
+          { status: res.status }
+        );
+      }
+
+      const data = await res.text();
+      //console.log({data})
+
+      return new NextResponse(data, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain",
+        },
+      });
+    } catch (err) {
+      return NextResponse.json({ error: "Server error" }, { status: 500 });
+    }
+  }
+
   let targetUrl = `${backendBaseUrl}${path}`;
 
   // Ensure the backend URL ends with a slash
