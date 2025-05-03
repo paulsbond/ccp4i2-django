@@ -9,7 +9,7 @@ from ccp4i2.core.CCP4Data import CList
 from ccp4i2.core.CCP4TaskManager import CTaskManager
 from ccp4i2.dbapi.CCP4DbApi import FILETYPES_CLASS, FILETYPES_TEXT
 from ccp4i2.report.CCP4ReportParser import ReportClass
-
+from core import CCP4File
 from ...db.ccp4i2_django_wrapper import using_django_pm
 from ...db.models import Job, FileUse, File
 from .get_job_plugin import get_job_plugin
@@ -132,6 +132,7 @@ def _get_input_filenames(container: CContainer):
     return {
         key: _get_filename(container.inputData.find(key))
         for key in container.inputData.dataOrder()
+        if isinstance(container.inputData.find(key), CCP4File.CDataFile)
     }
 
 
