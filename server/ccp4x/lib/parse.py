@@ -2,7 +2,29 @@ from os import PathLike
 import gemmi
 
 
-def parse(path: str | PathLike):
+def identify_data_type(path: str):
+    path = str(path)
+    for data_type_name, parse_function in (
+        ("mtz", gemmi.read_mtz_file),
+        ("map", gemmi.read_ccp4_map),
+        ("sfcif", parse_sfcif),
+        ("model", parse_structure),
+        ("dictionary", parse_chemical_component),
+        ("sequence", parse_pir_or_fasta),
+    ):
+        try:
+            print("Trying to parse as", data_type_name)
+            content = parse_function(path)
+            result = {"data_type_name": data_type_name, "content": content}
+            print("Succeeded to parse as", data_type_name)
+            return result
+        except (RuntimeError, ValueError):
+            print("Failed to parse as", data_type_name)
+            continue
+    raise ValueError(f"Unknown file format: {path}")
+
+
+def parse(path: str):
     path = str(path)
     for parse_function in (
         gemmi.read_mtz_file,

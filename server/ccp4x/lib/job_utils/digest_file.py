@@ -6,6 +6,7 @@ from core import CCP4XtalData
 from core import CCP4ModelData
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4XtalData import CGenericReflDataFile
+from ccp4i2.core.CCP4XtalData import CMapDataFile
 from ccp4i2.core.CCP4ModelData import CPdbDataFile
 from ccp4i2.core import CCP4DataManager
 from ccp4i2.core.CCP4File import CDataFile
@@ -16,6 +17,7 @@ from .get_job_container import get_job_container
 from .json_encoder import CCP4i2JsonEncoder
 from .value_dict_for_object import value_dict_for_object
 from ...db import models
+from ..parse import identify_data_type
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
@@ -174,7 +176,6 @@ def digest_param_file(the_job, object_path):
 
 
 def digest_file_object(file_object: CDataFile):
-    content_dict = {}
     if not isinstance(file_object, CCP4File.CDataFile):
         return {"status": "Failed", "reason": "Not a valid file object", "digest": {}}
     if not file_object.isSet():
@@ -184,7 +185,12 @@ def digest_file_object(file_object: CDataFile):
         return digest_cpdbdata_file_object(file_object)
     if isinstance(file_object, CCP4XtalData.CGenericReflDataFile):
         return digest_cgenericrefldatafile_file_object(file_object)
+    if type(file_object) is CCP4File.CDataFile:
+        return digest_cdatafile_file_object(file_object)
+    return digest_other_file_object(file_object)
 
+
+def digest_other_file_object(file_object: CDataFile):
     try:
         file_object.loadFile()
         file_object.setContentFlag(reset=True)
@@ -238,6 +244,27 @@ def digest_cpdbdata_file_object(file_object: CPdbDataFile):
         }
 
 
+def digest_cseqdata_file_object(file_object: CPdbDataFile):
+    content_dict = {}
+    if not isinstance(file_object, CCP4ModelData.CSeqDataFile):
+        return {"status": "Failed", "reason": "Not a CSeqDataFile object", "digest": {}}
+    if not file_object.isSet():
+        return {"status": "Failed", "reason": "File object is not set", "digest": {}}
+    try:
+        file_object.loadFile()
+        file_object.setContentFlag(reset=True)
+        contents = file_object.getFileContent()
+        content_dict = flatten_instance(contents)
+        return content_dict
+    except Exception as err:
+        logger.exception("Error digesting file %s", file_object, exc_info=err)
+        return {
+            "status": "Failed",
+            "reason": f"Failed digesting CSeqDataFile {err}",
+            "digest": {},
+        }
+
+
 def digest_cgenericrefldatafile_file_object(file_object: CGenericReflDataFile):
     content_dict = {}
     if not isinstance(file_object, CCP4XtalData.CGenericReflDataFile):
@@ -269,5 +296,39 @@ def digest_cgenericrefldatafile_file_object(file_object: CGenericReflDataFile):
         return {
             "status": "Failed",
             "reason": f"Failed digesting CGenericReflDataFile {err}",
+            "digest": {},
+        }
+
+
+def digest_cdatafile_file_object(file_object: CDataFile):
+    if not isinstance(file_object, CCP4File.CDataFile):
+        return {"status": "Failed", "reason": "Not a CDataFile object", "digest": {}}
+    if not file_object.isSet():
+        return {"status": "Failed", "reason": "File object is not set", "digest": {}}
+    try:
+        result = identify_data_type(str(file_object.fullPath))
+        if result["data_type_name"] in ["mtz", "sfcif"]:
+            specific_object = CCP4XtalData.CGenericReflDataFile()
+            specific_object.setFullPath(str(file_object.fullPath))
+            return digest_cgenericrefldatafile_file_object(specific_object)
+        elif result["data_type_name"] == "model":
+            specific_object = CCP4ModelData.CPdbDataFile()
+            specific_object.setFullPath(str(file_object.fullPath))
+            return digest_cpdbdata_file_object(specific_object)
+        elif result["data_type_name"] == "map":
+            specific_object = CCP4XtalData.CMapDataFile()
+            specific_object.setFullPath(str(file_object.fullPath))
+            return digest_other_file_object(specific_object)
+        elif result["data_type_name"] == "sequence":
+            specific_object = CCP4ModelData.CSeqDataFile()
+            specific_object.setFullPath(str(file_object.fullPath))
+            return digest_cseqdata_file_object(specific_object)
+        return digest_other_file_object(file_object)
+
+    except Exception as err:
+        logger.exception("Error digesting file %s", file_object, exc_info=err)
+        return {
+            "status": "Failed",
+            "reason": f"Failed digesting CDataFile {err}",
             "digest": {},
         }
