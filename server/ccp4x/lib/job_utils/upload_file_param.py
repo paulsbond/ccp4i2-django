@@ -18,7 +18,7 @@ from .save_params_for_job import save_params_for_job
 from .json_encoder import CCP4i2JsonEncoder
 from .value_dict_for_object import value_dict_for_object
 from .detect_file_type import detect_file_type
-from .set_parameter import set_parameter
+from .set_parameter import set_parameter, set_parameter_container
 from ...db import models
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -26,7 +26,6 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
 
-    logger.debug("Received %s %s", job, request.POST)
     plugin = get_job_plugin(the_job=job)
     container = plugin.container
     object_path = request.POST.get("objectPath")
@@ -66,8 +65,7 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     # based on CDataFile
     initial_download_project_folder = (
         "CCP4_DOWNLOADED_FILES"
-        if param_object.__class__.__name__ == "CDataFile"
-        or isinstance(
+        if isinstance(
             param_object,
             (
                 CCP4XtalData.CMtzDataFile,
@@ -77,6 +75,7 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         else "CCP4_IMPORTED_FILES"
     )
     downloaded_file_path = download_file(job, files[0], initial_download_project_folder)
+    assert downloaded_file_path.exists()
     file_type = detect_file_type(downloaded_file_path)
 
     logger.error(
@@ -100,7 +99,7 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     else:
         imported_file_path = downloaded_file_path
 
-    logger.info(
+    logger.error(
         "Final imported file destination is %s %s",
         imported_file_path,
         imported_file_path.name,
@@ -140,21 +139,24 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         file=new_file, name=files[0].name, checksum=param_object.checksum()
     )
     new_file_import.save()
-
-    set_parameter(
-        job,
+    # Note: calling set_parameter here would invalidate "param_object" (since it takes job argument and constructs a new container),
+    # replacing it with updated
+    updated_object = set_parameter_container(
+        container,
         object_path,
         {
             "project": str(job.project.uuid).replace("-", ""),
             "baseName": new_file.name,
-            "relPath": "CCP4_IMPORTED_FILES",
+            "relPath": initial_download_project_folder,
             "annotation": new_file.annotation,
             "dbFileId": str(new_file.uuid).replace("-", ""),
             "subType": new_file.sub_type,
         },
     )
+    logger.error("Updated object %s", updated_object)
+    save_params_for_job(the_job_plugin=plugin, the_job=job)
 
-    return json.loads(json.dumps(param_object, cls=CCP4i2JsonEncoder))
+    return json.loads(json.dumps(updated_object, cls=CCP4i2JsonEncoder))
 
 
 def download_file(job: models.Job, the_file, initial_download_project_folder: str):
