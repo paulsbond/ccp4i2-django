@@ -54,7 +54,7 @@ def _get_basic_job_info(job: Job):
     }
     if job.finish_time is not None:
         result["finishtime"] = job.finish_time.timestamp()
-    logger.warning(result)
+    logger.debug(result)
     return result
 
 
@@ -129,19 +129,23 @@ def _get_filenames(job: Job):
 
 
 def _get_input_filenames(container: CContainer):
-    return {
-        key: _get_filename(container.inputData.find(key))
-        for key in container.inputData.dataOrder()
-        if isinstance(container.inputData.find(key), CCP4File.CDataFile)
-    }
+    if "inputData" in container.dataOrder():
+        return {
+            key: _get_filename(container.inputData.find(key))
+            for key in container.inputData.dataOrder()
+            if isinstance(container.inputData.find(key), CCP4File.CDataFile)
+        }
+    return {}
 
 
 def _get_output_filenames(container: CContainer):
-    result_filenames = {}
     if "outputData" in container.dataOrder():
-        for key in container.outputData.dataOrder():
-            result_filenames[key] = _get_filename(container.outputData.find(key))
-    return result_filenames
+        return {
+            key: _get_filename(container.outputData.find(key))
+            for key in container.outputData.dataOrder()
+            if isinstance(container.outputData.find(key), CCP4File.CDataFile)
+        }
+    return {}
 
 
 def _get_filename(data):

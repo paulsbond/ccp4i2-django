@@ -32,7 +32,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           {...props}
           itemName="SMILES"
           visibility={() => ligandAs === "SMILES"}
-          qualifiers={{ multiLine: true }}
+          qualifiers={{ guiMode: "multiLine" }}
         />
         <CCP4i2TaskElement
           {...props}

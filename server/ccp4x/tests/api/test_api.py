@@ -306,8 +306,8 @@ class CCP4i2TestCase(TestCase):
         mmcif_path = (
             Path(CCP4Container.__file__).parent.parent
             / "demo_data"
-            / "mdm2"
-            / "4hg7.cif"
+            / "gamma"
+            / "gamma.pir"
         )
         print(mmcif_path, mmcif_path.exists())
         with open(mmcif_path, "rb") as mmcif_file:
@@ -321,4 +321,14 @@ class CCP4i2TestCase(TestCase):
                 data,
                 format="multipart",
             )
-            print(response.json()["updated_item"]["_value"]["dbFileId"])
+            uploaded_file_uuid = response.json()["updated_item"]["_value"]["dbFileId"][
+                "_value"
+            ]
+            uploaded_file = models.File.objects.get(uuid=uploaded_file_uuid)
+            self.assertEqual(uploaded_file.name, "gamma.pir")
+            self.assertTrue(uploaded_file.path.exists())
+            digest_url = f"/files/{uploaded_file.id}/digest/"
+            digest_response = self.client.get(
+                digest_url, content_type="application/json; charset=utf-8"
+            )
+            print(digest_response.json())

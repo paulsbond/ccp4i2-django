@@ -4,6 +4,8 @@ from typing import List
 from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
+from ccp4i2.core import CCP4Container
+from core.CCP4File import CDataFile
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
 from ...db import models
@@ -16,6 +18,7 @@ from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ...lib.job_utils.get_what_next import get_what_next
 from ...lib.job_utils.object_method import object_method
 from ...db.project_json import project_json
+from ...lib.job_utils.digest_file import digest_cdatafile_file_object
 
 
 @override_settings(
@@ -209,4 +212,31 @@ class CCP4i2TestCase(TestCase):
                     },
                 ],
             },
+        )
+
+    def test_digest_cdata(self):
+        mmcif_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "mdm2"
+            / "4hg7.cif"
+        )
+        file = CDataFile(str(mmcif_path))
+        a = digest_cdatafile_file_object(file)
+        self.assertEqual(
+            a["sequences"]["A"],
+            "QIPASEQETLVRPKPLLLKLLKSVGAQKDTYTMKEVLFYLGQYIMTKRLYDAAQQHIVYCSNDLLGDLFGVPSFSVKEHRKIYTMIYRNLV",
+        )
+
+        mmcif_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "baz2b"
+            / "baz2b.pir"
+        )
+        file = CDataFile(str(mmcif_path))
+        a = digest_cdatafile_file_object(file)
+        self.assertEqual(
+            a["sequences"]["A"],
+            "QIPASEQETLVRPKPLLLKLLKSVGAQKDTYTMKEVLFYLGQYIMTKRLYDAAQQHIVYCSNDLLGDLFGVPSFSVKEHRKIYTMIYRNLV",
         )

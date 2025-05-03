@@ -1,5 +1,8 @@
 from os import PathLike
 import gemmi
+import logging
+
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def identify_data_type(path: str):
@@ -13,13 +16,13 @@ def identify_data_type(path: str):
         ("sequence", parse_pir_or_fasta),
     ):
         try:
-            print("Trying to parse as", data_type_name)
+            logger.info("Trying to parse as %s", data_type_name)
             content = parse_function(path)
             result = {"data_type_name": data_type_name, "content": content}
-            print("Succeeded to parse as", data_type_name)
+            logger.info("Succeeded to parse as %s", data_type_name)
             return result
         except (RuntimeError, ValueError):
-            print("Failed to parse as", data_type_name)
+            logger.info("Failed to parse as %s", data_type_name)
             continue
     raise ValueError(f"Unknown file format: {path}")
 

@@ -33,6 +33,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           initiallyOpen={true}
           size={{ xs: 12 }}
         >
+          <Typography variant="body1" gutterBottom color="primary.dark">
+            Adopt contents of the ASU from an input file
+          </Typography>
           <CCP4i2TaskElement
             {...props}
             itemName="ASUCONTENTIN"

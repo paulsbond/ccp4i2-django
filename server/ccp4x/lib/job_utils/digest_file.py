@@ -187,6 +187,8 @@ def digest_file_object(file_object: CDataFile):
         return digest_cgenericrefldatafile_file_object(file_object)
     if type(file_object) is CCP4File.CDataFile:
         return digest_cdatafile_file_object(file_object)
+    if isinstance(file_object, CCP4ModelData.CSeqDataFile):
+        return digest_cseqdata_file_object(file_object)
     return digest_other_file_object(file_object)
 
 
@@ -254,7 +256,7 @@ def digest_cseqdata_file_object(file_object: CPdbDataFile):
         file_object.loadFile()
         file_object.setContentFlag(reset=True)
         contents = file_object.getFileContent()
-        content_dict = flatten_instance(contents)
+        content_dict = value_dict_for_object(contents)
         return content_dict
     except Exception as err:
         logger.exception("Error digesting file %s", file_object, exc_info=err)
