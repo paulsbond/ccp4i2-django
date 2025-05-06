@@ -241,7 +241,10 @@ export const JobMenu: React.FC = () => {
         <StatusMenu
           job={job}
           anchorEl={statusMenuAnchorEl}
-          onClose={() => setStatusMenuAnchorEl(null)}
+          onClose={() => {
+            setStatusMenuAnchorEl(null);
+            setJobMenuAnchorEl(null);
+          }}
         />
       </>
     )
@@ -265,11 +268,9 @@ const StatusMenu = ({ job, anchorEl, onClose }) => {
   const setStatus = useCallback(
     async (status: number) => {
       const formData = new FormData();
-      formData.append("comments", `${status}`);
+      formData.append("status", `${status}`);
 
-      const result = await api.patch(`jobs/${job.id}/`, {
-        formData,
-      });
+      const result = await api.patch(`jobs/${job.id}/`, formData);
       if (result) {
         console.log(result);
         mutateJobs();
@@ -281,10 +282,10 @@ const StatusMenu = ({ job, anchorEl, onClose }) => {
 
   return (
     <Menu open={Boolean(anchorEl)} anchorEl={anchorEl} onClose={onClose}>
-      <MenuItem>
+      <MenuItem onClick={() => setStatus(5)}>
         <SmsFailed /> Failed
       </MenuItem>
-      <MenuItem>
+      <MenuItem onClick={() => setStatus(6)}>
         <FireExtinguisherRounded /> Finished
       </MenuItem>
       <MenuItem onClick={() => setStatus(1)}>
