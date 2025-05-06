@@ -28,28 +28,48 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         <CContainerElement
           {...props}
           itemName=""
-          qualifiers={{ guiLabel: "Key files" }}
-          containerHint="FolderLevel"
+          qualifiers={{
+            guiLabel: "Optionally load existing AU content file to edit",
+          }}
+          containerHint="BlockLevel"
           initiallyOpen={true}
           size={{ xs: 12 }}
         >
-          <Typography variant="body1" gutterBottom color="primary.dark">
-            Adopt contents of the ASU from an input file
-          </Typography>
           <CCP4i2TaskElement
             {...props}
             itemName="ASUCONTENTIN"
             qualifiers={{ guiLabel: "ASU contents" }}
           />
-          <CCP4i2TaskElement
-            {...props}
-            itemName="HKLIN"
-            qualifiers={{ guiLabel: "MTZFile (for Matthews volumne calc)" }}
-          />
+        </CContainerElement>
+        <CContainerElement
+          {...props}
+          itemName=""
+          qualifiers={{
+            guiLabel:
+              "Specify the protein/nucleic acid sequences in the crystal",
+          }}
+          containerHint="FolderLevel"
+          initiallyOpen={true}
+          size={{ xs: 12 }}
+        >
           <CCP4i2TaskElement
             {...props}
             itemName="ASU_CONTENT"
             qualifiers={{ guiLabel: "ASU contents" }}
+          />
+        </CContainerElement>
+        <CContainerElement
+          {...props}
+          itemName=""
+          qualifiers={{ guiLabel: "Solvent analysis" }}
+          containerHint="BlockLevel"
+          initiallyOpen={true}
+          size={{ xs: 12 }}
+        >
+          <CCP4i2TaskElement
+            {...props}
+            itemName="HKLIN"
+            qualifiers={{ guiLabel: "MTZFile (for Matthews volumne calc)" }}
           />
         </CContainerElement>
       </CCP4i2Tab>

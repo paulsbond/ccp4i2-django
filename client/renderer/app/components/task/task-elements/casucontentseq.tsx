@@ -66,13 +66,16 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
 
   //And here the useEffect which triggeers that callback*only( when SEQIN changes from one defined value to another)
   useEffect(() => {
-    console.log("source changed");
+    console.log(
+      "source changed",
+      Boolean(oldSEQIN),
+      JSON.stringify(SEQIN) !== JSON.stringify(oldSEQIN)
+    );
     const asyncFunc = async () => {
       console.log(SEQIN, JSON.stringify(SEQIN), JSON.stringify(oldSEQIN));
-      if (SEQIN && JSON.stringify(SEQIN) !== JSON.stringify(oldSEQIN)) {
+      if (oldSEQIN && JSON.stringify(SEQIN) !== JSON.stringify(oldSEQIN)) {
         console.log({ oldSEQIN, SEQIN });
         await setSEQUENCEFromSEQIN();
-        await mutateContainer();
       }
     };
     asyncFunc();

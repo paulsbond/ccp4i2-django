@@ -76,6 +76,15 @@ const theme = createTheme({
           variants: [
             {
               props: { variant: "primary" },
+              defaultProps: {
+                disableTypography: false,
+                titleTypographyProps: {
+                  variant: "body1",
+                },
+                subheaderTypographyProps: {
+                  variant: "subtitle2",
+                },
+              },
               style: ({ theme }) => ({
                 paddingTop: theme.spacing(0.5),
                 paddingBottom: theme.spacing(0.5),
@@ -86,6 +95,15 @@ const theme = createTheme({
             },
             {
               props: { variant: "secondary" },
+              defaultProps: {
+                disableTypography: false,
+                titleTypographyProps: {
+                  variant: "body1",
+                },
+                subheaderTypographyProps: {
+                  variant: "subtitle2",
+                },
+              },
               style: ({ theme }) => ({
                 paddingTop: theme.spacing(0.5),
                 paddingBottom: theme.spacing(0.5),
