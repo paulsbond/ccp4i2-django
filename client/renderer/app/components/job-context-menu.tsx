@@ -16,8 +16,11 @@ import {
   CopyAll,
   Delete,
   Download,
+  FireExtinguisherRounded,
+  Pending,
   Preview,
   RunCircle,
+  SmsFailed,
   Terminal,
 } from "@mui/icons-material";
 import { createContext } from "react";
@@ -71,6 +74,9 @@ export const JobMenu: React.FC = () => {
   const api = useApi();
   const router = useRouter();
   const deleteDialog = useDeleteDialog();
+  const [statusMenuAnchorEl, setStatusMenuAnchorEl] = useState<Element | null>(
+    null
+  );
 
   const { data: jobs, mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",
@@ -127,6 +133,16 @@ export const JobMenu: React.FC = () => {
     },
     [job, mutateJobs]
   );
+
+  const handleStatusClicked = useCallback(
+    (ev: SyntheticEvent) => {
+      if (!job) return;
+      ev.stopPropagation();
+      setStatusMenuAnchorEl(ev.currentTarget);
+    },
+    [job, setStatusMenuAnchorEl]
+  );
+
   const handleDelete = useCallback(
     (ev: SyntheticEvent) => {
       if (!job) return;
@@ -187,33 +203,93 @@ export const JobMenu: React.FC = () => {
 
   return (
     job && (
-      <Menu
-        open={Boolean(jobMenuAnchorEl)}
-        anchorEl={jobMenuAnchorEl}
-        onClose={() => setJobMenuAnchorEl(null)}
-      >
-        <MenuItem
-          key="Clone"
-          disabled={job.number.includes(".")}
-          onClick={handleClone}
+      <>
+        <Menu
+          open={Boolean(jobMenuAnchorEl)}
+          anchorEl={jobMenuAnchorEl}
+          onClose={() => setJobMenuAnchorEl(null)}
         >
-          <CopyAll /> Clone
-        </MenuItem>
-        <MenuItem
-          key="Run"
-          disabled={job.number.includes(".") || job.status !== 1}
-          onClick={handleRun}
-        >
-          <RunCircle /> Run
-        </MenuItem>
-        <MenuItem
-          key="Delete"
-          disabled={job.number.includes(".")}
-          onClick={handleDelete}
-        >
-          <Delete /> Delete
-        </MenuItem>
-      </Menu>
+          <MenuItem
+            key="Clone"
+            disabled={job.number.includes(".")}
+            onClick={handleClone}
+          >
+            <CopyAll /> Clone
+          </MenuItem>
+          <MenuItem
+            key="Run"
+            disabled={job.number.includes(".") || job.status !== 1}
+            onClick={handleRun}
+          >
+            <RunCircle /> Run
+          </MenuItem>
+          <MenuItem
+            key="Delete"
+            disabled={job.number.includes(".")}
+            onClick={handleDelete}
+          >
+            <Delete /> Delete
+          </MenuItem>
+          <MenuItem
+            key="Status"
+            disabled={job.number.includes(".")}
+            onClick={handleStatusClicked}
+          >
+            <Delete /> Set status
+          </MenuItem>
+        </Menu>
+        <StatusMenu
+          job={job}
+          anchorEl={statusMenuAnchorEl}
+          onClose={() => setStatusMenuAnchorEl(null)}
+        />
+      </>
     )
+  );
+};
+
+interface StatusMenuProps {
+  job: Job;
+  anchorEL: HTMLElement;
+  onClose: () => void;
+}
+const StatusMenu = ({ job, anchorEl, onClose }) => {
+  const api = useApi();
+
+  const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
+    type: "projects",
+    id: job?.project,
+    endpoint: "jobs",
+  });
+
+  const setStatus = useCallback(
+    async (status: number) => {
+      const formData = new FormData();
+      formData.append("comments", `${status}`);
+
+      const result = await api.patch(`jobs/${job.id}/`, {
+        formData,
+      });
+      if (result) {
+        console.log(result);
+        mutateJobs();
+        onClose();
+      }
+    },
+    [job, mutateJobs, onClose]
+  );
+
+  return (
+    <Menu open={Boolean(anchorEl)} anchorEl={anchorEl} onClose={onClose}>
+      <MenuItem>
+        <SmsFailed /> Failed
+      </MenuItem>
+      <MenuItem>
+        <FireExtinguisherRounded /> Finished
+      </MenuItem>
+      <MenuItem onClick={() => setStatus(1)}>
+        <Pending /> Pending
+      </MenuItem>
+    </Menu>
   );
 };
