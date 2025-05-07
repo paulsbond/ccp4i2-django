@@ -117,10 +117,28 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
     setAnchorEl(null);
   };
 
+  const { noSlashUrl } = useApi();
+  const { projectId } = useContext(CCP4i2Context);
+
   const handlePreview = useCallback(
     async (ev: SyntheticEvent) => {
+      if (!menuNode) return;
       ev.stopPropagation();
-      setPreviewNode(node);
+      const composite_path = noSlashUrl(
+        `projects/${projectId}/project_file?path=${encodeURIComponent(
+          node.path
+        )}`
+      );
+      setContentSpecification({
+        url: composite_path,
+        title: node.name || "Preview",
+        language: node.name.endsWith(".json")
+          ? "json"
+          : node.name.endsWith(".xml")
+          ? "xml"
+          : "text",
+      });
+      setAnchorEl(null);
     },
     [node]
   );
@@ -229,7 +247,7 @@ const FileMenu: React.FC = () => {
     [menuNode]
   );
 
-  const handlePreviewFile = async (
+  const handleServersideViewer = async (
     project_id: number,
     viewer: string,
     path: string
@@ -241,11 +259,11 @@ const FileMenu: React.FC = () => {
     );
   };
 
-  const handlePreviewFileInCoot = useCallback(
+  const handleServersideViewerInCoot = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (project) {
-        handlePreviewFile(
+        handleServersideViewer(
           project.id,
           "coot",
           menuNode?.path.slice(project.directory.length) || ""
@@ -256,11 +274,11 @@ const FileMenu: React.FC = () => {
     [project, menuNode, setAnchorEl]
   );
 
-  const handlePreviewFileInHklview = useCallback(
+  const handleServersideViewerInHklview = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (project) {
-        handlePreviewFile(
+        handleServersideViewer(
           project.id,
           "hklview",
           menuNode?.path.slice(project.directory.length) || ""
@@ -271,11 +289,11 @@ const FileMenu: React.FC = () => {
     [project, menuNode, setAnchorEl]
   );
 
-  const handlePreviewFileInCcp4mg = useCallback(
+  const handleServersideViewerInCcp4mg = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (project) {
-        handlePreviewFile(
+        handleServersideViewer(
           project.id,
           "ccp4mg",
           menuNode?.path.slice(project.directory.length) || ""
@@ -301,9 +319,17 @@ const FileMenu: React.FC = () => {
         </MenuItem>
       )}
       {menuNode?.name &&
-        ["log", "xml", "json", "txt", "mmcif", "cif", "pdb"].includes(
-          menuNode?.name?.split(".").at(-1) || ""
-        ) && (
+        [
+          "log",
+          "xml",
+          "json",
+          "txt",
+          "mmcif",
+          "cif",
+          "pdb",
+          "dict",
+          "mol",
+        ].includes(menuNode?.name?.split(".").at(-1) || "") && (
           <MenuItem onClick={handlePreview}>
             <Preview />
             Preview
@@ -313,7 +339,7 @@ const FileMenu: React.FC = () => {
         ["pdb", "mmcif", "cif", "mtz"].includes(
           menuNode?.name?.split(".").at(-1) || ""
         ) && (
-          <MenuItem onClick={handlePreviewFileInCoot}>
+          <MenuItem onClick={handleServersideViewerInCoot}>
             <Preview />
             Coot
           </MenuItem>
@@ -322,14 +348,14 @@ const FileMenu: React.FC = () => {
         ["pdb", "mmcif", "cif", "mtz"].includes(
           menuNode?.name?.split(".").at(-1) || ""
         ) && (
-          <MenuItem onClick={handlePreviewFileInCcp4mg}>
+          <MenuItem onClick={handleServersideViewerInCcp4mg}>
             <Preview />
             CCP4MG
           </MenuItem>
         )}
       {menuNode?.name &&
         ["mtz"].includes(menuNode?.name?.split(".").at(-1) || "") && (
-          <MenuItem onClick={handlePreviewFileInHklview}>
+          <MenuItem onClick={handleServersideViewerInHklview}>
             <Preview />
             HKLView
           </MenuItem>
