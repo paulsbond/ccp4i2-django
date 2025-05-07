@@ -16,6 +16,7 @@ import {
 import ToolBar from "../../../../components/tool-bar";
 import { JobCommentEditor } from "../../../../components/job-comment-editor";
 import { JobMenu } from "../../../../components/job-context-menu";
+import { JobDirectoryView } from "../../../../components/job_directory_view";
 
 export default function JobPage({
   params,
@@ -82,6 +83,7 @@ export default function JobPage({
           {devMode && <Tab value={6} label="Validation report" />}
           {devMode && <Tab value={7} label="Job container" />}
           <Tab value={8} label="Comments" />
+          <Tab value={9} label="Directory" />
         </Tabs>
         {tabValue == 0 && <TaskContainer />}
         {devMode && tabValue == 1 && params_xml && (
@@ -126,6 +128,11 @@ export default function JobPage({
         {tabValue == 8 && container && (
           <>
             <JobCommentEditor jobId={job.id} />
+          </>
+        )}
+        {tabValue == 9 && job && project && (
+          <>
+            <JobDirectoryView job={job} project={project} />
           </>
         )}
         <JobMenu />

@@ -122,7 +122,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
       ev.stopPropagation();
       setPreviewNode(node);
     },
-    [menuNode]
+    [node]
   );
 
   return (
