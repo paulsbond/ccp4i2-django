@@ -11,5 +11,7 @@ export const CBooleanElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  return inferredVisibility && <CSimpleElement {...props} type="checkbox" />;
+  return inferredVisibility ? (
+    <CSimpleElement {...props} type="checkbox" />
+  ) : null;
 };

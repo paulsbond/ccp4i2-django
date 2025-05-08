@@ -27,37 +27,34 @@ export const CPdbEnsembleItemElement: React.FC<CCP4i2TaskElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  return (
-    inferredVisibility &&
-    item && (
-      <CSimpleDataFileElement
-        {...props}
-        sx={{
-          border: "3px solid",
-          borderColor: getValidationColor(item),
-        }}
-        itemName={`${item._objectPath}.structure`}
-        qualifiers={{
-          guiLabel: "Coordinates",
-        }}
-      >
-        <Stack direction="row" spacing={2}>
-          <CCP4i2TaskElement
-            {...props}
-            sx={{ my: 0, py: 0, minWidth: "10rem" }}
-            itemName={`${item._objectPath}.identity_to_target`}
-            qualifiers={{ guiLabel: "Identity" }}
-          />
-          <CCP4i2TaskElement
-            {...props}
-            sx={{ my: 0, py: 0, minWidth: "10rem" }}
-            itemName={`${item._objectPath}.rms_to_target`}
-            qualifiers={{
-              guiLabel: "Rms",
-            }}
-          />
-        </Stack>
-      </CSimpleDataFileElement>
-    )
-  );
+  return inferredVisibility && item ? (
+    <CSimpleDataFileElement
+      {...props}
+      sx={{
+        border: "3px solid",
+        borderColor: getValidationColor(item),
+      }}
+      itemName={`${item._objectPath}.structure`}
+      qualifiers={{
+        guiLabel: "Coordinates",
+      }}
+    >
+      <Stack direction="row" spacing={2}>
+        <CCP4i2TaskElement
+          {...props}
+          sx={{ my: 0, py: 0, minWidth: "10rem" }}
+          itemName={`${item._objectPath}.identity_to_target`}
+          qualifiers={{ guiLabel: "Identity" }}
+        />
+        <CCP4i2TaskElement
+          {...props}
+          sx={{ my: 0, py: 0, minWidth: "10rem" }}
+          itemName={`${item._objectPath}.rms_to_target`}
+          qualifiers={{
+            guiLabel: "Rms",
+          }}
+        />
+      </Stack>
+    </CSimpleDataFileElement>
+  ) : null;
 };

@@ -122,6 +122,7 @@ const theme = createTheme({
         subheaderTypographyProps: {
           variant: "subtitle2",
         },
+        //@ts-ignore
         variant: "secondary",
       },
     },

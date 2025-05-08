@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import $ from "jquery";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, Skeleton, TextField } from "@mui/material";
 
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 import { CCP4i2ApplicationOutputView } from "./CCP4i2ApplicationOutputView";
@@ -75,32 +75,30 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
     return graphs.find((graph, iGraph) => iGraph === shown);
   }, [graphs, shown]);
 
-  return (
-    graphs.length > 0 &&
-    xmlGraphs.length > 0 &&
-    graphTitles.length > 0 && (
-      <div style={{ height: "450px" }}>
-        {$(props.item).attr("title")}
-        {graphs && graphs.length > 1 && (
-          <Autocomplete
-            sx={{ mt: 2 }}
-            defaultValue={
-              graphTitles && graphTitles.length > 0 ? graphTitles[0] : "0"
-            }
+  return graphs.length > 0 && xmlGraphs.length > 0 && graphTitles.length > 0 ? (
+    <div style={{ height: "450px" }}>
+      {$(props.item).attr("title")}
+      {graphs && graphs.length > 1 && (
+        <Autocomplete
+          sx={{ mt: 2 }}
+          defaultValue={
+            graphTitles && graphTitles.length > 0 ? graphTitles[0] : "0"
+          }
+          //@ts-ignore
+          options={options}
+          onChange={(ev, newValue) => {
+            console.log(ev, newValue);
             //@ts-ignore
-            options={options}
-            onChange={(ev, newValue) => {
-              console.log(ev, newValue);
-              //@ts-ignore
-              setShown(newValue.id);
-            }}
-            renderInput={(params) => (
-              <TextField {...params} size="small" label={groupTitle} />
-            )}
-          />
-        )}
-        {graphToDraw}
-      </div>
-    )
+            setShown(newValue.id);
+          }}
+          renderInput={(params) => (
+            <TextField {...params} size="small" label={groupTitle} />
+          )}
+        />
+      )}
+      {graphToDraw}
+    </div>
+  ) : (
+    <Skeleton />
   );
 };

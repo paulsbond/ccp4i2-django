@@ -51,49 +51,47 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
     }
     setInFlight(false);
   };
-  return (
-    inferredVisibility && (
-      <Card
-        sx={{
-          border: "3px solid",
-          borderColor: getValidationColor(item),
-        }}
-      >
-        <CardHeader
-          title={qualifiers?.guiLabel}
-          sx={{ borderColor: getValidationColor(item) }}
-          action={<ErrorInfo {...props} />}
-        />
-        <CardContent sx={{ my: 0, py: 0 }}>
-          {item && (
-            <Autocomplete
-              sx={{
-                mt: 1,
-                backgroundColor: inFlight ? "#ffeebe" : "palette.common.white",
-              }}
-              id="autocomplete-spacegroup"
-              disabled={inFlight || job.status != 1}
-              multiple={false}
-              options={spaceGroups}
-              getOptionLabel={(option: SpaceGroup) => option.name}
-              getOptionKey={(option: SpaceGroup) => option.name}
-              value={value}
-              style={{ minWidth: "15rem" }}
-              onChange={(
-                event: React.SyntheticEvent<Element, Event>,
-                newValue: SpaceGroup | null
-              ) => {
-                if (newValue) {
-                  handleInputChanged(newValue);
-                }
-              }}
-              renderInput={(params: any) => (
-                <TextField {...params} label="Space groups" />
-              )}
-            />
-          )}
-        </CardContent>
-      </Card>
-    )
-  );
+  return inferredVisibility ? (
+    <Card
+      sx={{
+        border: "3px solid",
+        borderColor: getValidationColor(item),
+      }}
+    >
+      <CardHeader
+        title={qualifiers?.guiLabel}
+        sx={{ borderColor: getValidationColor(item) }}
+        action={<ErrorInfo {...props} />}
+      />
+      <CardContent sx={{ my: 0, py: 0 }}>
+        {item && (
+          <Autocomplete
+            sx={{
+              mt: 1,
+              backgroundColor: inFlight ? "#ffeebe" : "palette.common.white",
+            }}
+            id="autocomplete-spacegroup"
+            disabled={inFlight || job.status != 1}
+            multiple={false}
+            options={spaceGroups}
+            getOptionLabel={(option: SpaceGroup) => option.name}
+            getOptionKey={(option: SpaceGroup) => option.name}
+            value={value}
+            style={{ minWidth: "15rem" }}
+            onChange={(
+              event: React.SyntheticEvent<Element, Event>,
+              newValue: SpaceGroup | null
+            ) => {
+              if (newValue) {
+                handleInputChanged(newValue);
+              }
+            }}
+            renderInput={(params: any) => (
+              <TextField {...params} label="Space groups" />
+            )}
+          />
+        )}
+      </CardContent>
+    </Card>
+  ) : null;
 };

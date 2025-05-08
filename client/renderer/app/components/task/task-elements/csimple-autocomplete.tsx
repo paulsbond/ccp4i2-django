@@ -160,60 +160,56 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     [enumerators, labels]
   );
 
-  return (
-    inferredVisibility &&
-    enumerators &&
-    labels && (
-      <Stack direction="row" sx={{ mb: 2 }}>
-        {qualifiers?.guiMode === "multiLineRadio" ||
-        qualifiers?.guiMode === "radio" ? (
-          <RadioGroup
-            row={qualifiers?.guiMode === "radio"}
-            value={value}
-            onChange={handleSelectRadio}
-            sx={calculatedSx}
-          >
-            <FormControlLabel
-              control={<></>}
-              label={guiLabel}
-              sx={{ marginRight: 2 }}
-            />
-            {enumerators.map((enumerator: string, index: number) => (
-              <FormControlLabel
-                key={index}
-                value={enumerator}
-                control={<Radio size="small" disabled={disabled} />}
-                label={getOptionLabel(enumerator)}
-              />
-            ))}
-          </RadioGroup>
-        ) : (
-          <Autocomplete
-            disabled={disabled}
-            sx={calculatedSx}
-            value={value}
-            onChange={handleSelect}
-            getOptionLabel={getOptionLabel}
-            options={enumerators}
-            size="small"
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                error={getValidationColor(item) === "error.light"}
-                label={guiLabel}
-                size="small"
-                slotProps={{
-                  inputLabel: {
-                    shrink: true,
-                    disableAnimation: true,
-                  },
-                }}
-              />
-            )}
+  return inferredVisibility && enumerators && labels ? (
+    <Stack direction="row" sx={{ mb: 2 }}>
+      {qualifiers?.guiMode === "multiLineRadio" ||
+      qualifiers?.guiMode === "radio" ? (
+        <RadioGroup
+          row={qualifiers?.guiMode === "radio"}
+          value={value}
+          onChange={handleSelectRadio}
+          sx={calculatedSx}
+        >
+          <FormControlLabel
+            control={<></>}
+            label={guiLabel}
+            sx={{ marginRight: 2 }}
           />
-        )}
-        <ErrorTrigger {...{ item, job }} />
-      </Stack>
-    )
-  );
+          {enumerators.map((enumerator: string, index: number) => (
+            <FormControlLabel
+              key={index}
+              value={enumerator}
+              control={<Radio size="small" disabled={disabled} />}
+              label={getOptionLabel(enumerator)}
+            />
+          ))}
+        </RadioGroup>
+      ) : (
+        <Autocomplete
+          disabled={disabled}
+          sx={calculatedSx}
+          value={value}
+          onChange={handleSelect}
+          getOptionLabel={getOptionLabel}
+          options={enumerators}
+          size="small"
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              error={getValidationColor(item) === "error.light"}
+              label={guiLabel}
+              size="small"
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                  disableAnimation: true,
+                },
+              }}
+            />
+          )}
+        />
+      )}
+      <ErrorTrigger {...{ item, job }} />
+    </Stack>
+  ) : null;
 };

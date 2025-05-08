@@ -33,18 +33,16 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  return (
-    inferredVisibility && (
-      <CSimpleDataFileElement {...props}>
-        <CCP4i2TaskElement
-          {...props}
-          itemName={selectionItemName}
-          qualifiers={{
-            ...getTaskItem(selectionItemName).item._qualifiers,
-            guiLabel: "Selection string",
-          }}
-        />
-      </CSimpleDataFileElement>
-    )
-  );
+  return inferredVisibility ? (
+    <CSimpleDataFileElement {...props}>
+      <CCP4i2TaskElement
+        {...props}
+        itemName={selectionItemName}
+        qualifiers={{
+          ...getTaskItem(selectionItemName).item._qualifiers,
+          guiLabel: "Selection string",
+        }}
+      />
+    </CSimpleDataFileElement>
+  ) : null;
 };

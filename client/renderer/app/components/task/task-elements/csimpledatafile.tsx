@@ -84,13 +84,11 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  return (
-    inferredVisibility && (
-      <>
-        <Stack direction="column">
-          <CDataFileElement {...props} setFiles={setSelectedFiles} />
-        </Stack>
-      </>
-    )
-  );
+  return inferredVisibility ? (
+    <>
+      <Stack direction="column">
+        <CDataFileElement {...props} setFiles={setSelectedFiles} />
+      </Stack>
+    </>
+  ) : null;
 };

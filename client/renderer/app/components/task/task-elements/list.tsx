@@ -109,69 +109,67 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  return (
-    inferredVisibility && (
-      <Card>
-        <CardHeader
-          variant="primary"
-          title={<>{guiLabel}</>}
-          action={
-            <>
-              <MyExpandMore
-                sx={{ color: "primary.contrastText" }}
-                expand={expanded}
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  setExpanded(!expanded);
-                }}
-                aria-expanded={expanded}
-                aria-label="show more"
-              >
-                <ExpandMoreIcon />
-              </MyExpandMore>
-              <Button disabled={!(job.status == 1)} onClick={extendListItem}>
-                <Add sx={{ color: "primary.contrastText" }} />
-              </Button>
-            </>
-          }
-        />
-        <CardContent>
-          <Collapse in={expanded} timeout="auto" unmountOnExit>
-            {item?._value &&
-              (item._value?.length == 0 ? (
-                <Typography variant="caption">No elements</Typography>
-              ) : (
-                item._value.map((content: any) => {
-                  return (
-                    <Grid2 key={content._objectPath} container>
-                      <Grid2 key="Element" size={{ xs: 11 }}>
-                        <CCP4i2TaskElement
-                          {...props}
-                          itemName={content._objectPath}
-                        />
-                      </Grid2>
-                      <Grid2 key="deleteButton" size={{ xs: 1 }}>
-                        <FormControl>
-                          <FormLabel>Delete</FormLabel>
-                          <Button
-                            disabled={!(job.status === 1)}
-                            id="deleteButton"
-                            onClick={() => {
-                              deleteItem(content);
-                            }}
-                          >
-                            {" "}
-                            <Delete />
-                          </Button>
-                        </FormControl>
-                      </Grid2>
+  return inferredVisibility ? (
+    <Card>
+      <CardHeader
+        variant="primary"
+        title={<>{guiLabel}</>}
+        action={
+          <>
+            <MyExpandMore
+              sx={{ color: "primary.contrastText" }}
+              expand={expanded}
+              onClick={(ev) => {
+                ev.stopPropagation();
+                setExpanded(!expanded);
+              }}
+              aria-expanded={expanded}
+              aria-label="show more"
+            >
+              <ExpandMoreIcon />
+            </MyExpandMore>
+            <Button disabled={!(job.status == 1)} onClick={extendListItem}>
+              <Add sx={{ color: "primary.contrastText" }} />
+            </Button>
+          </>
+        }
+      />
+      <CardContent>
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          {item?._value &&
+            (item._value?.length == 0 ? (
+              <Typography variant="caption">No elements</Typography>
+            ) : (
+              item._value.map((content: any) => {
+                return (
+                  <Grid2 key={content._objectPath} container>
+                    <Grid2 key="Element" size={{ xs: 11 }}>
+                      <CCP4i2TaskElement
+                        {...props}
+                        itemName={content._objectPath}
+                      />
                     </Grid2>
-                  );
-                })
-              ))}
-          </Collapse>
-        </CardContent>
-      </Card>
-    )
-  );
+                    <Grid2 key="deleteButton" size={{ xs: 1 }}>
+                      <FormControl>
+                        <FormLabel>Delete</FormLabel>
+                        <Button
+                          disabled={!(job.status === 1)}
+                          id="deleteButton"
+                          onClick={() => {
+                            deleteItem(content);
+                          }}
+                        >
+                          {" "}
+                          <Delete />
+                        </Button>
+                      </FormControl>
+                    </Grid2>
+                  </Grid2>
+                );
+              })
+            ))}
+        </Collapse>
+      </CardContent>
+    </Card>
+  ) : null;
 };

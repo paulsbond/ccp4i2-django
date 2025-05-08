@@ -80,27 +80,25 @@ export const CContainerElement: React.FC<
   }, [item]);
 
   const calculatedContent = useMemo(() => {
-    return (
-      item && (
-        <Grid2 container spacing={0} key={item._objectPath}>
-          {childNames.map((childName: string) => {
-            const childObjectPath = `${item._objectPath}.${childName}`;
-            const { item: childItem } = getTaskItem(childObjectPath);
-            return (
-              <Grid2 key={childObjectPath} size={size}>
-                <CCP4i2TaskElement
-                  key={childObjectPath}
-                  {...props}
-                  sx={elementSx}
-                  itemName={childObjectPath}
-                  qualifiers={{ ...childItem._qualifiers }}
-                />
-              </Grid2>
-            );
-          })}
-        </Grid2>
-      )
-    );
+    return item ? (
+      <Grid2 container spacing={0} key={item._objectPath}>
+        {childNames.map((childName: string) => {
+          const childObjectPath = `${item._objectPath}.${childName}`;
+          const { item: childItem } = getTaskItem(childObjectPath);
+          return (
+            <Grid2 key={childObjectPath} size={size}>
+              <CCP4i2TaskElement
+                key={childObjectPath}
+                {...props}
+                sx={elementSx}
+                itemName={childObjectPath}
+                qualifiers={{ ...childItem._qualifiers }}
+              />
+            </Grid2>
+          );
+        })}
+      </Grid2>
+    ) : null;
   }, [item, elementSx, childNames]);
 
   const griddedChildren = useMemo(() => {
@@ -116,57 +114,57 @@ export const CContainerElement: React.FC<
     return null;
   }, [children]);
 
-  return containerHint === "FolderLevel"
-    ? inferredVisibility && (
-        <Card>
-          <CardHeader
-            variant="primary"
-            title={qualifiers.guiLabel}
-            onClick={(ev) => {
-              ev.stopPropagation();
-              setOpen(!open);
-            }}
-            action={
-              <Stack direction="row">
-                <MyExpandMore
-                  expand={open}
-                  aria-expanded={open}
-                  aria-label="show more"
-                >
-                  <ExpandMore sx={{ color: "primary.contrastText" }} />
-                </MyExpandMore>
-                {item && <ErrorInfo {...props} />}
-              </Stack>
-            }
-          />
-          <CardContent>
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              {calculatedContent}
-              {griddedChildren}
-            </Collapse>
-          </CardContent>
-        </Card>
-      )
-    : containerHint === "BlockLevel"
-    ? inferredVisibility && (
-        <Paper>
-          <Typography variant="h6" noWrap component="div">
-            {qualifiers.guiLabel}
-          </Typography>
-          {calculatedContent} {griddedChildren}
-        </Paper>
-      )
-    : containerHint == "RowLevel"
-    ? inferredVisibility && (
-        <Stack direction="row">
-          {calculatedContent}
-          {griddedChildren}
-        </Stack>
-      )
-    : inferredVisibility && (
-        <div>
-          {calculatedContent}
-          {griddedChildren}
-        </div>
-      );
+  return containerHint === "FolderLevel" ? (
+    inferredVisibility ? (
+      <Card>
+        <CardHeader
+          variant="primary"
+          title={qualifiers.guiLabel}
+          onClick={(ev) => {
+            ev.stopPropagation();
+            setOpen(!open);
+          }}
+          action={
+            <Stack direction="row">
+              <MyExpandMore
+                expand={open}
+                aria-expanded={open}
+                aria-label="show more"
+              >
+                <ExpandMore sx={{ color: "primary.contrastText" }} />
+              </MyExpandMore>
+              {item && <ErrorInfo {...props} />}
+            </Stack>
+          }
+        />
+        <CardContent>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            {calculatedContent}
+            {griddedChildren}
+          </Collapse>
+        </CardContent>
+      </Card>
+    ) : null
+  ) : containerHint === "BlockLevel" ? (
+    inferredVisibility ? (
+      <Paper>
+        <Typography variant="h6" noWrap component="div">
+          {qualifiers.guiLabel}
+        </Typography>
+        {calculatedContent} {griddedChildren}
+      </Paper>
+    ) : null
+  ) : containerHint == "RowLevel" ? (
+    inferredVisibility ? (
+      <Stack direction="row">
+        {calculatedContent}
+        {griddedChildren}
+      </Stack>
+    ) : null
+  ) : inferredVisibility ? (
+    <div>
+      {calculatedContent}
+      {griddedChildren}
+    </div>
+  ) : null;
 };

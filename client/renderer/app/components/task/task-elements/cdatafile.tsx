@@ -276,55 +276,103 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     return props.disabled || inFlight || job.status !== 1;
   }, [props.disabled, inFlight, job]);
 
-  return (
-    inferredVisibility && (
-      <Stack
-        sx={{
-          border: "3px solid",
-          borderColor: getValidationColor(item),
-          backgroundColor: isOver
-            ? isValidDrop
-              ? "success.light"
-              : "error.light"
-            : "background.paper",
-          borderRadius: "0.5rem",
-          mx: 2,
-          my: 1,
-        }}
-        direction="column"
-      >
-        <Stack ref={setNodeRef} direction="row">
-          <Avatar
-            src={`/api/proxy/djangostatic/qticons/${item._class.slice(1)}.png`}
-          />
-          <Autocomplete
-            disabled={disabled}
-            sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
-            size="small"
-            value={value}
-            onChange={handleSelect}
-            options={fileOptions?.concat([nullFile]) || []}
-            getOptionLabel={getOptionLabel}
-            getOptionKey={(option) => `${option.uuid}`}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                error={getValidationColor(item) === "error.light"}
-                slotProps={{
-                  inputLabel: {
-                    shrink: true,
-                    disableAnimation: true,
-                  },
-                }}
-                label={guiLabel}
+  return inferredVisibility ? (
+    <Stack
+      sx={{
+        border: "3px solid",
+        borderColor: getValidationColor(item),
+        backgroundColor: isOver
+          ? isValidDrop
+            ? "success.light"
+            : "error.light"
+          : "background.paper",
+        borderRadius: "0.5rem",
+        mx: 2,
+        my: 1,
+      }}
+      direction="column"
+    >
+      <Stack ref={setNodeRef} direction="row">
+        <Avatar
+          src={`/api/proxy/djangostatic/qticons/${item._class.slice(1)}.png`}
+        />
+        <Autocomplete
+          disabled={disabled}
+          sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
+          size="small"
+          value={value}
+          onChange={handleSelect}
+          options={fileOptions?.concat([nullFile]) || []}
+          getOptionLabel={getOptionLabel}
+          getOptionKey={(option) => `${option.uuid}`}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              error={getValidationColor(item) === "error.light"}
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                  disableAnimation: true,
+                },
+              }}
+              label={guiLabel}
+              size="small"
+            />
+          )}
+          title={objectPath || item._className || "Title"}
+        />
+        <Stack direction="row">
+          {job.status == 1 && (
+            <InputFileUpload
+              sx={{
+                my: 1,
+                borderRadius: "0",
+                "&:first-of-type": {
+                  borderTopLeftRadius: "0.5rem",
+                  borderBottomLeftRadius: "0.5rem",
+                },
+                "&:last-of-type": {
+                  borderTopRightRadius: "0.5rem",
+                  borderBottomRightRadius: "0.5rem",
+                },
+              }}
+              disabled={disabled}
+              accept={qualifiers?.fileExtensions
+                .map((ext: string) => `.${ext}`)
+                .join(",")}
+              handleFileChange={handleFileChange}
+            />
+          )}
+          {qualifiers?.downloadModes?.length > 0 && job.status == 1 && (
+            <InputFileFetch
+              sx={{
+                my: 1,
+                borderRadius: "0",
+                "&:first-of-type": {
+                  borderTopLeftRadius: "0.5rem",
+                  borderBottomLeftRadius: "0.5rem",
+                },
+                "&:last-of-type": {
+                  borderTopRightRadius: "0.5rem",
+                  borderBottomRightRadius: "0.5rem",
+                },
+              }}
+              disabled={disabled}
+              modes={qualifiers.downloadModes}
+              handleFileChange={handleFileChange}
+              item={item}
+            />
+          )}
+          {value && value != nullFile && (
+            <>
+              <Button
+                disabled={false}
+                component="label"
+                role={undefined}
+                variant="outlined"
+                tabIndex={-1}
                 size="small"
-              />
-            )}
-            title={objectPath || item._className || "Title"}
-          />
-          <Stack direction="row">
-            {job.status == 1 && (
-              <InputFileUpload
+                startIcon={<Menu fontSize="small" />}
                 sx={{
                   my: 1,
                   borderRadius: "0",
@@ -337,69 +385,19 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
                     borderBottomRightRadius: "0.5rem",
                   },
                 }}
-                disabled={disabled}
-                accept={qualifiers?.fileExtensions
-                  .map((ext: string) => `.${ext}`)
-                  .join(",")}
-                handleFileChange={handleFileChange}
-              />
-            )}
-            {qualifiers?.downloadModes?.length > 0 && job.status == 1 && (
-              <InputFileFetch
-                sx={{
-                  my: 1,
-                  borderRadius: "0",
-                  "&:first-of-type": {
-                    borderTopLeftRadius: "0.5rem",
-                    borderBottomLeftRadius: "0.5rem",
-                  },
-                  "&:last-of-type": {
-                    borderTopRightRadius: "0.5rem",
-                    borderBottomRightRadius: "0.5rem",
-                  },
+                onClick={(ev) => {
+                  ev.stopPropagation();
+                  ev.preventDefault();
+                  setFileMenuAnchorEl(ev.currentTarget);
+                  setFile(value);
                 }}
-                disabled={disabled}
-                modes={qualifiers.downloadModes}
-                handleFileChange={handleFileChange}
-                item={item}
-              />
-            )}
-            {value && value != nullFile && (
-              <>
-                <Button
-                  disabled={false}
-                  component="label"
-                  role={undefined}
-                  variant="outlined"
-                  tabIndex={-1}
-                  size="small"
-                  startIcon={<Menu fontSize="small" />}
-                  sx={{
-                    my: 1,
-                    borderRadius: "0",
-                    "&:first-of-type": {
-                      borderTopLeftRadius: "0.5rem",
-                      borderBottomLeftRadius: "0.5rem",
-                    },
-                    "&:last-of-type": {
-                      borderTopRightRadius: "0.5rem",
-                      borderBottomRightRadius: "0.5rem",
-                    },
-                  }}
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    ev.preventDefault();
-                    setFileMenuAnchorEl(ev.currentTarget);
-                    setFile(value);
-                  }}
-                ></Button>
-              </>
-            )}
-          </Stack>
-          <ErrorTrigger {...{ item, job }} />
+              ></Button>
+            </>
+          )}
         </Stack>
-        {props.children}
+        <ErrorTrigger {...{ item, job }} />
       </Stack>
-    )
-  );
+      {props.children}
+    </Stack>
+  ) : null;
 };

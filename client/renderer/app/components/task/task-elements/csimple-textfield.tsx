@@ -161,29 +161,27 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     return props.disabled || inFlight || job.status != 1;
   }, [props.disabled, inFlight, job]);
 
-  return (
-    inferredVisibility && (
-      <Stack direction="row" sx={{ mb: 2 }}>
-        <TextField
-          multiline={multiLine}
-          inputRef={inputRef}
-          disabled={disabled}
-          size="small"
-          sx={compositedSx}
-          slotProps={calculatedSlotProps}
-          type={type}
-          value={value}
-          label={guiLabel}
-          title={calculatedTitle}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          error={
-            getValidationColor(item) === "error.light" || Number.isNaN(value)
-          }
-        />
-        <ErrorTrigger {...{ item, job }} />
-      </Stack>
-    )
-  );
+  return inferredVisibility ? (
+    <Stack direction="row" sx={{ mb: 2 }}>
+      <TextField
+        multiline={multiLine}
+        inputRef={inputRef}
+        disabled={disabled}
+        size="small"
+        sx={compositedSx}
+        slotProps={calculatedSlotProps}
+        type={type}
+        value={value}
+        label={guiLabel}
+        title={calculatedTitle}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        error={
+          getValidationColor(item) === "error.light" || Number.isNaN(value)
+        }
+      />
+      <ErrorTrigger {...{ item, job }} />
+    </Stack>
+  ) : null;
 };

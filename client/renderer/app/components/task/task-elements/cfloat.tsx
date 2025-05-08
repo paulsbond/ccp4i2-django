@@ -11,5 +11,5 @@ export const CFloatElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  return inferredVisibility && <CSimpleElement {...props} type="float" />;
+  return inferredVisibility ? <CSimpleElement {...props} type="float" /> : null;
 };

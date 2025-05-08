@@ -6,7 +6,7 @@ import { CCP4i2ApplicationOutputView } from "./CCP4i2ApplicationOutputView";
 
 export const CCP4i2RVAPIRow: React.FC<CCP4i2ReportElementProps> = (props) => {
   const [content, setContent] = useState<
-    JQuery<React.JSX.Element> | undefined
+    JQuery<React.ReactElement> | undefined
   >();
 
   useEffect(() => {

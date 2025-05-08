@@ -1,4 +1,12 @@
-import { Avatar, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Avatar,
+  Button,
+  Chip,
+  Paper,
+  Skeleton,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { EndpointFetch, useApi } from "../api";
 import {
   Job,
@@ -105,26 +113,26 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
     [jobs]
   );
 
-  return (
-    decoratedJobs && (
-      <RichTreeView
-        items={decoratedJobs || []}
-        isItemEditable={(item) => true}
-        experimentalFeatures={{ labelEditing: true }}
-        getItemId={(jobOrFile) => jobOrFile.uuid}
-        getItemLabel={getItemLabel}
-        slots={{ item: CustomTreeItem }}
-        onSelectedItemsChange={(event, ids) => {
-          // Prevent selection when an item is opened
-          const closest = (event.target as Element).closest(
-            '[class*="-MuiTreeItem2-iconContainer"]'
-          );
-          if (event.type !== "click" || !closest) {
-            handleSelectedItemsChange(event, ids);
-          }
-        }}
-      />
-    )
+  return decoratedJobs ? (
+    <RichTreeView
+      items={decoratedJobs || []}
+      isItemEditable={(item) => true}
+      experimentalFeatures={{ labelEditing: true }}
+      getItemId={(jobOrFile) => jobOrFile.uuid}
+      getItemLabel={getItemLabel}
+      slots={{ item: CustomTreeItem }}
+      onSelectedItemsChange={(event, ids) => {
+        // Prevent selection when an item is opened
+        const closest = (event.target as Element).closest(
+          '[class*="-MuiTreeItem2-iconContainer"]'
+        );
+        if (event.type !== "click" || !closest) {
+          handleSelectedItemsChange(event, ids);
+        }
+      }}
+    />
+  ) : (
+    <Skeleton variant="rectangular" width="100%" height={200} />
   );
 };
 
@@ -219,79 +227,73 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
       : null;
 
   return (
-    <TreeItem2Provider itemId={itemId}>
-      <TreeItem2Root
-        {...getRootProps()}
-        sx={
-          !file && !job?.number.includes(".")
-            ? { border: "1px solid #999" }
-            : {}
-        }
-      >
-        <TreeItem2Content {...getContentProps()}>
-          <TreeItem2IconContainer {...getIconContainerProps()}>
-            <TreeItem2Icon status={status} />
-          </TreeItem2IconContainer>
-          <Stack direction="row">
-            {job ? (
-              <CCP4i2JobAvatar
-                job={job}
-                ref={setNodeRef}
-                {...listeners}
-                {...attributes}
-              />
-            ) : file ? (
-              <FileAvatar
-                file={file}
-                ref={setNodeRef}
-                {...listeners}
-                {...attributes}
-              />
-            ) : (
-              ""
-            )}
-          </Stack>
-          {status.editing ? (
-            <TreeItem2LabelInput {...getLabelInputProps()} />
+    <TreeItem2Root
+      {...getRootProps()}
+      sx={
+        !file && !job?.number.includes(".") ? { border: "1px solid #999" } : {}
+      }
+    >
+      <TreeItem2Content {...getContentProps()}>
+        <TreeItem2IconContainer {...getIconContainerProps()}>
+          <TreeItem2Icon status={status} />
+        </TreeItem2IconContainer>
+        <Stack direction="row">
+          {job ? (
+            <CCP4i2JobAvatar
+              job={job}
+              ref={setNodeRef}
+              {...listeners}
+              {...attributes}
+            />
+          ) : file ? (
+            <FileAvatar
+              file={file}
+              ref={setNodeRef}
+              {...listeners}
+              {...attributes}
+            />
           ) : (
-            <Stack direction={"column"}>
-              <TreeItem2Label {...getLabelProps()} />
-              {jobTime && (
-                <Typography variant="body2" sx={{ fontSize: "75%" }} noWrap>
-                  {jobTime}
-                </Typography>
-              )}
-              <Stack direction="row">{kpiContent}</Stack>
-            </Stack>
+            ""
           )}
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
-          />
-          <Button
-            size="small"
-            sx={{ p: 0, m: 0 }}
-            variant="outlined"
-            onClick={(ev) => {
-              ev.stopPropagation();
-              if (job) {
-                setJobMenuAnchorEl(ev.currentTarget);
-                setJob(job || null);
-              } else if (file) {
-                setFileMenuAnchorEl(ev.currentTarget);
-                setFile(file || null);
-              }
-            }}
-          >
-            <MenuIcon fontSize="small" />
-          </Button>
-        </TreeItem2Content>
-        {children && (
-          <TreeItem2GroupTransition {...getGroupTransitionProps()} />
+        </Stack>
+        {status.editing ? (
+          <TreeItem2LabelInput {...getLabelInputProps()} />
+        ) : (
+          <Stack direction={"column"}>
+            <TreeItem2Label {...getLabelProps()} />
+            {jobTime && (
+              <Typography variant="body2" sx={{ fontSize: "75%" }} noWrap>
+                {jobTime}
+              </Typography>
+            )}
+            <Stack direction="row">{kpiContent}</Stack>
+          </Stack>
         )}
-      </TreeItem2Root>
-    </TreeItem2Provider>
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
+        />
+        <Button
+          size="small"
+          sx={{ p: 0, m: 0 }}
+          variant="outlined"
+          onClick={(ev) => {
+            ev.stopPropagation();
+            if (job) {
+              setJobMenuAnchorEl(ev.currentTarget);
+              setJob(job || null);
+            } else if (file) {
+              setFileMenuAnchorEl(ev.currentTarget);
+              setFile(file || null);
+            }
+          }}
+        >
+          <MenuIcon fontSize="small" />
+        </Button>
+      </TreeItem2Content>
+      {children && <TreeItem2GroupTransition {...getGroupTransitionProps()} />}
+    </TreeItem2Root>
   );
 });

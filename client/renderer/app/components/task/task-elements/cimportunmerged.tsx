@@ -88,97 +88,95 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
-  return (
-    inferredVisibility && (
-      <Card
-        sx={{
-          border: "3px solid",
-          borderColor: getValidationColor(item),
-          borderRadius: "0.5rem",
-        }}
-      >
-        <CardHeader
-          title={item._qualifiers.guiLabel}
-          action={<ErrorInfo {...props} />}
-        />
-        <CardContent>
-          {fileObjectPath && (
-            <CSimpleDataFileElement {...props} itemName={fileObjectPath}>
-              {cellObjectPath && item._value["cell"] && (
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName={cellObjectPath}
-                  qualifiers={{ guiLabel: "Cell" }}
-                />
-              )}
-              {true && (
-                <Grid2 container rowSpacing={0} sx={{ mt: 2 }}>
-                  <Grid2 size={{ xs: 4 }}>
-                    <CCP4i2TaskElement
-                      key="crystalName"
-                      {...props}
-                      sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                      itemName={`${crystalNameObjectPath}`}
-                      qualifiers={{
-                        ...props.qualifiers,
-                        guiLabel: "Crystal name",
-                      }}
-                    />
-                  </Grid2>
-                  <Grid2 size={{ xs: 4 }}>
-                    <CCP4i2TaskElement
-                      key="datasetName"
-                      {...props}
-                      sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                      itemName={`${datasetObjectPath}`}
-                      qualifiers={{
-                        ...props.qualifiers,
-                        guiLabel: "Dataset name",
-                      }}
-                    />
-                  </Grid2>
-                  <Grid2 size={{ xs: 4 }}>
-                    <CCP4i2TaskElement
-                      key="wavelength"
-                      {...props}
-                      sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                      itemName={`${wavelengthObjectPath}`}
-                      qualifiers={{
-                        ...props.qualifiers,
-                        guiLabel: "Wavelength",
-                      }}
-                    />
-                  </Grid2>
-                  <Grid2 size={{ xs: 4 }}>
-                    <Typography variant="body1">Batches in file</Typography>
-                  </Grid2>{" "}
-                  <Grid2 size={{ xs: 8 }}>
-                    <Typography variant="body1">
-                      {true &&
-                        fileDigest &&
-                        fileDigest?.digest?.batchs &&
-                        JSON.stringify(fileDigest.digest.batchs)}
-                    </Typography>
-                  </Grid2>
-                  <Grid2 size={{ xs: 12 }}>
-                    <CCP4i2TaskElement
-                      key="selected batch string"
-                      {...props}
-                      sx={{ mt: 1, mb: 0, py: 0, minWidth: "30rem" }}
-                      itemName={`${itemName}.excludeSelection`}
-                      qualifiers={{
-                        ...props.qualifiers,
-                        guiLabel: "Batch range(s) to exclude",
-                        guiMode: "multiLine",
-                      }}
-                    />
-                  </Grid2>
+  return inferredVisibility ? (
+    <Card
+      sx={{
+        border: "3px solid",
+        borderColor: getValidationColor(item),
+        borderRadius: "0.5rem",
+      }}
+    >
+      <CardHeader
+        title={item._qualifiers.guiLabel}
+        action={<ErrorInfo {...props} />}
+      />
+      <CardContent>
+        {fileObjectPath && (
+          <CSimpleDataFileElement {...props} itemName={fileObjectPath}>
+            {cellObjectPath && item._value["cell"] && (
+              <CCP4i2TaskElement
+                {...props}
+                itemName={cellObjectPath}
+                qualifiers={{ guiLabel: "Cell" }}
+              />
+            )}
+            {true && (
+              <Grid2 container rowSpacing={0} sx={{ mt: 2 }}>
+                <Grid2 size={{ xs: 4 }}>
+                  <CCP4i2TaskElement
+                    key="crystalName"
+                    {...props}
+                    sx={{ my: 0, py: 0, minWidth: "10rem" }}
+                    itemName={`${crystalNameObjectPath}`}
+                    qualifiers={{
+                      ...props.qualifiers,
+                      guiLabel: "Crystal name",
+                    }}
+                  />
                 </Grid2>
-              )}
-            </CSimpleDataFileElement>
-          )}
-        </CardContent>
-      </Card>
-    )
-  );
+                <Grid2 size={{ xs: 4 }}>
+                  <CCP4i2TaskElement
+                    key="datasetName"
+                    {...props}
+                    sx={{ my: 0, py: 0, minWidth: "10rem" }}
+                    itemName={`${datasetObjectPath}`}
+                    qualifiers={{
+                      ...props.qualifiers,
+                      guiLabel: "Dataset name",
+                    }}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <CCP4i2TaskElement
+                    key="wavelength"
+                    {...props}
+                    sx={{ my: 0, py: 0, minWidth: "10rem" }}
+                    itemName={`${wavelengthObjectPath}`}
+                    qualifiers={{
+                      ...props.qualifiers,
+                      guiLabel: "Wavelength",
+                    }}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <Typography variant="body1">Batches in file</Typography>
+                </Grid2>{" "}
+                <Grid2 size={{ xs: 8 }}>
+                  <Typography variant="body1">
+                    {true &&
+                      fileDigest &&
+                      fileDigest?.digest?.batchs &&
+                      JSON.stringify(fileDigest.digest.batchs)}
+                  </Typography>
+                </Grid2>
+                <Grid2 size={{ xs: 12 }}>
+                  <CCP4i2TaskElement
+                    key="selected batch string"
+                    {...props}
+                    sx={{ mt: 1, mb: 0, py: 0, minWidth: "30rem" }}
+                    itemName={`${itemName}.excludeSelection`}
+                    qualifiers={{
+                      ...props.qualifiers,
+                      guiLabel: "Batch range(s) to exclude",
+                      guiMode: "multiLine",
+                    }}
+                  />
+                </Grid2>
+              </Grid2>
+            )}
+          </CSimpleDataFileElement>
+        )}
+      </CardContent>
+    </Card>
+  ) : null;
 };

@@ -42,11 +42,11 @@ export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  return usingSelect
-    ? inferredVisibility && (
-        <CSimpleAutocompleteElement {...props} qualifiers={patchedQualifiers} />
-      )
-    : inferredVisibility && (
-        <CSimpleTextFieldElement {...props} qualifiers={patchedQualifiers} />
-      );
+  return usingSelect ? (
+    inferredVisibility ? (
+      <CSimpleAutocompleteElement {...props} qualifiers={patchedQualifiers} />
+    ) : null
+  ) : inferredVisibility ? (
+    <CSimpleTextFieldElement {...props} qualifiers={patchedQualifiers} />
+  ) : null;
 };
