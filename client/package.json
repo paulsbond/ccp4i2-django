@@ -18,6 +18,7 @@
     "express": "^5.1.0",
     "http-proxy-middleware": "^3.0.5",
     "jquery": "^3.7.1",
+    "moorhen": "^0.20.0",
     "next": "latest",
     "react-dom": "latest",
     "url": "^0.11.4"
@@ -47,7 +48,6 @@
     "electron": "latest",
     "electron-builder": "^26.0.12",
     "install": "^0.13.0",
-    "moorhen": "^0.19.1",
     "npm": "^11.3.0",
     "react": "^19.1.0",
     "react-chartjs-2": "^5.3.0",
