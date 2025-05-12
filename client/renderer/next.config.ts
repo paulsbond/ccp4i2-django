@@ -2,9 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.module.parser.javascript.importMeta = false;
-
+    if (isServer) {
+      config.externals = [...config.externals, "moorhen"];
+    }
     return config;
   },
   async headers() {
