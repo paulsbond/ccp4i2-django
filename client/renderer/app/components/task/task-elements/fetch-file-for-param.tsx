@@ -64,7 +64,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   const [mode, setMode] = useState<string | null>(null);
 
   useEffect(() => {
-    if ((modes && modes.length > 0 && !mode) || !modes.includes(mode)) {
+    if (modes && modes.length > 0 && (!mode || !modes.includes(mode))) {
       setMode(modes[0]);
     }
   }, [modes]);
