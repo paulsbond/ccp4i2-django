@@ -97,6 +97,9 @@ class JobViewSet(ModelViewSet):
     def what_next(self, request, pk=None):
         try:
             job = models.Job.objects.get(id=pk)
+        except ValueError as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return JsonResponse({"status": "Failed", "reason": str(err)})
         except models.Job.DoesNotExist as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return JsonResponse({"status": "Failed", "reason": str(err)})
