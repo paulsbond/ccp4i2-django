@@ -2,6 +2,7 @@ import logging
 import pathlib
 import json
 import gemmi
+import re
 from ccp4i2.core.CCP4File import CDataFile
 from ccp4i2.core.CCP4XtalData import CMtzDataFile
 from django.utils.text import slugify
@@ -24,6 +25,14 @@ from ...db import models
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
+def extract_from_first_bracketed(path: str) -> str:
+    parts = path.split(".")
+    for i, part in enumerate(parts):
+        if re.search(r"\[.*\]", part):
+            return ".".join(parts[i:])
+    return parts[-1]  # fallback to the last part if no bracketed part found
+
+
 def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
 
     plugin = get_job_plugin(the_job=job)
@@ -33,10 +42,11 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     param_object = find_object_by_path(container, object_path)
     # Look for existing file import for this job/job_param_name and delete
     # the associated file if exists
+
+    job_param_name = extract_from_first_bracketed(object_path)
+
     try:
-        existing_file = models.File.objects.get(
-            job=job, job_param_name=param_object.objectName()
-        )
+        existing_file = models.File.objects.get(job=job, job_param_name=job_param_name)
         logger.warning("Upload will replace existing file [%s]", existing_file.path)
         try:
             existing_file.path.unlink()
@@ -114,13 +124,20 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         type = models.FileType.objects.get(name=param_object.QUALIFIERS["mimeTypeName"])
     except models.FileType.DoesNotExist:
         type = models.FileType.objects.get(name="Unknown")
+
+    # Okay, so here is a thing. I do not think that the apropriate value for "job_param_name" is param_object.object_name()
+    # Consider the "source" file in a CAsuContentSeq object. The object name is "source" but the relevant parameter name is
+    # ASU_CONTENT[i].source , where i is the number of the asu content in the CAsuContentSeqLIst list. This is gernally true for items that
+    # are children of lists (Don't even get me started on CEnsembles, where files are children of a list of lists)
+    # So, we need to get the parameter name from the object path. This is a bit of a hack, but it works.
+
     new_file = models.File(
         job=job,
         name=str(imported_file_path.name),
         directory=models.File.Directory.IMPORT_DIR,
         type=type,
         annotation=f"Imported from {files[0].name}",
-        job_param_name=param_object.objectName(),
+        job_param_name=job_param_name,
     )
     # Note deliberate explicit for != None instead of is not None
     try:
