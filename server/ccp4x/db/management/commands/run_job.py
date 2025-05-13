@@ -1,4 +1,5 @@
 import uuid
+import os
 import subprocess
 import platform
 from django.core.management.base import BaseCommand
@@ -59,11 +60,20 @@ class Command(BaseCommand):
                     f"{str(the_job.uuid)}",
                 ],
                 start_new_session=True,
+                stdout=stdout_file,  # Capture stdout
+                stderr=subprocess.STDOUT,  # Merge stderr into stdout
             )
             the_job.process_id = process.pid
             the_job.save()
         else:
-            run_job(str(the_job.uuid))
+            with open(
+                the_job.directory / "cplusplus_stdout.txt", "w", encoding="utf-8"
+            ) as stdout_file:
+                # Redirect file descriptors
+                stdout_fd = stdout_file.fileno()
+                os.dup2(stdout_fd, 1)  # Redirect stdout
+                os.dup2(stdout_fd, 2)  # Redirect stderr
+                run_job(str(the_job.uuid))
 
     def get_job(self, options):
         if options["jobid"] is not None:
