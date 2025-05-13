@@ -1,6 +1,7 @@
 import uuid
 from typing import List
 import logging
+import re
 from core import CCP4File
 from core import CCP4PerformanceData
 from core import CCP4Data
@@ -13,6 +14,14 @@ from ...db import models
 from .find_objects import find_objects
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
+
+
+def extract_from_first_bracketed(path: str) -> str:
+    parts = path.split(".")
+    for i, part in enumerate(parts):
+        if re.search(r"\[.*\]", part):
+            return ".".join(parts[i:])
+    return parts[-1]  # fallback to the last part if no bracketed part found
 
 
 def is_data_file(item):
@@ -136,15 +145,7 @@ def create_new_file(job: models.Job, item: CDataFile):
     name = getattr(item, "baseName", None)
     if name is not None:
         name = str(name)
-    job_param_name = item.objectName()
-    if isinstance(
-        item.parent(),
-        (
-            CCP4Data.CList,
-            CList,
-        ),
-    ):
-        job_param_name = item.parent().objectName()
+    job_param_name = extract_from_first_bracketed(item.objectPath())
     directory = 1
 
     try:
@@ -175,8 +176,9 @@ def create_new_file(job: models.Job, item: CDataFile):
 
 def create_file_use(job: models.Job, item: CDataFile, the_file: models.File, role: int):
     try:
+        job_param_name = extract_from_first_bracketed(item.objectPath())
         file_use = models.FileUse(
-            file=the_file, job=job, job_param_name=item.objectName(), role=role
+            file=the_file, job=job, job_param_name=job_param_name, role=role
         )
         file_use.save()
     except Exception as err:
@@ -187,7 +189,7 @@ def create_file_use(job: models.Job, item: CDataFile, the_file: models.File, rol
             role,
             exc_info=err,
         )
-    logger.info("Created FileUse for param %s", item.objectName())
+    logger.info("Created FileUse for param %s", job_param_name)
 
 
 def make_file_uses(job: models.Job, item_dicts: List[CDataFile]):
@@ -228,13 +230,14 @@ def make_file_uses(job: models.Job, item_dicts: List[CDataFile]):
                 )
             except models.FileUse.DoesNotExist:
                 try:
+                    job_param_name = extract_from_first_bracketed(item.objectPath())
                     fileUse: models.FileUse = models.FileUse(
                         file=the_file,
                         job=job,
                         role=role,
-                        job_param_name=item.objectName(),
+                        job_param_name=job_param_name,
                     )
-                    logger.info("Created FileUse for parameter %s", item.objectName())
+                    logger.info("Created FileUse for parameter %s", job_param_name)
                     fileUse.save()
                 except models.File.DoesNotExist as err:
                     logger.exception(

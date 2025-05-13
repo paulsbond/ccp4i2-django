@@ -4,6 +4,7 @@ import os
 import pathlib
 import shutil
 import uuid
+import re
 
 from ccp4i2.core import CCP4Container
 from ccp4i2.core.CCP4File import CDataFile
@@ -19,6 +20,14 @@ from .find_objects import find_objects
 
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
+
+
+def extract_from_first_bracketed(path: str) -> str:
+    parts = path.split(".")
+    for i, part in enumerate(parts):
+        if re.search(r"\[.*\]", part):
+            return ".".join(parts[i:])
+    return parts[-1]  # fallback to the last part if no bracketed part found
 
 
 def _process_input(
@@ -76,12 +85,13 @@ def _process_input(
                     annotation = f"Imported from file {sourceFilePath.name}"
                 else:
                     annotation = str(input.annotation)
+                job_param_name = extract_from_first_bracketed(input.objectPath())
                 createDict = {
                     "name": str(destFilePath.name),
                     "annotation": annotation,
                     "type": file_type_object,
                     "job": theJob,
-                    "job_param_name": input.objectName(),
+                    "job_param_name": job_param_name,
                     "directory": 2,
                 }
                 # print(createDict)
@@ -116,11 +126,12 @@ def _process_input(
 
     if theFile is not None:
         theRole = models.FileUse.Role.IN
+        job_param_name = extract_from_first_bracketed(input.objectPath())
         createDict = {
             "file": theFile,
             "job": theJob,
             "role": theRole,
-            "job_param_name": input.objectName(),
+            "job_param_name": job_param_name,
         }
         fileUse = models.FileUse(**createDict)
         fileUse.save()
