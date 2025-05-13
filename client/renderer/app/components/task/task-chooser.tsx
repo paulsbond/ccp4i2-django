@@ -45,9 +45,8 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
   const api = useApi();
   const { projectId } = useContext(CCP4i2Context);
   const [searchText, setSearchText] = useState<string | null>(null);
-  const { data: taskTreeResult } = api.get<any>(
-    `projects/${projectId}/task_tree`
-  );
+  const { data: taskTreeResult } = api.get<any>(`task_tree/`);
+
   const taskTree = taskTreeResult?.task_tree;
   const iconLookup = taskTreeResult?.task_tree?.iconLookup;
 
