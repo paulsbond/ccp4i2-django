@@ -7,6 +7,7 @@ from .ProjectTagViewSet import ProjectTagViewSet
 from .FileViewSet import FileViewSet
 from .JobViewSet import JobViewSet
 from .FileTypeViewSet import FileTypeViewSet
+from . import views
 
 router = routers.DefaultRouter()
 router.register("projects", ProjectViewSet)
@@ -18,4 +19,5 @@ router.register("filetypes", FileTypeViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("task_tree/", views.task_tree, name="task_tree"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

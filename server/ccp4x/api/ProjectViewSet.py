@@ -437,17 +437,6 @@ class ProjectViewSet(ModelViewSet):
 
     @action(
         detail=True,
-        methods=["get"],
-        permission_classes=[],
-        serializer_class=serializers.ProjectSerializer,
-    )
-    def task_tree(self, request, pk=None):
-        # Not clear to me this should be a view exposed through the project api
-        task_tree = get_task_tree()
-        return JsonResponse({"status": "Success", "task_tree": task_tree})
-
-    @action(
-        detail=True,
         methods=["post"],
         permission_classes=[],
         serializer_class=serializers.ProjectSerializer,
