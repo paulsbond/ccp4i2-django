@@ -13,12 +13,12 @@ import { Job } from "../../../models";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../../app-context";
 import { useJob } from "../../../utils";
-import { v4 as uuid4 } from "uuid";
 
 interface FetchFileForParamProps {
   itemParams: any;
   open: boolean;
   onClose: () => void;
+  onSuccess?: (updatedItem: any) => void;
 }
 export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   itemParams,
@@ -27,9 +27,11 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
 }) => {
   const api = useApi();
 
-  const { item, modes } = useMemo(() => {
+  const { item, modes, onUploadSuccess } = useMemo(() => {
     //alert(JSON.stringify(itemParams));
-    return itemParams ? itemParams : { item: null, modes: null };
+    return itemParams
+      ? itemParams
+      : { item: null, modes: null, onUploadSuccess: null };
   }, [itemParams]);
 
   const downloadModes: string[] = useMemo(
@@ -77,15 +79,19 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         const formData = new FormData();
         formData.append("objectPath", itemParams.item._objectPath);
         formData.append("file", fileBlob, fileName);
-        const uploadResult = await api.post<Job>(
+        const uploadResult = await api.post<any>(
           `jobs/${job.id}/upload_file_param`,
           formData
         );
-        console.log(uploadResult);
-        mutateJobs();
-        mutateFiles();
-        mutateContainer();
-        mutateValidation();
+        if (uploadResult.status === "Success") {
+          if (onUploadSuccess) {
+            onUploadSuccess(uploadResult.updated_item);
+          }
+          mutateJobs();
+          mutateFiles();
+          mutateContainer();
+          mutateValidation();
+        }
       }
     },
     [itemParams, job]
