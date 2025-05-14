@@ -1,13 +1,8 @@
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { CContainerElement } from "./ccontainer";
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
   Dialog,
   DialogContent,
-  Grid2,
   Table,
   TableBody,
   TableCell,
@@ -17,10 +12,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useApi } from "../../../api";
-import { useJob, valueOfItem } from "../../../utils";
-import { ErrorInfo } from "./error-info";
-import { useCallback, useEffect, useState } from "react";
-import ToolBar from "../../tool-bar";
+import { useJob, usePrevious, valueOfItem } from "../../../utils";
+import { useCallback, useState } from "react";
 import { Add, Delete } from "@mui/icons-material";
 
 export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
@@ -29,18 +22,12 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
   const api = useApi();
   const { itemName, job } = props;
   const [detailItem, setDetailItem] = useState<any | null>(null);
-  const {
-    getTaskItem,
-    getFileDigest,
-    getValidationColor,
-    setParameter,
-    container,
-    useAsyncEffect,
-    mutateContainer,
-    mutateValidation,
-  } = useJob(job.id);
+  const { getTaskItem, setParameter, container, mutateContainer } = useJob(
+    job.id
+  );
 
-  const { item, update: updateList } = getTaskItem(itemName);
+  const { item, update: updateList, value: itemValue } = getTaskItem(itemName);
+  const previousItemValue = usePrevious(itemValue);
 
   const extendListItem = useCallback(async () => {
     if (!updateList) return;
