@@ -1,6 +1,7 @@
 import logging
 from typing import Union
 from ccp4i2.core.CCP4Container import CContainer
+import json
 from core import CCP4XtalData
 from core import CCP4ModelData
 from core import CCP4File
@@ -8,6 +9,7 @@ from ccp4i2.core.CCP4File import CDataFile
 from .save_params_for_job import save_params_for_job
 from .find_objects import find_object_by_path
 from .get_job_plugin import get_job_plugin
+from .json_encoder import CCP4i2JsonEncoder
 from ...db import models
 import xml.etree.ElementTree as ET
 
@@ -31,7 +33,7 @@ def set_parameter(
         )
         save_params_for_job(the_job_plugin=the_job_plugin, the_job=job)
 
-        return ET.tostring(object_element.getEtree()).decode("utf-8")
+        return json.loads(json.dumps(object_element, cls=CCP4i2JsonEncoder))
     except IndexError as err:
         logger.exception(
             "Failed to set parameter for path %s", object_path, exc_info=err
