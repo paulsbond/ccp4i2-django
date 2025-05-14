@@ -65,8 +65,8 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
         formData
       );
       console.log(uploadResult);
-      if (props.onUploadSuccess) {
-        props.onUploadSuccess(uploadResult.updated_item);
+      if (props.onFileChangeSuccess) {
+        props.onFileChangeSuccess(uploadResult.updated_item);
       }
       setSelectedFiles(null);
       mutateJobs();

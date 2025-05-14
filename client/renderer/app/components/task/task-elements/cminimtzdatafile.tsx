@@ -70,8 +70,8 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
           `jobs/${job.id}/upload_file_param`,
           formData
         );
-        if (props.onUploadSuccess) {
-          props.onUploadSuccess(uploadResult.updated_item);
+        if (props.onFileChangeSuccess) {
+          props.onFileChangeSuccess(uploadResult.updated_item);
         }
         setSelectedFiles(null);
         mutateJobs();

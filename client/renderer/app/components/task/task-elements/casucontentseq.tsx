@@ -124,7 +124,8 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   mimeTypeName: "application/CCP4-seq",
                   downloadModes: ["uniprotFasta"],
                 }}
-                onUploadSuccess={async (updatedItem: any) => {
+                onFileChangeSuccess={async (updatedItem: any) => {
+                  alert("Hello");
                   const { dbFileId, annotation } = valueOfItem(updatedItem);
                   const digest = await fetch(
                     fullUrl(`files/${dbFileId}/digest_by_uuid/`)
