@@ -75,12 +75,12 @@ export interface CCP4i2DataFileElementProps
   setFileContent?: (fileContent: ArrayBuffer | null | string | File) => void;
   setFiles?: (files: FileList | null) => void;
   infoContent?: ReactNode;
-  onFileChangeSuccess?: (updatedItem: any) => void;
+  onParameterChangeSuccess?: (updatedItem: any) => void;
 }
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   props
 ) => {
-  const { job, sx, itemName, onFileChangeSuccess } = props;
+  const { job, sx, itemName, onParameterChangeSuccess } = props;
   const api = useApi();
   const {
     getTaskItem,
@@ -234,8 +234,8 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       setInFlight(true);
       try {
         const updatedResult: any = await setParameter(setParameterArg);
-        if (updatedResult && onFileChangeSuccess) {
-          onFileChangeSuccess(updatedResult.updated_item);
+        if (updatedResult && onParameterChangeSuccess) {
+          onParameterChangeSuccess(updatedResult.updated_item);
         }
       } catch (err) {
         alert(err);
@@ -364,7 +364,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
               disabled={disabled}
               modes={qualifiers.downloadModes}
               handleFileChange={handleFileChange}
-              onFileChangeSuccess={onFileChangeSuccess}
+              onParameterChangeSuccess={onParameterChangeSuccess}
               item={item}
             />
           )}
