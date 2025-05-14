@@ -96,6 +96,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         const result: any = await setParameter(setParameterArg);
         if (result.status === "Failed") {
           setValue(item._value);
+        } else if (props.onParameterChangeSuccess) {
+          await props.onParameterChangeSuccess(result.updated_item);
         }
       } catch (err) {
         console.log("Here's an", err);

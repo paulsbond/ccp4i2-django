@@ -19,11 +19,13 @@ import { useJob } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../task-container";
 import { get } from "jquery";
+import { on } from "events";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const { itemName, job, type, sx, qualifiers } = props;
+  const { itemName, job, type, sx, qualifiers, onParameterChangeSuccess } =
+    props;
   const { getTaskItem, getValidationColor } = useJob(job.id);
   const { item } = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
@@ -93,6 +95,8 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
           const result: any = await setParameter(setParameterArg);
           if (result?.status === "Failed") {
             setValue(item._value);
+          } else if (onParameterChangeSuccess) {
+            await onParameterChangeSuccess(result.updated_item);
           }
         } catch (err) {
           alert(err);
@@ -101,7 +105,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
         }
       }
     },
-    [type]
+    [type, onParameterChangeSuccess]
   );
 
   const handleSelectRadio = useCallback(
@@ -119,6 +123,8 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
           const result: any = await setParameter(setParameterArg);
           if (result?.status === "Failed") {
             setValue(item._value);
+          } else if (onParameterChangeSuccess) {
+            await onParameterChangeSuccess(result.updated_item);
           }
         } catch (err) {
           alert(err);

@@ -63,7 +63,10 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
           object_path: item._objectPath,
           value: valueOfItem(item),
         };
-        const result = await setParameter(setParameterArg);
+        const updateResult: any = await setParameter(setParameterArg);
+        if (props.onParameterChangeSuccess) {
+          await props.onParameterChangeSuccess(updateResult.updated_item);
+        }
       }
     },
     [item]

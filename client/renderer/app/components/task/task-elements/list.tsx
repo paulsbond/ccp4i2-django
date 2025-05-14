@@ -78,8 +78,10 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
       object_path: item._objectPath,
       value: listValue,
     };
-    const result = await setParameter(setParameterArg);
-    console.log(result);
+    const result: any = await setParameter(setParameterArg);
+    if (result?.status === "Success" && props.onParameterChangeSuccess) {
+      await props.onParameterChangeSuccess(result.updated_item);
+    }
   }, [item, project, job]);
 
   const deleteItem = useCallback(
@@ -95,7 +97,10 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
           object_path: item._objectPath,
           value: valueOfItem(item),
         };
-        const result = await setParameter(setParameterArg);
+        const result: any = await setParameter(setParameterArg);
+        if (result?.status === "Success" && props.onParameterChangeSuccess) {
+          await props.onParameterChangeSuccess(result.updated_item);
+        }
       }
     },
     [item]

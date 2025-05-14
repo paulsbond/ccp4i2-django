@@ -234,7 +234,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
       setInFlight(true);
       try {
         const updatedResult: any = await setParameter(setParameterArg);
-        if (updatedResult && onParameterChangeSuccess) {
+        if (updatedResult?.status === "Success" && onParameterChangeSuccess) {
           onParameterChangeSuccess(updatedResult.updated_item);
         }
       } catch (err) {
