@@ -28,8 +28,8 @@ interface TaskInterfaceContextProps {
   setErrorInfoItem: (item: any) => void;
   inFlight: any | null;
   setInFlight: (item: any) => void;
-  downloadItemParams?: any | null;
-  setDownloadItemParams: (item: any) => void;
+  fetchItemParams?: any | null;
+  setFetchItemParams: (item: any) => void;
   downloadDialogOpen?: boolean;
   setDownloadDialogOpen?: (valie: boolean) => void;
 }
@@ -40,8 +40,8 @@ export const TaskInterfaceContext = createContext<TaskInterfaceContextProps>({
   setErrorInfoItem: (item: any) => {},
   inFlight: null,
   setInFlight: (item: any) => {},
-  downloadItemParams: null,
-  setDownloadItemParams: (item: any) => {},
+  fetchItemParams: null,
+  setFetchItemParams: (item: any) => {},
   downloadDialogOpen: false,
   setDownloadDialogOpen: (value: boolean) => {},
 });
@@ -53,9 +53,7 @@ export const TaskContainer = () => {
   const [errorInfoAnchor, setErrorInfoAnchor] = useState<Element | null>(null);
   const [errorInfoItem, setErrorInfoItem] = useState<any | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);
-  const [downloadItemParams, setDownloadItemParams] = useState<any | null>(
-    null
-  );
+  const [fetchItemParams, setFetchItemParams] = useState<any | null>(null);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState<boolean>(false);
 
   const taskInterface = useMemo(() => {
@@ -170,8 +168,8 @@ export const TaskContainer = () => {
         setInFlight,
         downloadDialogOpen,
         setDownloadDialogOpen,
-        downloadItemParams,
-        setDownloadItemParams,
+        fetchItemParams,
+        setFetchItemParams,
       }}
     >
       <Paper
@@ -197,7 +195,7 @@ export const TaskContainer = () => {
         <CircularProgress size={150} thickness={4} />
       </Popper>
       <FetchFileForParam
-        itemParams={downloadItemParams}
+        itemParams={fetchItemParams}
         open={downloadDialogOpen}
         onClose={() => {
           setDownloadDialogOpen(false);
