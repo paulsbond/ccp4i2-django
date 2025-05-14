@@ -80,6 +80,21 @@ class FileViewSet(ModelViewSet):
 
     @action(
         detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def digest_by_uuid(self, request, pk=None):
+        try:
+            the_file = models.File.objects.get(uuid=pk)
+            result = digest_file(the_file)
+            return Response(result)
+        except models.File.DoesNotExist as err:
+            logging.exception("Failed to retrieve file with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
         methods=["post"],
         permission_classes=[],
         serializer_class=serializers.FileSerializer,
