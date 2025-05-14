@@ -47,7 +47,6 @@ export const CootProvider: React.FC<PropsWithChildren> = (props) => {
               ).find((htmlElement: HTMLElement) => {
                 return htmlElement.getAttribute("src") === "/moorhen.js";
               });
-              console.log({ cm: module, scriptElement });
             });
         }}
       />
