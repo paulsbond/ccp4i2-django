@@ -129,7 +129,9 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     # Consider the "source" file in a CAsuContentSeq object. The object name is "source" but the relevant parameter name is
     # ASU_CONTENT[i].source , where i is the number of the asu content in the CAsuContentSeqLIst list. This is gernally true for items that
     # are children of lists (Don't even get me started on CEnsembles, where files are children of a list of lists)
-    # So, we need to get the parameter name from the object path. This is a bit of a hack, but it works.
+    # So, we need to get the parameter name from the object path. I propose to look at the objects "path" and adopt the
+    # value from just before the first array-indirection brackets.  hence coot_rebuild.outputData.XYZOUT[0] becomes
+    # job_param_name XYZOUT[0]. This is a bit of a hack, but it works.
 
     new_file = models.File(
         job=job,
@@ -239,6 +241,7 @@ def handle_reflections(
 
 def gemmi_convert_to_mtz(dobj: CMtzDataFile, downloaded_file_path: pathlib.Path):
     document = gemmi.cif.read_file(str(downloaded_file_path))
+    # But what if there are multiple blocks?
     block = gemmi.as_refln_blocks(document)[0]
     converter = gemmi.CifToMtz()
     returned_mtz = converter.convert_block_to_mtz(block)
