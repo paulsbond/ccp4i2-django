@@ -41,13 +41,15 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     `projects/${job.project}/files`
   );
 
+  //If file(s) are selected, call handleAccept
   useEffect(() => {
     if (selectedFiles) {
-      handleAccept();
+      processFirstFile();
     }
   }, [selectedFiles]);
 
-  const handleAccept = useCallback(async () => {
+  //handleAccept is a simple upload of the file to the server
+  const processFirstFile = useCallback(async () => {
     if (selectedFiles) {
       //Read file
       const fileBuffer = await readFilePromise(selectedFiles[0], "ArrayBuffer");
@@ -58,11 +60,14 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
       const formData = new FormData();
       formData.append("objectPath", item._objectPath);
       formData.append("file", fileBlob, selectedFiles[0].name);
-      const uploadResult = await api.post<Job>(
+      const uploadResult = await api.post<any>(
         `jobs/${job.id}/upload_file_param`,
         formData
       );
       console.log(uploadResult);
+      if (props.onUploadSuccess) {
+        props.onUploadSuccess(uploadResult.updated_item);
+      }
       setSelectedFiles(null);
       mutateJobs();
       mutateFiles();

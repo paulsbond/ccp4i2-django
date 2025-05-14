@@ -66,10 +66,13 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
         formData.append("objectPath", item._objectPath);
         formData.append("file", fileBlob, selectedFiles[0].name);
         console.log(signature, item._objectPath, selectedFiles[0]);
-        const uploadResult = await api.post<Job>(
+        const uploadResult = await api.post<any>(
           `jobs/${job.id}/upload_file_param`,
           formData
         );
+        if (props.onUploadSuccess) {
+          props.onUploadSuccess(uploadResult.updated_item);
+        }
         setSelectedFiles(null);
         mutateJobs();
         mutateFiles();

@@ -342,7 +342,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
                 .map((ext: string) => `.${ext}`)
                 .join(",")}
               handleFileChange={handleFileChange}
-              onUploadSuccess={onUploadSuccess}
             />
           )}
           {qualifiers?.downloadModes?.length > 0 && job.status == 1 && (

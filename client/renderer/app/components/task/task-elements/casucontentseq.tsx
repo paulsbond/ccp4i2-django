@@ -2,7 +2,7 @@ import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { CContainerElement } from "./ccontainer";
 import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { fullUrl, useApi } from "../../../api";
-import { useJob, usePrevious } from "../../../utils";
+import { useJob, usePrevious, valueOfItem } from "../../../utils";
 import { ErrorInfo } from "./error-info";
 import { useCallback, useEffect } from "react";
 
@@ -23,63 +23,45 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
   } = useJob(job.id);
 
   const { item } = getTaskItem(itemName);
-  const { value: SEQIN } = getTaskItem(`${item._objectPath}.source`);
-  const oldSEQIN = usePrevious(SEQIN);
   const { update: setPolymerType } = getTaskItem(
     `${item._objectPath}.polymerType`
   );
   const { update: setName } = getTaskItem(`${item._objectPath}.name`);
-  const { value: SEQUENCETEXT, update: setSEQUENCETEXT } = getTaskItem(
-    `${item._objectPath}.sequence`
+  const { update: setSequence } = getTaskItem(`${item._objectPath}.sequence`);
+  const { update: setDescription } = getTaskItem(
+    `${item._objectPath}.description`
   );
-  const setSEQUENCEFromSEQIN = useCallback(async () => {
-    console.log("in setSEQUENCEFromSEQIN", setSEQUENCETEXT);
-    if (!setSEQUENCETEXT || !setName || !setPolymerType || !item) return;
-
-    const seqinDigest = await fetch(
-      fullUrl(`jobs/${job.id}/digest?object_path=${item._objectPath}.source`)
-    ).then((response) => response.json());
-    console.log({ seqinDigest });
-    const newSequence = seqinDigest?.digest?.sequence || "";
-    if (job?.status == 1 && newSequence !== SEQUENCETEXT) {
-      console.log({
-        setPolymerType: await setPolymerType(seqinDigest?.digest?.moleculeType),
-      });
-      const sanitizedName = seqinDigest?.digest?.name.replace(
-        /[^a-zA-Z0-9]/g,
-        "_"
-      );
-      console.log({ setName: await setName(sanitizedName) });
-      await setSEQUENCETEXT(seqinDigest?.digest?.sequence);
+  const setSEQUENCEFromSEQIN = useCallback(
+    async (seqinDigest: any, annotation: string) => {
+      if (
+        !setSequence ||
+        !setName ||
+        !setPolymerType ||
+        !setDescription ||
+        !item ||
+        job?.status != 1
+      )
+        return;
+      const { name, moleculeType, sequence } = seqinDigest || {};
+      console.log("New values", { name, moleculeType, sequence });
+      await setPolymerType(moleculeType);
+      const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, "_");
+      await setName(sanitizedName);
+      await setSequence(sequence);
+      await setDescription(annotation);
       await mutateContainer();
       await mutateValidation();
-    }
-  }, [
-    setSEQUENCETEXT,
-    setName,
-    setPolymerType,
-    job,
-    item,
-    mutateContainer,
-    SEQUENCETEXT,
-  ]);
-
-  //And here the useEffect which triggeers that callback*only( when SEQIN changes from one defined value to another)
-  useEffect(() => {
-    console.log(
-      "source changed",
-      Boolean(oldSEQIN),
-      JSON.stringify(SEQIN) !== JSON.stringify(oldSEQIN)
-    );
-    const asyncFunc = async () => {
-      console.log(SEQIN, JSON.stringify(SEQIN), JSON.stringify(oldSEQIN));
-      if (oldSEQIN && JSON.stringify(SEQIN) !== JSON.stringify(oldSEQIN)) {
-        console.log({ oldSEQIN, SEQIN });
-        await setSEQUENCEFromSEQIN();
-      }
-    };
-    asyncFunc();
-  }, [SEQIN]);
+    },
+    [
+      setSequence,
+      setName,
+      setPolymerType,
+      setDescription,
+      job,
+      item,
+      mutateContainer,
+    ]
+  );
 
   return (
     <Card sx={{ border: "3px solid", borderColor: getValidationColor(item) }}>
@@ -141,6 +123,13 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   guiMode: "multiLine",
                   mimeTypeName: "application/CCP4-seq",
                   downloadModes: ["uniprotFasta"],
+                }}
+                onUploadSuccess={async (updatedItem: any) => {
+                  const { dbFileId, annotation } = valueOfItem(updatedItem);
+                  const digest = await fetch(
+                    fullUrl(`files/${dbFileId}/digest_by_uuid/`)
+                  ).then((response) => response.json());
+                  setSEQUENCEFromSEQIN(digest, annotation);
                 }}
               />
             </Grid2>
