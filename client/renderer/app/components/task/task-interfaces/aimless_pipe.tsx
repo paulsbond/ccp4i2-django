@@ -39,6 +39,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="FREERFLAG"
             qualifiers={{ guiLabel: "Free R set to use/extend" }}
           />
+          <CCP4i2TaskElement
+            {...props}
+            key="HKLIN_IS_SCALED"
+            itemName="HKLIN_IS_SCALED"
+            qualifiers={{ guiLabel: "Analyse data without determining scales" }}
+          />
         </CContainerElement>
         <CContainerElement
           {...props}
