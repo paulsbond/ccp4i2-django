@@ -266,7 +266,7 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
                 {jobTime}
               </Typography>
             )}
-            <Stack direction="row">{kpiContent}</Stack>
+            <div>{kpiContent}</div>
           </Stack>
         )}
         <Typography
