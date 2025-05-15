@@ -22,6 +22,7 @@ import {
   RunCircle,
   SmsFailed,
   Terminal,
+  TerminalOutlined,
 } from "@mui/icons-material";
 import { createContext } from "react";
 
@@ -134,6 +135,17 @@ export const JobMenu: React.FC = () => {
     [job, mutateJobs]
   );
 
+  const handleTerminalInJobDirectory = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (job) {
+        api.post<any>(`jobs/${job.id}/preview/`, { viewer: "terminal" });
+        setJobMenuAnchorEl(null);
+      }
+    },
+    [job, setJobMenuAnchorEl]
+  );
+
   const handleStatusClicked = useCallback(
     (ev: SyntheticEvent) => {
       if (!job) return;
@@ -236,6 +248,13 @@ export const JobMenu: React.FC = () => {
             onClick={handleStatusClicked}
           >
             <Delete /> Set status
+          </MenuItem>
+          <MenuItem
+            key="Status"
+            disabled={false}
+            onClick={handleTerminalInJobDirectory}
+          >
+            <TerminalOutlined /> Terminal in job directory
           </MenuItem>
         </Menu>
         <StatusMenu

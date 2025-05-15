@@ -18,6 +18,7 @@ from ..lib.job_utils.digest_file import digest_param_file
 from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.set_input_by_context_job import set_input_by_context_job
 from ..lib.job_utils.get_job_plugin import get_job_plugin
+from ..lib.job_utils.preview_job import preview_job
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -598,3 +599,19 @@ class JobViewSet(ModelViewSet):
             return JsonResponse(
                 {"status": "Failed", "reason": ET.tostring(error_tree).decode("utf-8")}
             )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def preview(self, request, pk=None):
+        try:
+            the_job = models.Job.objects.get(id=pk)
+            the_viewer = request.data.get("viewer")
+            preview_job(the_viewer, str(the_job.directory))
+            return Response({"status": "Success"})
+        except models.File.DoesNotExist as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
