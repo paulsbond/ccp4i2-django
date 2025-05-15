@@ -65,7 +65,13 @@ def set_input_by_context_job(
     a_list: CList
     for a_list in list_list:
         try:
-            a_list_item = a_list.makeItem()
+            a_list.unSet()
+            # We may need to make a new item of the list, as the list is empty
+            if len(a_list) == 0:
+                a_list_item = a_list.makeItem()
+            else:
+                a_list_item = a_list[0]
+            # We need to check if the item is a file, as it may be a list of other things
             if isinstance(a_list_item, CCP4File.CDataFile):
                 a_list.append(a_list_item)
                 dobj_list.append(a_list_item)
