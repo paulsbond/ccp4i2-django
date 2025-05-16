@@ -76,9 +76,11 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
   const valueOfErrorInfoItem = useMemo(() => {
     if (!errorInfoItem) return null;
     const result = valueOfItem(errorInfoItem);
-    if (result) {
+    if (result || typeof result === "boolean") {
       if (typeof result === "object") {
         return result;
+      } else if (typeof result === "boolean") {
+        return { value: result ? "true" : "false" };
       } else {
         return { value: result };
       }
