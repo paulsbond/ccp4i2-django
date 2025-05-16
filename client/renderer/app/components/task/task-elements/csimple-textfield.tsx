@@ -31,6 +31,17 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
 
   const { setParameter } = useJob(job.id);
 
+  const changeCountdown = useRef<any | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (changeCountdown.current) {
+        clearTimeout(changeCountdown.current);
+        changeCountdown.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     setValue(item._value || "");
     if (type === "checkbox" && inputRef.current)
@@ -51,10 +62,13 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     (ev) => {
       if (type === "int") {
         setValue(parseInt(ev.target.value));
+        setCountdown(parseInt(ev.target.value));
       } else if (type === "float") {
         setValue(parseFloat(ev.target.value));
+        setCountdown(parseFloat(ev.target.value));
       } else if (type === "text") {
         setValue(ev.target.value);
+        setCountdown(ev.target.value);
       } else if (type === "checkbox") {
         //@ts-ignore
         const newValue = ev.currentTarget.checked;
@@ -82,6 +96,17 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const sendValue = useCallback(async () => {
     sendExplicitValue(value);
   }, [objectPath, value]);
+
+  const setCountdown = useCallback(() => {
+    if (changeCountdown.current) {
+      clearTimeout(changeCountdown.current);
+      changeCountdown.current = null;
+    }
+    changeCountdown.current = setTimeout((valueToSend: any) => {
+      sendExplicitValue(valueToSend);
+      changeCountdown.current = null;
+    }, 500);
+  }, [sendValue]);
 
   const sendExplicitValue = useCallback(
     async (explicitValue: any) => {
@@ -178,7 +203,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         title={calculatedTitle}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
+        onBlur={handleBlur} // This handles when the element loses focus
         error={
           getValidationColor(item) === "error.light" || Number.isNaN(value)
         }
