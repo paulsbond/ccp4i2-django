@@ -9,7 +9,7 @@ import { CSimpleDataFileElement } from "./csimpledatafile";
 export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
-  const { job, itemName } = props;
+  const { job, itemName, qualifiers } = props;
   const api = useApi();
   const { getTaskItem } = useJob(job.id);
   const { item } = getTaskItem(itemName);
@@ -33,16 +33,22 @@ export const CPdbDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
+  const overriddenQualifiers = useMemo(() => {
+    return { ...item?._qualifiers, ...qualifiers };
+  }, [item, qualifiers]);
+
   return inferredVisibility ? (
     <CSimpleDataFileElement {...props}>
-      <CCP4i2TaskElement
-        {...props}
-        itemName={selectionItemName}
-        qualifiers={{
-          ...getTaskItem(selectionItemName).item._qualifiers,
-          guiLabel: "Selection string",
-        }}
-      />
+      {overriddenQualifiers.ifAtomSelection && (
+        <CCP4i2TaskElement
+          {...props}
+          itemName={selectionItemName}
+          qualifiers={{
+            ...getTaskItem(selectionItemName).item._qualifiers,
+            guiLabel: "Selection string",
+          }}
+        />
+      )}
     </CSimpleDataFileElement>
   ) : null;
 };
