@@ -104,6 +104,14 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
               <TableRow
                 key={`iElement`}
                 onClick={() => setDetailItem(contentElement)}
+                sx={{
+                  transition: "box-shadow 0.2s, background 0.2s",
+                  cursor: "pointer",
+                  "&:hover": {
+                    boxShadow: 3,
+                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  },
+                }}
               >
                 {[
                   "name",
