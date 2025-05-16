@@ -14,10 +14,14 @@ export const SimpleObjectTable: React.FC<SimpleObjectTableProps> = ({
         <TableBody>
           {Object.keys(object).map((key: string) => (
             <TableRow key={key}>
-              <TableCell variant="head" style={{ textAlign: "left" }}>
+              <TableCell key="key" variant="head" style={{ textAlign: "left" }}>
                 {key}
               </TableCell>
-              <TableCell variant="body" style={{ textAlign: "center" }}>
+              <TableCell
+                key="value"
+                variant="body"
+                style={{ textAlign: "center" }}
+              >
                 {Array.isArray(object[key])
                   ? JSON.stringify(object[key])
                   : object[key]}

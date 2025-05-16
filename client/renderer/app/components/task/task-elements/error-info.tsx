@@ -23,8 +23,8 @@ import {
   useState,
 } from "react";
 import { CCP4i2TaskElementProps } from "./task-element";
-import { Info } from "@mui/icons-material";
-import { useJob } from "../../../utils";
+import { ExpandLess, ExpandMore, Info, MoreHoriz } from "@mui/icons-material";
+import { useJob, valueOfItem } from "../../../utils";
 import { TaskInterfaceContext } from "../task-container";
 import { Job } from "../../../models";
 import { Line } from "react-chartjs-2";
@@ -70,7 +70,21 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
   useEffect(() => {
     console.log("errorInfoItem", errorInfoItem, errorInfoAnchor);
   }, [errorInfoItem, errorInfoAnchor]);
-  const [qualifiersOpen, setQualifiersOpen] = useState<boolean>(true);
+  const [qualifiersOpen, setQualifiersOpen] = useState<boolean>(false);
+  const [valueOpen, setValueOpen] = useState<boolean>(false);
+
+  const valueOfErrorInfoItem = useMemo(() => {
+    if (!errorInfoItem) return null;
+    const result = valueOfItem(errorInfoItem);
+    if (result) {
+      if (typeof result === "object") {
+        return result;
+      } else {
+        return { value: result };
+      }
+    }
+    return null;
+  }, [errorInfoItem]);
 
   const errorContent = useMemo(() => {
     if (!errorInfoItem) return null;
@@ -102,9 +116,10 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
           </Typography>
         )}
         {errorInfoItem && errorInfoItem._qualifiers && (
-          <Card>
+          <Card key="qualifiers">
             <CardHeader
-              subheader="Item qualifiers"
+              avatar={qualifiersOpen ? <ExpandLess /> : <ExpandMore />}
+              title="Item qualifiers"
               onClick={() => {
                 setQualifiersOpen(qualifiersOpen ? false : true);
               }}
@@ -118,6 +133,14 @@ export const ErrorPopper: React.FC<{ job: Job }> = ({ job }) => {
               >
                 <SimpleObjectTable object={errorInfoItem._qualifiers} />
               </Collapse>
+            </CardContent>
+          </Card>
+        )}
+        {valueOfErrorInfoItem && (
+          <Card key="value">
+            <CardHeader title="Value of item" />
+            <CardContent>
+              <SimpleObjectTable object={valueOfErrorInfoItem} />
             </CardContent>
           </Card>
         )}
