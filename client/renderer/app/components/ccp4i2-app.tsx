@@ -4,6 +4,7 @@ import { CCP4i2Context } from "../app-context";
 import { CssBaseline } from "@mui/material";
 import MenuBar from "./menu-bar";
 import { File, Job } from "../models";
+import { RunningProcessesProvider } from "./running-processes";
 
 export const CCP4i2App = (props: PropsWithChildren) => {
   const [projectId, setProjectId] = useState<number | null>(null);
@@ -31,8 +32,10 @@ export const CCP4i2App = (props: PropsWithChildren) => {
       }}
     >
       <CssBaseline />
-      <MenuBar />
-      {props.children}
+      <RunningProcessesProvider>
+        <MenuBar />
+        {props.children}
+      </RunningProcessesProvider>
     </CCP4i2Context.Provider>
   );
 };
