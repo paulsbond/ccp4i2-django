@@ -20,4 +20,5 @@ router.register("filetypes", FileTypeViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("task_tree/", views.task_tree, name="task_tree"),
+    path("active_jobs/", views.active_jobs, name="active_jobs"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
