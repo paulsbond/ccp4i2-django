@@ -97,16 +97,19 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     sendExplicitValue(value);
   }, [objectPath, value]);
 
-  const setCountdown = useCallback(() => {
-    if (changeCountdown.current) {
-      clearTimeout(changeCountdown.current);
-      changeCountdown.current = null;
-    }
-    changeCountdown.current = setTimeout((valueToSend: any) => {
-      sendExplicitValue(valueToSend);
-      changeCountdown.current = null;
-    }, 500);
-  }, [sendValue]);
+  const setCountdown = useCallback(
+    (valueToSend: any) => {
+      if (changeCountdown.current) {
+        clearTimeout(changeCountdown.current);
+        changeCountdown.current = null;
+      }
+      changeCountdown.current = setTimeout((valueToSend: any) => {
+        sendExplicitValue(valueToSend);
+        changeCountdown.current = null;
+      }, 500);
+    },
+    [sendValue]
+  );
 
   const sendExplicitValue = useCallback(
     async (explicitValue: any) => {
