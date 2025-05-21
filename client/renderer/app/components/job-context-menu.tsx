@@ -244,7 +244,7 @@ export const JobMenu: React.FC = () => {
           </MenuItem>
           <MenuItem
             key="Status"
-            disabled={job.number.includes(".")}
+            //disabled={job.number.includes(".")} // There are cases where we want to set the status of a job that is not top level
             onClick={handleStatusClicked}
           >
             <Delete /> Set status
