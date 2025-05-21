@@ -640,7 +640,7 @@ export const extractPlotLineDataset = (
       x: row[parseInt(`${plotline.xcol}`) - 1],
       y: row[parseInt(`${plotline.ycol}`) - 1],
     })),
-    backgroundColor: plotline.colour
+    backgroundColor: plotline?.colour?.startsWith
       ? plotline.colour.startsWith("#")
         ? hexToRGBA(plotline.colour, 0.5)
         : colorNameToRGBA(plotline.colour, 0.5)
