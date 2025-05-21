@@ -9,8 +9,10 @@ import {
   TableRow,
   TableBody,
   TableCell,
+  Avatar,
 } from "@mui/material";
 import { fullUrl, useApi } from "../api";
+import { Project } from "../models";
 
 interface RunningProcessesProps {
   jobsAndProcessesDialogOpen: boolean;
@@ -39,6 +41,7 @@ export const RunningProcessesProvider: React.FC<PropsWithChildren> = (
     useState<boolean>(false);
   const api = useApi();
   const { data: activeJobs } = api.get<any>("active_jobs/", 5000);
+  const { data: projects } = api.get<Project[]>("projects/");
   const runningProcesses =
     activeJobs?.status === "Success" ? activeJobs.active_jobs : [];
   const headerMap = {
@@ -51,6 +54,17 @@ export const RunningProcessesProvider: React.FC<PropsWithChildren> = (
     cpu_percent: "%CPU",
     memory_usage_bytes: "Memory usage (MB)",
   };
+
+  const onSelectRow = useCallback(
+    (row: RunningProcess) => {
+      const project = projects?.find((project) => project.name === row.project);
+      if (project) {
+        const url = `/project/${project.id}/job/${row.job_id}`;
+        window.open(url, "_blank");
+      }
+    },
+    [projects]
+  );
   return (
     <RunningProcessesContext.Provider
       value={{ jobsAndProcessesDialogOpen, setJobsAndProcessesDialogOpen }}
@@ -79,10 +93,17 @@ export const RunningProcessesProvider: React.FC<PropsWithChildren> = (
               </TableHead>
               <TableBody>
                 {runningProcesses.map((process: RunningProcess) => (
-                  <TableRow key={process.job_id}>
+                  <TableRow
+                    key={process.job_id}
+                    onClick={() => onSelectRow(process)}
+                  >
                     <TableCell variant="body">{process.project}</TableCell>
                     <TableCell variant="body">{process.job_id}</TableCell>
                     <TableCell variant="body">
+                      <Avatar
+                        src={`/api/proxy/djangostatic/svgicons/${process.job_task_name}.svg`}
+                        alt={`/api/proxy/djangostatic/qticons/${process.job_task_name}.png`}
+                      />{" "}
                       {process.job_task_name}
                     </TableCell>
                     <TableCell variant="body">{process.job_uuid}</TableCell>
