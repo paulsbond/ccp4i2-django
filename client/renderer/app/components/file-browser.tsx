@@ -147,7 +147,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node }) => {
     <>
       <ListItem
         dense
-        sx={{ ml: 0, px: 0 }}
+        sx={{
+          ml: 0,
+          px: 0,
+          transition: "background 0.2s",
+          "&:hover": {
+            backgroundColor: "rgba(25, 118, 210, 0.08)", // MUI primary.main with opacity
+            cursor: "pointer",
+          },
+        }}
         onClick={toggleOpen}
         onDoubleClick={handlePreview}
         secondaryAction={
