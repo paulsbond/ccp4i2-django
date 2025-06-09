@@ -13,7 +13,6 @@ import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
 import { CCP4i2Context } from "../../app-context";
 import { useJob, usePrevious } from "../../utils";
-import { Exo_2 } from "next/font/google";
 import { useRouter } from "next/navigation";
 
 export const CCP4i2ReportXMLView = () => {
