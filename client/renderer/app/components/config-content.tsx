@@ -24,7 +24,7 @@ export const ConfigContent: React.FC = () => {
   const router = useRouter();
   const { devMode, setDevMode } = useContext(CCP4i2Context);
   const [existingFiles, setExistingFiles] = useState<any | null>(null);
-
+  const [requirementsExist, setRequirementsExist] = useState<boolean>(false);
   useEffect(() => {
     // Send a message to the main process to get the config
     if (window.electronAPI) {
@@ -72,6 +72,10 @@ export const ConfigContent: React.FC = () => {
             }));
           }
         }
+      } else if (data.message === "requirements-exist") {
+        setRequirementsExist(true);
+      } else if (data.message === "requirements-missing") {
+        setRequirementsExist(false);
       }
     },
     [config]
@@ -92,6 +96,9 @@ export const ConfigContent: React.FC = () => {
           path: config.CCP4Dir,
         });
         window.electronAPI.sendMessage("check-file-exists", {
+          path: config.ccp4_python,
+        });
+        window.electronAPI.sendMessage("check-requirements", {
           path: config.ccp4_python,
         });
       }
@@ -131,6 +138,18 @@ export const ConfigContent: React.FC = () => {
     }
 
     window.electronAPI.sendMessage("start-uvicorn", {
+      ...config,
+      CCP4Dir: config.CCP4Dir.path,
+    });
+  };
+
+  const onInstallRequirements = async () => {
+    if (!window.electronAPI) {
+      console.error("Electron API is not available");
+      return;
+    }
+
+    window.electronAPI.sendMessage("install-requirements", {
       ...config,
       CCP4Dir: config.CCP4Dir.path,
     });
@@ -220,6 +239,28 @@ export const ConfigContent: React.FC = () => {
                 </TableCell>
               </TableRow>
               <TableRow>
+                <TableCell variant="head">Requirements installed</TableCell>
+                <TableCell
+                  variant="body"
+                  colSpan={1}
+                  sx={{ display: "flex", justifyContent: "center" }}
+                >
+                  {requirementsExist ? <Check /> : <Cancel />}
+                </TableCell>
+                {!requirementsExist && (
+                  <TableCell colSpan={2}>
+                    <Button
+                      component="label"
+                      onClick={onInstallRequirements}
+                      variant="contained"
+                      sx={{ minWidth: 320, p: 0, m: 0 }}
+                    >
+                      Install
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+              <TableRow>
                 <TableCell variant="head">Dev. mode</TableCell>
                 <TableCell
                   variant="body"
@@ -253,7 +294,7 @@ export const ConfigContent: React.FC = () => {
             startIcon={<Folder />}
             onClick={onStartUvicorn}
             sx={{ minWidth: 320 }}
-            disabled={!existingFiles?.ccp4_python}
+            disabled={!existingFiles?.ccp4_python || !requirementsExist}
           >
             Launch CCP4i2
           </Button>

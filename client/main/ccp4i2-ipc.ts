@@ -5,7 +5,7 @@ import Store from "electron-store";
 import { dialog } from "electron";
 import path from "node:path";
 import fs from "node:fs";
-import { ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, ChildProcessWithoutNullStreams } from "node:child_process";
 import { StoreSchema } from "../types/store";
 
 /**
@@ -173,6 +173,69 @@ export const installIpcHandlers = (
     BrowserWindow.getAllWindows().forEach((win) => {
       win.webContents.setZoomLevel(0);
       store.set("zoomLevel", 0);
+    });
+  });
+
+  ipcMain.on("check-requirements", (event, data) => {
+    const ccp4_python =
+      process.platform === "win32" ? "ccp4-python.bat" : "ccp4-python";
+    const ccp4Dir = store.get("CCP4Dir") || "";
+    const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
+
+    // Try to import rest_framework using ccp4-python
+    const child = spawn(ccp4PythonPath, ["-c", "import rest_framework"], {
+      stdio: "ignore",
+    });
+
+    child.on("exit", (code: number) => {
+      if (code === 0) {
+        event.reply("message-from-main", { message: "requirements-exist" });
+      } else {
+        event.reply("message-from-main", { message: "requirements-missing" });
+      }
+    });
+
+    child.on("error", () => {
+      event.reply("message-from-main", { message: "requirements-missing" });
+    });
+  });
+
+  ipcMain.on("install-requirements", (event, data) => {
+    const ccp4_python =
+      process.platform === "win32" ? "ccp4-python.bat" : "ccp4-python";
+    const ccp4Dir = store.get("CCP4Dir") || "";
+    const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
+
+    // You may want to make requirements.txt path configurable or absolute
+    const requirementsPath = path.join(
+      process.cwd(),
+      "..",
+      "server",
+      "requirements.txt"
+    );
+
+    const child = spawn(
+      ccp4PythonPath,
+      ["-m", "pip", "install", "-r", requirementsPath],
+      { stdio: "ignore" }
+    );
+
+    child.on("exit", (code: number) => {
+      if (code === 0) {
+        event.reply("message-from-main", {
+          message: "requirements-exist",
+        });
+      } else {
+        event.reply("message-from-main", {
+          message: "requirements-missing",
+        });
+      }
+    });
+
+    child.on("error", () => {
+      event.reply("message-from-main", {
+        message: "requirements-install-failed",
+      });
     });
   });
 };

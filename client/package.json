@@ -82,10 +82,6 @@
         "to": "server"
       },
       {
-        "from": "assets/requirements.txt",
-        "to": "requirements.txt"
-      },
-      {
         "from": "node_modules/react",
         "to": "node_modules/react",
         "filter": [
