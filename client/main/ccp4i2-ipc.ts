@@ -181,7 +181,7 @@ export const installIpcHandlers = (
       process.platform === "win32" ? "ccp4-python.bat" : "ccp4-python";
     const ccp4Dir = store.get("CCP4Dir") || "";
     const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
-
+    console.log("In check-requirements", ccp4PythonPath);
     // Try to import rest_framework using ccp4-python
     const child = spawn(ccp4PythonPath, ["-c", "import rest_framework"], {
       stdio: "ignore",
@@ -205,22 +205,21 @@ export const installIpcHandlers = (
       process.platform === "win32" ? "ccp4-python.bat" : "ccp4-python";
     const ccp4Dir = store.get("CCP4Dir") || "";
     const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
+    console.log("In install-requirements", ccp4PythonPath);
 
     // You may want to make requirements.txt path configurable or absolute
-    const requirementsPath = path.join(
-      process.cwd(),
-      "..",
-      "server",
-      "requirements.txt"
-    );
+    const requirementsPath = isDev
+      ? path.join(process.cwd(), "..", "server", "requirements.txt")
+      : path.join(process.cwd(), "server", "requirements.txt");
 
     const child = spawn(
       ccp4PythonPath,
       ["-m", "pip", "install", "-r", requirementsPath],
-      { stdio: "ignore" }
+      { stdio: "inherit" }
     );
 
     child.on("exit", (code: number) => {
+      console.log("Child process exited with code:", code);
       if (code === 0) {
         event.reply("message-from-main", {
           message: "requirements-exist",
