@@ -210,7 +210,7 @@ export const installIpcHandlers = (
     // You may want to make requirements.txt path configurable or absolute
     const requirementsPath = isDev
       ? path.join(process.cwd(), "..", "server", "requirements.txt")
-      : path.join(process.cwd(), "server", "requirements.txt");
+      : path.join(process.resourcesPath, "server", "requirements.txt");
 
     const child = spawn(
       ccp4PythonPath,

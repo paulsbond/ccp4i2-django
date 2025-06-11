@@ -65,9 +65,13 @@ export async function startDjangoServer(
   if (isDev) {
     process.env.PYTHONPATH = path.join(process.cwd(), "..", "server");
   } else {
-    process.env.PYTHONPATH = path.join(process.cwd(), "server");
+    process.env.PYTHONPATH = path.join(process.resourcesPath, "server");
   }
-  console.log(`🐍 Python Path: ${process.env.PYTHONPATH}`, process.cwd());
+  console.log(
+    `🐍 Python Path: ${process.env.PYTHONPATH}`,
+    process.cwd(),
+    process.resourcesPath
+  );
   //console.log(process.env);
   const migrateEnv = { ...process.env };
   const oldCWD = process.cwd();
@@ -76,8 +80,8 @@ export async function startDjangoServer(
     process.env.PYTHONPATH = path.join(process.cwd(), "..", "server");
     process.chdir(path.join(process.cwd(), "..", "server"));
   } else {
-    process.env.PYTHONPATH = path.join(process.cwd(), "server");
-    process.chdir(path.join(process.cwd(), "server"));
+    process.env.PYTHONPATH = path.join(process.resourcesPath, "server");
+    process.chdir(path.join(process.resourcesPath, "server"));
   }
   const migrateResult = execSync(`${CCP4_PYTHON} manage.py migrate`, {
     env: migrateEnv,
