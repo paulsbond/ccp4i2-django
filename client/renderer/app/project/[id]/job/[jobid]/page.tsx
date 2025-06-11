@@ -1,5 +1,5 @@
 "use client";
-import { use, useContext, useEffect, useState } from "react";
+import { use, useContext, useEffect, useMemo, useState } from "react";
 import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
 import { useApi } from "../../../../api";
 import { Editor } from "@monaco-editor/react";
@@ -17,6 +17,7 @@ import ToolBar from "../../../../components/tool-bar";
 import { JobCommentEditor } from "../../../../components/job-comment-editor";
 import { JobMenu } from "../../../../components/job-context-menu";
 import { JobDirectoryView } from "../../../../components/job_directory_view";
+import useSWR from "swr";
 
 export default function JobPage({
   params,
@@ -38,18 +39,25 @@ export default function JobPage({
 
   const { job } = useJob(parseInt(jobid));
 
-  const {
-    params_xml,
-    validation,
-    report_xml,
-    diagnostic_xml,
-    def_xml,
-    container,
-  } = useJob(job?.id);
+  const { params_xml, validation, diagnostic_xml, def_xml, container } = useJob(
+    job?.id
+  );
 
   const previousJob = usePrevious(job);
 
   const [tabValue, setTabValue] = useState<Number>(job?.status == 1 ? 0 : 3);
+
+  const { data: report_xml_json, mutate: mutateReportXml } = useSWR<any>(
+    job ? `/api/proxy/jobs/${job.id}/report_xml/` : null,
+    (url) => fetch(url).then((r) => r.json()),
+    { refreshInterval: job?.status == 3 || job?.status == 2 ? 5000 : 0 }
+  );
+
+  const report_xml: XMLDocument | null = useMemo(() => {
+    if (!report_xml_json || !report_xml_json.xml) return null;
+    return $.parseXML(report_xml_json.xml);
+  }, [report_xml_json]);
+
   const handleTabChange = (event: React.SyntheticEvent, value: number) => {
     setTabValue(value);
   };
