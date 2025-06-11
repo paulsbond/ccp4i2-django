@@ -217,15 +217,6 @@ export const useJob = (jobId: number | null | undefined) => {
     endpoint: "validation",
   });
 
-  const { data: report_xml, mutate: mutateReport_xml } = api.get_endpoint_xml(
-    {
-      type: "jobs",
-      id: jobId,
-      endpoint: "report_xml",
-    },
-    0
-  );
-
   const { data: diagnostic_xml, mutate: mutateDiagnosticXml } =
     api.get_pretty_endpoint_xml({
       type: "jobs",
@@ -367,8 +358,6 @@ export const useJob = (jobId: number | null | undefined) => {
     mutateParams_xml,
     validation,
     mutateValidation,
-    report_xml,
-    mutateReport_xml,
     diagnostic_xml,
     mutateDiagnosticXml,
     def_xml,
