@@ -18,6 +18,7 @@ import { JobCommentEditor } from "../../../../components/job-comment-editor";
 import { JobMenu } from "../../../../components/job-context-menu";
 import { JobDirectoryView } from "../../../../components/job_directory_view";
 import useSWR from "swr";
+import $ from "jquery";
 
 export default function JobPage({
   params,
