@@ -14,6 +14,8 @@ import { useApi } from "../../api";
 import { CCP4i2Context } from "../../app-context";
 import { useJob, usePrevious } from "../../utils";
 import { useRouter } from "next/navigation";
+import { usePopcorn } from "../popcorn-provider";
+import useSWR from "swr";
 
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
@@ -25,37 +27,33 @@ export const CCP4i2ReportXMLView = () => {
     endpoint: "jobs",
   });
 
-  const { data: report_xml, mutate: mutateReportXml } = api.get_endpoint_xml(
-    {
-      type: "jobs",
-      id: jobId,
-      endpoint: "report_xml",
-    },
-    job?.status == 3 || job?.status == 2 ? 5000 : 0
+  const { data: report_xml_json, mutate: mutateReportXml } = useSWR<any>(
+    job ? `/api/proxy/jobs/${job.id}/report_xml/` : null,
+    (url) => fetch(url).then((r) => r.json()),
+    { refreshInterval: job?.status == 3 || job?.status == 2 ? 5000 : 0 }
   );
+
+  const report_xml: XMLDocument | null = useMemo(() => {
+    if (!report_xml_json || !report_xml_json.xml) return null;
+    return $.parseXML(report_xml_json.xml);
+  }, [report_xml_json]);
+
   const { data: what_next } = api.get<any>(`jobs/${job?.id}/what_next/`);
 
   const oldJob = usePrevious(job);
 
   const router = useRouter();
 
+  const { setMessage } = usePopcorn();
+
   useEffect(() => {
-    console.log({ job, oldJob });
     if (job && oldJob && job.status !== oldJob.status) {
       if (job.status > 3) {
-        console.log("Job finished");
+        setMessage("Job finished");
         mutateReportXml(() => null); // Force re-fetch
       }
     }
   }, [job, oldJob]);
-
-  useEffect(() => {
-    if (report_xml) {
-      console.log(report_xml);
-    } else {
-      console.log("No report xml");
-    }
-  }, [report_xml]);
 
   const reportContent = useMemo<ReactNode[] | null>(() => {
     if (!report_xml) return null;
