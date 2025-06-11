@@ -36,6 +36,7 @@ import { JobHeader } from "./job-header";
 import { useDeleteDialog } from "./delete-dialog";
 import { CCP4i2JobAvatar } from "./job-avatar";
 import { useProject } from "../utils";
+import { usePopcorn } from "./popcorn-provider";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -112,6 +113,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   const [filesExpanded, setFilesExpanded] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMenuOpen = Boolean(anchorEl);
+  const { setMessage } = usePopcorn();
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
@@ -129,6 +131,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   };
   const handleRun = async () => {
     const runResult: Job = await api.post(`jobs/${job.id}/run/`);
+    setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
     if (runResult?.id) {
       mutateJobs();
       setAnchorEl(null);

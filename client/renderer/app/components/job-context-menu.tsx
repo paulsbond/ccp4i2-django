@@ -25,6 +25,7 @@ import {
   TerminalOutlined,
 } from "@mui/icons-material";
 import { createContext } from "react";
+import { usePopcorn } from "./popcorn-provider";
 
 interface JobMenuContextDataProps {
   jobMenuAnchorEl: HTMLElement | null;
@@ -74,6 +75,8 @@ export const JobMenu: React.FC = () => {
     useContext(JobMenuContext);
   const api = useApi();
   const router = useRouter();
+  const { setMessage } = usePopcorn();
+
   const deleteDialog = useDeleteDialog();
   const [statusMenuAnchorEl, setStatusMenuAnchorEl] = useState<Element | null>(
     null
@@ -126,6 +129,7 @@ export const JobMenu: React.FC = () => {
       if (!job) return;
       ev.stopPropagation();
       const runResult: Job = await api.post(`jobs/${job.id}/run/`);
+      setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
       if (runResult?.id) {
         mutateJobs();
         setJobMenuAnchorEl(null);

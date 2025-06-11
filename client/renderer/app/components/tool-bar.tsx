@@ -15,14 +15,13 @@ import { Job, Project } from "../models";
 import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
 import { HelpIframe } from "./help_iframe";
+import { usePopcorn } from "./popcorn-provider";
 
 export default function ToolBar() {
   const sizeMinus1 = useMediaQuery("(max-width:110rem)");
   const sizeMinus2 = useMediaQuery("(max-width:95rem)");
   const sizeMinus3 = useMediaQuery("(max-width:80rem)");
   const sizeMinus4 = useMediaQuery("(max-width:70rem)");
-  const sizeMinus5 = useMediaQuery("(max-width:60rem)");
-  const { jobPanelSize } = useContext(CCP4i2Context);
   const { projectId, jobId } = useContext(CCP4i2Context);
   const api = useApi();
   const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
@@ -37,6 +36,8 @@ export default function ToolBar() {
   });
   const router = useRouter();
   const [showHelp, setShowHelp] = useState(false);
+  const { setMessage } = usePopcorn();
+
   const handleClone = async () => {
     if (job) {
       const cloneResult: Job = await api.post(`jobs/${job?.id}/clone/`);
@@ -51,7 +52,7 @@ export default function ToolBar() {
   const handleRun = async () => {
     if (job) {
       const runResult: Job = await api.post(`jobs/${job.id}/run/`);
-      console.log(runResult);
+      setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
       if (runResult?.id) {
         setTimeout(() => {
           mutateJob();
