@@ -250,7 +250,11 @@ class JobViewSet(ModelViewSet):
             else:
                 report_xml = make_old_report(the_job)
             ET.indent(report_xml, space="\t", level=0)
-            return Response({"status": "Success", "xml": ET.tostring(report_xml)})
+            response = Response({"status": "Success", "xml": ET.tostring(report_xml)})
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response["Pragma"] = "no-cache"
+            response["Expires"] = "0"
+            return response
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
@@ -349,6 +353,7 @@ class JobViewSet(ModelViewSet):
                 start_new_session=True,
             )
             job.process_id = process.pid
+            job.status = models.Job.Status.QUEUED
             job.save()
             serializer = serializers.JobSerializer(job)
             return Response(serializer.data)
