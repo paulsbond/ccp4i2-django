@@ -1,0 +1,10 @@
+django-cors-headers
+django-filter
+django
+djangorestframework
+gemmi
+pytest
+requests-cache
+requests
+uvicorn
+whitenoise

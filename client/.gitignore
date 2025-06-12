@@ -1,4 +1,7 @@
-/.next
-/dist
-/next-env.d.ts
+/renderer/.next
+/renderer/public
 /node_modules
+**/.DS_Store
+/dist
+/CCP4I2_TEST_PROJECT_DIRECTORY
+

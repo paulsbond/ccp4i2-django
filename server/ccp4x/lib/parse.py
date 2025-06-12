@@ -1,8 +1,33 @@
 from os import PathLike
 import gemmi
+import logging
+
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
-def parse(path: str | PathLike):
+def identify_data_type(path: str):
+    path = str(path)
+    for data_type_name, parse_function in (
+        ("mtz", gemmi.read_mtz_file),
+        ("map", gemmi.read_ccp4_map),
+        ("sfcif", parse_sfcif),
+        ("model", parse_structure),
+        ("dictionary", parse_chemical_component),
+        ("sequence", parse_pir_or_fasta),
+    ):
+        try:
+            logger.info("Trying to parse as %s", data_type_name)
+            content = parse_function(path)
+            result = {"data_type_name": data_type_name, "content": content}
+            logger.info("Succeeded to parse as %s", data_type_name)
+            return result
+        except (RuntimeError, ValueError):
+            logger.info("Failed to parse as %s", data_type_name)
+            continue
+    raise ValueError(f"Unknown file format: {path}")
+
+
+def parse(path: str):
     path = str(path)
     for parse_function in (
         gemmi.read_mtz_file,
@@ -41,3 +66,22 @@ def parse_pir_or_fasta(path: str) -> list[gemmi.FastaSeq]:
 def parse_chemical_component(path: str) -> gemmi.ChemComp:
     block = gemmi.cif.read(path)[-1]
     return gemmi.make_chemcomp_from_block(block)
+
+
+def parse_mtz(file_path):
+    mtz = gemmi.read_mtz_file(file_path)
+    reflections = []
+
+    # Extract column labels
+    column_labels = [col.label for col in mtz.columns]
+
+    for hkl, values in zip(mtz, mtz.array):
+        reflection = {
+            "h": hkl.h,
+            "k": hkl.k,
+            "l": hkl.l,
+            **{label: value for label, value in zip(column_labels, values)},
+        }
+        reflections.append(reflection)
+
+    return reflections
