@@ -1,10 +1,11 @@
 __pycache__
+.DS_Store
 *.egg-info
 *.pyc
 build
 client/app/components/task/FORREFERENCE-TaskJavascripts
-client/public/baby-gru
 client/out
+client/public/baby-gru
 client/public/coot_env_web.js
 client/public/CootWorker.js
 client/public/CootWorker.ts
