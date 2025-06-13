@@ -3,6 +3,7 @@ import unittest
 import argparse
 import re
 from ccp4i2.core.CCP4Container import CContainer
+from ccp4i2.core.CCP4ErrorHandling import CException
 from ccp4i2.core.CCP4PluginScript import CPluginScript
 from core import CCP4Container
 from core import CCP4Modules
@@ -41,6 +42,7 @@ class CCP4i2RunnerBase(object):
         self.task_name = self.args[0]
         self.parser.add_argument("task_name")
         self.parser.add_argument("--project_name", default=None)
+        self.parser.add_argument("--project_path", default=None)
         self.parser.add_argument("--delay", action="store_true")
         self.parser.add_argument("--batch", action="store_true")
         self.parsed_args = None
@@ -64,7 +66,9 @@ class CCP4i2RunnerBase(object):
         logger.debug(f"parsed_args is {parsed_args}")
         sys.stdout.flush()
         if parsed_args.project_name is not None:
-            self.projectId = self.projectWithName(parsed_args.project_name)
+            self.projectId = self.projectWithName(
+                parsed_args.project_name, parsed_args.project_path
+            )
             self.jobId = self.projectJobWithTask(
                 projectId=self.projectId, task_name=self.task_name
             )
@@ -152,7 +156,16 @@ class CCP4i2RunnerBase(object):
         xmlLocation = CCP4Modules.TASKMANAGER().lookupDefFile(
             name=task_name, version=None
         )
-        theContainer.loadContentsFromXml(xmlLocation)
+        try:
+            if not xmlLocation:
+                raise FileNotFoundError(
+                    f"Task definition file for {task_name} not found."
+                )
+            theContainer.loadContentsFromXml(xmlLocation)
+        except CException as e:
+            raise FileNotFoundError(f"Task definition file for {task_name} not found.")
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Task definition file for {task_name} not found.")
         allKeywords = CCP4i2RunnerBase.keywordsOfContainer(theContainer, [])
         # print(CCP4i2RunnerBase.minimisePaths(allKeywords))
         return CCP4i2RunnerBase.minimisePaths(allKeywords)

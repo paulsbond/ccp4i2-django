@@ -2,6 +2,9 @@ import os
 import glob
 import shlex
 import logging
+from pathlib import Path
+from django.conf import settings
+from django.utils.text import slugify
 from .CCP4i2RunnerBase import CCP4i2RunnerBase
 from ..db import models
 from ..api import serializers
@@ -103,14 +106,18 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         logger.info("File match is %s", fileDict)
         return fileDict
 
-    def projectWithName(self, projectName):
+    def projectWithName(self, projectName, projectPath=None):
         logger.info("In project with name %s", projectName)
         try:
             project = models.Project.objects.get(name=projectName)
             return project.uuid
         except models.Project.DoesNotExist as err:
+            if projectPath is None:
+                projectPath = settings.CCP4I2_PROJECTS_DIR / slugify(projectName)
             newProjectSerializer: serializers.ProjectSerializer = (
-                serializers.ProjectSerializer(data={"name": projectName})
+                serializers.ProjectSerializer(
+                    data={"name": projectName, "directory": str(projectPath)}
+                )
             )
             assert (
                 newProjectSerializer.is_valid()
@@ -118,7 +125,7 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
             newProject = newProjectSerializer.save()
             newProject.save()
             logger.info(
-                f'Created new project "{newProject.name}" in {newProject.directory} with id {newProject.projectid}'
+                f'Created new project "{newProject.name}" in {Path(newProject.directory).resolve()} with id {newProject.uuid}'
             )
             return newProject.uuid
 
