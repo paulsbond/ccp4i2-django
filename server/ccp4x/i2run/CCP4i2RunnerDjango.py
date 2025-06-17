@@ -116,7 +116,10 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
                 projectPath = settings.CCP4I2_PROJECTS_DIR / slugify(projectName)
             newProjectSerializer: serializers.ProjectSerializer = (
                 serializers.ProjectSerializer(
-                    data={"name": projectName, "directory": str(projectPath)}
+                    data={
+                        "name": projectName,
+                        "directory": str(Path(projectPath).resolve()),
+                    }
                 )
             )
             assert (

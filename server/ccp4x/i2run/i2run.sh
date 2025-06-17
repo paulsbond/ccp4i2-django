@@ -26,11 +26,13 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "Running i2run with arguments: ${args[@]}"
+echo "Running i2run with arguments: ${args[@]} in directory ${PWD}"
 
 ccp4-python "$SCRIPT_DIR/../../manage.py" migrate
 
 # Replace all --projectName with --project_name
+# Ditto --projectPath => --project_path
+
 for i in "${!args[@]}"; do
   if [[ "${args[$i]}" == "--projectName" ]]; then
     args[$i]="--project_name"
