@@ -8,7 +8,7 @@ import { Provider } from "react-redux";
 export default function MoorhenPageLayout(props: PropsWithChildren) {
   return (
     <Provider store={store}>
-      <CootProvider>Hi{props.children}</CootProvider>
+      <CootProvider>{props.children}</CootProvider>
     </Provider>
   );
 }
