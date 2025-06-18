@@ -1,7 +1,14 @@
 "use client";
 import { PropsWithChildren } from "react";
 import { CootProvider } from "../components/coot-provider";
+//import { MoorhenReduxStore } from "moorhen";
+import { store } from "../store";
+import { Provider } from "react-redux";
 
 export default function MoorhenPageLayout(props: PropsWithChildren) {
-  return <CootProvider>Hi{props.children}</CootProvider>;
+  return (
+    <Provider store={store}>
+      <CootProvider>Hi{props.children}</CootProvider>
+    </Provider>
+  );
 }

@@ -1,63 +1,125 @@
 "use client";
-import { MenuItem, Skeleton } from "@mui/material";
-import React, { useContext } from "react";
-import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
-import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
-import { CCP4i2Context } from "../app-context";
+import { addMolecule, addMap, setActiveMap } from "moorhen";
+import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { moorhen } from "moorhen/types/moorhen";
+import { Button } from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { store } from "../store";
+const WrappedMoorhen = () => {
+  const dispatch = useDispatch();
 
-export default function MoorhenPage() {
-  const [store, setStore] = useState<any>(null);
-  const { cootModule, setCootModule } = useContext(CCP4i2Context);
+  const glRef = useRef(null);
+  const timeCapsuleRef = useRef(null);
+  const commandCentre = useRef(null);
+  const moleculesRef = useRef(null);
+  const mapsRef = useRef(null);
+  const activeMapRef = useRef(null);
+  const lastHoveredAtom = useRef(null);
+  const prevActiveMoleculeRef = useRef(null);
 
-  useEffect(() => {
-    console.log("In use effect", typeof window !== "undefined");
-    if (cootModule && typeof window !== "undefined") {
-      // Dynamically import the moorhen module
-      import("moorhen")
-        .then((moorhen) => {
-          console.log({ moorhen });
-          // Extract reducers from the dynamically loaded module
-          const {
-            moleculesReducer,
-            mapsReducer,
-            mouseSettingsReducer,
-            backupSettingsReducer,
-            shortcutSettingsReducer,
-            labelSettingsReducer,
-            sceneSettingsReducer,
-            miscAppSettingsReducer,
-            generalStatesReducer,
-            hoveringStatesReducer,
-            modalsReducer,
-            mapContourSettingsReducer,
-            moleculeMapUpdateReducer,
-            sharedSessionReducer,
-            refinementSettingsReducer,
-            lhasaReducer,
-          } = moorhen;
+  const monomerLibraryPath =
+    "https://raw.githubusercontent.com/MRC-LMB-ComputationalStructuralBiology/monomers/master/";
+  const baseUrl = "https://www.ebi.ac.uk/pdbe/entry-files";
 
-          // Configure the store with the dynamically loaded reducers
-
-          // Set the store in state
-          setStore(store);
-        })
-        .catch((error) => {
-          console.error("Failed to load moorhen module:", error);
-        });
-    }
-  }, [cootModule]);
-
-  const doClick = (evt) => {
-    console.log("Click!");
-  };
-
-  const exportMenuItem = (
-    <MenuItem key={"example-key"} id="example-menu-item" onClick={doClick}>
-      Example extra menu
-    </MenuItem>
+  const backgroundColor = useSelector(
+    (state: moorhen.State) => state.sceneSettings.backgroundColor
+  );
+  const defaultBondSmoothness = useSelector(
+    (state: moorhen.State) => state.sceneSettings.defaultBondSmoothness
   );
 
-  return store ? <Provider store={store}>Hello</Provider> : <Skeleton />;
-}
+  const collectedProps = {
+    glRef,
+    timeCapsuleRef,
+    commandCentre,
+    moleculesRef,
+    mapsRef,
+    activeMapRef,
+    lastHoveredAtom,
+    prevActiveMoleculeRef,
+  };
+  const [windowWidth, setWindowWidth] = useState<number>(window.innerWidth);
+  const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
+  const setMoorhenDimensions = useCallback(() => {
+    const result = [windowWidth - 650, windowHeight - 75];
+    return result;
+  }, [windowWidth, windowHeight]);
+
+  useEffect(() => {
+    window.addEventListener("resize", () => {
+      setWindowWidth(window.innerWidth);
+      setWindowHeight(window.innerHeight);
+      console.log("Window resized");
+    });
+    return () => {
+      window.removeEventListener("resize", () => {
+        setWindowWidth(window.innerWidth);
+        setWindowHeight(window.innerHeight);
+      });
+    };
+  }, []);
+  const onClick = (pdbCode: string) => {
+    loadData(pdbCode);
+  };
+
+  const fetchMolecule = async (url: string, molName: string) => {
+    const newMolecule = new MoorhenMolecule(
+      commandCentre,
+      glRef,
+      store,
+      monomerLibraryPath
+    );
+    newMolecule.setBackgroundColour(backgroundColor);
+    newMolecule.defaultBondOptions.smoothness = defaultBondSmoothness;
+    try {
+      await newMolecule.loadToCootFromURL(url, molName);
+      if (newMolecule.molNo === -1) {
+        throw new Error("Cannot read the fetched molecule...");
+      }
+      await newMolecule.fetchIfDirtyAndDraw("CBs");
+      await newMolecule.addRepresentation("ligands", "/*/*/*/*");
+      await newMolecule.centreOn("/*/*/*/*", true, true);
+      dispatch(addMolecule(newMolecule));
+    } catch (err) {
+      console.warn(err);
+      console.warn(`Cannot fetch PDB entry from ${url}, doing nothing...`);
+    }
+  };
+
+  const fetchMap = async (
+    url: string,
+    mapName: string,
+    isDiffMap: boolean = false
+  ) => {
+    const newMap = new MoorhenMap(commandCentre, glRef, store);
+    try {
+      await newMap.loadToCootFromMapURL(url, mapName, isDiffMap);
+      if (newMap.molNo === -1)
+        throw new Error("Cannot read the fetched map...");
+      dispatch(addMap(newMap));
+      dispatch(setActiveMap(newMap));
+    } catch (err) {
+      console.warn(err);
+      console.warn(`Cannot fetch map from ${url}`);
+    }
+    return newMap;
+  };
+
+  const loadData = async (pdbCode: string) => {
+    await fetchMolecule(`${baseUrl}/download/${pdbCode}.cif`, pdbCode);
+    await fetchMap(`${baseUrl}/${pdbCode}_diff.ccp4`, `${pdbCode}-FoFc`, true);
+    await fetchMap(`${baseUrl}/${pdbCode}.ccp4`, `${pdbCode}-2FoFc`);
+  };
+
+  return (
+    <>
+      <MoorhenContainer
+        {...collectedProps}
+        setMoorhenDimensions={setMoorhenDimensions}
+      />
+    </>
+  );
+};
+
+export default WrappedMoorhen;
