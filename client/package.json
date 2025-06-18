@@ -20,7 +20,7 @@
     "express": "^5.1.0",
     "http-proxy-middleware": "^3.0.5",
     "jquery": "^3.7.1",
-    "moorhen": "^0.20.0",
+    "moorhen": "file:moorhen-0.21.1.tgz",
     "next": "latest",
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
