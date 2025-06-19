@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector } from "react-redux";
 import { store } from "../store";
+import { Button } from "@mui/material";
 
 export const MoorhenWrapper = () => {
   const dispatch = useDispatch();
@@ -50,6 +51,7 @@ export const MoorhenWrapper = () => {
     window.addEventListener("resize", () => {
       setWindowWidth(window.innerWidth);
       setWindowHeight(window.innerHeight);
+      glRef.current?.drawScene();
       console.log("Window resized");
     });
     return () => {
@@ -111,6 +113,10 @@ export const MoorhenWrapper = () => {
 
   return (
     <>
+      <Button
+        variant="contained"
+        onClick={() => fetchMolecule(`/api/proxy/files/${1}/download/`, "amol")}
+      />
       <MoorhenContainer
         {...collectedProps}
         setMoorhenDimensions={setMoorhenDimensions}
