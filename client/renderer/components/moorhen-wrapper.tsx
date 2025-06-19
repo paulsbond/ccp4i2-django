@@ -9,11 +9,8 @@ import {
 import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { moorhen } from "moorhen/types/moorhen";
-import { useDispatch, useSelector } from "react-redux";
-import { store } from "../store";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
-import { Slider } from "@mui/material";
-import { Check, CheckBox } from "@mui/icons-material";
 
 export interface MoorhenWrapperProps {
   fileIds?: number[];
@@ -33,6 +30,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   const cootInitialized = useSelector(
     (state: moorhen.State) => state.generalStates.cootInitialized
   );
+  const store = useStore();
 
   const monomerLibraryPath =
     "https://raw.githubusercontent.com/MRC-LMB-ComputationalStructuralBiology/monomers/master/";
