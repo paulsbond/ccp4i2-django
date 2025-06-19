@@ -2,7 +2,7 @@
 import { ChangeEvent, use } from "react";
 import { Container, LinearProgress, Stack, Toolbar } from "@mui/material";
 import { useApi } from "../../../api";
-import { File, Project } from "../../../models";
+import { File, Project } from "../../../../types/models";
 import EditableTypography from "../../../components/editable-typography";
 import FilesTable from "../../../components/files-table";
 import FileUpload from "../../../components/file-upload";

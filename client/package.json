@@ -4,7 +4,7 @@
   "main": "dist/main.js",
   "version": "0.0.1",
   "scripts": {
-    "copy-assets": "copyfiles -u 2 node_modules/moorhen/public/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/**/* renderer/",
+    "copy-assets": "copyfiles -u 2 node_modules/moorhen/public/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/**/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/pixmaps/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/tutorials/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/* renderer/",
     "build": "npm run copy-assets && next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
     "start": "npm run copy-assets && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts&& electron dist/main.js",
     "package-mac": "npm run build && electron-builder",

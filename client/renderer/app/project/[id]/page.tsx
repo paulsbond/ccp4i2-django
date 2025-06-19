@@ -1,11 +1,10 @@
 "use client";
 import { use, useCallback } from "react";
-import { CircularProgress, Skeleton, Stack } from "@mui/material";
-import { useApi } from "../../api";
-import { Job, Project } from "../../models";
-import EditableTypography from "../../components/editable-typography";
-import { useProject } from "../../utils";
-import { CCP4i2TaskTree } from "../../components/task/task-chooser";
+import { CircularProgress } from "@mui/material";
+import { useApi } from "../../../api";
+import { Job } from "../../../types/models";
+import { useProject } from "../../../utils";
+import { CCP4i2TaskTree } from "../../../components/task/task-chooser";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage({

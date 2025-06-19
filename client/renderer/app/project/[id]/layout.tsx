@@ -2,17 +2,17 @@
 import { PropsWithChildren, use, useContext, useEffect, useState } from "react";
 import { Paper, Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { CCP4i2Context } from "../../app-context";
-import { useApi } from "../../api";
-import { CCP4i2DirectoryViewer } from "../../components/directory_viewer";
-import { useProject } from "../../utils";
-import { ClassicJobList } from "../../components/classic-jobs-list";
-import { DraggableContext } from "../../components/draggable-context";
-import { CootProvider } from "../../components/coot-provider";
-import { FilePreviewContextProvider } from "../../components/file-preview-context";
-import { Job } from "../../models";
-import { JobMenuContextProvider } from "../../components/job-context-menu";
-import { FileMenuContextProvider } from "../../components/file-context-menu";
+import { CCP4i2Context } from "../../../app-context";
+import { useApi } from "../../../api";
+import { CCP4i2DirectoryViewer } from "../../../components/directory_viewer";
+import { useProject } from "../../../utils";
+import { ClassicJobList } from "../../../components/classic-jobs-list";
+import { DraggableContext } from "../../../components/contexts/draggable-context";
+import { CootProvider } from "../../../components/contexts/coot-provider";
+import { FilePreviewContextProvider } from "../../../components/contexts/file-preview-context";
+import { Job } from "../../../types/models";
+import { JobMenuContextProvider } from "../../../components/contexts/job-context-menu";
+import { FileMenuContextProvider } from "../../../components/contexts/file-context-menu";
 
 export interface ProjectLayoutProps extends PropsWithChildren {
   params: Promise<{ id: string; jobid: string }>;
