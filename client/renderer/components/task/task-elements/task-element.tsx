@@ -1,4 +1,4 @@
-import { Job } from "../../../models";
+import { Job } from "../../../types/models";
 import { CIntElement } from "./cint";
 import { PropsWithChildren, useMemo } from "react";
 import { SxProps, Theme, Typography } from "@mui/material";

@@ -17,7 +17,7 @@ import { Add, Delete } from "@mui/icons-material";
 import { MyExpandMore } from "../../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { CCP4i2Context } from "../../../app-context";
-import { Project } from "../../../models";
+import { Project } from "../../../types/models";
 
 interface CListElementProps extends CCP4i2TaskElementProps {
   initiallyOpen?: boolean;

@@ -1,9 +1,9 @@
 "use client";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { CCP4i2Context } from "../../app-context";
+import { CCP4i2Context } from "../app-context";
 import { CssBaseline } from "@mui/material";
-import MenuBar from "../menu-bar";
-import { File, Job } from "../../types/models";
+import MenuBar from "../components/menu-bar";
+import { File, Job } from "../types/models";
 import { PopcornProvider } from "./popcorn-provider";
 import { RunningProcessesProvider } from "./running-processes";
 
@@ -35,7 +35,6 @@ export const CCP4i2App = (props: PropsWithChildren) => {
           }}
         >
           <CssBaseline />
-          <MenuBar />
           {props.children}
         </CCP4i2Context.Provider>
       </RunningProcessesProvider>

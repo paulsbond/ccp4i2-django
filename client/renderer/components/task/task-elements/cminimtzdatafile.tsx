@@ -6,7 +6,7 @@ import { ParseMtz } from "./parse-mtz";
 import { useApi } from "../../../api";
 import { BaseSpacegroupCellElement } from "./base-spacegroup-cell-element";
 import { readFilePromise, useJob } from "../../../utils";
-import { Job } from "../../../models";
+import { Job } from "../../../types/models";
 
 export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   props

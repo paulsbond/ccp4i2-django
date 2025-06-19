@@ -1,4 +1,4 @@
-import { CCP4i2TaskInterfaceProps } from "../../contexts/task-container";
+import { CCP4i2TaskInterfaceProps } from "../../../contexts/task-container";
 import {
   CCP4i2TaskElement,
   CCP4i2TaskElementProps,
@@ -9,7 +9,7 @@ import { useJob, usePrevious } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import { ParseMtz } from "../task-elements/parse-mtz";
-import { Job } from "../../../models";
+import { Job } from "../../../types/models";
 import {
   Card,
   CardContent,

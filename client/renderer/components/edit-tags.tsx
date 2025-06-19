@@ -1,7 +1,7 @@
 import { Button, Chip, Stack } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import { useApi } from "../api";
-import { ProjectTag } from "../models";
+import { ProjectTag } from "../types/models";
 
 export default function EditTags(props: {
   tags: number[];

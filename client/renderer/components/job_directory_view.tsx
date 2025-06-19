@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Job, Project } from "../models";
-import { FileTree } from "./contexts/file-browser";
+import { Job, Project } from "../types/models";
+import { FileTree } from "../contexts/file-browser";
 import { useProject } from "../utils";
 
 interface JobDirectoryViewProps {

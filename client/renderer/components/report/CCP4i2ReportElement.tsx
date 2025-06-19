@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import $ from "jquery";
-import { Job } from "../../models";
+import { Job } from "../../types/models";
 
 import { CCP4i2ReportFlotGraphGroup } from "./CCP4i2ReportFlotGraphGroup";
 import { CCP4i2ReportTable } from "./CCP4i2ReportTable";

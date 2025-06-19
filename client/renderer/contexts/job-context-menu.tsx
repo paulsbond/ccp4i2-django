@@ -6,12 +6,12 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Job, File as DjangoFile } from "../models";
-import { doDownload, useApi } from "../../api";
+import { Job, File as DjangoFile } from "../types/models";
+import { doDownload, useApi } from "../api";
 import { useRouter } from "next/navigation";
 import { useDeleteDialog } from "./delete-dialog";
 import { List, ListItem, Menu, MenuItem, Paper, Toolbar } from "@mui/material";
-import { CCP4i2JobAvatar } from "../job-avatar";
+import { CCP4i2JobAvatar } from "../components/job-avatar";
 import {
   CopyAll,
   Delete,

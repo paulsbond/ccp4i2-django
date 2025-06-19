@@ -28,11 +28,11 @@ import {
 } from "react";
 import { useJob } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
-import { TaskInterfaceContext } from "../../contexts/task-container";
+import { TaskInterfaceContext } from "../../../contexts/task-container";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
 import { useDndContext, useDroppable } from "@dnd-kit/core";
-import { FileMenuContext } from "../../contexts/file-context-menu";
+import { FileMenuContext } from "../../../contexts/file-context-menu";
 import { Menu } from "@mui/icons-material";
 
 export const inverseFileTypeMapping: { [key: string]: string } = {

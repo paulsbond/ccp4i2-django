@@ -23,7 +23,7 @@ import { alpha } from "@mui/material/styles";
 import { useApi } from "../api";
 import { Project } from "../types/models";
 import { shortDate } from "../pipes";
-import { useDeleteDialog } from "./contexts/delete-dialog";
+import { useDeleteDialog } from "../contexts/delete-dialog";
 import { useSet } from "../hooks";
 import SearchField from "./search-field";
 

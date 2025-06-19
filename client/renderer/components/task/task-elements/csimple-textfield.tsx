@@ -12,7 +12,7 @@ import { Stack, TextField } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
-import { TaskInterfaceContext } from "../../contexts/task-container";
+import { TaskInterfaceContext } from "../../../contexts/task-container";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props

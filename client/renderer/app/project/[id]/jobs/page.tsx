@@ -1,9 +1,7 @@
 "use client";
 import { use } from "react";
 import { Container, LinearProgress } from "@mui/material";
-import { JobsGrid } from "../../../components/jobs-grid";
-import { Project } from "../../../../types/models";
-import { useApi } from "../../../api";
+import { JobsGrid } from "../../../../components/jobs-grid";
 import { useProject } from "../../../../utils";
 
 export default function JobsPage({

@@ -1,5 +1,5 @@
 import { Avatar } from "@mui/material";
-import { File } from "../models";
+import { File } from "../types/models";
 import { fileTypeMapping } from "./files-table";
 import { useDraggable } from "@dnd-kit/core";
 import { forwardRef } from "react";

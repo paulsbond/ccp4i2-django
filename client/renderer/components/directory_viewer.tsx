@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useApi } from "../api";
 import { Editor } from "@monaco-editor/react";
-import { FileTree } from "./contexts/file-browser";
+import { FileTree } from "../contexts/file-browser";
 import { LinearProgress } from "@mui/material";
 import { useProject } from "../utils";
 

@@ -16,7 +16,7 @@ import { useApi } from "../api";
 import { Cancel, Check, Folder, Upload } from "@mui/icons-material";
 import { VisuallyHiddenInput } from "./task/task-elements/input-file-upload";
 import { useRouter } from "next/navigation";
-import { Project } from "../models";
+import { Project } from "../types/models";
 
 export const ImportProjectContent: React.FC = () => {
   const api = useApi();

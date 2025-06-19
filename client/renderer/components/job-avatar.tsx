@@ -1,5 +1,5 @@
 import { Avatar } from "@mui/material";
-import { Job } from "../models";
+import { Job } from "../types/models";
 import { forwardRef, useMemo } from "react";
 import { useDraggable } from "@dnd-kit/core";
 

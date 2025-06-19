@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useApi } from "../../../api";
-import { Job } from "../../../models";
+import { Job } from "../../../types/models";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../../app-context";
 import { useJob } from "../../../utils";

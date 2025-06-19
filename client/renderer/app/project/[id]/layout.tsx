@@ -7,12 +7,13 @@ import { useApi } from "../../../api";
 import { CCP4i2DirectoryViewer } from "../../../components/directory_viewer";
 import { useProject } from "../../../utils";
 import { ClassicJobList } from "../../../components/classic-jobs-list";
-import { DraggableContext } from "../../../components/contexts/draggable-context";
-import { CootProvider } from "../../../components/contexts/coot-provider";
-import { FilePreviewContextProvider } from "../../../components/contexts/file-preview-context";
+import { DraggableContext } from "../../../contexts/draggable-context";
+import { CootProvider } from "../../../contexts/coot-provider";
+import { FilePreviewContextProvider } from "../../../contexts/file-preview-context";
 import { Job } from "../../../types/models";
-import { JobMenuContextProvider } from "../../../components/contexts/job-context-menu";
-import { FileMenuContextProvider } from "../../../components/contexts/file-context-menu";
+import { JobMenuContextProvider } from "../../../contexts/job-context-menu";
+import { FileMenuContextProvider } from "../../../contexts/file-context-menu";
+import MenuBar from "../../../components/menu-bar";
 
 export interface ProjectLayoutProps extends PropsWithChildren {
   params: Promise<{ id: string; jobid: string }>;
@@ -49,6 +50,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
           <FilePreviewContextProvider>
             <JobMenuContextProvider>
               <FileMenuContextProvider>
+                <MenuBar />
                 <PanelGroup direction="horizontal">
                   <Panel defaultSize={30} minSize={20}>
                     <Paper

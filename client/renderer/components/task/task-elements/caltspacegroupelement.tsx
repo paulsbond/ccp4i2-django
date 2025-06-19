@@ -11,7 +11,7 @@ import {
 import { Info } from "@mui/icons-material";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ErrorInfo } from "./error-info";
-import { TaskInterfaceContext } from "../../contexts/task-container";
+import { TaskInterfaceContext } from "../../../contexts/task-container";
 import { SpaceGroup, spaceGroups } from "../../../spacegroups";
 
 export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (

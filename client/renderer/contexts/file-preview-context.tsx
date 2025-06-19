@@ -1,8 +1,8 @@
 import { PropsWithChildren, useContext, useEffect, useState } from "react";
-import { doRetrieve, fullUrl } from "../../api";
+import { doRetrieve, fullUrl } from "../api";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { Editor } from "@monaco-editor/react";
-import { prettifyXml } from "../../utils";
+import { prettifyXml } from "../utils";
 import { createContext } from "react";
 import $ from "jquery";
 

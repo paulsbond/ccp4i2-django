@@ -11,11 +11,11 @@ import {
 } from "@mui/icons-material";
 import { useContext, useState } from "react";
 import { useApi } from "../api";
-import { Job, Project } from "../models";
+import { Job, Project } from "../types/models";
 import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
 import { HelpIframe } from "./help_iframe";
-import { usePopcorn } from "./contexts/popcorn-provider";
+import { usePopcorn } from "../contexts/popcorn-provider";
 
 export default function ToolBar() {
   const sizeMinus1 = useMediaQuery("(max-width:110rem)");

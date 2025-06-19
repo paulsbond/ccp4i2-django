@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { Folder } from "@mui/icons-material";
 import { useApi } from "../api";
-import { Project } from "../models";
+import { Project } from "../types/models";
 import EditTags from "./edit-tags";
 
 export const NewProjectContent: React.FC = () => {

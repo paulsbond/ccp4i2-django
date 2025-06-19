@@ -9,7 +9,7 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Job, File as DjangoFile } from "../models";
+import { Job, File as DjangoFile } from "../types/models";
 import EditableTypography from "./editable-typography";
 import { useApi } from "../api";
 import { KeyedMutator } from "swr";
@@ -19,7 +19,7 @@ import {
   JobMenu,
   JobMenuContext,
   JobWithChildren,
-} from "./contexts/job-context-menu";
+} from "../contexts/job-context-menu";
 import { Menu } from "@mui/icons-material";
 import { useJob } from "../utils";
 import { useDroppable } from "@dnd-kit/core";

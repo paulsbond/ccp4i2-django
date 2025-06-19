@@ -11,8 +11,8 @@ import {
   TableCell,
   Avatar,
 } from "@mui/material";
-import { fullUrl, useApi } from "../../api";
-import { Project } from "../models";
+import { fullUrl, useApi } from "../api";
+import { Project } from "../types/models";
 
 interface RunningProcessesProps {
   jobsAndProcessesDialogOpen: boolean;

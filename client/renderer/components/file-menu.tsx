@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { Add, Download, Menu as MenuIcon, Upload } from "@mui/icons-material";
 import { useApi } from "../api";
-import { Project } from "../models";
+import { Project } from "../types/models";
 
 export default function FileMenu() {
   const router = useRouter();

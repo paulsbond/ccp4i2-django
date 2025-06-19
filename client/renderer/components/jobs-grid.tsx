@@ -1,6 +1,6 @@
 import { useApi } from "../api";
 import { Grid2, GridSize } from "@mui/material";
-import { Job } from "../models";
+import { Job } from "../types/models";
 import { JobCard } from "./job-card";
 
 interface SizeProps {

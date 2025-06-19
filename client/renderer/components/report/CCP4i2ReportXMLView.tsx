@@ -8,13 +8,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { Job } from "../../models";
+import { Job } from "../../types/models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
 import { CCP4i2Context } from "../../app-context";
 import { useJob, usePrevious } from "../../utils";
 import { useRouter } from "next/navigation";
-import { usePopcorn } from "../contexts/popcorn-provider";
+import { usePopcorn } from "../../contexts/popcorn-provider";
 import useSWR from "swr";
 
 export const CCP4i2ReportXMLView = () => {

@@ -14,7 +14,7 @@ import ViewMenu from "./view-menu";
 import { useContext, useEffect } from "react";
 import { CCP4i2Context } from "../app-context";
 import { useApi } from "../api";
-import { Job, Project } from "../models";
+import { Job, Project } from "../types/models";
 import EditableTypography from "./editable-typography";
 
 export default function MenuBar() {

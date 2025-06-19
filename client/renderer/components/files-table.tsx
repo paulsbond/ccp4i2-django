@@ -10,10 +10,10 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Delete, Download } from "@mui/icons-material";
-import { File } from "../models";
+import { File } from "../types/models";
 import { fileSize } from "../pipes";
 import { useApi } from "../api";
-import { useDeleteDialog } from "./contexts/delete-dialog";
+import { useDeleteDialog } from "../contexts/delete-dialog";
 import { KeyedMutator } from "swr";
 import { useMemo } from "react";
 

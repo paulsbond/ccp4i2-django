@@ -1,6 +1,6 @@
 import Script from "next/script";
 import { PropsWithChildren, useContext, useEffect, useRef } from "react";
-import { CCP4i2Context } from "../../app-context";
+import { CCP4i2Context } from "../app-context";
 
 export const CootProvider: React.FC<PropsWithChildren> = (props) => {
   const { setCootModule } = useContext(CCP4i2Context);

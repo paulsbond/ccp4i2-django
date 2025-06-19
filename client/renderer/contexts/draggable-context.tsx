@@ -1,13 +1,12 @@
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { PropsWithChildren, useCallback, useContext, useState } from "react";
-import { CCP4i2Context } from "../../app-context";
+import { CCP4i2Context } from "../app-context";
 import { Avatar } from "@mui/material";
-import { File, Job, Project } from "../../types/models";
-import { useJob } from "../../utils";
-import { useApi } from "../../api";
+import { File, Job, Project } from "../types/models";
+import { useJob } from "../utils";
+import { useApi } from "../api";
 import { TaskInterfaceContext } from "./task-container";
-import { fileTypeMapping } from "../files-table";
-import { inverseFileTypeMapping } from "../task/task-elements/cdatafile";
+import { inverseFileTypeMapping } from "../components/task/task-elements/cdatafile";
 
 export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
   const { jobId } = useContext(CCP4i2Context);

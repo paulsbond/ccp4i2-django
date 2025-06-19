@@ -1,5 +1,5 @@
 import { PropsWithChildren } from "react";
-import { ImportProjectContent } from "../components/import-project-content";
+import { ImportProjectContent } from "../../components/import-project-content";
 import { Paper } from "@mui/material";
 
 export default function ImportProjectPage() {

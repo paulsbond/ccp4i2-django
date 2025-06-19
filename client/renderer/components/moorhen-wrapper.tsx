@@ -11,14 +11,13 @@ import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector } from "react-redux";
 import { store } from "../store";
-import { Button } from "@mui/material";
 import { webGL } from "moorhen/types/mgWebGL";
 
 interface MoorhenWrapperProps {
   fileIds?: number[];
 }
 
-export const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
+const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   const dispatch = useDispatch();
 
   const glRef: RefObject<webGL.MGWebGL | null> = useRef(null);
@@ -121,7 +120,12 @@ export const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     mapName: string,
     isDiffMap: boolean = false
   ) => {
-    const newMap = new MoorhenMap(commandCentre, glRef, store);
+    if (!glRef.current) return;
+    const newMap = new MoorhenMap(
+      commandCentre,
+      glRef as RefObject<webGL.MGWebGL>,
+      store
+    );
     try {
       await newMap.loadToCootFromMapURL(url, mapName, isDiffMap);
       if (newMap.molNo === -1)
@@ -144,3 +148,5 @@ export const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     </>
   );
 };
+
+export default MoorhenWrapper;

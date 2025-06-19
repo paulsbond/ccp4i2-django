@@ -6,7 +6,7 @@ import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../../components/job-header";
 import { CCP4i2ReportXMLView } from "../../../../../components/report/CCP4i2ReportXMLView";
 import { CCP4i2Context } from "../../../../../app-context";
-import { TaskContainer } from "../../../../../components/contexts/task-container";
+import { TaskContainer } from "../../../../../contexts/task-container";
 import {
   prettifyXml,
   useJob,
@@ -15,7 +15,7 @@ import {
 } from "../../../../../utils";
 import ToolBar from "../../../../../components/tool-bar";
 import { JobCommentEditor } from "../../../../../components/job-comment-editor";
-import { JobMenu } from "../../../../../components/contexts/job-context-menu";
+import { JobMenu } from "../../../../../contexts/job-context-menu";
 import { JobDirectoryView } from "../../../../../components/job_directory_view";
 import useSWR from "swr";
 import $ from "jquery";

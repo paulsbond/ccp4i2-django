@@ -36,10 +36,10 @@ import {
   JobMenu,
   JobMenuContext,
   JobWithChildren,
-} from "./contexts/job-context-menu";
+} from "../contexts/job-context-menu";
 import { useDraggable } from "@dnd-kit/core";
 import { FileAvatar } from "./file-avatar";
-import { FileMenuContext } from "./contexts/file-context-menu";
+import { FileMenuContext } from "../contexts/file-context-menu";
 
 interface ClassicJobListProps {
   projectId: number;

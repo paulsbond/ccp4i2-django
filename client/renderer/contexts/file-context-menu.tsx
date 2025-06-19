@@ -6,11 +6,12 @@ import {
   useState,
   PropsWithChildren,
 } from "react";
-import { doDownload, useApi } from "../../api";
+import { doDownload, useApi } from "../api";
 import { Menu, MenuItem } from "@mui/material";
 import { Download, Preview, Terminal } from "@mui/icons-material";
 import { FilePreviewContext } from "./file-preview-context";
-import { File as DjangoFile } from "../models";
+import { File as DjangoFile } from "../types/models";
+import { useRouter } from "next/navigation";
 
 interface FileMenuContextProps {
   fileMenuAnchorEl: HTMLElement | null;
@@ -54,6 +55,7 @@ export const FileMenu: React.FC = () => {
     useContext(FileMenuContext);
   const api = useApi();
   const { setContentSpecification } = useContext(FilePreviewContext);
+  const router = useRouter();
 
   const handleDownloadFile = useCallback(
     async (ev: SyntheticEvent) => {
@@ -145,6 +147,17 @@ export const FileMenu: React.FC = () => {
     [file]
   );
 
+  const handlePreviewFileInMoorhen = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (file) {
+        router.push(`/moorhen-page/file-by-id/${file.id}`);
+        setFileMenuAnchorEl(null);
+      }
+    },
+    [file]
+  );
+
   const handlePreviewFileInTerminal = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
@@ -186,6 +199,12 @@ export const FileMenu: React.FC = () => {
         ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(file.type) && (
           <MenuItem key="CCP4MG" onClick={handlePreviewFileInCCP4MG}>
             <Preview /> CCP4MG
+          </MenuItem>
+        )}
+      {file &&
+        ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(file.type) && (
+          <MenuItem key="Moorhen" onClick={handlePreviewFileInMoorhen}>
+            <Preview /> Moorhen
           </MenuItem>
         )}
       {file && file.type.startsWith("application/CCP4-mtz") && (

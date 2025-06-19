@@ -1,9 +1,5 @@
 "use client";
 
-import { MoorhenWrapper } from "../../components/moorhen-wrapper";
-
-const MoorhenPage = () => {
-  return <MoorhenWrapper />;
-};
-
-export default MoorhenPage;
+export default function MoorhenPage() {
+  return <span>Moorhen page</span>;
+}
