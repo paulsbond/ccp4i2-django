@@ -1,7 +1,6 @@
 "use client";
 import { PropsWithChildren } from "react";
 import { CootProvider } from "../../contexts/coot-provider";
-import { store } from "../../store";
 import { Provider } from "react-redux";
 import { AppBar, IconButton, Toolbar } from "@mui/material";
 import { NavigateBefore } from "@mui/icons-material";
@@ -13,22 +12,20 @@ export default function MoorhenPageLayout(props: PropsWithChildren) {
     router.back();
   };
   return (
-    <Provider store={store}>
-      <CootProvider>
-        <AppBar position="static">
-          <Toolbar sx={{ gap: 2 }}>
-            <IconButton
-              size="large"
-              aria-label="show 4 new mails"
-              color="inherit"
-              onClick={handleBack}
-            >
-              <NavigateBefore />
-            </IconButton>
-          </Toolbar>
-        </AppBar>
-        {props.children}
-      </CootProvider>
-    </Provider>
+    <CootProvider>
+      <AppBar position="static">
+        <Toolbar sx={{ gap: 2 }}>
+          <IconButton
+            size="large"
+            aria-label="show 4 new mails"
+            color="inherit"
+            onClick={handleBack}
+          >
+            <NavigateBefore />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+      {props.children}
+    </CootProvider>
   );
 }

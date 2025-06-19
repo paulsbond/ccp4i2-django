@@ -1,12 +1,14 @@
 "use client";
 
 import { ClientStoreProvider } from "../contexts/client-store-provider";
-import MoorhenWrapper from "./moorhen-wrapper";
+import MoorhenWrapper, { MoorhenWrapperProps } from "./moorhen-wrapper";
 
-export const ClientSideMoorhenComponent = () => {
+export const ClientSideMoorhenComponent: React.FC<MoorhenWrapperProps> = (
+  props
+) => {
   return (
     <ClientStoreProvider>
-      <MoorhenWrapper />
+      <MoorhenWrapper {...props} />
     </ClientStoreProvider>
   );
 };

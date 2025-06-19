@@ -12,8 +12,10 @@ import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector } from "react-redux";
 import { store } from "../store";
 import { webGL } from "moorhen/types/mgWebGL";
+import { Slider } from "@mui/material";
+import { Check, CheckBox } from "@mui/icons-material";
 
-interface MoorhenWrapperProps {
+export interface MoorhenWrapperProps {
   fileIds?: number[];
 }
 
@@ -140,12 +142,12 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   };
 
   return (
-    <>
+    <div style={{ width: "100%", height: "100%" }}>
       <MoorhenContainer
         {...collectedProps}
         setMoorhenDimensions={setMoorhenDimensions}
       />
-    </>
+    </div>
   );
 };
 

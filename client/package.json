@@ -3,6 +3,12 @@
   "type": "module",
   "main": "dist/main.js",
   "version": "0.0.1",
+  "author": {
+    "name": "CCP4 Developers",
+    "email": "martin.noble@newcastle.ac.uk"
+  },
+  "license": "BSD-3-Clause",
+  "description": "CCP4i2 Electron application",
   "scripts": {
     "copy-assets": "copyfiles -u 2 node_modules/moorhen/public/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/**/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/pixmaps/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/tutorials/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/* renderer/",
     "build": "npm run copy-assets && next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
