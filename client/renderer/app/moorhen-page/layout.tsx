@@ -2,12 +2,14 @@
 import { PropsWithChildren } from "react";
 import { CootProvider } from "../../contexts/coot-provider";
 import { Provider } from "react-redux";
-import { AppBar, IconButton, Toolbar } from "@mui/material";
+import { AppBar, IconButton, Toolbar, Typography } from "@mui/material";
 import { NavigateBefore } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export default function MoorhenPageLayout(props: PropsWithChildren) {
   const router = useRouter();
+  const { id } = useParams();
+  const fileIds = id ? [parseInt(id as string)] : [];
   const handleBack = () => {
     router.back();
   };
@@ -23,6 +25,12 @@ export default function MoorhenPageLayout(props: PropsWithChildren) {
           >
             <NavigateBefore />
           </IconButton>
+          <Typography
+            variant="h6"
+            style={{ textAlign: "center", margin: "10px" }}
+          >
+            Moorhen Viewer {JSON.stringify(fileIds)}
+          </Typography>
         </Toolbar>
       </AppBar>
       {props.children}

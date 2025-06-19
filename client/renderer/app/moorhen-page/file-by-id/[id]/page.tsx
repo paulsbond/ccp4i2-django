@@ -8,6 +8,8 @@ const FileByIdPage = () => {
   const { data: file } = useSWR(`/api/proxy/files/${id}`, (url) =>
     fetch(url).then((res) => res.json())
   );
-  return <ClientSideMoorhenComponent />;
+  return (
+    <ClientSideMoorhenComponent fileIds={id ? [parseInt(id as string)] : []} />
+  );
 };
 export default FileByIdPage;
