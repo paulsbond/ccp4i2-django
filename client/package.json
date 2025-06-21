@@ -79,6 +79,8 @@
     "files": [
       "dist/**",
       "renderer/.next/**",
+      "!renderer/.next/cache",
+      "!renderer/.next/cache/**/*",
       "renderer/public/**",
       "scripts/start-next.js"
     ],
