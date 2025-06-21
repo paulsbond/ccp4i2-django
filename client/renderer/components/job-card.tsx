@@ -33,10 +33,10 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { JobHeader } from "./job-header";
-import { useDeleteDialog } from "../contexts/delete-dialog";
+import { useDeleteDialog } from "../providers/delete-dialog";
 import { CCP4i2JobAvatar } from "./job-avatar";
 import { useProject } from "../utils";
-import { usePopcorn } from "../contexts/popcorn-provider";
+import { usePopcorn } from "../providers/popcorn-provider";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),

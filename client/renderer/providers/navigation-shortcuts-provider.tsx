@@ -1,3 +1,5 @@
+"use client";
+
 import React, { PropsWithChildren, useEffect } from "react";
 
 export function NavigationShortcutsProvider({ children }: PropsWithChildren) {

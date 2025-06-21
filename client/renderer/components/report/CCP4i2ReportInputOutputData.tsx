@@ -18,8 +18,8 @@ import { useApi } from "../../api";
 import { fileTypeMapping } from "../files-table";
 import EditableTypography from "../editable-typography";
 import { File as DjangoFile } from "../../types/models";
-import { JobMenu } from "../../contexts/job-context-menu";
-import { FileMenuContext } from "../../contexts/file-context-menu";
+import { JobMenu } from "../../providers/job-context-menu";
+import { FileMenuContext } from "../../providers/file-context-menu";
 //import { fileTypeMapping } from "../files-table";
 
 export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (

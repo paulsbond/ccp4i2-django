@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Button,
   Table,
   TableHead,
   TableRow,
@@ -11,7 +10,7 @@ import {
   TableCell,
   Avatar,
 } from "@mui/material";
-import { fullUrl, useApi } from "../api";
+import { useApi } from "../api";
 import { Project } from "../types/models";
 
 interface RunningProcessesProps {

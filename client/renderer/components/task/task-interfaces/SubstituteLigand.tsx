@@ -1,4 +1,4 @@
-import { CCP4i2TaskInterfaceProps } from "../../../contexts/task-container";
+import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";

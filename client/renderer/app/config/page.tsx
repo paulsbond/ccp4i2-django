@@ -1,6 +1,6 @@
 "use client";
 import { ConfigContent } from "../../components/config-content";
-import { NavigationShortcutsProvider } from "../../contexts/navigation-shortcuts-provider";
+import { NavigationShortcutsProvider } from "../../providers/navigation-shortcuts-provider";
 
 export default function ConfigPage() {
   return (

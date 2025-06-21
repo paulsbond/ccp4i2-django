@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { Button, Menu, MenuItem } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useContext } from "react";
-import { RunningProcessesContext } from "../contexts/running-processes";
+import { RunningProcessesContext } from "../providers/running-processes";
 
 export default function UtilMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

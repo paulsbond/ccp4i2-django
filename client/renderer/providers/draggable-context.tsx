@@ -1,5 +1,5 @@
 import { DndContext, DragOverlay } from "@dnd-kit/core";
-import { PropsWithChildren, useCallback, useContext, useState } from "react";
+import { PropsWithChildren, useCallback, useContext } from "react";
 import { CCP4i2Context } from "../app-context";
 import { Avatar } from "@mui/material";
 import { File, Job, Project } from "../types/models";

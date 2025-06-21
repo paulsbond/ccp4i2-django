@@ -7,14 +7,14 @@ import { useApi } from "../../../api";
 import { CCP4i2DirectoryViewer } from "../../../components/directory_viewer";
 import { useProject } from "../../../utils";
 import { ClassicJobList } from "../../../components/classic-jobs-list";
-import { DraggableContext } from "../../../contexts/draggable-context";
-import { CootProvider } from "../../../contexts/coot-provider";
-import { FilePreviewContextProvider } from "../../../contexts/file-preview-context";
+import { DraggableContext } from "../../../providers/draggable-context";
+import { CootProvider } from "../../../providers/coot-provider";
+import { FilePreviewContextProvider } from "../../../providers/file-preview-context";
 import { Job } from "../../../types/models";
-import { JobMenuContextProvider } from "../../../contexts/job-context-menu";
-import { FileMenuContextProvider } from "../../../contexts/file-context-menu";
+import { JobMenuContextProvider } from "../../../providers/job-context-menu";
+import { FileMenuContextProvider } from "../../../providers/file-context-menu";
 import MenuBar from "../../../components/menu-bar";
-import { NavigationShortcutsProvider } from "../../../contexts/navigation-shortcuts-provider";
+import { NavigationShortcutsProvider } from "../../../providers/navigation-shortcuts-provider";
 
 export interface ProjectLayoutProps extends PropsWithChildren {
   params: Promise<{ id: string; jobid: string }>;

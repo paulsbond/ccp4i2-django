@@ -14,7 +14,7 @@ import { useApi } from "../../api";
 import { CCP4i2Context } from "../../app-context";
 import { useJob, usePrevious } from "../../utils";
 import { useRouter } from "next/navigation";
-import { usePopcorn } from "../../contexts/popcorn-provider";
+import { usePopcorn } from "../../providers/popcorn-provider";
 import useSWR from "swr";
 
 export const CCP4i2ReportXMLView = () => {

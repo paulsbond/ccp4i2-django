@@ -1,7 +1,7 @@
 import { PropsWithChildren } from "react";
 import { ImportProjectContent } from "../../components/import-project-content";
 import { Paper } from "@mui/material";
-import { NavigationShortcutsProvider } from "../../contexts/navigation-shortcuts-provider";
+import { NavigationShortcutsProvider } from "../../providers/navigation-shortcuts-provider";
 
 export default function ImportProjectPage() {
   return (

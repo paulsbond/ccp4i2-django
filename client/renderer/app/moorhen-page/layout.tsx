@@ -1,11 +1,11 @@
 "use client";
 import { PropsWithChildren } from "react";
-import { CootProvider } from "../../contexts/coot-provider";
+import { CootProvider } from "../../providers/coot-provider";
 import { Provider } from "react-redux";
 import { AppBar, IconButton, Toolbar, Typography } from "@mui/material";
 import { NavigateBefore } from "@mui/icons-material";
 import { useParams, useRouter } from "next/navigation";
-import { NavigationShortcutsProvider } from "../../contexts/navigation-shortcuts-provider";
+import { NavigationShortcutsProvider } from "../../providers/navigation-shortcuts-provider";
 
 export default function MoorhenPageLayout(props: PropsWithChildren) {
   const router = useRouter();

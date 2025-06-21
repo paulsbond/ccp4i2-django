@@ -15,13 +15,10 @@ import { CCP4i2JobAvatar } from "../components/job-avatar";
 import {
   CopyAll,
   Delete,
-  Download,
   FireExtinguisherRounded,
   Pending,
-  Preview,
   RunCircle,
   SmsFailed,
-  Terminal,
   TerminalOutlined,
 } from "@mui/icons-material";
 import { createContext } from "react";

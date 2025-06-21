@@ -25,7 +25,7 @@ import {
 import { CCP4i2TaskElementProps } from "./task-element";
 import { ExpandLess, ExpandMore, Info, MoreHoriz } from "@mui/icons-material";
 import { useJob, valueOfItem } from "../../../utils";
-import { TaskInterfaceContext } from "../../../contexts/task-container";
+import { TaskInterfaceContext } from "../../../providers/task-container";
 import { Job } from "../../../types/models";
 import { Line } from "react-chartjs-2";
 import { SimpleObjectTable } from "../../simple-object-table";
