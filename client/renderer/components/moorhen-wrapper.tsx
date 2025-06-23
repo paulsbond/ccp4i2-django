@@ -1,4 +1,5 @@
 "use client";
+
 import {
   addMolecule,
   addMap,
@@ -7,7 +8,14 @@ import {
   setHeight,
 } from "moorhen";
 import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
-import { RefObject, useCallback, useEffect, useRef, useState } from "react";
+import {
+  RefObject,
+  use,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
@@ -61,15 +69,20 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   }, [windowWidth, windowHeight]);
 
   useEffect(() => {
+    //What to do when the component mounts
+    console.log("MoorhenWrapper mounted");
     window.addEventListener("resize", () => {
       setWindowWidth(window.innerWidth);
-      setWindowHeight(window.innerHeight);
+      setWindowHeight(window.innerHeight - 75);
       console.log("Window resized");
     });
     return () => {
+      //What to do when the component unmounts
+      commandCentre.current?.close();
+      console.log("MoorhenWrapper unmounted");
       window.removeEventListener("resize", () => {
         setWindowWidth(window.innerWidth);
-        setWindowHeight(window.innerHeight);
+        setWindowHeight(window.innerHeight - 75);
       });
     };
   }, []);
@@ -77,18 +90,40 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   useEffect(() => {
     if (fileIds && cootInitialized) {
       fileIds.forEach((fileId) => {
-        fetchMolecule(`/api/proxy/files/${fileId}/download/`, `file-${fileId}`);
+        fetchFile(fileId);
       });
+      //fetchMolecule(`/api/proxy/files/${fileId}/download/`, `file-${fileId}`);
     }
   }, [fileIds, cootInitialized]);
 
   useEffect(() => {
     if (cootInitialized) {
-      dispatch(setWidth(window.innerWidth - 500));
-      dispatch(setHeight(window.innerHeight - 156));
+      console.log("Coot is initialized, you can now load molecules and maps.");
+      dispatch(setWidth(window.innerWidth));
+      dispatch(setHeight(window.innerHeight - 75));
     }
   }, [cootInitialized]);
 
+  const fetchFile = async (fileId) => {
+    const fileInfo = await fetch(`/api/proxy/files/${fileId}/`).then((res) =>
+      res.json()
+    );
+    console.log(fileInfo);
+    if (!fileInfo) {
+      console.warn(`File with ID ${fileId} not found.`);
+      return;
+    }
+    if (fileInfo.type === "chemical/x-pdb") {
+      const url = `/api/proxy/files/${fileId}/download/`;
+      const molName = fileInfo.annotation || fileInfo.job_param_name;
+      await fetchMolecule(url, molName);
+    } else if (fileInfo.type === "application/CCP4-mtz-map") {
+      const url = `/api/proxy/files/${fileId}/download/`;
+      const molName = fileInfo.name || fileInfo.job_param_name;
+      const isDiffMap = fileInfo.sub_type !== 1 || false;
+      await fetchMap(url, molName, isDiffMap);
+    }
+  };
   const fetchMolecule = async (url: string, molName: string) => {
     if (!glRef.current) return;
     const newMolecule = new MoorhenMolecule(
@@ -140,12 +175,14 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   };
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
-      <MoorhenContainer
-        {...collectedProps}
-        setMoorhenDimensions={setMoorhenDimensions}
-      />
-    </div>
+    store && (
+      <div style={{ width: "100%", height: "100%" }}>
+        <MoorhenContainer
+          {...collectedProps}
+          setMoorhenDimensions={setMoorhenDimensions}
+        />
+      </div>
+    )
   );
 };
 
