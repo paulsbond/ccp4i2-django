@@ -147,11 +147,15 @@ export const FileMenu: React.FC = () => {
     [file]
   );
 
+  const handleOpenInNewWindow = (path: string) => {
+    window.open(path, "_blank", "noopener,noreferrer");
+  };
+
   const handlePreviewFileInMoorhen = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
-        router.push(`/moorhen-page/file-by-id/${file.id}`);
+        handleOpenInNewWindow(`/moorhen-page/file-by-id/${file.id}`);
         setFileMenuAnchorEl(null);
       }
     },
