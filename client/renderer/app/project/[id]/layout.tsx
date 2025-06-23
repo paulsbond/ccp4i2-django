@@ -52,69 +52,70 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
             width: "100%",
           }}
         >
-          <CootProvider>
-            <FilePreviewContextProvider>
-              <JobMenuContextProvider>
-                <FileMenuContextProvider>
-                  <MenuBar />
-                  <PanelGroup direction="horizontal">
-                    <Panel defaultSize={30} minSize={20}>
-                      <Paper
-                        sx={{ overflowY: "auto", height: "calc(100vh - 8rem)" }}
-                      >
-                        <Tabs
-                          value={tabValue}
-                          onChange={handleTabChange}
-                          variant="fullWidth"
-                        >
-                          <Tab value={0} label="Job list" />
-                          {/*<Tab value={1} label="Job grid" />*/}
-                          <Tab value={2} label="Project directory" />
-                        </Tabs>
-                        {tabValue == 0 && project && (
-                          <ClassicJobList projectId={project.id} />
-                        )}
-                        {/*tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />*/}
-                        {tabValue == 2 && project && (
-                          <CCP4i2DirectoryViewer projectId={project.id} />
-                        )}
-                      </Paper>
-                    </Panel>
-                    <PanelResizeHandle
-                      style={{
-                        width: 10,
-                        backgroundColor: "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "col-resize",
+          <FilePreviewContextProvider>
+            <JobMenuContextProvider>
+              <FileMenuContextProvider>
+                <MenuBar />
+                <PanelGroup direction="horizontal">
+                  <Panel defaultSize={30} minSize={20}>
+                    <Paper
+                      sx={{
+                        overflowY: "auto",
+                        height: "calc(100vh - 8rem)",
                       }}
                     >
-                      <div
-                        style={{
-                          width: 4,
-                          height: "50%",
-                          backgroundColor: "gray",
-                          borderRadius: 2,
-                        }}
-                      />
-                    </PanelResizeHandle>
-                    <Panel
-                      defaultSize={70}
-                      minSize={20}
-                      onResize={(size) =>
-                        setJobPanelSize && setJobPanelSize(size)
-                      }
-                    >
-                      {props.children}
-                    </Panel>
-                  </PanelGroup>
-                </FileMenuContextProvider>
-              </JobMenuContextProvider>
-            </FilePreviewContextProvider>
-          </CootProvider>
+                      <Tabs
+                        value={tabValue}
+                        onChange={handleTabChange}
+                        variant="fullWidth"
+                      >
+                        <Tab value={0} label="Job list" />
+                        {/*<Tab value={1} label="Job grid" />*/}
+                        <Tab value={2} label="Project directory" />
+                      </Tabs>
+                      {tabValue == 0 && project && (
+                        <ClassicJobList projectId={project.id} />
+                      )}
+                      {/*tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />*/}
+                      {tabValue == 2 && project && (
+                        <CCP4i2DirectoryViewer projectId={project.id} />
+                      )}
+                    </Paper>
+                  </Panel>
+                  <PanelResizeHandle
+                    style={{
+                      width: 10,
+                      backgroundColor: "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "col-resize",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 4,
+                        height: "50%",
+                        backgroundColor: "gray",
+                        borderRadius: 2,
+                      }}
+                    />
+                  </PanelResizeHandle>
+                  <Panel
+                    defaultSize={70}
+                    minSize={20}
+                    onResize={(size) =>
+                      setJobPanelSize && setJobPanelSize(size)
+                    }
+                  >
+                    {props.children}
+                  </Panel>
+                </PanelGroup>
+              </FileMenuContextProvider>
+            </JobMenuContextProvider>
+          </FilePreviewContextProvider>
         </Stack>
-      </NavigationShortcutsProvider>{" "}
+      </NavigationShortcutsProvider>
     </DraggableContext>
   );
 }

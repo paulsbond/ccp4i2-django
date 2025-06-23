@@ -10,8 +10,8 @@ import {
 import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
 import {
   RefObject,
-  use,
   useCallback,
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -19,6 +19,7 @@ import {
 import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
+import { CCP4i2Context } from "../app-context";
 
 export interface MoorhenWrapperProps {
   fileIds?: number[];
@@ -39,6 +40,13 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     (state: moorhen.State) => state.generalStates.cootInitialized
   );
   const store = useStore();
+  const { cootModule } = useContext(CCP4i2Context);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).CCP4Module = cootModule;
+    }
+  }, [cootModule]);
 
   const monomerLibraryPath =
     "https://raw.githubusercontent.com/MRC-LMB-ComputationalStructuralBiology/monomers/master/";
@@ -51,6 +59,13 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     (state: moorhen.State) => state.sceneSettings.defaultBondSmoothness
   );
 
+  const [windowWidth, setWindowWidth] = useState<number>(window.innerWidth);
+  const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
+  const setMoorhenDimensions = useCallback(() => {
+    const result = [windowWidth, windowHeight - 75];
+    return result;
+  }, [windowWidth, windowHeight]);
+
   const collectedProps = {
     glRef,
     timeCapsuleRef,
@@ -60,13 +75,8 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     activeMapRef,
     lastHoveredAtom,
     prevActiveMoleculeRef,
+    setMoorhenDimensions,
   };
-  const [windowWidth, setWindowWidth] = useState<number>(window.innerWidth);
-  const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
-  const setMoorhenDimensions = useCallback(() => {
-    const result = [windowWidth, windowHeight - 75];
-    return result;
-  }, [windowWidth, windowHeight]);
 
   useEffect(() => {
     //What to do when the component mounts
@@ -74,27 +84,30 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     window.addEventListener("resize", () => {
       setWindowWidth(window.innerWidth);
       setWindowHeight(window.innerHeight - 75);
+      if (glRef.current) {
+        glRef.current.drawScene();
+      }
       console.log("Window resized");
     });
     return () => {
-      //What to do when the component unmounts
-      commandCentre.current?.close();
       console.log("MoorhenWrapper unmounted");
       window.removeEventListener("resize", () => {
         setWindowWidth(window.innerWidth);
         setWindowHeight(window.innerHeight - 75);
+        if (glRef.current) {
+          glRef.current.drawScene();
+        }
       });
     };
   }, []);
 
   useEffect(() => {
-    if (fileIds && cootInitialized) {
+    if (fileIds && cootInitialized && cootModule) {
       fileIds.forEach((fileId) => {
         fetchFile(fileId);
       });
-      //fetchMolecule(`/api/proxy/files/${fileId}/download/`, `file-${fileId}`);
     }
-  }, [fileIds, cootInitialized]);
+  }, [fileIds, cootInitialized, cootModule]);
 
   useEffect(() => {
     if (cootInitialized) {
@@ -124,6 +137,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       await fetchMap(url, molName, isDiffMap);
     }
   };
+
   const fetchMolecule = async (url: string, molName: string) => {
     if (!glRef.current) return;
     const newMolecule = new MoorhenMolecule(
@@ -139,9 +153,10 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       if (newMolecule.molNo === -1) {
         throw new Error("Cannot read the fetched molecule...");
       }
-      await newMolecule.fetchIfDirtyAndDraw("CBs");
+      await newMolecule.addRepresentation("CBs", "/*/*/*/*");
       await newMolecule.addRepresentation("ligands", "/*/*/*/*");
       await newMolecule.centreOn("/*/*/*/*", false, true);
+
       dispatch(addMolecule(newMolecule));
       glRef.current.drawScene();
     } catch (err) {
@@ -162,7 +177,12 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       store
     );
     try {
-      await newMap.loadToCootFromMapURL(url, mapName, isDiffMap);
+      await newMap.loadToCootFromMtzURL(url, mapName, {
+        F: "F",
+        PHI: "PHI",
+        useWeight: false,
+        isDifference: isDiffMap,
+      });
       if (newMap.molNo === -1)
         throw new Error("Cannot read the fetched map...");
       dispatch(addMap(newMap));
@@ -175,12 +195,10 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   };
 
   return (
-    store && (
+    store &&
+    cootModule && (
       <div style={{ width: "100%", height: "100%" }}>
-        <MoorhenContainer
-          {...collectedProps}
-          setMoorhenDimensions={setMoorhenDimensions}
-        />
+        <MoorhenContainer {...collectedProps} />
       </div>
     )
   );

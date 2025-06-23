@@ -1,5 +1,7 @@
 "use client";
 
+import MoorhenLoader from "../../components/client-side-moorhen-loader";
+
 export default function MoorhenPage() {
-  return <span>Moorhen page</span>;
+  return <MoorhenLoader fileIds={[]} />;
 }
