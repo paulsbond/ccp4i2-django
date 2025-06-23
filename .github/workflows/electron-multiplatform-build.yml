@@ -3,10 +3,10 @@ name: Electron Multiplatform Build
 on:
   push:
     branches:
-      - electron-vite
+      - main
   pull_request:
     branches:
-      - electron-vite
+      - main
 
 jobs:
   build-mac:

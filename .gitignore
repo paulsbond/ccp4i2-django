@@ -17,3 +17,4 @@ client/public/moorhen64.wasm
 client/public/robots.txt
 client/tsconfig.tsbuildinfo
 server/ccp4x/staticfiles
+server/ccp4x/i2run/tmp*

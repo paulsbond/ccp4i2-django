@@ -1,22 +1,22 @@
 "use client";
 import { use, useContext, useEffect, useMemo, useState } from "react";
 import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
-import { useApi } from "../../../../api";
+import { useApi } from "../../../../../api";
 import { Editor } from "@monaco-editor/react";
-import { JobHeader } from "../../../../components/job-header";
-import { CCP4i2ReportXMLView } from "../../../../components/report/CCP4i2ReportXMLView";
-import { CCP4i2Context } from "../../../../app-context";
-import { TaskContainer } from "../../../../components/task/task-container";
+import { JobHeader } from "../../../../../components/job-header";
+import { CCP4i2ReportXMLView } from "../../../../../components/report/CCP4i2ReportXMLView";
+import { CCP4i2Context } from "../../../../../app-context";
+import { TaskContainer } from "../../../../../providers/task-container";
 import {
   prettifyXml,
   useJob,
   usePrevious,
   useProject,
-} from "../../../../utils";
-import ToolBar from "../../../../components/tool-bar";
-import { JobCommentEditor } from "../../../../components/job-comment-editor";
-import { JobMenu } from "../../../../components/job-context-menu";
-import { JobDirectoryView } from "../../../../components/job_directory_view";
+} from "../../../../../utils";
+import ToolBar from "../../../../../components/tool-bar";
+import { JobCommentEditor } from "../../../../../components/job-comment-editor";
+import { JobMenu } from "../../../../../providers/job-context-menu";
+import { JobDirectoryView } from "../../../../../components/job_directory_view";
 import useSWR from "swr";
 import $ from "jquery";
 

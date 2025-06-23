@@ -66,7 +66,7 @@ MEDIA_ROOT = USER_DIR / "files"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": USER_DIR / "db.sqlite3",
+        "NAME": os.environ.get("CCP4I2_DB_FILE", USER_DIR / "db.sqlite3"),
     }
 }
 

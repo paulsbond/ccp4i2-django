@@ -2,17 +2,19 @@
 import { PropsWithChildren, use, useContext, useEffect, useState } from "react";
 import { Paper, Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { CCP4i2Context } from "../../app-context";
-import { useApi } from "../../api";
-import { CCP4i2DirectoryViewer } from "../../components/directory_viewer";
-import { useProject } from "../../utils";
-import { ClassicJobList } from "../../components/classic-jobs-list";
-import { DraggableContext } from "../../components/draggable-context";
-import { CootProvider } from "../../components/coot-provider";
-import { FilePreviewContextProvider } from "../../components/file-preview-context";
-import { Job } from "../../models";
-import { JobMenuContextProvider } from "../../components/job-context-menu";
-import { FileMenuContextProvider } from "../../components/file-context-menu";
+import { CCP4i2Context } from "../../../app-context";
+import { useApi } from "../../../api";
+import { CCP4i2DirectoryViewer } from "../../../components/directory_viewer";
+import { useProject } from "../../../utils";
+import { ClassicJobList } from "../../../components/classic-jobs-list";
+import { DraggableContext } from "../../../providers/draggable-context";
+import { CootProvider } from "../../../providers/coot-provider";
+import { FilePreviewContextProvider } from "../../../providers/file-preview-context";
+import { Job } from "../../../types/models";
+import { JobMenuContextProvider } from "../../../providers/job-context-menu";
+import { FileMenuContextProvider } from "../../../providers/file-context-menu";
+import MenuBar from "../../../components/menu-bar";
+import { NavigationShortcutsProvider } from "../../../providers/navigation-shortcuts-provider";
 
 export interface ProjectLayoutProps extends PropsWithChildren {
   params: Promise<{ id: string; jobid: string }>;
@@ -41,18 +43,26 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
 
   return (
     <DraggableContext>
-      <Stack
-        spacing={2}
-        sx={{ height: "calc(100vh - 4rem)", paddingTop: "1rem", width: "100%" }}
-      >
-        <CootProvider>
+      <NavigationShortcutsProvider>
+        <Stack
+          spacing={2}
+          sx={{
+            height: "calc(100vh - 4rem)",
+            paddingTop: "1rem",
+            width: "100%",
+          }}
+        >
           <FilePreviewContextProvider>
             <JobMenuContextProvider>
               <FileMenuContextProvider>
+                <MenuBar />
                 <PanelGroup direction="horizontal">
                   <Panel defaultSize={30} minSize={20}>
                     <Paper
-                      sx={{ overflowY: "auto", height: "calc(100vh - 8rem)" }}
+                      sx={{
+                        overflowY: "auto",
+                        height: "calc(100vh - 8rem)",
+                      }}
                     >
                       <Tabs
                         value={tabValue}
@@ -104,8 +114,8 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
               </FileMenuContextProvider>
             </JobMenuContextProvider>
           </FilePreviewContextProvider>
-        </CootProvider>
-      </Stack>
+        </Stack>
+      </NavigationShortcutsProvider>
     </DraggableContext>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 import { Badge, Container, Skeleton, Stack } from "@mui/material";
-import ProjectsToolbar from "./components/projects-toolbar";
-import ProjectsTable from "./components/projects-table";
-import { useApi } from "./api";
-import { Project } from "./models";
+import ProjectsToolbar from "../components/projects-toolbar";
+import ProjectsTable from "../components/projects-table";
+import { useApi } from "../api";
+import { Project } from "../types/models";
 
 export default function ProjectsPage() {
   const api = useApi();

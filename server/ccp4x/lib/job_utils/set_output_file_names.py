@@ -15,6 +15,7 @@ def set_output_file_names(
     projectId: str = None,
     jobNumber: str = None,
     force: bool = True,
+    fancy: bool = False,
 ):
     """
     Sets the output file names for a given job in a CCP4 project.
@@ -31,7 +32,11 @@ def set_output_file_names(
         *[f"job_{numberElement}" for numberElement in jobNumber.split(".")]
     )
     the_job = models.Job.objects.get(project__uuid=projectId, number=jobNumber)
-    jobName = f"{jobNumber}_{slugify(the_job.project.name)}_{the_job.task_name}_"
+    jobName = (
+        f"{jobNumber}_{slugify(the_job.project.name)}_{the_job.task_name}_"
+        if fancy
+        else ""
+    )
     dataList = container.outputData.dataOrder()
     for objectName in dataList:
         try:
