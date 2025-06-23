@@ -251,7 +251,7 @@ export const JobMenu: React.FC = () => {
             <Delete /> Set status
           </MenuItem>
           <MenuItem
-            key="Status"
+            key="Terminal"
             disabled={false}
             onClick={handleTerminalInJobDirectory}
           >
