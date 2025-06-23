@@ -140,8 +140,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
 
   const fetchMolecule = async (url: string, molName: string) => {
     if (!glRef.current) return;
+    if (!commandCentre.current) return;
     const newMolecule = new MoorhenMolecule(
-      commandCentre,
+      commandCentre as RefObject<moorhen.CommandCentre>,
       glRef as RefObject<webGL.MGWebGL>,
       store,
       monomerLibraryPath
@@ -171,8 +172,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     isDiffMap: boolean = false
   ) => {
     if (!glRef.current) return;
+    if (!commandCentre.current) return;
     const newMap = new MoorhenMap(
-      commandCentre,
+      commandCentre as RefObject<moorhen.CommandCentre>,
       glRef as RefObject<webGL.MGWebGL>,
       store
     );

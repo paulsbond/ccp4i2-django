@@ -28,7 +28,7 @@
     "jquery": "^3.7.1",
     "moorhen": "file:moorhen-0.21.1.tgz",
     "next": "latest",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
     "url": "^0.11.4"
   },
@@ -48,8 +48,8 @@
     "@types/express": "^5.0.1",
     "@types/jquery": "^3.5.32",
     "@types/node": "^22.8.7",
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
     "@types/xml2js": "^0.4.14",
     "chart.js": "^4.4.8",
     "chartjs-plugin-annotation": "^3.1.0",
@@ -59,7 +59,7 @@
     "electron-builder": "^26.0.12",
     "install": "^0.13.0",
     "npm": "^11.3.0",
-    "react": "18.3.1",
+    "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-resizable-panels": "^2.1.7",
     "swr": "^2.3.3",
@@ -122,6 +122,6 @@
     }
   },
   "overrides": {
-    "react": "18.3.1"
+    "react": "19.1.0"
   }
 }

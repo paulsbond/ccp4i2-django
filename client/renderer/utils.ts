@@ -466,7 +466,7 @@ export const validationColor = (fieldErrors: any): string => {
  * @returns {T | undefined} - The previous value of the input, or undefined if there is no previous value.
  */
 export const usePrevious = <T>(value: T): T | undefined => {
-  const ref = useRef<T | undefined>();
+  const ref = useRef<T | undefined>(undefined);
 
   useEffect(() => {
     ref.current = value;
