@@ -19,7 +19,7 @@ import {
 import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
-import { CCP4i2Context } from "../app-context";
+import { CCP4i2Context } from "../../app-context";
 
 export interface MoorhenWrapperProps {
   fileIds?: number[];
