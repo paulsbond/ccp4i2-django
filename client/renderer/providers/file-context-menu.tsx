@@ -125,11 +125,11 @@ export const FileMenu: React.FC = () => {
     [file]
   );
 
-  const handlePreviewFileInHklview = useCallback(
+  const handlePreviewFileInViewHKL = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
-        api.post<any>(`files/${file.id}/preview/`, { viewer: "hklview" });
+        api.post<any>(`files/${file.id}/preview/`, { viewer: "viewhkl" });
         setFileMenuAnchorEl(null);
       }
     },
@@ -212,8 +212,8 @@ export const FileMenu: React.FC = () => {
           </MenuItem>
         )}
       {file && file.type.startsWith("application/CCP4-mtz") && (
-        <MenuItem key="HKLVIEW" onClick={handlePreviewFileInHklview}>
-          <Preview /> HKLVIEW
+        <MenuItem key="ViewHKL" onClick={handlePreviewFileInViewHKL}>
+          <Preview /> ViewHKL
         </MenuItem>
       )}
       {file && (
