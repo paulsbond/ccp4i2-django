@@ -10,7 +10,13 @@
   "license": "BSD-3-Clause",
   "description": "CCP4i2 Electron application",
   "scripts": {
-    "copy-assets": "copyfiles -u 2 node_modules/moorhen/public/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/**/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/pixmaps/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/tutorials/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/* renderer/",
+    "copy-moorhen-base": "copyfiles -u 2 node_modules/moorhen/public/* renderer/",
+    "copy-moorhen-dirs": "copyfiles -u 2 node_modules/moorhen/public/**/* renderer/",
+    "copy-moorhen-pixmaps": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/pixmaps/* renderer/",
+    "copy-moorhen-tutorials": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/tutorials/* renderer/",
+    "copy-moorhen-monomers-base": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/* renderer/",
+    "copy-moorhen-monomers": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/**/* renderer/",
+    "copy-assets": "npm run copy-moorhen-base && npm run copy-moorhen-dirs && npm run copy-moorhen-pixmaps && npm run copy-moorhen-tutorials && npm run copy-moorhen-monomers-base && npm run copy-moorhen-monomers",
     "build": "npm run copy-assets && next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
     "start": "npm run copy-assets && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts&& electron dist/main.js",
     "package-mac": "npm run build && electron-builder",
@@ -20,11 +26,8 @@
     "package-linux-all": "npm run build && electron-builder --linux AppImage --x64 --arm64"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.4.1",
-    "detect-port": "^2.1.0",
     "electron-store": "^9.0.0",
     "express": "^5.1.0",
-    "http-proxy-middleware": "^3.0.5",
     "jquery": "^3.7.1",
     "moorhen": "file:moorhen-0.21.1.tgz",
     "next": "latest",
@@ -33,6 +36,9 @@
     "url": "^0.11.4"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "detect-port": "^2.1.0",
+    "http-proxy-middleware": "^3.0.5",
     "@dnd-kit/core": "^6.3.1",
     "@emotion/cache": "^11.13.1",
     "@emotion/react": "^11.13.3",
