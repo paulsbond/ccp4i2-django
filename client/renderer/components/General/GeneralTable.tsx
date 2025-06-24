@@ -51,6 +51,7 @@ export interface GeneralTableProps {
   sx?: SxProps | undefined;
   tableProps?: TableProps | undefined;
   tableRowProps?: TableRowProps | undefined;
+  tableHeadProps?: TableRowProps | undefined;
   tableCellProps?: TableCellProps | undefined;
   title?: ReactNode | string | null;
   locked?: boolean | undefined;
@@ -519,7 +520,7 @@ export const GeneralTable = (props: GeneralTableProps) => {
       )}
       <Table {...props.tableProps}>
         <TableHead>
-          <TableRow {...props.tableRowProps}>
+          <TableRow {...(props.tableHeadProps || props.tableRowProps)}>
             {selectedColumns?.map((column, iColumn) => (
               <TableCell
                 variant="head"
@@ -582,16 +583,7 @@ export const GeneralTable = (props: GeneralTableProps) => {
                   }}
                 >
                   {selectedColumns?.map((column, iColumn) => (
-                    <TableCell
-                      sx={{
-                        margin: 0,
-                        marginBlockStart: "0px",
-                        marginBlockEnd: "0px",
-                        padding: "0.5rem",
-                      }}
-                      {...props.tableCellProps}
-                      key={iColumn}
-                    >
+                    <TableCell {...props.tableCellProps} key={iColumn}>
                       {Object.keys(column).includes("render")
                         ? (
                             column.render as (

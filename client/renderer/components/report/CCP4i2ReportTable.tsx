@@ -78,10 +78,9 @@ export const CCP4i2ReportTable: React.FC<CCP4i2ReportElementProps> = (
       <GeneralTable
         columns={columns}
         dataSource={data}
-        tableRowProps={{ sx: { p: 0.5 } }}
         size="small"
         pagination={false}
-        sx={{ mx: 6, my: 0, py: 0 }}
+        sx={{ mx: 6, my: "0.5rem", py: 0 }}
       />
     </>
   );
