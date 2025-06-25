@@ -118,9 +118,16 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     param_object.setFullPath(str(imported_file_path))
     param_object.loadFile()
     param_object.setContentFlag(reset=True)
-    logger.error(
-        "Content flag is %s %s", param_object.contentFlag, int(param_object.contentFlag)
-    )
+
+    # Note deliberate explicit for != None instead of is not None
+    try:
+        subType = int(param_object.subType)
+    except Exception:
+        subType = 1
+    try:
+        contentFlag = int(param_object.contentFlag)
+    except Exception:
+        contentFlag = 0
 
     try:
         type = models.FileType.objects.get(name=param_object.QUALIFIERS["mimeTypeName"])
@@ -142,18 +149,9 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         type=type,
         annotation=f"Imported from {files[0].name}",
         job_param_name=job_param_name,
+        sub_type=subType,
+        content=contentFlag,
     )
-    # Note deliberate explicit for != None instead of is not None
-    try:
-        new_file.sub_type = int(param_object.subType)
-    except Exception:
-        new_file.sub_type = 1
-    try:
-        contentFlag = int(param_object.contentFlag)
-        new_file.content = contentFlag
-    except Exception:
-        new_file.content = 0
-        logging.error("Unsettable contentFlag on %s", param_object.objectName())
     new_file.save()
 
     new_file_import = models.FileImport(
