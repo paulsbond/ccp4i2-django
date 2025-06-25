@@ -135,6 +135,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       const molName = fileInfo.name || fileInfo.job_param_name;
       const isDiffMap = fileInfo.sub_type !== 1 || false;
       await fetchMap(url, molName, isDiffMap);
+    } else if (fileInfo.type === "application/refmac-dictionary") {
+      const url = `/api/proxy/files/${fileId}/download/`;
+      await fetchDict(url);
     }
   };
 
@@ -194,6 +197,57 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       console.warn(`Cannot fetch map from ${url}`);
     }
     return newMap;
+  };
+
+  const fetchDict = async (
+    url: string,
+    newMolecules: moorhen.Molecule[] = []
+  ) => {
+    if (!glRef.current) return;
+    if (!commandCentre.current) return;
+    const fileResponse = await fetch(url);
+    const fileContent = await fileResponse.text();
+    await commandCentre.current.cootCommand(
+      {
+        returnType: "status",
+        command: "read_dictionary_string",
+        commandArgs: [fileContent, -999999],
+        changesMolecules: [],
+      },
+      false
+    );
+    const instanceName = "LIG";
+    const result = (await commandCentre.current.cootCommand(
+      {
+        returnType: "status",
+        command: "get_monomer_and_position_at",
+        commandArgs: [
+          instanceName,
+          -999999, // This is a placeholder for the monomer ID
+          ...glRef.current.origin.map((coord) => -coord),
+        ],
+      },
+      true
+    )) as moorhen.WorkerResponse<number>;
+    if (result.data.result.status === "Completed") {
+      const newMolecule = new MoorhenMolecule(
+        commandCentre as RefObject<moorhen.CommandCentre>,
+        glRef as RefObject<webGL.MGWebGL>,
+        store,
+        monomerLibraryPath
+      );
+      newMolecule.molNo = result.data.result.result;
+      newMolecule.name = instanceName;
+      newMolecule.setBackgroundColour(backgroundColor);
+      newMolecule.defaultBondOptions.smoothness = defaultBondSmoothness;
+      newMolecule.coordsFormat = "mmcif";
+      await Promise.all([
+        newMolecule.fetchDefaultColourRules(),
+        newMolecule.addDict(fileContent),
+      ]);
+      await newMolecule.fetchIfDirtyAndDraw("CBs");
+      dispatch(addMolecule(newMolecule));
+    }
   };
 
   return (

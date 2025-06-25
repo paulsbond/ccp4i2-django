@@ -206,7 +206,11 @@ export const FileMenu: React.FC = () => {
           </MenuItem>
         )}
       {file &&
-        ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(file.type) && (
+        [
+          "chemical/x-pdb",
+          "application/CCP4-mtz-map",
+          "application/refmac-dictionary",
+        ].includes(file.type) && (
           <MenuItem key="Moorhen" onClick={handlePreviewFileInMoorhen}>
             <Preview /> Moorhen
           </MenuItem>
