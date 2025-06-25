@@ -29,7 +29,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     item._value || ""
   );
 
-  const { setParameter } = useJob(job.id);
+  const { setParameter, setParameterNoMutate } = useJob(job.id);
 
   const changeCountdown = useRef<any | null>(null);
 
@@ -104,7 +104,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         changeCountdown.current = null;
       }
       changeCountdown.current = setTimeout(() => {
-        console.log("sending value", valueToSend);
+        //console.log("sending value", valueToSend);
         sendExplicitValue(valueToSend);
         changeCountdown.current = null;
       }, 500);
@@ -122,7 +122,9 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         value: explicitValue,
       };
       try {
-        const result: any = await setParameter(setParameterArg);
+        const result: any = props.suppressMutations
+          ? await setParameterNoMutate(setParameterArg)
+          : await setParameter(setParameterArg);
         if (result.status === "Failed") {
           setValue(item._value);
         } else if (props.onParameterChangeSuccess) {

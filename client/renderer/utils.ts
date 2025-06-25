@@ -260,6 +260,22 @@ export const useJob = (jobId: number | null | undefined) => {
       [job, mutateContainer, mutateValidation, mutateParams_xml]
     ),
 
+    setParameterNoMutate: useCallback(
+      async (setParameterArg: SetParameterArg) => {
+        if (job?.status == 1) {
+          const result = await api.post<Job>(
+            `jobs/${job.id}/set_parameter`,
+            setParameterArg
+          );
+          return result;
+        } else
+          console.log(
+            "Alert attempting to edit interface of task not in pending state"
+          );
+      },
+      [job]
+    ),
+
     getTaskItem: useMemo(() => {
       return (param_name: string) => {
         if (param_name?.length == 0) return { item: null, value: null };

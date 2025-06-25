@@ -158,6 +158,7 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
             open={Boolean(detailItem)}
             onClose={() => {
               setDetailItem(null);
+              mutateContainer();
             }}
             fullWidth
             maxWidth={false}

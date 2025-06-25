@@ -44,7 +44,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
     return { objectPath: null };
   }, [item]);
 
-  const { setParameter } = useJob(job.id);
+  const { setParameter, setParameterNoMutate } = useJob(job.id);
 
   const enumerators = useMemo<(string | number)[]>(() => {
     const result = qualifiers?.enumerators?.map((element: any) => {
@@ -92,7 +92,9 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
         console.log({ setParameterArg });
         setInFlight(true);
         try {
-          const result: any = await setParameter(setParameterArg);
+          const result: any = props.suppressMutations
+            ? await setParameterNoMutate(setParameterArg)
+            : await setParameter(setParameterArg);
           if (result?.status === "Failed") {
             setValue(item._value);
           } else if (onParameterChangeSuccess) {
