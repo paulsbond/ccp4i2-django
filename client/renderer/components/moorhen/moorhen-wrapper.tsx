@@ -245,7 +245,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         newMolecule.fetchDefaultColourRules(),
         newMolecule.addDict(fileContent),
       ]);
-      await newMolecule.fetchIfDirtyAndDraw("CBs");
+      newMolecule.centreAndAlignViewOn("/*/*/*/*", false, 100);
+      glRef.current.drawScene();
+      await newMolecule.fetchIfDirtyAndDraw("ligands");
       dispatch(addMolecule(newMolecule));
     }
   };
