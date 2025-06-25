@@ -39,6 +39,7 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
   disabled?: boolean | (() => boolean);
   qualifiers?: any;
   onParameterChangeSuccess?: (updatedItem: any) => void;
+  suppressMutations?: boolean;
 }
 
 /**
