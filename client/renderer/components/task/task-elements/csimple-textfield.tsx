@@ -103,7 +103,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         clearTimeout(changeCountdown.current);
         changeCountdown.current = null;
       }
-      changeCountdown.current = setTimeout((valueToSend: any) => {
+      changeCountdown.current = setTimeout(() => {
+        console.log("sending value", valueToSend);
         sendExplicitValue(valueToSend);
         changeCountdown.current = null;
       }, 500);
