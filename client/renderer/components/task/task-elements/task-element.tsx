@@ -168,7 +168,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
           <CMiniMtzDataFileElement
             key={the_uuid}
             {...props}
-            qualifiers={{ downloadModes: ["ebiSFs"] }}
+            qualifiers={{ downloadModes: ["ebiSFs"], ...qualifiers }}
           />
         );
       case "CList":
