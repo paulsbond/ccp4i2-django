@@ -267,6 +267,8 @@ export const useJob = (jobId: number | null | undefined) => {
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
+          await mutateParams_xml();
+          await mutateValidation();
           return result;
         } else
           console.log(
