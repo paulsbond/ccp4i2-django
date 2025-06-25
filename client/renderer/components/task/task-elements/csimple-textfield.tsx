@@ -13,6 +13,7 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../../../providers/task-container";
+import { usePopcorn } from "../../../providers/popcorn-provider";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
@@ -32,6 +33,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   const { setParameter, setParameterNoMutate } = useJob(job.id);
 
   const changeCountdown = useRef<any | null>(null);
+
+  const { setMessage } = usePopcorn();
 
   useEffect(() => {
     return () => {
@@ -126,11 +129,13 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
           ? await setParameterNoMutate(setParameterArg)
           : await setParameter(setParameterArg);
         if (result.status === "Failed") {
+          setMessage("Unacceptable new value provided");
           setValue(item._value);
         } else if (props.onParameterChangeSuccess) {
           await props.onParameterChangeSuccess(result.updated_item);
         }
       } catch (err) {
+        setMessage(err);
         console.log("Here's an", err);
       } finally {
         setInFlight(false);

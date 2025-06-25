@@ -20,6 +20,7 @@ import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../../../providers/task-container";
 import { get } from "jquery";
 import { on } from "events";
+import { usePopcorn } from "../../../providers/popcorn-provider";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
@@ -30,7 +31,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   const { item } = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
   const [value, setValue] = useState<string | number>(item._value);
-
+  const { setMessage } = usePopcorn();
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
   const [validationAnchor, setValidationAnchor] = useState<HTMLElement | null>(
     null
@@ -96,11 +97,13 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
             ? await setParameterNoMutate(setParameterArg)
             : await setParameter(setParameterArg);
           if (result?.status === "Failed") {
+            setMessage("Unacceptable new value provided");
             setValue(item._value);
           } else if (onParameterChangeSuccess) {
             await onParameterChangeSuccess(result.updated_item);
           }
         } catch (err) {
+          setMessage(err);
           alert(err);
         } finally {
           setInFlight(false);
