@@ -25,10 +25,9 @@
     "package-linux-x64": "npm run build && electron-builder --linux AppImage --x64",
     "package-linux-arm64": "npm run build && electron-builder --linux AppImage --arm64",
     "package-linux-all": "npm run build && electron-builder --linux AppImage --x64 --arm64",
-    "postinstall": "@electron/rebuild"
+    "postinstall": "electron-rebuild"
   },
   "dependencies": {
-    "@electron/rebuild": "^4.0.1",
     "@rdkit/rdkit": "^2025.3.3-1.0.0",
     "electron-store": "^9.0.0",
     "express": "^5.1.0",
@@ -66,6 +65,7 @@
     "detect-port": "^2.1.0",
     "electron": "latest",
     "electron-builder": "^26.0.12",
+    "electron-rebuild": "^3.2.9",
     "http-proxy-middleware": "^3.0.5",
     "install": "^0.13.0",
     "npm": "^11.3.0",
