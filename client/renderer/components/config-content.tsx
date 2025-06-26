@@ -247,18 +247,16 @@ export const ConfigContent: React.FC = () => {
                 >
                   {requirementsExist ? <Check /> : <Cancel />}
                 </TableCell>
-                {!requirementsExist && (
-                  <TableCell colSpan={2}>
-                    <Button
-                      component="label"
-                      onClick={onInstallRequirements}
-                      variant="contained"
-                      sx={{ minWidth: 320, p: 0, m: 0 }}
-                    >
-                      Install
-                    </Button>
-                  </TableCell>
-                )}
+                <TableCell colSpan={2}>
+                  <Button
+                    component="label"
+                    onClick={onInstallRequirements}
+                    variant="contained"
+                    sx={{ minWidth: 320, p: 0, m: 0 }}
+                  >
+                    Install
+                  </Button>
+                </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell variant="head">Dev. mode</TableCell>
