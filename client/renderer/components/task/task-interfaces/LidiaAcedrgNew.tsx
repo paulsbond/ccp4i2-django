@@ -4,6 +4,8 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
+import { Grid2 } from "@mui/material";
+import { RDKitView } from "../../rdkit-view";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -21,14 +23,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="MOLSMILESORSKETCH"
             qualifiers={{ guiLabel: "Ligand geometry provided as" }}
           />
-          <CCP4i2TaskElement
-            {...props}
-            itemName="SMILESIN"
-            qualifiers={{ guiLabel: "Smiles", guiMode: "multiLine" }}
-            visibility={() => {
-              return MOLSMILESORSKETCH === "SMILES";
-            }}
-          />
+          <Grid2 container>
+            <CCP4i2TaskElement
+              {...props}
+              itemName="SMILESIN"
+              qualifiers={{ guiLabel: "Smiles", guiMode: "multiLine" }}
+              visibility={() => {
+                return MOLSMILESORSKETCH === "SMILES";
+              }}
+            />
+            <RDKitView smiles={getTaskItem("SMILESIN").value || ""} />
+          </Grid2>
           <CCP4i2TaskElement
             {...props}
             itemName="MOLIN"
