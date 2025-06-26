@@ -21,11 +21,14 @@ logger = logging.getLogger(f"ccp4x:{__name__}")
 
 def simple_failed_report(reason: str, task_name: str):
     return ET.fromstring(
-        f"""<html>
-           <body>
-                Failed making report for task {task_name} due to {reason}
-           </body>
-        </html>"""
+        f"""<CCP4i2Report{task_name}_report xmlns:ns0="http://www.ccp4.ac.uk/ccp4ns" key="{task_name}_report_0" class="" style="overflow:auto;">
+  <CCP4i2ReportTitle key="Title_112" class="" style="" title1="{reason}" title2="{reason}"/>
+  <CCP4i2ReportDiv key="Div_0" class="" style="width:100%;border-width: 1px; border-color: black; clear:both; margin:0px; padding:0px;">
+      <CCP4i2ReportGeneric key="Generic_1" class="" style="">
+        <p style="font-size: 14">No report because: <em>{reason}</em></p>
+      </CCP4i2ReportGeneric>
+  </CCP4i2ReportDiv>
+</CCP4i2Report{task_name}_report>"""
     )
 
 

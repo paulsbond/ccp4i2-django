@@ -83,6 +83,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                     guiLabel: key,
                     onlyEnumerators: true,
                   }}
+                  suppressMutations={true}
                 />
               </Grid2>
             ))}
@@ -96,6 +97,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   qualifiers={{
                     guiLabel: key,
                   }}
+                  suppressMutations={true}
                 />
               </Grid2>
             ))}
@@ -109,6 +111,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   guiLabel: key,
                   guiMode: "multiLine",
                 }}
+                suppressMutations={true}
               />
             </Grid2>
           ))}
@@ -131,6 +134,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   ).then((response) => response.json());
                   setSEQUENCEFromSEQIN(digest, annotation);
                 }}
+                suppressMutations={true}
               />
             </Grid2>
           ))}

@@ -33,11 +33,11 @@ def preview_file(viewer: str = None, file_path: pathlib.Path = None):
             start_new_session=True,
         )
         return {"status": "Success"}
-    if viewer == "hklview":
+    if viewer == "viewhkl":
         # Here should dial into mechanism to use the user-specified path to coot as appropriate.
         # Also suspect will need diverse environment variables to be set for this to work.
         subprocess.Popen(
-            ["hklview", str(file_path)],
+            ["viewhkl", str(file_path)],
             start_new_session=True,
         )
         return {"status": "Success"}

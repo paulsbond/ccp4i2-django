@@ -10,7 +10,14 @@
   "license": "BSD-3-Clause",
   "description": "CCP4i2 Electron application",
   "scripts": {
-    "copy-assets": "copyfiles -u 2 node_modules/moorhen/public/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/**/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/pixmaps/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/tutorials/* renderer/ && copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/* renderer/",
+    "copy-rdkit-minimal": "copyfiles -u 4 node_modules/@rdkit/rdkit/dist/* renderer/public/",
+    "copy-moorhen-base": "copyfiles -u 2 node_modules/moorhen/public/* renderer/",
+    "copy-moorhen-dirs": "copyfiles -u 2 node_modules/moorhen/public/**/* renderer/",
+    "copy-moorhen-pixmaps": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/pixmaps/* renderer/",
+    "copy-moorhen-tutorials": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/tutorials/* renderer/",
+    "copy-moorhen-monomers-base": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/* renderer/",
+    "copy-moorhen-monomers": "copyfiles -u 2 node_modules/moorhen/public/baby-gru/monomers/**/* renderer/",
+    "copy-assets": "npm run copy-rdkit-minimal && npm run copy-moorhen-base && npm run copy-moorhen-dirs && npm run copy-moorhen-pixmaps && npm run copy-moorhen-tutorials && npm run copy-moorhen-monomers-base && npm run copy-moorhen-monomers",
     "build": "npm run copy-assets && next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
     "start": "npm run copy-assets && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts&& electron dist/main.js",
     "package-mac": "npm run build && electron-builder",
@@ -20,11 +27,9 @@
     "package-linux-all": "npm run build && electron-builder --linux AppImage --x64 --arm64"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.4.1",
-    "detect-port": "^2.1.0",
+    "@rdkit/rdkit": "^2025.3.3-1.0.0",
     "electron-store": "^9.0.0",
     "express": "^5.1.0",
-    "http-proxy-middleware": "^3.0.5",
     "jquery": "^3.7.1",
     "moorhen": "file:moorhen-0.21.1.tgz",
     "next": "latest",
@@ -51,12 +56,15 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@types/xml2js": "^0.4.14",
+    "@vitejs/plugin-react": "^4.4.1",
     "chart.js": "^4.4.8",
     "chartjs-plugin-annotation": "^3.1.0",
     "concurrently": "latest",
     "copyfiles": "^2.4.1",
+    "detect-port": "^2.1.0",
     "electron": "latest",
     "electron-builder": "^26.0.12",
+    "http-proxy-middleware": "^3.0.5",
     "install": "^0.13.0",
     "npm": "^11.3.0",
     "react": "19.1.0",
@@ -113,7 +121,6 @@
     },
     "win": {
       "target": [
-        "nsis",
         "portable"
       ]
     },

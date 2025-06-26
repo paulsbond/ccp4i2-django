@@ -1,7 +1,7 @@
 "use client";
 import { useParams } from "next/navigation";
 import useSWR from "swr";
-import MoorhenLoader from "../../../../components/client-side-moorhen-loader";
+import MoorhenLoader from "../../../../components/moorhen/client-side-moorhen-loader";
 
 const FileByIdPage = () => {
   const { id } = useParams();

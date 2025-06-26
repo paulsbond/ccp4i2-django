@@ -96,13 +96,16 @@ export const CCP4i2ReportXMLView = () => {
   return !reportContent ? (
     <Skeleton />
   ) : (
-    <Paper
-      sx={{
-        width: "100%",
-        height: "calc(100vh - 14rem)",
-        overflowY: "auto",
-      }}
-    >
+    <>
+      <Paper
+        sx={{
+          width: "100%",
+          height: "calc(100vh - 14rem)",
+          overflowY: "auto",
+        }}
+      >
+        {reportContent}
+      </Paper>
       {what_next?.Status === "Success" &&
         what_next?.result.length > 0 &&
         job?.status == 6 && (
@@ -145,7 +148,6 @@ export const CCP4i2ReportXMLView = () => {
             ))}
           </Stack>
         )}
-      {reportContent}
-    </Paper>
+    </>
   );
 };

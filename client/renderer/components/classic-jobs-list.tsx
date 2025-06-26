@@ -192,11 +192,7 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
           jobCharValues
             ?.filter((item: JobCharValue) => item.job === job.id)
             .map((item: JobCharValue) => (
-              <Chip
-                key={item.key}
-                avatar={<div style={{ width: "4rem" }}>{item.key}</div>}
-                label={item.value}
-              />
+              <Chip key={item.key} label={`${item.key}: ${item.value}`} />
             ))}
         {job &&
           jobFloatValues
@@ -204,9 +200,7 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
             .map((item) => (
               <Chip
                 key={item.key}
-                sx={{ backgroundColor: "#DFD" }}
-                avatar={<div style={{ width: "4rem" }}>{item.key}</div>}
-                label={item.value.toPrecision(3)}
+                label={`${item.key}: ${item.value.toPrecision(3)}`}
               />
             ))}
       </>

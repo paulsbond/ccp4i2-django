@@ -39,6 +39,7 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
   disabled?: boolean | (() => boolean);
   qualifiers?: any;
   onParameterChangeSuccess?: (updatedItem: any) => void;
+  suppressMutations?: boolean;
 }
 
 /**
@@ -142,6 +143,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CDialsJsonFile":
       case "CDialsPickleFile":
       case "CMDLMolDataFile":
+      case "CMol2DataFile":
         return (
           <CSimpleDataFileElement
             key={the_uuid}
@@ -149,7 +151,6 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             qualifiers={qualifiers}
           />
         );
-      case "CFreeRDataFile":
       case "CMiniMtzDataFile":
       case "CMtzDataFile":
       case "CObsDataFile":
@@ -161,6 +162,14 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             key={the_uuid}
             {...props}
             qualifiers={qualifiers}
+          />
+        );
+      case "CFreeRDataFile":
+        return (
+          <CMiniMtzDataFileElement
+            key={the_uuid}
+            {...props}
+            qualifiers={{ downloadModes: ["ebiSFs"], ...qualifiers }}
           />
         );
       case "CList":

@@ -118,7 +118,16 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     param_object.setFullPath(str(imported_file_path))
     param_object.loadFile()
     param_object.setContentFlag(reset=True)
-    logger.debug("Content flag is %s", param_object.contentFlag)
+
+    # Note deliberate explicit for != None instead of is not None
+    try:
+        subType = int(param_object.subType)
+    except Exception:
+        subType = 1
+    try:
+        contentFlag = int(param_object.contentFlag)
+    except Exception:
+        contentFlag = 0
 
     try:
         type = models.FileType.objects.get(name=param_object.QUALIFIERS["mimeTypeName"])
@@ -140,18 +149,9 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
         type=type,
         annotation=f"Imported from {files[0].name}",
         job_param_name=job_param_name,
+        sub_type=subType,
+        content=contentFlag,
     )
-    # Note deliberate explicit for != None instead of is not None
-    try:
-        new_file.sub_type = int(param_object.subType)
-    except Exception:
-        new_file.sub_type = 1
-    try:
-        contentFlag = int(param_object.contentFlag)
-        new_file.content = contentFlag
-    except Exception:
-        new_file.content = 0
-        logging.warning("Unsettable contentFlag on %s", param_object.objectName())
     new_file.save()
 
     new_file_import = models.FileImport(
@@ -160,17 +160,21 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
     new_file_import.save()
     # Note: calling set_parameter here would invalidate "param_object" (since it takes job argument and constructs a new container),
     # replacing it with updated
+    updated_object_dict = {
+        "project": str(job.project.uuid).replace("-", ""),
+        "baseName": new_file.name,
+        "relPath": pathlib.Path(imported_file_path)
+        .relative_to(job.project.directory)
+        .parent,
+        "annotation": new_file.annotation,
+        "dbFileId": str(new_file.uuid).replace("-", ""),
+        "subType": new_file.sub_type,
+        "contentFlag": new_file.content,
+    }
     updated_object = set_parameter_container(
         container,
         object_path,
-        {
-            "project": str(job.project.uuid).replace("-", ""),
-            "baseName": new_file.name,
-            "relPath": initial_download_project_folder,
-            "annotation": new_file.annotation,
-            "dbFileId": str(new_file.uuid).replace("-", ""),
-            "subType": new_file.sub_type,
-        },
+        updated_object_dict,
     )
     logger.error("Updated object %s", updated_object)
     save_params_for_job(the_job_plugin=plugin, the_job=job)
@@ -233,7 +237,7 @@ def handle_reflections(
         pathlib.Path(job.project.directory)
         / "CCP4_IMPORTED_FILES"
         / slugify(pathlib.Path(file_name).stem)
-    ).with_suffix(pathlib.Path(file_name).suffix)
+    ).with_suffix(pathlib.Path(downloaded_file_path).suffix)
     logger.error("Preferred imported file destination is %s", dest)
     imported_file_path = gemmi_split_mtz(downloaded_file_path, column_selector, dest)
     return imported_file_path

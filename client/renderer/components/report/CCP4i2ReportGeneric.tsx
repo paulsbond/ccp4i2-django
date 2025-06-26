@@ -17,9 +17,21 @@ export const CCP4i2ReportGeneric: React.FC<CCP4i2ReportElementProps> = (
     return tableBody;
   }, [props.item]);
 
+  // Clean up SVG namespaces for rendering
+  const cleanedInnerHTML = useMemo(() => {
+    let html = props.item.innerHTML;
+    // Remove all namespace prefixes like ns0:
+    html = html.replace(/<\s*\/?\s*ns\d*:/g, (match) =>
+      match.replace(/ns\d*:/, "")
+    );
+    // Remove xmlns:ns0="..." attributes
+    html = html.replace(/xmlns:ns\d+="[^"]*"/g, "");
+    return html;
+  }, [props.item.innerHTML]);
+
   return isRVAPITable && tableBody ? (
     <CCP4i2RVAPITable iItem={props.iItem} item={tableBody} job={props.job} />
   ) : (
-    <div dangerouslySetInnerHTML={{ __html: props.item.innerHTML }} />
+    <div dangerouslySetInnerHTML={{ __html: cleanedInnerHTML }} />
   );
 };
