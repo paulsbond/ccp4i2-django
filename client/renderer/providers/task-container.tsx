@@ -4,6 +4,7 @@ import { useApi } from "../api";
 import { Job } from "../types/models";
 import { CircularProgress, LinearProgress, Paper, Popper } from "@mui/material";
 import AimlessPipeInterface from "../components/task/task-interfaces/aimless_pipe";
+import LidiaAcedrgNewInterface from "../components/task/task-interfaces/LidiaAcedrgNew";
 import Crank2Interface from "../components/task/task-interfaces/crank2";
 import GenericInterface from "../components/task/task-interfaces/generic";
 import ImportMergedInterface from "../components/task/task-interfaces/import_merged";
@@ -103,6 +104,14 @@ export const TaskContainer = () => {
       case "aimless_pipe":
         return (
           <AimlessPipeInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "LidiaAcedrgNew":
+        return (
+          <LidiaAcedrgNewInterface
             {...{
               job,
             }}

@@ -13,8 +13,8 @@ const theme = createTheme({
   palette: {
     success: { main: "rgb(70, 164, 75)", light: "rgb(193, 226, 214)" },
     primary: {
-      main: "rgb(123, 198, 219)",
-      dark: "rgb(71, 113, 125)",
+      main: "rgb(92, 149, 165)",
+      dark: "rgb(39, 62, 69)",
       contrastText: "rgb(0, 0, 0)",
     },
   },
@@ -34,8 +34,8 @@ const theme = createTheme({
             {
               props: { variant: "head" },
               style: {
-                backgroundColor: "rgb(123, 198, 219)",
-                paddingTop: 0,
+                backgroundColor: "rgb(92, 149, 165)", // Use the primary color for the header
+                marginTop: "0.5rem",
                 paddingBottom: 0,
               },
             },

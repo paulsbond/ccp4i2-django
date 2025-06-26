@@ -280,13 +280,13 @@ const FileMenu: React.FC = () => {
     [project, menuNode, setAnchorEl]
   );
 
-  const handleServersideViewerInHklview = useCallback(
+  const handleServersideViewerInViewHKL = useCallback(
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (project) {
         handleServersideViewer(
           project.id,
-          "hklview",
+          "viewhkl",
           menuNode?.path.slice(project.directory.length) || ""
         );
       }
@@ -361,9 +361,9 @@ const FileMenu: React.FC = () => {
         )}
       {menuNode?.name &&
         ["mtz"].includes(menuNode?.name?.split(".").at(-1) || "") && (
-          <MenuItem onClick={handleServersideViewerInHklview}>
+          <MenuItem onClick={handleServersideViewerInViewHKL}>
             <Preview />
-            HKLView
+            ViewHKL
           </MenuItem>
         )}
     </Menu>

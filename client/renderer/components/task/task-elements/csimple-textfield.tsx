@@ -13,6 +13,7 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../../../providers/task-container";
+import { usePopcorn } from "../../../providers/popcorn-provider";
 
 export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
@@ -29,9 +30,11 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
     item._value || ""
   );
 
-  const { setParameter } = useJob(job.id);
+  const { setParameter, setParameterNoMutate } = useJob(job.id);
 
   const changeCountdown = useRef<any | null>(null);
+
+  const { setMessage } = usePopcorn();
 
   useEffect(() => {
     return () => {
@@ -103,7 +106,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         clearTimeout(changeCountdown.current);
         changeCountdown.current = null;
       }
-      changeCountdown.current = setTimeout((valueToSend: any) => {
+      changeCountdown.current = setTimeout(() => {
+        //console.log("sending value", valueToSend);
         sendExplicitValue(valueToSend);
         changeCountdown.current = null;
       }, 500);
@@ -121,13 +125,17 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         value: explicitValue,
       };
       try {
-        const result: any = await setParameter(setParameterArg);
+        const result: any = props.suppressMutations
+          ? await setParameterNoMutate(setParameterArg)
+          : await setParameter(setParameterArg);
         if (result.status === "Failed") {
+          setMessage(`Unacceptable new value provided: "${explicitValue}"`);
           setValue(item._value);
         } else if (props.onParameterChangeSuccess) {
           await props.onParameterChangeSuccess(result.updated_item);
         }
       } catch (err) {
+        setMessage(err);
         console.log("Here's an", err);
       } finally {
         setInFlight(false);

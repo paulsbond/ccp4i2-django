@@ -102,7 +102,7 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
           <TableBody>
             {item?._value?.map((contentElement: any, iElement: number) => (
               <TableRow
-                key={`iElement`}
+                key={`${iElement}`}
                 onClick={() => setDetailItem(contentElement)}
                 sx={{
                   transition: "box-shadow 0.2s, background 0.2s",
@@ -158,6 +158,7 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
             open={Boolean(detailItem)}
             onClose={() => {
               setDetailItem(null);
+              mutateContainer();
             }}
             fullWidth
             maxWidth={false}
