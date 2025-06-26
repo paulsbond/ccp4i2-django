@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { CCP4i2Context } from "../app-context";
-import { Skeleton } from "@mui/material";
+import { Typography } from "@mui/material";
 
 interface RDKitViewProps {
   smiles: string;
@@ -23,12 +23,13 @@ export const RDKitView: React.FC<RDKitViewProps> = ({ smiles }) => {
       setDataURI(URL.createObjectURL(theBlob.current));
     } catch (error) {
       console.error("RDKit error:", error);
+      setDataURI(null);
     }
   }, [smiles, rdkitModule]);
 
   return dataURI ? (
-    <img src={dataURI} style={{ height: 200, width: 200 }} />
+    <img src={dataURI} style={{ height: 250, width: 250 }} />
   ) : (
-    <Skeleton />
+    <Typography sx={{ color: "text.error" }}>No valid SMILES </Typography>
   );
 };
