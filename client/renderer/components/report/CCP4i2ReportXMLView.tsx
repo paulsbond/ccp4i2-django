@@ -48,8 +48,8 @@ export const CCP4i2ReportXMLView = () => {
 
   useEffect(() => {
     if (job && oldJob && job.status !== oldJob.status) {
-      if (job.status > 3) {
-        setMessage("Job finished");
+      if (job.status > 3 && job.id === oldJob.id) {
+        setMessage(`Job finished with status ${job.status}`);
         mutateReportXml(() => null); // Force re-fetch
       }
     }
