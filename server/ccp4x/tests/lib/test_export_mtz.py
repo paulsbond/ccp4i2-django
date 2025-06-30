@@ -1,18 +1,9 @@
-import os
 from pathlib import Path
 from shutil import rmtree
-import subprocess
 from xml.etree import ElementTree as ET
 from django.test import TestCase, override_settings
 from django.conf import settings
-import gemmi
-from core import CCP4PerformanceData
-from core import CCP4ErrorHandling
-from core import CCP4Data
-from ccp4i2.pimple import MGQTmatplotlib
-from ccp4i2.core import CCP4Container
-from ccp4i2.core import CCP4TaskManager
-from ...db.models import Job, File
+from ...db.models import Job, File, FileImport
 from ...db.import_i2xml import import_ccp4_project_zip
 
 from ...lib.job_utils.get_job_plugin import get_job_plugin
@@ -31,6 +22,7 @@ from ...lib.job_utils.get_task_tree import get_task_tree
 from ...lib.job_utils.ccp4i2_report import get_report_job_info
 from ...lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
 from ...lib.job_utils.export_job_mtz_file import export_job_mtz_file
+from ...lib.job_utils.get_source_reflection_file import get_source_reflection_file
 
 
 @override_settings(
@@ -47,11 +39,28 @@ class CCP4i2TestCase(TestCase):
             / "refmac_gamma_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "aimless_gamma_native_test_1.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+
         return super().setUp()
 
     def tearDown(self):
         rmtree(settings.CCP4I2_PROJECTS_DIR)
         return super().tearDown()
+
+    def test_aimless_get_source(self):
+        the_job = Job.objects.filter(task_name="prosmart_refmac").first()
+        print(File.objects.filter(job=the_job))
+        print(FileImport.objects.filter(file__job=the_job))
+        get_source_reflection_file(
+            jobId=the_job.uuid,
+            jobParamNameList=["F_SIGF"],
+        )
 
     def test_export_job_mtz_file(self):
         job = Job.objects.filter(task_name="prosmart_refmac").first()

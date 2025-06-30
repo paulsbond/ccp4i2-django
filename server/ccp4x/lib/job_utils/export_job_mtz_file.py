@@ -2,7 +2,7 @@ from ccp4i2.core import CCP4TaskManager
 from ...db import models
 
 
-def export_job_mtz_file(self, job_uuid):
+def export_job_mtz_file(job_uuid):
     """
     Export the merged mtz file for a job.
     If the job has not been run yet, or the mtz file does not exist, return None.
@@ -20,9 +20,10 @@ def export_job_mtz_file(self, job_uuid):
     export_file = job_dir / "exportMtz.mtz"
     if export_file.exists():
         return str(export_file)
-    CCP4TaskManager.TASKMANAGER().getTaskAttribute(
+    export_params = CCP4TaskManager.TASKMANAGER().getTaskAttribute(
         the_job.task_name, "EXPORTMTZPARAMS", default=[]
     )
+    print(export_params)
 
 
 """
