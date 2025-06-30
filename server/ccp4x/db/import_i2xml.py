@@ -364,7 +364,7 @@ def import_file(node: ET.Element):
         instance = File.objects.get(uuid=create_dict["uuid"])
         item_form = FileSerializer(data=create_dict, instance=instance)
     except File.DoesNotExist as err:
-        logging.info(f"Attempting to create new project {err}")
+        logging.info(f"Attempting to create new File {err}")
         item_form = FileSerializer(data=create_dict)
 
     if item_form.is_valid():
@@ -393,7 +393,7 @@ def import_file_use(node: ET.Element):
         )
         item_form = FileUseSerializer(data=create_dict, instance=instance)
     except FileUse.DoesNotExist as err:
-        logging.info(f"Attempting to create new project {err}")
+        logging.info(f"Attempting to create new FileUse {err}")
         item_form = FileUseSerializer(data=create_dict)
 
     if item_form.is_valid():
@@ -419,7 +419,7 @@ def import_file_import(node: ET.Element):
         instance = FileImport.objects.get(file=create_dict["file"])
         item_form = FileImportSerializer(data=create_dict, instance=instance)
     except FileImport.DoesNotExist as err:
-        logging.info(f"Attempting to create new project {err}")
+        logging.info(f"Attempting to create new FileImport {err}")
         item_form = FileImportSerializer(data=create_dict)
 
     if item_form.is_valid():
