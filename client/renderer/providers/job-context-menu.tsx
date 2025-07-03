@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import { createContext } from "react";
 import { usePopcorn } from "./popcorn-provider";
+import { useRunCheck } from "./run-check-provider";
 
 interface JobMenuContextDataProps {
   jobMenuAnchorEl: HTMLElement | null;
@@ -45,6 +46,8 @@ export const JobMenuContextProvider: React.FC<PropsWithChildren> = ({
     null
   );
   const [job, setJob] = useState<Job | null>(null);
+  // In your component
+  const { confirmTaskRun } = useRunCheck();
 
   return (
     <>
@@ -73,6 +76,7 @@ export const JobMenu: React.FC = () => {
   const api = useApi();
   const router = useRouter();
   const { setMessage } = usePopcorn();
+  const { confirmTaskRun } = useRunCheck();
 
   const deleteDialog = useDeleteDialog();
   const [statusMenuAnchorEl, setStatusMenuAnchorEl] = useState<Element | null>(
@@ -124,6 +128,8 @@ export const JobMenu: React.FC = () => {
   const handleRun = useCallback(
     async (ev: SyntheticEvent) => {
       if (!job) return;
+      const confirmed = await confirmTaskRun(job.id);
+      if (!confirmed) return;
       ev.stopPropagation();
       const runResult: Job = await api.post(`jobs/${job.id}/run/`);
       setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);

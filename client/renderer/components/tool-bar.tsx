@@ -16,6 +16,7 @@ import { CCP4i2Context } from "../app-context";
 import { useRouter } from "next/navigation";
 import { HelpIframe } from "./help_iframe";
 import { usePopcorn } from "../providers/popcorn-provider";
+import { useRunCheck } from "../providers/run-check-provider";
 
 export default function ToolBar() {
   const sizeMinus1 = useMediaQuery("(max-width:110rem)");
@@ -37,6 +38,7 @@ export default function ToolBar() {
   const router = useRouter();
   const [showHelp, setShowHelp] = useState(false);
   const { setMessage } = usePopcorn();
+  const { confirmTaskRun } = useRunCheck();
 
   const handleClone = async () => {
     if (job) {
@@ -51,6 +53,8 @@ export default function ToolBar() {
   };
   const handleRun = async () => {
     if (job) {
+      const confirmed = await confirmTaskRun(job.id);
+      if (!confirmed) return;
       const runResult: Job = await api.post(`jobs/${job.id}/run/`);
       setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
       if (runResult?.id) {

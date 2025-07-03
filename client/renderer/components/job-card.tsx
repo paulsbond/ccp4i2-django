@@ -37,6 +37,7 @@ import { useDeleteDialog } from "../providers/delete-dialog";
 import { CCP4i2JobAvatar } from "./job-avatar";
 import { useProject } from "../utils";
 import { usePopcorn } from "../providers/popcorn-provider";
+import { useRunCheck } from "../providers/run-check-provider";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -65,6 +66,8 @@ export const JobCard: React.FC<JobCardProps> = ({
     jobFloatValues,
     mutateFiles,
   } = useProject(job.project);
+
+  const { confirmTaskRun } = useRunCheck();
 
   const subJobs: any[] | undefined = useMemo(() => {
     return jobs?.filter((aJob) => aJob.parent === job.id);
@@ -130,6 +133,8 @@ export const JobCard: React.FC<JobCardProps> = ({
     }
   };
   const handleRun = async () => {
+    const confirmed = await confirmTaskRun(job.id);
+    if (!confirmed) return;
     const runResult: Job = await api.post(`jobs/${job.id}/run/`);
     setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
     if (runResult?.id) {
