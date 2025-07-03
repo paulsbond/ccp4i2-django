@@ -46,6 +46,13 @@ class CCP4i2TestCase(TestCase):
             / "aimless_gamma_native_test_1.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "parrot_test_0.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
 
         return super().setUp()
 
@@ -63,7 +70,8 @@ class CCP4i2TestCase(TestCase):
         )
 
     def test_export_job_mtz_file(self):
-        job = Job.objects.filter(task_name="prosmart_refmac").first()
+        task_name = "parrot"
+        job = Job.objects.filter(task_name=task_name).first()
         if not job:
-            raise ValueError("No job found with task_name 'prosmart_refmac'")
+            raise ValueError(f"No job found with task_name '{task_name}'")
         export_job_mtz_file(job.uuid)

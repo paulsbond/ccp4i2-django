@@ -1,6 +1,10 @@
+import logging
+
 from ccp4i2.core import CCP4XtalData
 from ccp4i2.core import CCP4TaskManager
 from ...db.models import Job, FileUse, FileImport
+
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def get_source_reflection_file(jobId=None, jobParamNameList=None):
@@ -60,6 +64,14 @@ def get_source_reflection_file(jobId=None, jobParamNameList=None):
             # No input file for this job parameter, continue to next
             continue
 
+    logger.warning(
+        "CProjectManager.getSourceReflectionFile jobId %s, export_task_name %s, p_list %s, i_list %s, f_list %s",
+        jobId,
+        export_task_name,
+        p_list,
+        i_list,
+        f_list,
+    )
     colTagList = CCP4TaskManager.TASKMANAGER().exportMtzColumnLabels(
         taskName=export_task_name,
         jobId=jobId,

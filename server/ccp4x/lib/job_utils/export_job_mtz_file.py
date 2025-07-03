@@ -1,5 +1,12 @@
+import logging
+
 from ccp4i2.core import CCP4TaskManager
+from ccp4i2.core import CCP4XtalData
+from .get_source_reflection_file import get_source_reflection_file
 from ...db import models
+from ...db.ccp4i2_static_data import FILETYPES_TEXT
+
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def export_job_mtz_file(job_uuid):
@@ -23,11 +30,182 @@ def export_job_mtz_file(job_uuid):
     export_params = CCP4TaskManager.TASKMANAGER().getTaskAttribute(
         the_job.task_name, "EXPORTMTZPARAMS", default=[]
     )
-    print(export_params)
+    if len(export_params) == 0:
+        logger.warning("No export parameters found")
+        return None
+    refln_info = get_source_reflection_file(
+        jobId=the_job.uuid, jobParamNameList=export_params[0]
+    )
+    logger.warning(
+        "CProjectViewer.exportJobMtzFile getSourceReflectionFile %s %s",
+        the_job,
+        refln_info,
+    )
+    if refln_info.get("fileName", None) is None:
+        return None  # No source reflection file found
+    print(
+        "CProjectViewer.exportJobMtzFile getSourceReflectionFile", the_job, refln_info
+    )
+
+    file_info: list[models.File] = []
+    param_name_list: list[str] = []
+    label_list: list[str] = []
+    for ep in export_params[1:]:
+        if isinstance(ep, list):
+            param, lab = ep
+        else:
+            param = ep
+            lab = None
+        try:
+            the_file = models.File.objects.get(job__uuid=job_uuid, job_param_name=param)
+            file_info.append(the_file)
+            param_name_list.append(param)
+            label_list.append(
+                the_file.job.number
+                + "_"
+                + CCP4TaskManager.TASKMANAGER().getTaskLabel(the_file.job.task_name)
+            )
+            try:
+                _ = models.FileImport.objects.get(file=the_file)
+                label_list[-1] = label_list[-1] + "_import"
+            except models.FileImport.DoesNotExist:
+                pass
+            if lab is not None:
+                label_list[-1] = label_list[-1] + "_" + lab
+        except models.File.DoesNotExist:
+            logger.warning("File not found for job %s and param %s", job_uuid, param)
+    print("file_info", file_info)
+    col_tag_list = CCP4TaskManager.TASKMANAGER().exportMtzColumnLabels(
+        taskName=the_job.task_name,
+        jobId=str(job_uuid),
+        paramNameList=param_name_list,
+        sourceInfoList=file_info,
+    )
+    if len(col_tag_list) > 0:
+        for ii in range(len(col_tag_list)):
+            label_list[ii] = col_tag_list[ii]
+    # print 'CProjectViewer.exportJobMtzFile fileInfo',file_info
+    if len(file_info) == 0:
+        return None
+    # Create CAD inputFiles and command lines
+    file_no = 1
+    com_lines = []
+    # Dont need reflnInfo['fileName'] in inputFiles as it is used for the CMtzDataFile object that runs CAD
+    input_files = []
+    for ifile, f_info in enumerate(file_info):
+        file_type = FILETYPES_TEXT.index(f_info.type.name) if f_info.type else 0
+        print(
+            {field.name: getattr(f_info, field.name) for field in f_info._meta.fields},
+            f_info.type.pk,
+            file_type,
+        )
+        if file_type in [11, 12]:
+            # Beware alternative fileContent
+            if f_info.content is not None:
+                f_c = f_info.content
+            else:
+                if file_type == 11:
+                    p = CCP4XtalData.CObsDataFile(str(f_info.path))
+                else:
+                    p = CCP4XtalData.CPhsDataFile(str(f_info.path))
+                p.setContentFlag()
+                f_c = int(p.contentFlag)
+        # Use CAD LABOUT line to set column labels in export file
+        file_no += 1
+        input_files.append(str(f_info.path))
+        if f_info.type == 10:
+            com_lines.append(
+                "LABOUT FILENUMBER " + str(file_no) + " E1=FREER_" + label_list[ifile]
+            )
+        elif file_type == 11:
+            if f_info.content == 1:
+                com_lines.append(
+                    "LABOUT FILENUMBER "
+                    + str(file_no)
+                    + " E1=I(+)_"
+                    + label_list[ifile]
+                    + " E2=SIGI(+)_"
+                    + label_list[ifile]
+                    + " E3=I(-)_"
+                    + label_list[ifile]
+                    + " E4=SIGI(-)_"
+                    + label_list[ifile]
+                )
+            elif f_info.content == 2:
+                com_lines.append(
+                    "LABOUT FILENUMBER "
+                    + str(file_no)
+                    + " E1=F(+)_"
+                    + label_list[ifile]
+                    + " E2=SIGF(+)_"
+                    + label_list[ifile]
+                    + " E3=F(-)_"
+                    + label_list[ifile]
+                    + " E4=SIGF(-)_"
+                    + label_list[ifile]
+                )
+            elif f_info.content == 3:
+                com_lines.append(
+                    "LABOUT FILENUMBER "
+                    + str(file_no)
+                    + " E1=I_"
+                    + label_list[ifile]
+                    + " E2=SIGI_"
+                    + label_list[ifile]
+                )
+            else:
+                com_lines.append(
+                    "LABOUT FILENUMBER "
+                    + str(file_no)
+                    + " E1=F_"
+                    + label_list[ifile]
+                    + " E2=SIGF_"
+                    + label_list[ifile]
+                )
+        elif file_type == 12:
+            if f_info.content == 1:
+                com_lines.append(
+                    "LABOUT FILENUMBER "
+                    + str(file_no)
+                    + " E1=HLA_"
+                    + label_list[ifile]
+                    + " E2=HLB_"
+                    + label_list[ifile]
+                    + " E3=HLC_"
+                    + label_list[ifile]
+                    + " E4=HLD_"
+                    + label_list[ifile]
+                )
+            else:
+                com_lines.append(
+                    "LABOUT FILENUMBER "
+                    + str(file_no)
+                    + " E1=PHI_"
+                    + label_list[ifile]
+                    + "  E2=FOM_"
+                    + label_list[ifile]
+                )
+        elif file_type == 13:
+            com_lines.append(
+                "LABOUT FILENUMBER "
+                + str(file_no)
+                + " E1=F_"
+                + label_list[ifile]
+                + "  E2=PHI_"
+                + label_list[ifile]
+            )
+    # print 'CProjectViewer.exportJobMtzFile',input_files
+    # print 'CProjectViewer.exportJobMtzFile',com_lines
+    #  Create an CMtzDataFile object and initialise with the refln data file
+    m = CCP4XtalData.CMtzDataFile(refln_info["fileName"])
+    # print m.runCad.__doc__   #Print out docs for the function
+    print("com_lines", com_lines)
+    outfile, err = m.runCad(str(export_file), input_files, com_lines)
+    # print 'CProjectViewer.exportJobMtzFile',outfile,err.report()
+    return outfile
 
 
-"""
-    def exportJobMtzFile(self, jobId):
+""" def exportJobMtzFile(self, jobId):
         from core import CCP4XtalData
         from core import CCP4TaskManager
         # Devise name for the merged file and check if it has already been created
@@ -46,6 +224,7 @@ def export_job_mtz_file(job_uuid):
         if reflnInfo.get('fileName', None) is None:
             return None
         # Query database for filenames and job info for the input and ouptput objects
+        
         fileInfo = []
         paramNameList = []
         for ep in exportParams[1:]:
