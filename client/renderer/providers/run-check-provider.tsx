@@ -34,7 +34,7 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
   >(null);
   const [filterErrors, setFilterErrors] = useState<
     null | ((validation: any) => any)
-  >(null);
+  >((validation: any) => validation);
 
   const confirmTaskRun = (taskId: number): Promise<boolean> => {
     return new Promise((resolve) => {
