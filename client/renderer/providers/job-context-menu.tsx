@@ -127,7 +127,10 @@ export const JobMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       if (!job) return;
       const confirmed = await confirmTaskRun(job.id);
-      if (!confirmed) return;
+      if (!confirmed) {
+        setJobMenuAnchorEl(null);
+        return;
+      }
       ev.stopPropagation();
       const runResult: Job = await api.post(`jobs/${job.id}/run/`);
       setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
