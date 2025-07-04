@@ -133,16 +133,15 @@ export const JobCard: React.FC<JobCardProps> = ({
     }
   };
   const handleRun = async () => {
+    setAnchorEl(null);
     const confirmed = await confirmTaskRun(job.id);
     if (!confirmed) {
-      setAnchorEl(null);
       return;
     }
     const runResult: Job = await api.post(`jobs/${job.id}/run/`);
     setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
     if (runResult?.id) {
       mutateJobs();
-      setAnchorEl(null);
       router.push(`/project/${projectId}/job/${runResult.id}`);
     }
   };

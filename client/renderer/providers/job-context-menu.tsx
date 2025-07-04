@@ -125,10 +125,10 @@ export const JobMenu: React.FC = () => {
 
   const handleRun = useCallback(
     async (ev: SyntheticEvent) => {
+      setJobMenuAnchorEl(null);
       if (!job) return;
       const confirmed = await confirmTaskRun(job.id);
       if (!confirmed) {
-        setJobMenuAnchorEl(null);
         return;
       }
       ev.stopPropagation();
@@ -136,7 +136,6 @@ export const JobMenu: React.FC = () => {
       setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
       if (runResult?.id) {
         mutateJobs();
-        setJobMenuAnchorEl(null);
         router.push(`/project/${job.project}/job/${runResult.id}`);
       }
     },
