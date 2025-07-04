@@ -1,18 +1,34 @@
-import { Grid2, LinearProgress, Paper, Typography } from "@mui/material";
+import {
+  Button,
+  Grid2,
+  LinearProgress,
+  Paper,
+  Typography,
+} from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
-import { useJob, usePrevious } from "../../../utils";
+import { useJob, usePrevious, useProject } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useContext, useEffect, useMemo } from "react";
 import type { ProcessErrorsCallback } from "../../../providers/run-check-provider";
-import { RunCheckContext } from "../../../providers/run-check-provider";
+import {
+  RunCheckContext,
+  useRunCheck,
+} from "../../../providers/run-check-provider";
+import { useRouter } from "next/navigation";
+import { Job } from "../../../types/models";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { setProcessErrorsCallback } = useContext(RunCheckContext);
+  const {
+    processErrorsCallback,
+    setProcessErrorsCallback,
+    setExtraDialogActions,
+    extraDialogActions = [],
+  } = useContext(RunCheckContext);
 
   //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
   //const { data: F_SIGFDigest } = api.digest<any>(
@@ -20,15 +36,13 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { setParameter, useAsyncEffect, getTaskItem, getFileDigest } = useJob(
-    job.id
-  );
+  const { getTaskItem, getFileDigest } = useJob(job.id);
 
   const { data: F_SIGFDigest } = getFileDigest(
     "prosmart_refmac.inputData.F_SIGF"
   );
   const { value: refinementMode } = getTaskItem("REFINEMENT_MODE");
-  const { value: freeRFlag } = getTaskItem("FREERGLAG");
+  const { value: freeRFlag } = getTaskItem("FREERFLAG");
   const { value: solventAdvanced } = getTaskItem("SOLVENT_ADVANCED");
   const { value: solventMaskType } = getTaskItem("SOLVENT_MASK_TYPE");
   const { value: tlsMode } = getTaskItem("TLSMODE");
@@ -39,7 +53,14 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
 
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
-  const oldWavelength = usePrevious<any>(wavelength);
+  const router = useRouter();
+  const { setRunTaskRequested } = useRunCheck();
+
+  const { mutateJobs } = useProject(job.project);
+
+  const projectId = useMemo(() => {
+    return job.project;
+  }, [job]);
 
   const handleF_SIGFDigestChanged = useCallback(
     (digest: any) => {
@@ -63,29 +84,63 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     handleF_SIGFDigestChanged(F_SIGFDigest);
   }, [F_SIGFDigest]);
 
-  const processErrorsCallback: ProcessErrorsCallback = (validation) => {
-    // This function is called to process errors from the run check
-    // It can be customized to handle errors in a specific way
-    const processedErrors = validation ? { ...validation } : {};
-    if (!(freeRFlag?.dbFileId?.length > 0)) {
-      processedErrors.FREERFLAG = {
-        messages: [
-          "Setting the Free R flag file is strongly recommended for refinement",
-          "You are advised to select an existing set or create a new one ",
-        ],
-        maxSeverity: 3,
-      };
+  const createFreeRTask = useCallback(async () => {
+    // This function can be used to create a Free R task
+    // It can be customized to perform specific actions when the button is clicked
+    console.log("Creating Free R task...");
+    // You can add logic here to create the task, e.g., navigating to a new page or opening a dialog
+    const created_job_result: any = await api.post(
+      `projects/${projectId}/create_task/`,
+      {
+        task_name: "freerflag",
+      }
+    );
+    if (created_job_result?.status === "Success") {
+      const created_job: Job = created_job_result.new_job;
+      mutateJobs();
+      router.push(`/project/${projectId}/job/${created_job.id}`);
+      setRunTaskRequested(null);
     }
-    return processedErrors;
-  };
+  }, [projectId, api, mutateJobs, router]);
+
+  const myProcessErrorsCallback: ProcessErrorsCallback = useCallback(
+    (validation) => {
+      // This function is called to process errors from the run check
+      // It can be customized to handle errors in a specific way
+      console.log("freeRFlag", freeRFlag, refinementMode);
+      const processedErrors = validation ? { ...validation } : {};
+      if (!(freeRFlag?.dbFileId?.length > 0)) {
+        processedErrors.FREERFLAG = {
+          messages: [
+            "Setting the Free R flag file is strongly recommended for refinement",
+            "You are advised to select an existing set or create a new one ",
+          ],
+          maxSeverity: 3,
+        };
+      }
+      return processedErrors;
+    },
+    [freeRFlag, refinementMode]
+  );
 
   useEffect(() => {
-    //Note the exotic syntax for the slightly unusual syntax !
-    setProcessErrorsCallback(() => processErrorsCallback);
+    if (!processErrorsCallback && !(freeRFlag?.dbFileId?.length > 0)) {
+      console.log(processErrorsCallback);
+      setProcessErrorsCallback(() => myProcessErrorsCallback);
+    }
     return () => {
-      setProcessErrorsCallback((validation: any) => validation);
+      if (processErrorsCallback) setProcessErrorsCallback(null);
+      if (extraDialogActions.length > 0) setExtraDialogActions([]);
     };
-  }, []);
+  }, [freeRFlag, myProcessErrorsCallback]);
+
+  useEffect(() => {
+    if (extraDialogActions.length == 0 && !(freeRFlag?.dbFileId?.length > 0)) {
+      setExtraDialogActions([
+        <Button onClick={createFreeRTask}>Create FreeR task</Button>,
+      ]);
+    }
+  }, [freeRFlag, setExtraDialogActions]);
 
   return (
     <Paper>
