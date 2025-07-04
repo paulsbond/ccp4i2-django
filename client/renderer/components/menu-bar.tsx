@@ -16,6 +16,11 @@ import { CCP4i2Context } from "../app-context";
 import { useApi } from "../api";
 import { Job, Project } from "../types/models";
 import EditableTypography from "./editable-typography";
+import IconButton from "@mui/material/IconButton";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import Stack from "@mui/material/Stack";
+import HistoryToolbar from "./history-toolbar";
 
 export default function MenuBar() {
   const { projectId, jobId, devMode, setDevMode } = useContext(CCP4i2Context);
@@ -53,7 +58,7 @@ export default function MenuBar() {
   };
   return (
     <AppBar position="static">
-      <Toolbar sx={{ gap: 2 }}>
+      <HistoryToolbar>
         <FormControlLabel
           control={
             <Switch
@@ -83,7 +88,7 @@ export default function MenuBar() {
             }
           />
         )}
-      </Toolbar>
+      </HistoryToolbar>
     </AppBar>
   );
 }
