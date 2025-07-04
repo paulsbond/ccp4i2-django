@@ -10,12 +10,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Typography,
 } from "@mui/material";
 import { Button } from "@mui/material";
 import { useJob } from "../utils";
-import { useApi } from "../api";
-import { run } from "node:test";
 
 export type ProcessErrorsCallback = (validation: any) => any;
 interface RunCheckContextType {
@@ -109,6 +106,7 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
     processErrorsCallback,
     typeof processErrorsCallback
   );
+
   const processedErrors = useMemo(() => {
     if (typeof processErrorsCallback === "function") {
       return processErrorsCallback(validation);
@@ -118,24 +116,42 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
 
   const seriousIssues = processedErrors
     ? Object.keys(processedErrors)
-        .filter((key: string) => processedErrors[key].maxSeverity == 2)
-        .map((key: string) => `${processedErrors[key].messages}`)
+        .filter((key: string) =>
+          [2, 3].includes(processedErrors[key].maxSeverity)
+        )
+        .map((key: string) => processedErrors[key].messages)
+    : [];
+
+  const blockingIssues = processedErrors
+    ? Object.keys(processedErrors)
+        .filter((key: string) => [2].includes(processedErrors[key].maxSeverity))
+        .map((key: string) => processedErrors[key].messages)
     : [];
 
   return (
-    <Dialog open={runTaskRequested !== null} onClose={() => handleCancel()}>
+    <Dialog
+      open={runTaskRequested !== null}
+      onClose={() => handleCancel()}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        style: { minWidth: 600 },
+      }}
+    >
       <DialogContent>
         <DialogTitle>Confirm Task Execution</DialogTitle>
         {seriousIssues.length > 0 && (
           <pre style={{ color: "red" }}>
-            {seriousIssues.map((issue, index) => (
-              <span key={`${index}`}>{issue}</span>
-            ))}
+            {seriousIssues.map((issueSet, index) =>
+              issueSet.map((issue, issueIndex) => (
+                <div key={`${index}_${issueIndex}`}>{issue}</div>
+              ))
+            )}
           </pre>
         )}
         <DialogActions>
           <Button onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleConfirm} disabled={seriousIssues.length > 0}>
+          <Button onClick={handleConfirm} disabled={blockingIssues.length > 0}>
             Confirm
           </Button>
         </DialogActions>
