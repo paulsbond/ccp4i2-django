@@ -18,17 +18,21 @@ export type ProcessErrorsCallback = (validation: any) => any;
 interface RunCheckContextType {
   runTaskRequested: number | null;
   setRunTaskRequested: (taskId: number | null) => void;
-  processErrorsCallback: (validation: any) => any;
-  setProcessErrorsCallback: (fn: ProcessErrorsCallback) => void;
+  processErrorsCallback: null | ProcessErrorsCallback;
+  setProcessErrorsCallback: (fn: null | ProcessErrorsCallback) => void;
   confirmTaskRun: (taskId: number) => Promise<boolean>;
+  extraDialogActions?: React.ReactNode[];
+  setExtraDialogActions: (actions: React.ReactNode[]) => void;
 }
 
 export const RunCheckContext = createContext<RunCheckContextType>({
   runTaskRequested: null,
   setRunTaskRequested: () => {},
   confirmTaskRun: () => Promise.resolve(false),
-  processErrorsCallback: (validation: any) => validation,
+  processErrorsCallback: null,
   setProcessErrorsCallback: () => {},
+  extraDialogActions: [],
+  setExtraDialogActions: () => {},
 });
 
 interface RunCheckProviderProps {
@@ -43,7 +47,10 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
     ((value: boolean) => void) | null
   >(null);
   const [processErrorsCallback, setProcessErrorsCallback] =
-    useState<ProcessErrorsCallback>((validation: any) => validation);
+    useState<ProcessErrorsCallback | null>(null);
+  const [extraDialogActions, setExtraDialogActions] = useState<
+    React.ReactNode[]
+  >([]);
 
   const confirmTaskRun = (taskId: number): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -76,6 +83,8 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
         confirmTaskRun,
         processErrorsCallback,
         setProcessErrorsCallback,
+        extraDialogActions,
+        setExtraDialogActions,
       }}
     >
       {children}
@@ -99,16 +108,10 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
   handleCancel,
 }) => {
   const { validation } = useJob(runTaskRequested || 0);
-  const { processErrorsCallback } = useRunCheck();
-
-  console.log(
-    "processErrorsCallback",
-    processErrorsCallback,
-    typeof processErrorsCallback
-  );
+  const { processErrorsCallback, extraDialogActions } = useRunCheck();
 
   const processedErrors = useMemo(() => {
-    if (typeof processErrorsCallback === "function") {
+    if (processErrorsCallback && typeof processErrorsCallback === "function") {
       return processErrorsCallback(validation);
     }
     return validation;
@@ -150,6 +153,9 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
           </pre>
         )}
         <DialogActions>
+          {extraDialogActions?.map((action, index) => (
+            <React.Fragment key={index}>{action}</React.Fragment> // Ensure each action is wrapped in a fragment
+          ))}
           <Button onClick={handleCancel}>Cancel</Button>
           <Button onClick={handleConfirm} disabled={blockingIssues.length > 0}>
             Confirm
