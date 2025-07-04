@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useMemo,
+} from "react";
 import {
   Dialog,
   DialogActions,
@@ -9,17 +15,24 @@ import {
 import { Button } from "@mui/material";
 import { useJob } from "../utils";
 import { useApi } from "../api";
+import { run } from "node:test";
 
+export type ProcessErrorsCallback = (validation: any) => any;
 interface RunCheckContextType {
   runTaskRequested: number | null;
   setRunTaskRequested: (taskId: number | null) => void;
-  filterErrors: null | ((validation: any) => any);
+  processErrorsCallback: (validation: any) => any;
+  setProcessErrorsCallback: (fn: ProcessErrorsCallback) => void;
   confirmTaskRun: (taskId: number) => Promise<boolean>;
 }
 
-const RunCheckContext = createContext<RunCheckContextType | undefined>(
-  undefined
-);
+export const RunCheckContext = createContext<RunCheckContextType>({
+  runTaskRequested: null,
+  setRunTaskRequested: () => {},
+  confirmTaskRun: () => Promise.resolve(false),
+  processErrorsCallback: (validation: any) => validation,
+  setProcessErrorsCallback: () => {},
+});
 
 interface RunCheckProviderProps {
   children: ReactNode;
@@ -32,9 +45,8 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
   const [pendingResolve, setPendingResolve] = useState<
     ((value: boolean) => void) | null
   >(null);
-  const [filterErrors, setFilterErrors] = useState<
-    null | ((validation: any) => any)
-  >((validation: any) => validation);
+  const [processErrorsCallback, setProcessErrorsCallback] =
+    useState<ProcessErrorsCallback>((validation: any) => validation);
 
   const confirmTaskRun = (taskId: number): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -65,7 +77,8 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
         runTaskRequested,
         setRunTaskRequested,
         confirmTaskRun,
-        filterErrors: filterErrors,
+        processErrorsCallback,
+        setProcessErrorsCallback,
       }}
     >
       {children}
@@ -88,12 +101,25 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
   handleConfirm,
   handleCancel,
 }) => {
-  const api = useApi();
   const { validation } = useJob(runTaskRequested || 0);
-  const seriousIssues = validation
-    ? Object.keys(validation)
-        .filter((key: string) => validation[key].maxSeverity == 2)
-        .map((key: string) => `${validation[key].messages}`)
+  const { processErrorsCallback } = useRunCheck();
+
+  console.log(
+    "processErrorsCallback",
+    processErrorsCallback,
+    typeof processErrorsCallback
+  );
+  const processedErrors = useMemo(() => {
+    if (typeof processErrorsCallback === "function") {
+      return processErrorsCallback(validation);
+    }
+    return validation;
+  }, [validation, processErrorsCallback]);
+
+  const seriousIssues = processedErrors
+    ? Object.keys(processedErrors)
+        .filter((key: string) => processedErrors[key].maxSeverity == 2)
+        .map((key: string) => `${processedErrors[key].messages}`)
     : [];
 
   return (
@@ -101,11 +127,11 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
       <DialogContent>
         <DialogTitle>Confirm Task Execution</DialogTitle>
         {seriousIssues.length > 0 && (
-          <Typography color="error" variant="body1">
+          <pre style={{ color: "red" }}>
             {seriousIssues.map((issue, index) => (
-              <pre>{issue}</pre>
+              <span key={`${index}`}>{issue}</span>
             ))}
-          </Typography>
+          </pre>
         )}
         <DialogActions>
           <Button onClick={handleCancel}>Cancel</Button>
@@ -117,6 +143,7 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
     </Dialog>
   );
 };
+
 export const useRunCheck = (): RunCheckContextType => {
   const context = useContext(RunCheckContext);
   if (!context) {

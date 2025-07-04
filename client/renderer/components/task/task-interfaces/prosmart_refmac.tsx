@@ -5,11 +5,16 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
-import { useCallback, useEffect } from "react";
+import { useCallback, useContext, useEffect, useMemo } from "react";
+import {
+  ProcessErrorsCallback,
+  RunCheckContext,
+} from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
+  const { setProcessErrorsCallback } = useContext(RunCheckContext);
 
   //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
   //const { data: F_SIGFDigest } = api.digest<any>(
@@ -58,6 +63,24 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   useEffect(() => {
     handleF_SIGFDigestChanged(F_SIGFDigest);
   }, [F_SIGFDigest]);
+
+  function processErrorsCallback(validation: any) {
+    // This function is called to process errors from the run check
+    // It can be customized to handle errors in a specific way
+
+    return { ...validation };
+  }
+
+  useEffect(() => {
+    console.log(
+      "Installing processErrorsCallback",
+      typeof processErrorsCallback
+    );
+    setProcessErrorsCallback(processErrorsCallback);
+    return () => {
+      setProcessErrorsCallback((validation: any) => validation);
+    };
+  }, []);
 
   return (
     <Paper>

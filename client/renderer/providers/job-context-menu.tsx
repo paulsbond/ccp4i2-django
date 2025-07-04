@@ -46,8 +46,6 @@ export const JobMenuContextProvider: React.FC<PropsWithChildren> = ({
     null
   );
   const [job, setJob] = useState<Job | null>(null);
-  // In your component
-  const { confirmTaskRun } = useRunCheck();
 
   return (
     <>
