@@ -6,10 +6,8 @@ import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useContext, useEffect, useMemo } from "react";
-import {
-  ProcessErrorsCallback,
-  RunCheckContext,
-} from "../../../providers/run-check-provider";
+import type { ProcessErrorsCallback } from "../../../providers/run-check-provider";
+import { RunCheckContext } from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -30,6 +28,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     "prosmart_refmac.inputData.F_SIGF"
   );
   const { value: refinementMode } = getTaskItem("REFINEMENT_MODE");
+  const { value: freeRFlag } = getTaskItem("FREERGLAG");
   const { value: solventAdvanced } = getTaskItem("SOLVENT_ADVANCED");
   const { value: solventMaskType } = getTaskItem("SOLVENT_MASK_TYPE");
   const { value: tlsMode } = getTaskItem("TLSMODE");
@@ -64,19 +63,25 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     handleF_SIGFDigestChanged(F_SIGFDigest);
   }, [F_SIGFDigest]);
 
-  function processErrorsCallback(validation: any) {
+  const processErrorsCallback: ProcessErrorsCallback = (validation) => {
     // This function is called to process errors from the run check
     // It can be customized to handle errors in a specific way
-
-    return { ...validation };
-  }
+    const processedErrors = validation ? { ...validation } : {};
+    if (!(freeRFlag?.dbFileId?.length > 0)) {
+      processedErrors.FREERFLAG = {
+        messages: [
+          "Setting the Free R flag file is strongly recommended for refinement",
+          "You are advised to select an existing set or create a new one ",
+        ],
+        maxSeverity: 3,
+      };
+    }
+    return processedErrors;
+  };
 
   useEffect(() => {
-    console.log(
-      "Installing processErrorsCallback",
-      typeof processErrorsCallback
-    );
-    setProcessErrorsCallback(processErrorsCallback);
+    //Note the exotic syntax for the slightly unusual syntax !
+    setProcessErrorsCallback(() => processErrorsCallback);
     return () => {
       setProcessErrorsCallback((validation: any) => validation);
     };
