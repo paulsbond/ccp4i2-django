@@ -160,9 +160,11 @@ class JobViewSet(ModelViewSet):
         kwargs = form_data.get("kwargs", {})
         try:
             result = object_method(job, object_path, method_name, args, kwargs)
+            logger.debug("result %s", result)
             return JsonResponse({"status": "Success", "result": result})
         except CCP4ErrorHandling.CException as err:
             error_tree = getEtree(err)
+            logger.debug("error_tree %s", error_tree)
             ET.indent(error_tree, " ")
             return JsonResponse(
                 {"status": "Failed", "reason": ET.tostring(error_tree).decode("utf-8")}
