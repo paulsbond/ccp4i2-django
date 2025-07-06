@@ -183,7 +183,7 @@ export const TaskContainer = () => {
     >
       <Paper
         key="interface"
-        sx={{ maxHeight: "calc(100vh - 15rem)", overflowY: "auto" }}
+        sx={{ maxHeight: "calc(100vh - 22rem)", overflowY: "auto" }}
       >
         {taskInterface}
       </Paper>
