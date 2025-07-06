@@ -15,6 +15,7 @@ import ServalcatPipeInterface from "../components/task/task-interfaces/servalcat
 import SubstituteLigandInterface from "../components/task/task-interfaces/SubstituteLigand";
 import ProvideAsuContentsInterface from "../components/task/task-interfaces/ProvideAsuContents";
 import ProvideSequenceInterface from "../components/task/task-interfaces/ProvideSequence";
+import ParrotInterface from "../components/task/task-interfaces/parrot";
 import { useJob } from "../utils";
 import { ErrorPopper } from "../components/task/task-elements/error-info";
 import { FetchFileForParam } from "../components/task/task-elements/fetch-file-for-param";
@@ -72,6 +73,14 @@ export const TaskContainer = () => {
       case "modelcraft":
         return (
           <ModelcraftInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "parrot":
+        return (
+          <ParrotInterface
             {...{
               job,
             }}
