@@ -6,6 +6,10 @@ import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
 import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
+import {
+  ProcessErrorsCallback,
+  useRunCheck,
+} from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -28,6 +32,30 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const intensitiesAvailable = useMemo(() => {
     return [1, 3].includes(HKLINValue?.contentFlag);
   }, [HKLINValue]);
+
+  const { processErrorsCallback, setProcessErrorsCallback } = useRunCheck();
+
+  const myProcessErrorsCallback: ProcessErrorsCallback = (validation) => {
+    // This function is called to process errors from the run check
+    // It can be customized to handle errors in a specific way
+    // Here, it filters a known "spurious" error from the validation object
+    // and returns the rest of the validation errors.
+    const processedErrors = validation
+      ? Object.fromEntries(
+          Object.entries(validation).filter(
+            ([key]) =>
+              key !== "servalcat_pipe.metalCoordWrapper.inputData.XYZIN"
+          )
+        )
+      : {};
+  };
+
+  useEffect(() => {
+    setProcessErrorsCallback(() => myProcessErrorsCallback);
+    return () => {
+      if (processErrorsCallback) setProcessErrorsCallback(null);
+    };
+  }, []);
 
   return (
     <CCP4i2Tabs>
