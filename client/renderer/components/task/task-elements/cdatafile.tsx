@@ -140,7 +140,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   );
 
   const fileTypes = useMemo<string[] | null>(() => {
-    console.log(qualifiers);
+    //console.log(qualifiers);
 
     if (!qualifiers?.mimeTypeName) return null;
     if (Array.isArray(qualifiers?.mimeTypeName)) {
