@@ -19,154 +19,31 @@ import { CContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import useSWR from "swr";
 
-const auVolume = (
-  cell: {
-    a: number;
-    b: number;
-    c: number;
-    alpha: number;
-    beta: number;
-    gamma: number;
-  },
-  spacegroup: string
-) => {
-  // Calculates the volume of the asymmetric unit given cell parameters and space group name.
-  // cell: {a, b, c, alpha, beta, gamma} (lengths in Å, angles in degrees)
-  // spacegroup: string (used to determine Z, the number of asymmetric units per unit cell)
-
-  if (
-    !cell ||
-    typeof cell.a !== "number" ||
-    typeof cell.b !== "number" ||
-    typeof cell.c !== "number" ||
-    typeof cell.alpha !== "number" ||
-    typeof cell.beta !== "number" ||
-    typeof cell.gamma !== "number" ||
-    !spacegroup
-  ) {
-    alert(
-      `Invalid cell parameters or space group name. Please check the input values. ${JSON.stringify(
-        cell
-      )} ${spacegroup}`
-      //       `Invalid cell parameters or space group name. Please check the"
-    );
-    return undefined;
-  }
-  const { a, b, c, alpha, beta, gamma } = cell;
-  const rad = (deg: number) => (Math.PI * deg) / 180;
-  const cosA = Math.cos(rad(alpha));
-  const cosB = Math.cos(rad(beta));
-  const cosG = Math.cos(rad(gamma));
-  const volume =
-    a *
-    b *
-    c *
-    Math.sqrt(
-      1 - cosA * cosA - cosB * cosB - cosG * cosG + 2 * cosA * cosB * cosG
-    );
-  // Z values for all 63 macromolecular space groups (short Hermann–Mauguin names)
-  // Source: International Tables for Crystallography, Vol. A
-  const zLookup: { [key: string]: number } = {
-    P1: 1,
-    "P-1": 1,
-    P2: 2,
-    P21: 2,
-    C2: 4,
-    P222: 4,
-    P21212: 4,
-    P212121: 4,
-    C2221: 8,
-    C222: 8,
-    F222: 16,
-    I222: 8,
-    I212121: 8,
-    P4: 4,
-    P41: 4,
-    P42: 4,
-    P43: 4,
-    I4: 8,
-    I41: 8,
-    "P-4": 4,
-    "I-4": 8,
-    P422: 8,
-    P4212: 8,
-    P4122: 8,
-    P41212: 8,
-    P4222: 8,
-    P42212: 8,
-    P4322: 8,
-    P43212: 8,
-    I422: 16,
-    I4122: 16,
-    P3: 3,
-    P31: 3,
-    P32: 3,
-    R3: 3,
-    "P-3": 3,
-    "R-3": 3,
-    P312: 6,
-    P321: 6,
-    P3112: 6,
-    P3121: 6,
-    P3212: 6,
-    P3221: 6,
-    R32: 6,
-    P6: 6,
-    P61: 6,
-    P65: 6,
-    P62: 6,
-    P64: 6,
-    P63: 6,
-    "P-6": 6,
-    P622: 12,
-    P6122: 12,
-    P6522: 12,
-    P6222: 12,
-    P6422: 12,
-    P6322: 12,
-    P23: 4,
-    F23: 16,
-    I23: 8,
-    P213: 4,
-    I213: 8,
-    P432: 8,
-    P4232: 8,
-    F432: 32,
-    F4132: 32,
-    I432: 16,
-    P4332: 8,
-    P4132: 8,
-    I4132: 16,
-  };
-
-  // Normalize space group name for lookup
-  const normalizedSG = spacegroup.replace(/[\s\-]/g, "").toUpperCase();
-  let Z = 1;
-  for (const key in zLookup) {
-    if (normalizedSG === key.replace(/[\s\-]/g, "").toUpperCase()) {
-      Z = zLookup[key];
-      break;
-    }
-  }
-
-  const asuVolume = volume / Z;
-  return asuVolume;
-};
-
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const { getTaskItem, mutateContainer } = useJob(job.id);
   const { update: setAsuContent } = getTaskItem("ASU_CONTENT");
 
-  //const { value: ID_RMSValue } = getTaskItem("ID_RMS");
-
-  //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
   const { data: HKLINDigest } = api.digest<any>(
     `jobs/${job.id}/digest?object_path=ProvideAsuContents.inputData.HKLIN`
   );
   const oldHKLINDigest = usePrevious(HKLINDigest?.digest);
 
+  /**
+   * Fetches the molecular weight for the current job's ASU content using SWR.
+   *
+   * Uses the `useSWR` hook to send a POST request to the backend API endpoint
+   * `/api/proxy/jobs/${job.id}/object_method/` with the required payload to invoke
+   * the `molecularWeight` method on the `ProvideAsuContents.inputData.ASU_CONTENT` object.
+   *
+   * @returns
+   *   - `data: molWeight` - The fetched molecular weight value, or `undefined` if not yet loaded.
+   *   - `mutate: mutateMolWeight` - Function to manually revalidate or update the molecular weight data.
+   *
+   * @throws
+   *   Throws an error if the response from the API is not successful.
+   */
   const { data: molWeight, mutate: mutateMolWeight } = useSWR(
     `/api/proxy/jobs/${job.id}/object_method/`,
     (url) =>
@@ -188,9 +65,36 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       })
   );
 
+  /**
+   * Fetches and caches the Matthews coefficient analysis for the current job using SWR.
+   *
+   * @remarks
+   * This hook uses the SWR library to fetch data from the backend API endpoint
+   * `/api/proxy/jobs/${job.id}/object_method/` via a POST request. The request body
+   * includes the object path and method name required for the analysis, along with
+   * the molecular weight as a parameter. The response is expected to be a JSON object
+   * containing the Matthews analysis results.
+   *
+   * @param job.id - The unique identifier for the current job.
+   * @param molWeight?.result - The calculated molecular weight to be used in the analysis.
+   * @param HKLINDigest?.digest - The digest of the HKLIN file, used as a cache key dependency.
+   *
+   * @returns
+   * - `data: matthewsAnalysis` - The result of the Matthews coefficient analysis, or `undefined` if not yet loaded.
+   * - `mutate: mutateMatthewsAnalysis` - A function to manually revalidate or update the cached data.
+   *
+   * @throws
+   * Throws an error if the API request fails.
+   *
+   * @see https://swr.vercel.app/ for more information about SWR.
+   */
   const { data: matthewsAnalysis, mutate: mutateMatthewsAnalysis } = useSWR(
-    [`/api/proxy/jobs/${job.id}/object_method/`, molWeight?.result],
-    ([url, molWeightResult]) =>
+    [
+      `/api/proxy/jobs/${job.id}/object_method/`,
+      molWeight?.result,
+      HKLINDigest?.digest,
+    ],
+    ([url, molWeightResult, hklinDigest]) =>
       fetch(url, {
         method: "POST",
         headers: {
@@ -211,17 +115,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       }),
     { keepPreviousData: true }
   );
-
-  const oldMolecularWeight = usePrevious(molWeight?.result);
-  useEffect(() => {
-    if (
-      molWeight?.result &&
-      molWeight.result !== oldMolecularWeight &&
-      JSON.stringify(HKLINDigest?.digest) !== JSON.stringify(oldHKLINDigest)
-    ) {
-      alert("useEfect noticed");
-    }
-  }, [molWeight, oldMolecularWeight, HKLINDigest, oldHKLINDigest, props]);
 
   const handleNewASUCONTENTIN = useCallback(
     async (updatedItem: any) => {
