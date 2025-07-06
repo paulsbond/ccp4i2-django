@@ -15,10 +15,9 @@ import {
   ChartOptions,
   ChartData,
 } from "chart.js";
-import { Chart, Bar, Scatter } from "react-chartjs-2";
+import { Scatter } from "react-chartjs-2";
 
 import annotationPlugin from "chartjs-plugin-annotation";
-import { parse } from "path";
 import {
   Autocomplete,
   Button,
@@ -27,7 +26,6 @@ import {
   CardHeader,
   Dialog,
   DialogContent,
-  Paper,
   TextField,
   Typography,
 } from "@mui/material";
