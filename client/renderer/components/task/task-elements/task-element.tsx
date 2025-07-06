@@ -151,8 +151,6 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             qualifiers={qualifiers}
           />
         );
-      case "CMiniMtzDataFile":
-      case "CMtzDataFile":
       case "CObsDataFile":
       case "CMapCoeffsDataFile":
       case "CXmlDataFile":
@@ -164,14 +162,48 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
             qualifiers={qualifiers}
           />
         );
+      case "CMiniMtzDataFile":
+      case "CMtzDataFile":
+        return (
+          <CMiniMtzDataFileElement
+            key={the_uuid}
+            {...props}
+            qualifiers={{
+              ...qualifiers,
+              mimeTypeName: [
+                "application/CCP4-mtz",
+                "application/CCP4-mtz-observed",
+                "application/CCP4-mtz-mini",
+                "application/CCP4-mtz-phases",
+                "application/CCP4-mtz-freerflag",
+              ],
+            }}
+          />
+        );
       case "CFreeRDataFile":
         return (
           <CMiniMtzDataFileElement
             key={the_uuid}
             {...props}
-            qualifiers={{ downloadModes: ["ebiSFs"], ...qualifiers }}
+            qualifiers={{ ...qualifiers, downloadModes: ["ebiSFs"] }}
           />
         );
+
+      case "CGenericReflDataFile":
+        return (
+          <CMiniMtzDataFileElement
+            key={the_uuid}
+            {...props}
+            qualifiers={{
+              ...qualifiers,
+              mimeTypeNames: [
+                "application/CCP4-generic-reflections",
+                "CCP4-mtz-observed",
+              ],
+            }}
+          />
+        );
+
       case "CList":
       case "CImportUnmergedList":
       case "CAltSpaceGroupList":
