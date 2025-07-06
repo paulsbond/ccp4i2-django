@@ -51,6 +51,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
       await setDescription(annotation);
       await mutateContainer();
       await mutateValidation();
+      props.onParameterChangeSuccess?.({ name, moleculeType, sequence });
     },
     [
       setSequence,
