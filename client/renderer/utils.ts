@@ -304,6 +304,13 @@ export const useJob = (jobId: number | null | undefined) => {
       };
     }, [container, job]),
 
+    getFileContent: useMemo(() => {
+      return (param_name: string) => {
+        const djangoFile = valueOfItem(container.lookup[param_name]);
+        return api.fileTextContent(djangoFile);
+      };
+    }, [container]),
+
     getValidationColor: useMemo(() => {
       return (item: any) => {
         const fieldErrors = errorsInValidation(item, validation);
