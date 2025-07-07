@@ -65,9 +65,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             qualifiers={{ guiLabel: "Model from which to infer NCS" }}
             key="NCS"
             containerHint="BlockLevel"
-            visibility={() => {
-              return XYZIN_MODE !== "no";
-            }}
+            visibility={() => XYZIN_MODE !== "no"}
           >
             <CCP4i2TaskElement
               {...props}
