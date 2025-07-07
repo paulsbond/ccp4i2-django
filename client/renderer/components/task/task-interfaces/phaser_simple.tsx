@@ -4,7 +4,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -30,7 +30,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <CCP4i2Tabs {...props}>
       <CCP4i2Tab tab="Main inputs">
-        <CContainerElement
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           qualifiers={{ guiLabel: "Key files" }}
@@ -73,8 +73,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="FREERFLAG"
             qualifiers={{ guiLabel: "Free R flags" }}
           />
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           qualifiers={{ guiLabel: "Basic parameters" }}
@@ -86,7 +86,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="NCOPIES"
             qualifiers={{ guiLabel: "Copies to find" }}
           />
-          <CContainerElement
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{ guiLabel: "Resolution" }}
@@ -104,8 +104,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               {...props}
               qualifiers={{ guiLabel: "High" }}
             />
-          </CContainerElement>
-          <CContainerElement
+          </CCP4i2ContainerElement>
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{ guiLabel: "Extra steps" }}
@@ -131,9 +131,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               qualifiers={{ guiLabel: "Coot add-waters" }}
               sx={{ my: 0, py: 0, minWidth: "10rem" }}
             />
-          </CContainerElement>
-        </CContainerElement>
-        <CContainerElement
+          </CCP4i2ContainerElement>
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           itemName=""
           {...props}
           qualifiers={{ guiLabel: "Scattering in the crystal" }}
@@ -173,8 +173,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               }}
             />
           </Stack>
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           qualifiers={{ guiLabel: "Spacegroups" }}
@@ -194,8 +194,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               return SGALT_SELECTValue === "LIST";
             }}
           />
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           itemName=""
           {...props}
           qualifiers={{ guiLabel: "Similarity of search model" }}
@@ -225,10 +225,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               return ID_RMSValue == "RMS";
             }}
           />
-        </CContainerElement>
+        </CCP4i2ContainerElement>
       </CCP4i2Tab>
       <CCP4i2Tab tab="Keywords" key="2">
-        <CContainerElement
+        <CCP4i2ContainerElement
           {...props}
           itemName="keywords"
           qualifiers={{ guiLabel: "" }}

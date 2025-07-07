@@ -3,7 +3,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -15,7 +15,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     <>
       <CCP4i2Tabs {...props}>
         <CCP4i2Tab tab="Main inputs" key="1">
-          <CContainerElement
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{ guiLabel: "Input data", initiallyOpen: true }}
@@ -40,7 +40,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="ASUIN"
               qualifiers={{ guiLabel: "Asymmetric unit contents" }}
             />
-            <CContainerElement
+            <CCP4i2ContainerElement
               {...props}
               itemName=""
               key="Starting phases"
@@ -70,9 +70,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                   return USE_MODEL_PHASES;
                 }}
               />
-            </CContainerElement>
-          </CContainerElement>
-          <CContainerElement
+            </CCP4i2ContainerElement>
+          </CCP4i2ContainerElement>
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{ guiLabel: "Controls" }}
@@ -86,7 +86,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 guiLabel: "Build methionine (MET) as selenomethionine (MSE)",
               }}
             />
-          </CContainerElement>
+          </CCP4i2ContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>
     </>

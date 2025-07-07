@@ -3,7 +3,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { CAltSpaceGroupElement } from "../task-elements/caltspacegroupelement";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -21,7 +21,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <CCP4i2Tabs {...props}>
       <CCP4i2Tab tab="Main inputs" key="1">
-        <CContainerElement
+        <CCP4i2ContainerElement
           key="Files"
           itemName=""
           {...props}
@@ -45,8 +45,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="HKLIN_IS_SCALED"
             qualifiers={{ guiLabel: "Analyse data without determining scales" }}
           />
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           key="Parameters"
@@ -74,8 +74,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             qualifiers={{ guiLabel: "Override cell difference" }}
             itemName="OVERRIDE_CELL_DIFFERENCE"
           />
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           {...props}
           key="ChoosingSpace"
           itemName=""
@@ -91,7 +91,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="MODE"
             qualifiers={{ guiLabel: "Pipeline mode" }}
           />
-          <CContainerElement
+          <CCP4i2ContainerElement
             {...props}
             key="ChoiceOptions"
             itemName=""
@@ -161,8 +161,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 );
               }}
             />
-          </CContainerElement>
-          <CContainerElement
+          </CCP4i2ContainerElement>
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             key="Specify refrence"
@@ -212,8 +212,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 );
               }}
             />
-          </CContainerElement>
-        </CContainerElement>
+          </CCP4i2ContainerElement>
+        </CCP4i2ContainerElement>
       </CCP4i2Tab>
     </CCP4i2Tabs>
   );

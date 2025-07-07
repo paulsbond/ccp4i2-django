@@ -1,8 +1,8 @@
 import { CCP4i2TaskElementProps } from "./task-element";
-import { CContainerElement } from "./ccontainer";
+import { CCP4i2ContainerElement } from "./ccontainer";
 
 export const CCellElement: React.FC<CCP4i2TaskElementProps> = (props) => (
-  <CContainerElement
+  <CCP4i2ContainerElement
     {...props}
     qualifiers={props.qualifiers}
     size={{ xs: 4 }}

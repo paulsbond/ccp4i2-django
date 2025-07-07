@@ -4,7 +4,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import {
   ProcessErrorsCallback,
@@ -60,7 +60,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <CCP4i2Tabs>
       <CCP4i2Tab tab="Input data">
-        <CContainerElement
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           containerHint="BlockLevel"
@@ -99,8 +99,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             )}
             <CCP4i2TaskElement {...props} itemName="FREERFLAG" />
           </div>
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           containerHint="BlockLevel"
@@ -112,7 +112,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="DICT_LIST"
             qualifiers={{ guiLabel: "Dictionaries" }}
           />
-        </CContainerElement>
+        </CCP4i2ContainerElement>
       </CCP4i2Tab>
       <CCP4i2Tab tab="Output" key="Output">
         <CCP4i2TaskElement
@@ -130,7 +130,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           visibility={() => true}
           key="USE_TWIN"
         />
-        <CContainerElement
+        <CCP4i2ContainerElement
           key="Output options"
           {...props}
           itemName=""
@@ -144,8 +144,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               guiLabel: "Output calculated riding hydrogens to file",
             }}
           />
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           itemName=""
           key="Map calculation"
           {...props}
@@ -183,8 +183,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               />
             </Grid2>
           </Grid2>
-        </CContainerElement>
-        <CContainerElement
+        </CCP4i2ContainerElement>
+        <CCP4i2ContainerElement
           itemName=""
           {...props}
           qualifiers={{ guiLabel: "Validation and analysis" }}
@@ -211,7 +211,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="VALIDATE_MOLPROBITY"
             qualifiers={{ guiLabel: "Run MolProbity to analyse geometry" }}
           />
-        </CContainerElement>
+        </CCP4i2ContainerElement>
       </CCP4i2Tab>
     </CCP4i2Tabs>
   );

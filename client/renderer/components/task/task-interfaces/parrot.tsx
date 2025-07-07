@@ -3,7 +3,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { Grid2 } from "@mui/material";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -15,7 +15,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <CCP4i2Tabs {...props}>
       <CCP4i2Tab tab="Main inputs" key="1">
-        <CContainerElement
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           qualifiers={{ guiLabel: "Input data" }}
@@ -59,7 +59,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="XYZIN_MODE"
             qualifiers={{ guiLabel: "Use of NCS", guiMode: "radio" }}
           />
-          <CContainerElement
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{ guiLabel: "Model from which to infer NCS" }}
@@ -83,10 +83,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               qualifiers={{ guiLabel: "Full atom model" }}
               visibility={() => XYZIN_MODE === "mr"}
             />
-          </CContainerElement>
-        </CContainerElement>
+          </CCP4i2ContainerElement>
+        </CCP4i2ContainerElement>
 
-        <CContainerElement
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           qualifiers={{ guiLabel: "Controls" }}
@@ -148,10 +148,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               />
             </Grid2>
           </Grid2>
-        </CContainerElement>
+        </CCP4i2ContainerElement>
       </CCP4i2Tab>
       <CCP4i2Tab tab="Reference structures" key="2">
-        <CContainerElement
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           qualifiers={{ guiLabel: "Reference density and atmomic models" }}
@@ -186,7 +186,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               guiLabel: "Model to define region of space to build",
             }}
           />
-        </CContainerElement>
+        </CCP4i2ContainerElement>
       </CCP4i2Tab>
     </CCP4i2Tabs>
   );

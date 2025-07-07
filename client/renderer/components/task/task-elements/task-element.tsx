@@ -9,7 +9,7 @@ import { CPdbDataFileElement } from "./cpdbdatafile";
 import { CMiniMtzDataFileElement } from "./cminimtzdatafile";
 import { CBooleanElement } from "./cboolean";
 import { CListElement } from "./list";
-import { CContainerElement } from "./ccontainer";
+import { CCP4i2ContainerElement } from "./ccontainer";
 import { CImportUnmergedElement } from "./cimportunmerged";
 import { CCellElement } from "./ccell";
 import { CEnsembleElement } from "./censemble";
@@ -246,7 +246,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
       case "CSpaceGroupCell":
       case "CContainer":
         return (
-          <CContainerElement
+          <CCP4i2ContainerElement
             key={the_uuid}
             {...props}
             qualifiers={qualifiers}

@@ -5,12 +5,12 @@ import { Button, Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { ErrorInfo } from "./error-info";
 import { useMemo, useState } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { CContainerElement } from "./ccontainer";
+import { CCP4i2ContainerElement } from "./ccontainer";
 
 export const CReindexOperatorElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => (
-  <CContainerElement
+  <CCP4i2ContainerElement
     {...props}
     qualifiers={props.qualifiers}
     size={{ xs: 4 }}

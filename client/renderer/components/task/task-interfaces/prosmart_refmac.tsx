@@ -10,7 +10,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious, useProject } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useContext, useEffect, useMemo } from "react";
 import type { ProcessErrorsCallback } from "../../../providers/run-check-provider";
 import {
@@ -191,7 +191,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         */}
 
         <CCP4i2Tab tab="Parameterisation" key="Parameterisation">
-          <CContainerElement
+          <CCP4i2ContainerElement
             itemName=""
             key="B-factors"
             {...props}
@@ -207,9 +207,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 />
               </Grid2>
             </Grid2>
-          </CContainerElement>
+          </CCP4i2ContainerElement>
 
-          <CContainerElement
+          <CCP4i2ContainerElement
             itemName=""
             key="Scaling"
             {...props}
@@ -250,7 +250,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 return solventMaskType === "EXPLICIT";
               }}
             />
-            <CContainerElement
+            <CCP4i2ContainerElement
               itemName=""
               {...props}
               qualifiers={{ guiLabel: "Custom parameters" }}
@@ -286,10 +286,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                   guiLabel: "Shrink the mask area by a factor of",
                 }}
               />
-            </CContainerElement>
-          </CContainerElement>
+            </CCP4i2ContainerElement>
+          </CCP4i2ContainerElement>
 
-          <CContainerElement
+          <CCP4i2ContainerElement
             itemName=""
             key="Translation libration screw (TLS)"
             {...props}
@@ -317,7 +317,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 />
               </Grid2>
             </Grid2>
-            <CContainerElement
+            <CCP4i2ContainerElement
               itemName=""
               key="Custom parameters"
               {...props}
@@ -363,11 +363,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                     "Add TLS contribution to output B-factors (only for analysis and deposition)",
                 }}
               />
-            </CContainerElement>
-          </CContainerElement>
+            </CCP4i2ContainerElement>
+          </CCP4i2ContainerElement>
         </CCP4i2Tab>
         <CCP4i2Tab tab="Output" key="Output">
-          <CContainerElement
+          <CCP4i2ContainerElement
             key="Output options"
             {...props}
             itemName=""
@@ -381,8 +381,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 guiLabel: "Output calculated riding hydrogens to file",
               }}
             />
-          </CContainerElement>
-          <CContainerElement
+          </CCP4i2ContainerElement>
+          <CCP4i2ContainerElement
             itemName=""
             key="Map calculation"
             {...props}
@@ -419,8 +419,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 />
               </Grid2>
             </Grid2>
-          </CContainerElement>
-          <CContainerElement
+          </CCP4i2ContainerElement>
+          <CCP4i2ContainerElement
             itemName=""
             {...props}
             qualifiers={{ guiLabel: "Validation and analysis" }}
@@ -447,7 +447,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="VALIDATE_MOLPROBITY"
               qualifiers={{ guiLabel: "Run MolProbity to analyse geometry" }}
             />
-          </CContainerElement>
+          </CCP4i2ContainerElement>
         </CCP4i2Tab>
 
         <CCP4i2Tab tab="Prosmart">

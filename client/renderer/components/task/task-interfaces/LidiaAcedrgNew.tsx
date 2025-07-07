@@ -3,7 +3,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { Grid2 } from "@mui/material";
 import { RDKitView } from "../../rdkit-view";
 
@@ -58,7 +58,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               return MOLSMILESORSKETCH === "SMILESFILE";
             }}
           />
-          <CContainerElement
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{
@@ -92,7 +92,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 return ATOMMATCHOPTION === "LOCALDICT";
               }}
             />
-          </CContainerElement>
+          </CCP4i2ContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>{" "}
     </>
