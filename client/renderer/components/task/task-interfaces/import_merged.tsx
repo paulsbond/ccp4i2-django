@@ -42,6 +42,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
 
+  const { update: updateCRYSTALNAME } = getTaskItem("CRYSTALNAME");
+
+  const { update: updateDATASETNAME } = getTaskItem("DATASETNAME");
+
   const { update: setHKLIN_OBS_COLUMNS } = getTaskItem("HKLIN_OBS_COLUMNS");
 
   const { update: setHKLIN_OBS_CONTENT_FLAG } = getTaskItem(
@@ -237,6 +241,22 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                       itemName="UNITCELL"
                     />
                   </Grid2>
+                  <Stack direction="row" spacing={2}>
+                    <CCP4i2TaskElement
+                      {...props}
+                      key="CRYSTALNAME"
+                      itemName="CRYSTALNAME"
+                      qualifiers={{ guiLabel: "Crystal name" }}
+                      sx={{ maxWidth: "3rem" }}
+                    />
+                    <CCP4i2TaskElement
+                      {...props}
+                      key="DATASETNAME"
+                      itemName="DATASETNAME"
+                      qualifiers={{ guiLabel: "Dataset name" }}
+                      sx={{ maxWidth: "3rem" }}
+                    />
+                  </Stack>
                 </Grid2>
                 <CCP4i2TaskElement
                   {...props}
