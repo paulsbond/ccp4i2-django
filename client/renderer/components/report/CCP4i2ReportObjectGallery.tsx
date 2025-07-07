@@ -51,6 +51,8 @@ export const CCP4i2ReportObjectGallery: React.FC<CCP4i2ReportElementProps> = (
                 >
                   {$(childItem).attr("title")
                     ? $(childItem).attr("title")
+                    : $(childItem).attr("key")
+                    ? $(childItem).attr("key")
                     : `Object ${iItem}`}
                 </ListItem>
               ))}

@@ -1,6 +1,6 @@
 "use client";
 import { use, useContext, useEffect, useMemo, useState } from "react";
-import { Container, LinearProgress, Tab, Tabs } from "@mui/material";
+import { Container, LinearProgress, Paper, Tab, Tabs } from "@mui/material";
 import { useApi } from "../../../../../api";
 import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../../components/job-header";
@@ -19,6 +19,7 @@ import { JobMenu } from "../../../../../providers/job-context-menu";
 import { JobDirectoryView } from "../../../../../components/job_directory_view";
 import useSWR from "swr";
 import $ from "jquery";
+import { Calculate } from "@mui/icons-material";
 
 export default function JobPage({
   params,
@@ -140,9 +141,9 @@ export default function JobPage({
           </>
         )}
         {tabValue == 9 && job && project && (
-          <>
+          <Paper sx={{ height: "calc(100vh - 20rem)", overflowY: "auto" }}>
             <JobDirectoryView job={job} project={project} />
-          </>
+          </Paper>
         )}
         <JobMenu />
       </Container>

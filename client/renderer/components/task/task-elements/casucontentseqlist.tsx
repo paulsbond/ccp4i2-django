@@ -88,15 +88,15 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
           />
         </Toolbar>
 
-        <Table style={{ width: "100%", tableLayout: "fixed" }}>
+        <Table style={{ width: "100%" }}>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Type</TableCell>
+              <TableCell style={{ maxWidth: "5rem" }}>Name</TableCell>
+              <TableCell style={{ maxWidth: "5rem" }}>Type</TableCell>
               <TableCell>Description</TableCell>
-              <TableCell>Number in AU</TableCell>
+              <TableCell style={{ maxWidth: "5rem" }}>Number in AU</TableCell>
               <TableCell>Sequence</TableCell>
-              <TableCell>Delete</TableCell>
+              <TableCell style={{ maxWidth: "5rem" }}>Delete</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -123,7 +123,13 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
                   <TableCell
                     key={property}
                     style={{
-                      maxWidth: property === "sequence" ? "30rem" : "10rem",
+                      maxWidth: ["name", "polymerType", "nCopies"].includes(
+                        property
+                      )
+                        ? "5rem"
+                        : property === "sequence"
+                        ? "30rem"
+                        : undefined,
                     }}
                   >
                     <div
@@ -138,7 +144,7 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
                     </div>
                   </TableCell>
                 ))}
-                <TableCell>
+                <TableCell style={{ maxWidth: "5rem" }}>
                   <Button
                     startIcon={<Delete />}
                     size="small"

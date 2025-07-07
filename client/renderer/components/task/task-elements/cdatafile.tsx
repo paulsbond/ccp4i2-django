@@ -139,18 +139,22 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     `jobs/${job.id}/digest?object_path=${item._objectPath}`
   );
 
-  const fileType = useMemo<string | null>(() => {
-    if (item?._class) {
-      return inverseFileTypeMapping[item?._class];
+  const fileTypes = useMemo<string[] | null>(() => {
+    //console.log(qualifiers);
+
+    if (!qualifiers?.mimeTypeName) return null;
+    if (Array.isArray(qualifiers?.mimeTypeName)) {
+      // If multiple mime types are allowed, return them as array
+      return qualifiers.mimeTypeName;
     }
-    return null;
+    return [qualifiers.mimeTypeName];
   }, [item]);
 
   const isValidDrop = useMemo(() => {
     if (!active?.data?.current?.file) return false;
     if (!item) return false;
     if (job?.status !== 1) return false;
-    return (active.data.current?.file as CCP4i2File).type === fileType;
+    return fileTypes?.includes((active.data.current?.file as CCP4i2File).type);
   }, [active, item, job]);
 
   if (!project_files || !project_jobs) return <LinearProgress />;
@@ -164,23 +168,16 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
         //console.log(file.type, fileType);
         if (fileJob)
           return (
-            (file.type === fileType ||
-              fileType === "Unknown" ||
-              (file.type === "application/CCP4-generic-reflections" &&
-                fileType === "application/CCP4-mtz-observed")) &&
+            (fileTypes?.includes(file.type) ||
+              fileTypes?.includes("Unknown")) &&
             !fileJob.parent
           );
-        return (
-          file.type === fileType ||
-          fileType === "Unknown" ||
-          (file.type === "application/CCP4-generic-reflections" &&
-            fileType === "application/CCP4-mtz-observed")
-        );
+        return fileTypes?.includes(file.type) || fileTypes?.includes("Unknown");
       })
       .sort((a, b) => {
         return b.job - a.job;
       });
-  }, [project_files, project_jobs, fileType]);
+  }, [project_files, project_jobs, fileTypes]);
 
   const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
 

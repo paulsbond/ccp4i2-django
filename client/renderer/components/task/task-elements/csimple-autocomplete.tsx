@@ -18,8 +18,6 @@ import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../../../providers/task-container";
-import { get } from "jquery";
-import { on } from "events";
 import { usePopcorn } from "../../../providers/popcorn-provider";
 
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (

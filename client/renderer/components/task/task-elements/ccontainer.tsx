@@ -30,14 +30,14 @@ interface SizeProps {
   lg?: GridSize | null;
   xl?: GridSize | null;
 }
-interface CContainerElementProps extends CCP4i2TaskElementProps {
+interface CCP4i2ContainerElementProps extends CCP4i2TaskElementProps {
   size?: SizeProps;
   initiallyOpen?: boolean;
   containerHint?: "FolderLevel" | "BlockLevel" | "RowLevel";
   elementSx?: SxProps;
 }
-export const CContainerElement: React.FC<
-  PropsWithChildren<CContainerElementProps>
+export const CCP4i2ContainerElement: React.FC<
+  PropsWithChildren<CCP4i2ContainerElementProps>
 > = (props) => {
   const {
     job,

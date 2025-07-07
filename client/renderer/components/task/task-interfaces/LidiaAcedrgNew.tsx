@@ -3,16 +3,19 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { Grid2 } from "@mui/material";
 import { RDKitView } from "../../rdkit-view";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { getTaskItem, getFileContent } = useJob(job.id);
   const { value: MOLSMILESORSKETCH } = getTaskItem("MOLSMILESORSKETCH");
   const { value: ATOMMATCHOPTION } = getTaskItem("ATOMMATCHOPTION");
+  const { data: MOLINContent } = getFileContent("MOLIN");
+  const { data: SMILESFILEContent } = getFileContent("SMILESFILE");
+
   ATOMMATCHOPTION;
   return (
     <>
@@ -21,27 +24,44 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           <CCP4i2TaskElement
             {...props}
             itemName="MOLSMILESORSKETCH"
+            sx={{ width: "100%" }}
             qualifiers={{ guiLabel: "Ligand geometry provided as" }}
           />
           <Grid2 container>
-            <CCP4i2TaskElement
-              {...props}
-              itemName="SMILESIN"
-              qualifiers={{ guiLabel: "Smiles", guiMode: "multiLine" }}
-              visibility={() => {
-                return MOLSMILESORSKETCH === "SMILES";
-              }}
-            />
-            <RDKitView smiles={getTaskItem("SMILESIN").value || ""} />
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SMILESIN"
+                qualifiers={{ guiLabel: "Smiles", guiMode: "multiLine" }}
+                sx={{ width: "100%" }}
+                visibility={() => {
+                  return MOLSMILESORSKETCH === "SMILES";
+                }}
+              />
+            </Grid2>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              {MOLSMILESORSKETCH === "SMILES" && (
+                <RDKitView smiles={getTaskItem("SMILESIN").value || ""} />
+              )}
+            </Grid2>
           </Grid2>
-          <CCP4i2TaskElement
-            {...props}
-            itemName="MOLIN"
-            qualifiers={{ guiLabel: "MDL Mol File" }}
-            visibility={() => {
-              return MOLSMILESORSKETCH === "MOL";
-            }}
-          />
+          <Grid2 container>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <CCP4i2TaskElement
+                {...props}
+                itemName="MOLIN"
+                qualifiers={{ guiLabel: "MDL Mol File" }}
+                visibility={() => {
+                  return MOLSMILESORSKETCH === "MOL";
+                }}
+              />
+            </Grid2>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              {MOLSMILESORSKETCH === "MOL" && MOLINContent && (
+                <RDKitView smiles={MOLINContent} />
+              )}
+            </Grid2>
+          </Grid2>
           <CCP4i2TaskElement
             {...props}
             itemName="DICTIN2"
@@ -58,7 +78,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               return MOLSMILESORSKETCH === "SMILESFILE";
             }}
           />
-          <CContainerElement
+          {MOLSMILESORSKETCH === "SMILESFILE" && SMILESFILEContent && (
+            <RDKitView smiles={SMILESFILEContent.trim()} />
+          )}
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{
@@ -92,7 +115,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 return ATOMMATCHOPTION === "LOCALDICT";
               }}
             />
-          </CContainerElement>
+          </CCP4i2ContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>{" "}
     </>

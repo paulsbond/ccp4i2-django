@@ -4,7 +4,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { fullUrl, useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -72,7 +72,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <CCP4i2Tabs {...props}>
       <CCP4i2Tab tab="Main inputs">
-        <CContainerElement
+        <CCP4i2ContainerElement
           {...props}
           itemName=""
           qualifiers={{ guiLabel: "Key files" }}
@@ -98,7 +98,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="XYZIN"
             qualifiers={{ guiLabel: "MTZFile (for Matthews volumne calc)" }}
           />
-        </CContainerElement>
+        </CCP4i2ContainerElement>
       </CCP4i2Tab>
     </CCP4i2Tabs>
   );

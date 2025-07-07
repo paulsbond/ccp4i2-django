@@ -23,7 +23,7 @@ jobs:
         working-directory: client
 
       - name: Rebuild native modules for Electron
-        run: npx @electron/rebuild
+        run: npx electron-rebuild
         working-directory: ./client
 
       - name: Build app
@@ -54,7 +54,7 @@ jobs:
         working-directory: client
 
       - name: Rebuild native modules for Electron
-        run: npx @electron/rebuild
+        run: npx electron-rebuild
         working-directory: ./client
 
       - name: Build app
@@ -87,7 +87,7 @@ jobs:
         working-directory: client
 
       - name: Rebuild native modules for Electron
-        run: npx @electron/rebuild
+        run: npx electron-rebuild
         working-directory: ./client
 
       - name: Build app

@@ -1,5 +1,5 @@
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { CContainerElement } from "./ccontainer";
+import { CCP4i2ContainerElement } from "./ccontainer";
 import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
 import { fullUrl, useApi } from "../../../api";
 import { useJob, usePrevious, valueOfItem } from "../../../utils";
@@ -51,6 +51,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
       await setDescription(annotation);
       await mutateContainer();
       await mutateValidation();
+      props.onParameterChangeSuccess?.({ name, moleculeType, sequence });
     },
     [
       setSequence,

@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import $ from "jquery";
 import { prettifyXml } from "./utils";
+import { File as DjangoFile } from "./types/models";
 
 export function fullUrl(endpoint: string): string {
   let api_path = `/api/proxy/${endpoint}`;
@@ -240,6 +241,20 @@ export function useApi() {
         body: body,
       });
       return response.json() as Promise<T>;
+    },
+
+    fileTextContent: function (djangoFile: any) {
+      return useSWR(
+        `/api/proxy/files/${djangoFile?.dbFileId}/download_by_uuid/`,
+        (url) => {
+          return fetch(url).then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+          });
+        }
+      );
     },
   };
 }

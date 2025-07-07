@@ -6,7 +6,7 @@ import {
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { doRetrieve, useApi, fullUrl } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import { ParseMtz } from "../task-elements/parse-mtz";
 import { Job } from "../../../types/models";
@@ -41,6 +41,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { update: updateUNITCELL } = getTaskItem("UNITCELL");
 
   const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
+
+  const { update: updateCRYSTALNAME } = getTaskItem("CRYSTALNAME");
+
+  const { update: updateDATASETNAME } = getTaskItem("DATASETNAME");
 
   const { update: setHKLIN_OBS_COLUMNS } = getTaskItem("HKLIN_OBS_COLUMNS");
 
@@ -205,7 +209,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     <>
       <CCP4i2Tabs {...props}>
         <CCP4i2Tab tab="Main inputs" key="1">
-          <CContainerElement
+          <CCP4i2ContainerElement
             {...props}
             itemName=""
             qualifiers={{ guiLabel: "Input data", initiallyOpen: true }}
@@ -237,6 +241,22 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                       itemName="UNITCELL"
                     />
                   </Grid2>
+                  <Stack direction="row" spacing={2}>
+                    <CCP4i2TaskElement
+                      {...props}
+                      key="CRYSTALNAME"
+                      itemName="CRYSTALNAME"
+                      qualifiers={{ guiLabel: "Crystal name" }}
+                      sx={{ maxWidth: "3rem" }}
+                    />
+                    <CCP4i2TaskElement
+                      {...props}
+                      key="DATASETNAME"
+                      itemName="DATASETNAME"
+                      qualifiers={{ guiLabel: "Dataset name" }}
+                      sx={{ maxWidth: "3rem" }}
+                    />
+                  </Stack>
                 </Grid2>
                 <CCP4i2TaskElement
                   {...props}
@@ -262,7 +282,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               <MmcifPanel {...props} itemName="" digest={HKLINDigest} />
             )}
             <CCP4i2TaskElement {...props} itemName="FREERFLAG" />
-          </CContainerElement>
+          </CCP4i2ContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>
       {HKLINFile && (

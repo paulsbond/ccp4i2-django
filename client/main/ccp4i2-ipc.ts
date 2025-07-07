@@ -213,11 +213,12 @@ export const installIpcHandlers = (
       : path.join(process.resourcesPath, "server", "requirements.txt");
 
     // Wrap in quotes to handle spaces
-    const quotedRequirementsPath = `"${requirementsPath.replace(/\\/g, "/")}"`;
+    // Convert backslashes to forward slashes for cross-platform compatibility
+    const normalizedRequirementsPath = requirementsPath.replace(/\\/g, "/");
 
     const child = spawn(
       ccp4PythonPath,
-      ["-m", "pip", "install", "-r", quotedRequirementsPath],
+      ["-m", "pip", "install", "-r", normalizedRequirementsPath],
       { stdio: "inherit" }
     );
 

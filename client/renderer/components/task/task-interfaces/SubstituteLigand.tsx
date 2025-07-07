@@ -2,7 +2,7 @@ import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -20,7 +20,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   return (
     <>
-      <CContainerElement
+      <CCP4i2ContainerElement
         itemName=""
         key="Ligand geometry"
         {...props}
@@ -44,8 +44,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           itemName="DICTIN"
           visibility={() => ligandAs === "DICT"}
         />
-      </CContainerElement>
-      <CContainerElement
+      </CCP4i2ContainerElement>
+      <CCP4i2ContainerElement
         itemName=""
         key="Refinement type"
         {...props}
@@ -53,8 +53,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         containerHint="BlockLevel"
       >
         <CCP4i2TaskElement {...props} itemName="PIPELINE" />
-      </CContainerElement>
-      <CContainerElement
+      </CCP4i2ContainerElement>
+      <CCP4i2ContainerElement
         itemName=""
         key="Starting coordinates"
         {...props}
@@ -62,8 +62,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         containerHint="BlockLevel"
       >
         <CCP4i2TaskElement {...props} itemName="XYZIN" />
-      </CContainerElement>
-      <CContainerElement
+      </CCP4i2ContainerElement>
+      <CCP4i2ContainerElement
         itemName=""
         key="Reflection data"
         {...props}
@@ -83,8 +83,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           itemName="F_SIGF_IN"
           visibility={() => obsAs === "MERGED"}
         />
-      </CContainerElement>
-      <CContainerElement
+      </CCP4i2ContainerElement>
+      <CCP4i2ContainerElement
         itemName=""
         key="Free R"
         {...props}
@@ -92,7 +92,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         containerHint="BlockLevel"
       >
         <CCP4i2TaskElement {...props} itemName="FREERFLAG_IN" />
-      </CContainerElement>
+      </CCP4i2ContainerElement>
     </>
   );
 };

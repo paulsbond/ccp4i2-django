@@ -4,7 +4,7 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious, valueOfItem } from "../../../utils";
-import { CContainerElement } from "../task-elements/ccontainer";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -12,7 +12,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   return (
     <>
-      <CContainerElement
+      <CCP4i2ContainerElement
         itemName=""
         key="inputData"
         {...props}
@@ -24,7 +24,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           .map((itemName) => (
             <CCP4i2TaskElement key={itemName} {...props} itemName={itemName} />
           ))}
-      </CContainerElement>
+      </CCP4i2ContainerElement>
     </>
   );
 };
