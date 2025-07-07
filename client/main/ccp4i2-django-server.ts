@@ -62,41 +62,41 @@ export async function startDjangoServer(
   console.log({ CCP4_PYTHON });
   process.env.UVICORN_PORT = `${UVICORN_PORT}`;
   process.env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
-  if (isDev) {
-    process.env.PYTHONPATH = path.join(process.cwd(), "..", "server");
-  } else {
-    process.env.PYTHONPATH = path.join(process.resourcesPath, "server");
-  }
-  console.log(
-    `🐍 Python Path: ${process.env.PYTHONPATH}`,
-    process.cwd(),
-    process.resourcesPath
-  );
   //console.log(process.env);
-  const migrateEnv = { ...process.env };
   const oldCWD = process.cwd();
-  const oldPythonPath = process.env.PYTHONPATH;
+  const oldPythonPath = process.env.PYTHONPATH || "";
+  let serverSrcPath: string;
   if (isDev) {
-    process.env.PYTHONPATH = path.join(process.cwd(), "..", "server");
+    serverSrcPath = path.join(process.cwd(), "..", "server");
     process.chdir(path.join(process.cwd(), "..", "server"));
   } else {
-    process.env.PYTHONPATH = path.join(process.resourcesPath, "server");
+    serverSrcPath = path.join(process.resourcesPath, "server");
     process.chdir(path.join(process.resourcesPath, "server"));
   }
+  process.env.PYTHONPATH = serverSrcPath;
+  const migrateEnv = { ...process.env };
   const migrateResult = execSync(`${CCP4_PYTHON} manage.py migrate`, {
     env: migrateEnv,
   });
   console.log(`🐍 Migrate result: ${migrateResult}`);
-
+  console.log(`🐍 serverSrcPath: ${serverSrcPath} ${typeof serverSrcPath}`);
   // 2️⃣ Start Python process with dynamic port
-  const pythonProcess = spawn(
-    CCP4_PYTHON,
-    ["-m", "uvicorn", "asgi:application"],
-    {
+  let pythonProcess: any;
+  if (isDev) {
+    pythonProcess = spawn(
+      CCP4_PYTHON,
+      ["-m", "uvicorn", "asgi:application", "--reload"],
+      {
+        env: process.env,
+        shell: true,
+      }
+    );
+  } else {
+    pythonProcess = spawn(CCP4_PYTHON, ["-m", "uvicorn", "asgi:application"], {
       env: process.env,
       shell: true,
-    }
-  );
+    });
+  }
   console.log(`🚀 Uvicorn running on http://localhost:${UVICORN_PORT}`);
 
   process.env.PYTHONPATH = path.join(oldPythonPath);
