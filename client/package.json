@@ -1,5 +1,5 @@
 {
-  "name": "ccp4i2-electron",
+  "name": "ccp4i2-django",
   "type": "module",
   "main": "dist/main.js",
   "version": "0.0.1",
@@ -84,8 +84,8 @@
     "node_modules/next"
   ],
   "build": {
-    "appId": "com.ccp4.ccp4i2-electron",
-    "productName": "ccp4i2-electron",
+    "appId": "com.ccp4.ccp4i2-django",
+    "productName": "ccp4i2-django",
     "icon": "assets/ccp4i2",
     "files": [
       "dist/**",

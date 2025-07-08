@@ -24,6 +24,7 @@ export const ImportProjectContent: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const { mutate: mutateProjects } = api.get<Project[]>("projects");
+
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     setFiles(files ? Array.from(files) : []);
@@ -39,6 +40,8 @@ export const ImportProjectContent: React.FC = () => {
         .then((response) => {
           console.log("Files uploaded successfully:", response.data);
           setUploading(false);
+          mutateProjects();
+          router.push("/");
         })
         .catch((error) => {
           console.error("Error uploading files:", error);

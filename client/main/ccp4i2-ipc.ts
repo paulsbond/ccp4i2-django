@@ -104,7 +104,7 @@ export const installIpcHandlers = (
     }
     dialog
       .showOpenDialog(mainWindow, {
-        properties: ["openDirectory"],
+        properties: ["openDirectory", "createDirectory"],
       })
       .then((result) => {
         if (!result.canceled) {
