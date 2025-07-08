@@ -1,5 +1,9 @@
 # ccp4i2-django
 
+## Casual use
+
+If you are interested in taking a look at the current development snapshot, without wishing to develop code, see the instructions [here](docs/user/snapshot-installation.md). Please note, this is an early (alpha) snapshot of the code, and is not recommended for use for production purposes.
+
 ## Development
 
 Clone the project from GitHub,
@@ -23,7 +27,7 @@ at http://localhost:8000.
 
 Use ctrl-C to kill the dev server
 
-## Install and import test suite
+## Install and import test suite (optional)
 
 The ccp4i2 test suite can be used to provide substrate for development
 To recover and import the test suite, navigate to the directory in which you have installed ccp4i2-django:
@@ -48,11 +52,18 @@ user:~/ccp4i2-django/client$ npm run start
 
 The django instance and the UI will update automatically when any changes are made to source code files.
 
-If making any changes to the database models,
-run the following commands to update the database
+See [here](./docs/user/getting-started.md) for guidance on how to get started with ccp4i2-django
+
+See [here](./docs/developer/task-interface.md) for guidance on how to create a task interface
+
+## In the event that you make a change to the CCP4i2 data model
+
+First rule of `ccp4i2-django` development is don't change the data model without consultation. Data model changes are actually straightforward (thanks to django), but need to be introduced in a consistent manner.
+
+If you ar ehappy ignoring the first rule, then run the following commands to update the database
 then restart the server:
 
 ```console
-user:~/ccp4i2-django$ python manage.py makemigrations
-user:~/ccp4i2-django$ python manage.py migrate
+user:~/ccp4i2-django$ ccp4-python manage.py makemigrations
+user:~/ccp4i2-django$ ccp4-python manage.py migrate
 ```

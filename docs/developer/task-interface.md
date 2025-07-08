@@ -10,49 +10,67 @@ Task interfaces are React components located in:
 client/renderer/components/task/task-interfaces/
 ```
 
-Each interface is a `.tsx` file named after the task.
+The appropriate interface to use for a given ccp4i2 task is captured in the file
+
+```
+client/renderer/providers/task-container.tsx
+```
+
+Each interface is a `.tsx` file named after the task, and registered in `task-container.tsx`. To register the interface in `task-container.tsx`, simply edit `task-container.tsx` to 1) import the task interface file, and 2) add a corresponding `case` to the long switch statement :
+
+```tsx
+//At the top of the file:
+import ParrotInterface from "../components/task/task-interfaces/parrot";
+
+//In the switch section:
+
+      case "parrot":
+        return (
+          <ParrotInterface
+            {...{
+              job,
+            }}
+          />
+        );
+
+```
+
+where`parrot` is the ccp4i2 task name as used in the task's `.def.xml` and python script files.
 
 ## 2. Component Boilerplate
 
 Start with a functional React component. Example:
 
 ```tsx
-import React from "react";
-import {
-  CCP4i2Tabs,
-  CCP4i2Tab,
-  CCP4i2ContainerElement,
-  CCP4i2TaskElement,
-} from "../task-elements";
-import { TaskInterfaceProps } from "../types";
+import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
+import { CCP4i2TaskElement } from "../task-elements/task-element";
+import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
+import { useJob } from "../../../utils";
+import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
+np;
+const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
+  const { job } = props;
+  const { getTaskItem } = useJob(job.id);
+  const { value: XYZIN_MODE } = getTaskItem("XYZIN_MODE");
 
-const ParrotTaskInterface: React.FC<TaskInterfaceProps> = (props) => {
   return (
-    <CCP4i2Tabs>
-      <CCP4i2Tab tab="Main">
+    <CCP4i2Tabs {...props}>
+      <CCP4i2Tab tab="Main inputs">
         <CCP4i2ContainerElement
+          {...props}
           itemName=""
-          qualifiers={{ guiLabel: "Main Parameters" }}
+          qualifiers={{ guiLabel: "Input data" }}
+          key="Input data"
           containerHint="FolderLevel"
           initiallyOpen={true}
-          size={{ xs: 12 }}
         >
           <CCP4i2TaskElement
             {...props}
-            itemName="INPUT_VALUE"
-            qualifiers={{ guiLabel: "Input Value" }}
-            onParameterChangeSuccess={(val) =>
-              props.onChange({
-                ...props.task,
-                parameters: { ...props.task.parameters, inputValue: val },
-              })
-            }
-            disabled={props.readonly}
+            key="F_SIGF"
+            itemName="F_SIGF"
+            qualifiers={{ guiLabel: "Reflections" }}
           />
         </CCP4i2ContainerElement>
-      </CCP4i2Tab>
-      <CCP4i2Tab tab="Advanced">
-        {/* Additional fields or settings */}
       </CCP4i2Tab>
     </CCP4i2Tabs>
   );
@@ -60,31 +78,6 @@ const ParrotTaskInterface: React.FC<TaskInterfaceProps> = (props) => {
 
 export default ParrotTaskInterface;
 ```
-
-## 3. Props
-
-All task interfaces receive `TaskInterfaceProps`, which typically include:
-
-- `task`: Task data and configuration.
-- `onChange`: Callback for updating task state.
-- `readonly`: Boolean for read-only mode.
-
-## 4. Using CCP4i2Tabs and Related Components
-
-- **CCP4i2Tabs**: Provides a tabbed interface for organizing fields.
-- **CCP4i2Tab**: Represents a single tab, labeled via the `label` prop.
-- **CCP4i2ContainerElement**: Groups related form elements for layout.
-- **CCP4i2TaskElement**: Renders a labeled input field, handling value and change events.
-
-Example usage is shown in the boilerplate above.
-
-## 5. Handling Read-Only Mode
-
-Disable inputs if `props.readonly` is true by passing `disabled={props.readonly}` to `CCP4i2TaskElement`.
-
-## 6. Custom Logic
-
-Implement any task-specific logic, such as validation or dynamic fields, within the component.
 
 ## 7. Export
 
