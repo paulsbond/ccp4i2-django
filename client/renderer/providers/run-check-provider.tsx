@@ -15,7 +15,6 @@ import {
 import { Button } from "@mui/material";
 import { useJob } from "../utils";
 import { CCP4i2Context } from "../app-context";
-import useSWR from "swr";
 
 export type ProcessErrorsCallback = (validation: any) => any;
 interface RunCheckContextType {
@@ -155,8 +154,10 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
       onClose={() => handleCancel()}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        style: { minWidth: 600 },
+      slotProps={{
+        paper: {
+          style: { minWidth: 600 },
+        },
       }}
     >
       <DialogContent>
