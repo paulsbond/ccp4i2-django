@@ -29,7 +29,7 @@ export const CCP4i2Tabs: React.FC<PropsWithChildren<CCP4i2TabsProps>> = ({
         {Children.map(children, (child: any, iChild) => (
           <Tab
             key={child.props.tab}
-            label={child.props.tab}
+            label={child.props.label}
             {...a11yProps(iChild)}
           />
         ))}
@@ -44,7 +44,7 @@ export const CCP4i2Tabs: React.FC<PropsWithChildren<CCP4i2TabsProps>> = ({
 };
 
 export interface CCP4i2TabProps {
-  tab: string;
+  label: string;
 }
 
 export const CCP4i2Tab: React.FC<PropsWithChildren<CCP4i2TabProps>> = ({

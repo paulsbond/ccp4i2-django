@@ -9,14 +9,14 @@ interface InputFileFetchProps {
   modes?: string[];
   item?: any;
   sx?: SxProps;
-  onParameterChangeSuccess?: (updatedItem: any) => void;
+  onChange?: (updatedItem: any) => void;
 }
 export const InputFileFetch: React.FC<InputFileFetchProps> = ({
   disabled,
   sx,
   item,
   modes,
-  onParameterChangeSuccess,
+  onChange,
 }) => {
   const { setDownloadDialogOpen, setFetchItemParams } =
     useContext(TaskInterfaceContext);
@@ -36,8 +36,7 @@ export const InputFileFetch: React.FC<InputFileFetchProps> = ({
         if (setDownloadDialogOpen) setDownloadDialogOpen(true);
         const arg = { item, modes };
         console.log({ arg });
-        if (setFetchItemParams)
-          setFetchItemParams({ item, modes, onParameterChangeSuccess });
+        if (setFetchItemParams) setFetchItemParams({ item, modes, onChange });
       }}
     />
   );

@@ -2,9 +2,10 @@ import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
-import { useJob, usePrevious } from "../../../utils";
+import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { CAltSpaceGroupElement } from "../task-elements/caltspacegroupelement";
+import { useContext, useEffect } from "react";
+import { RunCheckContext } from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -18,14 +19,58 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { value: aimlessRefValue } = getTaskItem("REFERENCE_FOR_AIMLESS");
   const { value: reference_datasetValue } = getTaskItem("REFERENCE_DATASET");
 
+  // 1. Retrieve the function for installing the processing callback from the relevant context
+  // layer
+
+  const { setProcessErrorsCallback, processErrorsCallback } =
+    useContext(RunCheckContext);
+
+  // 2. Define an error processing callback.  In this case filters out issues with
+  // aimless_pipe.controlParameters.CELL.
+  const myProcessErrorsCallback = (validation: any) => {
+    //Null action for validation null or undefined
+    if (!validation) return validation;
+    // Filter out keys that start with "aimless_pipe.controlParameters.cells"
+    const filteredValidation = Object.keys(validation)
+      .filter((key) => !key.startsWith("aimless_pipe.controlParameters.CELL."))
+      .reduce((acc, key) => {
+        acc[key] = validation[key];
+        return acc;
+      }, {} as any);
+
+    return filteredValidation;
+  };
+
+  // 3. Use a useEffect to install the filtering callback, and clean up when the task interface
+  // unmounts
+
+  useEffect(() => {
+    //Proceed only if the callback is not already set
+    //This is to avoid setting the callback multiple times, which could lead to unexpected behavior
+    //and to ensure that the callback is set only once when the component mounts
+    if (!processErrorsCallback) {
+      //Notice the esential (but unusual) syntax of the following line
+      //This is a function that will be called to process errors, and it will filter out
+      //any errors that are related to the cell parameters of the aimless_pipe task
+      setProcessErrorsCallback(() => myProcessErrorsCallback);
+    }
+    return () => {
+      if (processErrorsCallback) setProcessErrorsCallback(null);
+    };
+  }, []);
+
   return (
     <CCP4i2Tabs {...props}>
-      <CCP4i2Tab tab="Main inputs" key="1">
+      <CCP4i2Tab label="Main inputs" key="1">
         <CCP4i2ContainerElement
           key="Files"
           itemName=""
+          containerHint="BlockLevel"
           {...props}
-          qualifiers={{ containerHint: "FolderLevel", initiallyOpen: true }}
+          qualifiers={{
+            initiallyOpen: true,
+            guiLabel: "File inputs",
+          }}
         >
           <CCP4i2TaskElement
             {...props}
@@ -50,9 +95,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           {...props}
           itemName=""
           key="Parameters"
+          containerHint="FolderLevel"
           qualifiers={{
             guiLabel: "Parameters",
-            containerHint: "FolderLevel",
             initiallyOpen: true,
           }}
         >
@@ -79,9 +124,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           {...props}
           key="ChoosingSpace"
           itemName=""
+          containerHint="FolderLevel"
           qualifiers={{
             guiLabel: "Choosing spacegroup",
-            containerHint: "FolderLevel",
             initiallyOpen: true,
           }}
         >
@@ -95,9 +140,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             {...props}
             key="ChoiceOptions"
             itemName=""
+            containerHint="BlockLevel"
             qualifiers={{
               guiLabel: "Choice options",
-              containerHint: "BlockLevel",
             }}
             visibility={() => {
               return modeValue === "CHOOSE";
@@ -166,9 +211,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             {...props}
             itemName=""
             key="Specify refrence"
+            containerHint="BlockLevel"
             qualifiers={{
               guiLabel: "Specify reference",
-              containerHint: "BlockLevel",
             }}
             visibility={() => {
               return modeValue === "MATCH";

@@ -59,7 +59,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   return (
     <CCP4i2Tabs>
-      <CCP4i2Tab tab="Input data">
+      <CCP4i2Tab label="Input data">
         <CCP4i2ContainerElement
           {...props}
           itemName=""
@@ -114,7 +114,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           />
         </CCP4i2ContainerElement>
       </CCP4i2Tab>
-      <CCP4i2Tab tab="Output" key="Output">
+      <CCP4i2Tab label="Output" key="Output">
         <CCP4i2TaskElement
           {...props}
           itemName="USE_NCS"

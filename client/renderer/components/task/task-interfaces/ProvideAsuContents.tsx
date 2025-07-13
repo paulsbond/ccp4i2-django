@@ -145,7 +145,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   return (
     <CCP4i2Tabs {...props}>
-      <CCP4i2Tab tab="Main inputs">
+      <CCP4i2Tab label="Main inputs">
         <CCP4i2ContainerElement
           {...props}
           itemName=""
@@ -160,7 +160,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             {...props}
             itemName="ASUCONTENTIN"
             qualifiers={{ guiLabel: "ASU contents" }}
-            onParameterChangeSuccess={handleNewASUCONTENTIN}
+            onChange={handleNewASUCONTENTIN}
           />
         </CCP4i2ContainerElement>
         <CCP4i2ContainerElement
@@ -178,7 +178,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             {...props}
             itemName="ASU_CONTENT"
             qualifiers={{ guiLabel: "ASU contents" }}
-            onParameterChangeSuccess={() => {
+            onChange={() => {
               mutateMolWeight();
             }}
           />

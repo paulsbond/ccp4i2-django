@@ -131,8 +131,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
         if (result.status === "Failed") {
           setMessage(`Unacceptable new value provided: "${explicitValue}"`);
           setValue(item._value);
-        } else if (props.onParameterChangeSuccess) {
-          await props.onParameterChangeSuccess(result.updated_item);
+        } else if (props.onChange) {
+          await props.onChange(result.updated_item);
         }
       } catch (err) {
         setMessage(err);

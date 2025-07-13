@@ -51,7 +51,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
       await setDescription(annotation);
       await mutateContainer();
       await mutateValidation();
-      props.onParameterChangeSuccess?.({ name, moleculeType, sequence });
+      props.onChange?.({ name, moleculeType, sequence });
     },
     [
       setSequence,
@@ -128,7 +128,7 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   mimeTypeName: "application/CCP4-seq",
                   downloadModes: ["uniprotFasta"],
                 }}
-                onParameterChangeSuccess={async (updatedItem: any) => {
+                onChange={async (updatedItem: any) => {
                   const { dbFileId, annotation } = valueOfItem(updatedItem);
                   const digest = await fetch(
                     fullUrl(`files/${dbFileId}/digest_by_uuid/`)

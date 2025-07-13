@@ -79,8 +79,8 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
       value: listValue,
     };
     const result: any = await setParameter(setParameterArg);
-    if (result?.status === "Success" && props.onParameterChangeSuccess) {
-      await props.onParameterChangeSuccess(result.updated_item);
+    if (result?.status === "Success" && props.onChange) {
+      await props.onChange(result.updated_item);
     }
   }, [item, project, job]);
 
@@ -98,8 +98,8 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
           value: valueOfItem(item),
         };
         const result: any = await setParameter(setParameterArg);
-        if (result?.status === "Success" && props.onParameterChangeSuccess) {
-          await props.onParameterChangeSuccess(result.updated_item);
+        if (result?.status === "Success" && props.onChange) {
+          await props.onChange(result.updated_item);
         }
       }
     },
