@@ -18,21 +18,21 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <Paper>
       <CCP4i2Tabs>
-        <CCP4i2Tab key="Input data" tab="Input data">
+        <CCP4i2Tab key="Input data" label="Input data">
           <CCP4i2TaskElement
             itemName="inputData"
             {...props}
             qualifiers={{ guiLabel: "Input data" }}
           />
         </CCP4i2Tab>
-        <CCP4i2Tab key="Parameters" tab="Parameters">
+        <CCP4i2Tab key="Parameters" label="Parameters">
           <CCP4i2TaskElement
             itemName="controlParameters"
             {...props}
             qualifiers={{ guiLabel: "Parameters" }}
           />
         </CCP4i2Tab>
-        <CCP4i2Tab key="Keywords" tab="Keywords">
+        <CCP4i2Tab key="Keywords" label="Keywords">
           <CCP4i2TaskElement
             itemName="keywords"
             {...props}
