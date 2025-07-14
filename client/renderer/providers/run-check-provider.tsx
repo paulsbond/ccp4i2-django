@@ -3,7 +3,6 @@ import React, {
   useContext,
   useState,
   ReactNode,
-  useMemo,
   useEffect,
   useRef,
 } from "react";
@@ -14,7 +13,6 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { Button } from "@mui/material";
-import { useJob } from "../utils";
 import { CCP4i2Context } from "../app-context";
 
 /**
@@ -36,28 +34,24 @@ export interface CCP4i2RunActions {
   [key: string]: ReactNode;
 }
 
-export type ProcessErrorsCallback = (validation: CCP4i2ErrorReport) => any;
-
 interface RunCheckContextType {
   runTaskRequested: number | null;
   setRunTaskRequested: (taskId: number | null) => void;
-  processErrorsCallback: null | ProcessErrorsCallback;
-  setProcessErrorsCallback: (fn: null | ProcessErrorsCallback) => void;
   confirmTaskRun: (taskId: number) => Promise<boolean>;
   extraDialogActions: CCP4i2RunActions;
   setExtraDialogActions: (actions: CCP4i2RunActions) => void;
   processedErrors: CCP4i2ErrorReport | null;
+  setProcessedErrors: (errors: CCP4i2ErrorReport | null) => void;
 }
 
 export const RunCheckContext = createContext<RunCheckContextType>({
   runTaskRequested: null,
   setRunTaskRequested: () => {},
   confirmTaskRun: () => Promise.resolve(false),
-  processErrorsCallback: null,
-  setProcessErrorsCallback: () => {},
   extraDialogActions: {},
   setExtraDialogActions: () => {},
   processedErrors: null,
+  setProcessedErrors: () => {},
 });
 
 interface RunCheckProviderProps {
@@ -71,25 +65,10 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
   const [pendingResolve, setPendingResolve] = useState<
     ((value: boolean) => void) | null
   >(null);
-  const [processErrorsCallback, setProcessErrorsCallback] =
-    useState<ProcessErrorsCallback | null>(null);
   const [extraDialogActions, setExtraDialogActions] =
     useState<CCP4i2RunActions>({});
-  const { jobId } = useContext(CCP4i2Context);
-  const { validation } = useJob(parseInt(`${jobId}` || "0"));
-
-  const processedErrors: CCP4i2ErrorReport | null = useMemo(() => {
-    if (
-      validation &&
-      processErrorsCallback &&
-      typeof processErrorsCallback === "function"
-    ) {
-      const result = processErrorsCallback(validation);
-      console.log({ processedErrors: result });
-      return result;
-    }
-    return validation;
-  }, [processErrorsCallback, validation, jobId]);
+  const [processedErrors, setProcessedErrors] =
+    useState<CCP4i2ErrorReport | null>(null);
 
   const confirmTaskRun = (taskId: number): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -116,16 +95,17 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
 
   return (
     <RunCheckContext.Provider
-      value={{
-        runTaskRequested,
-        setRunTaskRequested,
-        confirmTaskRun,
-        processErrorsCallback,
-        setProcessErrorsCallback,
-        extraDialogActions,
-        setExtraDialogActions,
-        processedErrors,
-      }}
+      value={
+        {
+          runTaskRequested,
+          setRunTaskRequested,
+          confirmTaskRun,
+          extraDialogActions,
+          setExtraDialogActions,
+          processedErrors,
+          setProcessedErrors,
+        } as RunCheckContextType
+      }
     >
       {children}
       <ErrorAwareRunDialog

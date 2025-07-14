@@ -107,8 +107,6 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
   const handleSelectedItemsChange = useCallback(
     (event: React.SyntheticEvent, ids: string | null) => {
       const job = jobs?.find((job) => job.uuid === ids);
-      console.log(ids);
-      console.log({ job }, jobs);
       if (job) {
         navigate.push(`/project/${job.project}/job/${job.id}`);
       }

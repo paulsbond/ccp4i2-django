@@ -6,7 +6,7 @@ import { useApi } from "../../../api";
 import { useJob, usePrevious, useProject } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useContext, useEffect, useMemo } from "react";
-import type { ProcessErrorsCallback } from "../../../providers/run-check-provider";
+import type { CCP4i2RunActions } from "../../../providers/run-check-provider";
 import {
   RunCheckContext,
   useRunCheck,
@@ -18,8 +18,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const {
-    processErrorsCallback,
-    setProcessErrorsCallback,
+    processedErrors,
+    setProcessedErrors,
     setExtraDialogActions,
     extraDialogActions = [],
   } = useContext(RunCheckContext);
@@ -30,7 +30,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskItem, getFileDigest } = useJob(job.id);
+  const { getTaskItem, getFileDigest, validation } = useJob(job.id);
 
   const { data: F_SIGFDigest } = getFileDigest(
     "prosmart_refmac.inputData.F_SIGF"
@@ -97,48 +97,80 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
   }, [projectId, api, mutateJobs, router]);
 
-  const myProcessErrorsCallback: ProcessErrorsCallback = useCallback(
-    (validation) => {
-      // This function is called to process errors from the run check
-      // It can be customized to handle errors in a specific way
-      console.log("freeRFlag", freeRFlag, refinementMode);
-      const processedErrors = validation ? { ...validation } : {};
-      if (!(freeRFlag?.dbFileId?.length > 0)) {
-        processedErrors.FREERFLAG = {
-          messages: [
-            "Setting the Free R flag file is strongly recommended for refinement",
-            "You are advised to select an existing set or create a new one ",
-          ],
-          maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
-          // maxSeverity of 3 causes confirm dialog to show, but allows execution
-        };
-      }
-      return processedErrors;
-    },
-    [freeRFlag, refinementMode]
-  );
+  // Process the errors and set them in the context
+  useEffect(() => {
+    if (!validation) return;
+    const newProcessedErrors = { ...validation };
+
+    if (!(freeRFlag?.dbFileId?.length > 0)) {
+      // If the Free R flag is not set, we add an overridable serious error report.
+      if (processedErrors?.FREERFLAG) return;
+      newProcessedErrors.FREERFLAG = {
+        messages: [
+          "Setting the Free R flag file is strongly recommended for refinement",
+          "You are advised to select an existing set or create a new one ",
+        ],
+        maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
+        // maxSeverity of 3 causes confirm dialog to show, but allows execution
+      };
+    }
+
+    // Only update if processedErrors have changed
+    if (
+      JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
+    ) {
+      setProcessedErrors(newProcessedErrors);
+    }
+
+    //Tidy up on unmount
+    return () => {
+      if (processedErrors) setProcessedErrors(null);
+    };
+  }, [
+    validation,
+    freeRFlag,
+    refinementMode,
+    processedErrors,
+    setProcessedErrors,
+  ]);
 
   useEffect(() => {
-    if (!processErrorsCallback && !(freeRFlag?.dbFileId?.length > 0)) {
-      setProcessErrorsCallback(() => myProcessErrorsCallback);
+    const newExtraDialogActions: CCP4i2RunActions = {};
+
+    if (!(freeRFlag?.dbFileId?.length > 0)) {
+      newExtraDialogActions.FREERFLAG = (
+        <Button onClick={createFreeRTask}>Create FreeR task</Button>
+      );
     }
+
+    // To avoid unnecessary updates, we check if the extraDialogActions have changed
+    // before setting them. This prevents unnecessary re-renders and updates.
+    // We use JSON.stringify to compare the objects, which is a simple way to check for
+    // deep equality in this case. Note extraDialogActions is a non-serializable object,
+    // so we compare keys.
+    if (
+      JSON.stringify(Object.keys(newExtraDialogActions)) !==
+      JSON.stringify(Object.keys(extraDialogActions))
+    ) {
+      setExtraDialogActions(newExtraDialogActions);
+    }
+
+    //Tidy up on unmount
     return () => {
-      if (processErrorsCallback) setProcessErrorsCallback(null);
       if (Object.keys(extraDialogActions).length > 0) setExtraDialogActions({});
     };
-  }, [freeRFlag, myProcessErrorsCallback]);
+  }, [
+    validation,
+    freeRFlag,
+    processedErrors,
+    refinementMode,
+    setProcessedErrors,
+    setExtraDialogActions,
+    createFreeRTask,
+    extraDialogActions,
+  ]);
 
-  useEffect(() => {
-    if (
-      !Object.keys(extraDialogActions).includes("FREERFLAG") &&
-      !(freeRFlag?.dbFileId?.length > 0)
-    ) {
-      setExtraDialogActions({
-        FREERFLAG: <Button onClick={createFreeRTask}>Create FreeR task</Button>,
-      });
-    }
-  }, [freeRFlag, setExtraDialogActions, extraDialogActions]);
-
+  // Render the task interface
   return (
     <Paper>
       <CCP4i2Tabs>

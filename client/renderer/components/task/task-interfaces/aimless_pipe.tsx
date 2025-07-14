@@ -19,45 +19,37 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { value: aimlessRefValue } = getTaskItem("REFERENCE_FOR_AIMLESS");
   const { value: reference_datasetValue } = getTaskItem("REFERENCE_DATASET");
 
-  // 1. Retrieve the function for installing the processing callback from the relevant context
-  // layer
+  //1. Retrieve the jobs validation: this will be kept up to date automatically as parameters
+  //change
+  const { validation } = useJob(job.id);
 
-  const { setProcessErrorsCallback, processErrorsCallback } =
-    useContext(RunCheckContext);
+  // 2. Retrieve the function for setting a processed Error Report
 
-  // 2. Define an error processing callback.  In this case filters out issues with
-  // aimless_pipe.controlParameters.CELL.
-  const myProcessErrorsCallback = (validation: any) => {
-    //Null action for validation null or undefined
-    if (!validation) return validation;
-    // Filter out keys that start with "aimless_pipe.controlParameters.cells"
-    const filteredValidation = Object.keys(validation)
+  const { processedErrors, setProcessedErrors } = useContext(RunCheckContext);
+
+  // 3. Provide a useEffect which will filter out the errors related to the cell parameters
+  // of the aimless_pipe task, and set the processedErrors in the appropriate context
+  // layer, so that they can be used in the run check dialog
+
+  useEffect(() => {
+    if (!validation) return;
+    const newProcessedErrors = Object.keys(validation)
       .filter((key) => !key.startsWith("aimless_pipe.controlParameters.CELL."))
       .reduce((acc, key) => {
         acc[key] = validation[key];
         return acc;
       }, {} as any);
-
-    return filteredValidation;
-  };
-
-  // 3. Use a useEffect to install the filtering callback, and clean up when the task interface
-  // unmounts
-
-  useEffect(() => {
-    //Proceed only if the callback is not already set
-    //This is to avoid setting the callback multiple times, which could lead to unexpected behavior
-    //and to ensure that the callback is set only once when the component mounts
-    if (!processErrorsCallback) {
-      //Notice the esential (but unusual) syntax of the following line
-      //This is a function that will be called to process errors, and it will filter out
-      //any errors that are related to the cell parameters of the aimless_pipe task
-      setProcessErrorsCallback(() => myProcessErrorsCallback);
+    // Important: only update if processedErrors have changed
+    if (
+      JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
+    ) {
+      setProcessedErrors(newProcessedErrors);
     }
+    //Tidy up on unmount
     return () => {
-      if (processErrorsCallback) setProcessErrorsCallback(null);
+      if (processedErrors) setProcessedErrors(null);
     };
-  }, []);
+  }, [validation, processedErrors, setProcessedErrors]);
 
   return (
     <CCP4i2Tabs {...props}>
