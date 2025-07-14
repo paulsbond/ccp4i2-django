@@ -109,7 +109,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             "Setting the Free R flag file is strongly recommended for refinement",
             "You are advised to select an existing set or create a new one ",
           ],
-          maxSeverity: 3,
+          maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
+          // maxSeverity of 3 causes confirm dialog to show, but allows execution
         };
       }
       return processedErrors;
@@ -123,17 +124,20 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
     return () => {
       if (processErrorsCallback) setProcessErrorsCallback(null);
-      if (extraDialogActions.length > 0) setExtraDialogActions([]);
+      if (Object.keys(extraDialogActions).length > 0) setExtraDialogActions({});
     };
   }, [freeRFlag, myProcessErrorsCallback]);
 
   useEffect(() => {
-    if (extraDialogActions.length == 0 && !(freeRFlag?.dbFileId?.length > 0)) {
-      setExtraDialogActions([
-        <Button onClick={createFreeRTask}>Create FreeR task</Button>,
-      ]);
+    if (
+      !Object.keys(extraDialogActions).includes("FREERFLAG") &&
+      !(freeRFlag?.dbFileId?.length > 0)
+    ) {
+      setExtraDialogActions({
+        FREERFLAG: <Button onClick={createFreeRTask}>Create FreeR task</Button>,
+      });
     }
-  }, [freeRFlag, setExtraDialogActions]);
+  }, [freeRFlag, setExtraDialogActions, extraDialogActions]);
 
   return (
     <Paper>

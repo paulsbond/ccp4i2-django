@@ -5,6 +5,7 @@ import React, {
   ReactNode,
   useMemo,
   useEffect,
+  useRef,
 } from "react";
 import {
   Dialog,
@@ -16,16 +17,36 @@ import { Button } from "@mui/material";
 import { useJob } from "../utils";
 import { CCP4i2Context } from "../app-context";
 
-export type ProcessErrorsCallback = (validation: any) => any;
+/**
+ * An error report keyed by parameter name or error type.
+ * Each entry contains a maxSeverity (number) and an array of messages (strings).
+ */
+export interface CCP4i2ErrorReport {
+  [key: string]: {
+    maxSeverity: number;
+    messages: string[];
+    // You can add more fields here if needed
+  };
+}
+
+/**
+ * An object whose keys are strings and values are ReactNode actions.
+ */
+export interface CCP4i2RunActions {
+  [key: string]: ReactNode;
+}
+
+export type ProcessErrorsCallback = (validation: CCP4i2ErrorReport) => any;
+
 interface RunCheckContextType {
   runTaskRequested: number | null;
   setRunTaskRequested: (taskId: number | null) => void;
   processErrorsCallback: null | ProcessErrorsCallback;
   setProcessErrorsCallback: (fn: null | ProcessErrorsCallback) => void;
   confirmTaskRun: (taskId: number) => Promise<boolean>;
-  extraDialogActions?: React.ReactNode[];
-  setExtraDialogActions: (actions: React.ReactNode[]) => void;
-  processedErrors: any[] | null;
+  extraDialogActions: CCP4i2RunActions;
+  setExtraDialogActions: (actions: CCP4i2RunActions) => void;
+  processedErrors: CCP4i2ErrorReport | null;
 }
 
 export const RunCheckContext = createContext<RunCheckContextType>({
@@ -34,7 +55,7 @@ export const RunCheckContext = createContext<RunCheckContextType>({
   confirmTaskRun: () => Promise.resolve(false),
   processErrorsCallback: null,
   setProcessErrorsCallback: () => {},
-  extraDialogActions: [],
+  extraDialogActions: {},
   setExtraDialogActions: () => {},
   processedErrors: null,
 });
@@ -52,19 +73,20 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
   >(null);
   const [processErrorsCallback, setProcessErrorsCallback] =
     useState<ProcessErrorsCallback | null>(null);
-  const [extraDialogActions, setExtraDialogActions] = useState<
-    React.ReactNode[]
-  >([]);
+  const [extraDialogActions, setExtraDialogActions] =
+    useState<CCP4i2RunActions>({});
   const { jobId } = useContext(CCP4i2Context);
   const { validation } = useJob(parseInt(`${jobId}` || "0"));
 
-  const processedErrors = useMemo(() => {
+  const processedErrors: CCP4i2ErrorReport | null = useMemo(() => {
     if (
       validation &&
       processErrorsCallback &&
       typeof processErrorsCallback === "function"
     ) {
-      return processErrorsCallback(validation);
+      const result = processErrorsCallback(validation);
+      console.log({ processedErrors: result });
+      return result;
     }
     return validation;
   }, [processErrorsCallback, validation, jobId]);
@@ -126,27 +148,51 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
   handleCancel,
 }) => {
   const { extraDialogActions, processedErrors } = useRunCheck();
+  const autoSubmitTimer = useRef<NodeJS.Timeout | null>(null);
+  const { jobId } = useContext(CCP4i2Context);
 
-  const seriousIssues = processedErrors
-    ? Object.keys(processedErrors)
-        .filter((key: string) =>
-          [2, 3].includes(processedErrors[key].maxSeverity)
+  // ...inside ErrorAwareRunDialog...
+
+  const seriousIssues: CCP4i2ErrorReport | null = processedErrors
+    ? Object.fromEntries(
+        Object.entries(processedErrors).filter(
+          ([_, value]) => value.maxSeverity === 2 || value.maxSeverity === 3
         )
-        .map((key: string) => processedErrors[key].messages)
-    : [];
+      )
+    : null;
 
-  const blockingIssues = processedErrors
-    ? Object.keys(processedErrors)
-        .filter((key: string) => [2].includes(processedErrors[key].maxSeverity))
-        .map((key: string) => processedErrors[key].messages)
-    : [];
+  const blockingIssues: CCP4i2ErrorReport | null = processedErrors
+    ? Object.fromEntries(
+        Object.entries(processedErrors).filter(
+          ([_, value]) => value.maxSeverity === 2
+        )
+      )
+    : null;
 
-  // Automatically confirm if there are no serious issues
+  const hasSeriousIssues = seriousIssues
+    ? Object.keys(seriousIssues).length > 0
+    : false;
+
   useEffect(() => {
-    if (runTaskRequested !== null && seriousIssues.length === 0) {
-      handleConfirm();
+    if (autoSubmitTimer.current) {
+      clearTimeout(autoSubmitTimer.current);
     }
-  }, [runTaskRequested, seriousIssues, handleConfirm]);
+    if (
+      !hasSeriousIssues &&
+      runTaskRequested !== null &&
+      jobId !== null &&
+      jobId === runTaskRequested
+    ) {
+      autoSubmitTimer.current = setTimeout(() => {
+        handleConfirm();
+      }, 100); // Auto-submit after 100 milliseconds if no serious issues
+    }
+    return () => {
+      if (autoSubmitTimer.current) {
+        clearTimeout(autoSubmitTimer.current);
+      }
+    };
+  }, [seriousIssues, runTaskRequested, jobId]);
 
   return (
     <Dialog
@@ -162,21 +208,28 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
     >
       <DialogContent>
         <DialogTitle>Confirm Task Execution</DialogTitle>
-        {seriousIssues.length > 0 && (
+        {seriousIssues && Object.keys(seriousIssues).length > 0 && (
           <pre style={{ color: "red" }}>
-            {seriousIssues.map((issueSet, index) =>
-              issueSet.map((issue, issueIndex) => (
-                <div key={`${index}_${issueIndex}`}>{issue}</div>
+            {Object.entries(seriousIssues).map(([key, issueSet], index) =>
+              issueSet.messages.map((issue, issueIndex) => (
+                <div key={`${key}_${issueIndex}`}>{issue}</div>
               ))
             )}
           </pre>
         )}
         <DialogActions>
-          {extraDialogActions?.map((action, index) => (
-            <React.Fragment key={index}>{action}</React.Fragment> // Ensure each action is wrapped in a fragment
+          {Object.keys(extraDialogActions)?.map((actionName, index) => (
+            <React.Fragment key={index}>
+              {extraDialogActions[actionName]}
+            </React.Fragment> // Ensure each action is wrapped in a fragment
           ))}
           <Button onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleConfirm} disabled={blockingIssues.length > 0}>
+          <Button
+            onClick={handleConfirm}
+            disabled={
+              blockingIssues !== null && Object.keys(blockingIssues).length > 0
+            }
+          >
             Confirm
           </Button>
         </DialogActions>

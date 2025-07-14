@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@dnd-kit/core": "^6.3.1",
+    "@electron/rebuild": "^4.0.1",
     "@emotion/cache": "^11.13.1",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
@@ -66,7 +67,6 @@
     "detect-port": "^2.1.0",
     "electron": "latest",
     "electron-builder": "^26.0.12",
-    "electron-rebuild": "^3.2.9",
     "http-proxy-middleware": "^3.0.5",
     "install": "^0.13.0",
     "npm": "^11.3.0",
