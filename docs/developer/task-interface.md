@@ -55,21 +55,15 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   return (
     <CCP4i2Tabs {...props}>
-      <CCP4i2Tab tab="Main inputs">
+      <CCP4i2Tab label="Main inputs">
         <CCP4i2ContainerElement
           {...props}
           itemName=""
-          qualifiers={{ guiLabel: "Input data" }}
           key="Input data"
           containerHint="FolderLevel"
           initiallyOpen={true}
         >
-          <CCP4i2TaskElement
-            {...props}
-            key="F_SIGF"
-            itemName="F_SIGF"
-            qualifiers={{ guiLabel: "Reflections" }}
-          />
+          <CCP4i2TaskElement {...props} key="F_SIGF" itemName="F_SIGF" />
         </CCP4i2ContainerElement>
       </CCP4i2Tab>
     </CCP4i2Tabs>
@@ -83,6 +77,33 @@ export default ParrotTaskInterface;
 
 Export the component as default.
 
----
+## 8. Structuring an interface
+
+### 8.1 Tabs
+
+To provide a tabbed interface, embed a number of `CCP4i2Tab` elements within a `CCP4i2Tabs` element. For details see [here](./classes/task-elements/ccp4i2-tabs.md)
+
+### 8.2 Containers
+
+Layout of `CCP4i2TaskElement`s and other components can be achieved using the mui material `Grid`, and `Stack` elements. Stylistically consistent hierarchical layout of items is also possible using the `CCP4i2ContainerElement` described [here](./classes/task-elements/ccp4i2-container-element.md). In addition to organising child-elements explicitly embedded within it, the `CCP4i2ContainerElement` can be used to provide default rendering for a whol folder of elements from a tasks `.def.xml` file
+
+## 8. Customising an element
+
+### 8.1 using sxProps
+
+To change aspects of appearance that map eventually in to `css`, use the `sx` property of a `CCP4i2TaskElement`. For example to
+
+### 8.2 Using qualifiers
+
+Some of the customisation of a task element is achieved by overriding the element's qualifiers. The default values for these come from the task `.def.xml` file, but they can be overridden using the `qualifiers` property of a CCP4i2 TaskElemnt. For example, to provide a different guilabel, specify your preferred label in the dictionary that is the qualifiers property:
+
+```tsx
+<CCP4i2TaskElement
+  {...props}
+  key="F_SIGF"
+  itemName="F_SIGF"
+  qualifiers={{ guiLabel: "Reflections to use" }}
+/>
+```
 
 **Tip:** Use `parrot.tsx` as a template for new task interfaces. Keep UI consistent and follow React best practices. Leverage `CCP4i2Tabs`, `CCP4i2Tab`, `CCP4i2ContainerElement`, and `CCP4i2TaskElement` for a standardized UI.

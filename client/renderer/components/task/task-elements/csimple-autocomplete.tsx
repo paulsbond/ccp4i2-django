@@ -23,8 +23,7 @@ import { usePopcorn } from "../../../providers/popcorn-provider";
 export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
   props
 ) => {
-  const { itemName, job, type, sx, qualifiers, onParameterChangeSuccess } =
-    props;
+  const { itemName, job, type, sx, qualifiers, onChange } = props;
   const { getTaskItem, getValidationColor } = useJob(job.id);
   const { item } = getTaskItem(itemName);
   //return <Typography>"{itemName}",</Typography>;
@@ -97,8 +96,8 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
           if (result?.status === "Failed") {
             setMessage(`Unacceptable new value provided: "${value}"`);
             setValue(item._value);
-          } else if (onParameterChangeSuccess) {
-            await onParameterChangeSuccess(result.updated_item);
+          } else if (onChange) {
+            await onChange(result.updated_item);
           }
         } catch (err) {
           setMessage(err);
@@ -108,7 +107,7 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
         }
       }
     },
-    [type, onParameterChangeSuccess]
+    [type, onChange]
   );
 
   const handleSelectRadio = useCallback(
@@ -126,8 +125,8 @@ export const CSimpleAutocompleteElement: React.FC<CCP4i2CSimpleElementProps> = (
           const result: any = await setParameter(setParameterArg);
           if (result?.status === "Failed") {
             setValue(item._value);
-          } else if (onParameterChangeSuccess) {
-            await onParameterChangeSuccess(result.updated_item);
+          } else if (onChange) {
+            await onChange(result.updated_item);
           }
         } catch (err) {
           alert(err);

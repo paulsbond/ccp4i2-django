@@ -27,11 +27,11 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
 }) => {
   const api = useApi();
 
-  const { item, modes, onParameterChangeSuccess } = useMemo(() => {
+  const { item, modes, onChange } = useMemo(() => {
     //alert(JSON.stringify(itemParams));
     return itemParams
       ? itemParams
-      : { item: null, modes: null, onParameterChangeSuccess: null };
+      : { item: null, modes: null, onChange: null };
   }, [itemParams]);
 
   const downloadModes: string[] = useMemo(
@@ -84,8 +84,8 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
           formData
         );
         if (uploadResult.status === "Success") {
-          if (onParameterChangeSuccess) {
-            onParameterChangeSuccess(uploadResult.updated_item);
+          if (onChange) {
+            onChange(uploadResult.updated_item);
           }
           mutateJobs();
           mutateFiles();

@@ -1,10 +1,4 @@
-import {
-  Button,
-  Grid2,
-  LinearProgress,
-  Paper,
-  Typography,
-} from "@mui/material";
+import { Button, Grid2, Paper } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
@@ -125,7 +119,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   useEffect(() => {
     if (!processErrorsCallback && !(freeRFlag?.dbFileId?.length > 0)) {
-      console.log(processErrorsCallback);
       setProcessErrorsCallback(() => myProcessErrorsCallback);
     }
     return () => {
@@ -145,7 +138,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   return (
     <Paper>
       <CCP4i2Tabs>
-        <CCP4i2Tab tab="Input data">
+        <CCP4i2Tab label="Input data">
           <CCP4i2TaskElement
             itemName="F_SIGF"
             {...props}
@@ -190,7 +183,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         The parameterisation tab
         */}
 
-        <CCP4i2Tab tab="Parameterisation" key="Parameterisation">
+        <CCP4i2Tab label="Parameterisation" key="Parameterisation">
           <CCP4i2ContainerElement
             itemName=""
             key="B-factors"
@@ -366,7 +359,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             </CCP4i2ContainerElement>
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
-        <CCP4i2Tab tab="Output" key="Output">
+        <CCP4i2Tab label="Output" key="Output">
           <CCP4i2ContainerElement
             key="Output options"
             {...props}
@@ -450,12 +443,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
 
-        <CCP4i2Tab tab="Prosmart">
-          <CCP4i2TaskElement
+        <CCP4i2Tab label="Prosmart">
+          <CCP4i2ContainerElement
             {...props}
             itemName="prosmartProtein"
+            containerHint="FolderLevel"
             qualifiers={{
-              containerHint: "FolderLevel",
               guiLabel: "Prosmart - protein",
             }}
           />

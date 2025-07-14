@@ -52,7 +52,11 @@ user:~/ccp4i2-django/client$ npm run start
 
 The django instance and the UI will update automatically when any changes are made to source code files.
 
+## Getting started
+
 See [here](./docs/user/getting-started.md) for guidance on how to get started with ccp4i2-django
+
+## Building a task interface
 
 See [here](./docs/developer/task-interface.md) for guidance on how to create a task interface
 

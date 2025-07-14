@@ -4,6 +4,7 @@ import React, {
   useState,
   ReactNode,
   useMemo,
+  useEffect,
 } from "react";
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
 } from "@mui/material";
 import { Button } from "@mui/material";
 import { useJob } from "../utils";
+import { CCP4i2Context } from "../app-context";
 
 export type ProcessErrorsCallback = (validation: any) => any;
 interface RunCheckContextType {
@@ -23,6 +25,7 @@ interface RunCheckContextType {
   confirmTaskRun: (taskId: number) => Promise<boolean>;
   extraDialogActions?: React.ReactNode[];
   setExtraDialogActions: (actions: React.ReactNode[]) => void;
+  processedErrors: any[] | null;
 }
 
 export const RunCheckContext = createContext<RunCheckContextType>({
@@ -33,6 +36,7 @@ export const RunCheckContext = createContext<RunCheckContextType>({
   setProcessErrorsCallback: () => {},
   extraDialogActions: [],
   setExtraDialogActions: () => {},
+  processedErrors: null,
 });
 
 interface RunCheckProviderProps {
@@ -51,6 +55,19 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
   const [extraDialogActions, setExtraDialogActions] = useState<
     React.ReactNode[]
   >([]);
+  const { jobId } = useContext(CCP4i2Context);
+  const { validation } = useJob(parseInt(`${jobId}` || "0"));
+
+  const processedErrors = useMemo(() => {
+    if (
+      validation &&
+      processErrorsCallback &&
+      typeof processErrorsCallback === "function"
+    ) {
+      return processErrorsCallback(validation);
+    }
+    return validation;
+  }, [processErrorsCallback, validation, jobId]);
 
   const confirmTaskRun = (taskId: number): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -85,6 +102,7 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
         setProcessErrorsCallback,
         extraDialogActions,
         setExtraDialogActions,
+        processedErrors,
       }}
     >
       {children}
@@ -107,15 +125,7 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
   handleConfirm,
   handleCancel,
 }) => {
-  const { validation } = useJob(runTaskRequested || 0);
-  const { processErrorsCallback, extraDialogActions } = useRunCheck();
-
-  const processedErrors = useMemo(() => {
-    if (processErrorsCallback && typeof processErrorsCallback === "function") {
-      return processErrorsCallback(validation);
-    }
-    return validation;
-  }, [validation, processErrorsCallback]);
+  const { extraDialogActions, processedErrors } = useRunCheck();
 
   const seriousIssues = processedErrors
     ? Object.keys(processedErrors)
@@ -131,14 +141,23 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
         .map((key: string) => processedErrors[key].messages)
     : [];
 
+  // Automatically confirm if there are no serious issues
+  useEffect(() => {
+    if (runTaskRequested !== null && seriousIssues.length === 0) {
+      handleConfirm();
+    }
+  }, [runTaskRequested, seriousIssues, handleConfirm]);
+
   return (
     <Dialog
       open={runTaskRequested !== null}
       onClose={() => handleCancel()}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        style: { minWidth: 600 },
+      slotProps={{
+        paper: {
+          style: { minWidth: 600 },
+        },
       }}
     >
       <DialogContent>
