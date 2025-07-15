@@ -209,7 +209,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
             />
           </>
         ) : (
-          <Typography>nload modes</Typography>
+          <Typography>No download modes</Typography>
         )}
       </DialogContent>
       <DialogActions>
