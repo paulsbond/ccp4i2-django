@@ -301,3 +301,30 @@ class CCP4i2DjangoDbApi(object):
             roleList=roleList,
             unSetMissingFiles=unSetMissingFiles,
         )
+
+    def jobDirectory(self, jobId=None, projectName=None, jobNumber=None):
+        logger.debug("in CCP4i2DjangoDbApi %s, %s, %s", jobId, projectName, jobNumber)
+        assert jobId is not None or (projectName is not None and jobNumber is not None)
+        the_job = None
+        if jobId is not None:
+            the_job = models.Job.objects.get(uuid=jobId)
+        elif projectName is not None and jobNumber is not None:
+            the_job = models.Job.objects.get(
+                project__name=projectName, number=jobNumber
+            )
+        if the_job is None:
+            logger.error(
+                "No job found with jobId %s, projectName %s, jobNumber %s",
+                jobId,
+                projectName,
+                jobNumber,
+            )
+            return None
+        if the_job.directory is None:
+            logger.error(
+                "Job %s has no directory set, cannot return job directory",
+                the_job.uuid,
+            )
+            return None
+        logger.debug("Job directory is %s %s", the_job.directory, the_job.project)
+        return str(the_job.directory)
