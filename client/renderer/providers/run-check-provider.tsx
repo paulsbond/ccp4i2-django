@@ -156,6 +156,7 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
   useEffect(() => {
     if (autoSubmitTimer.current) {
       clearTimeout(autoSubmitTimer.current);
+      autoSubmitTimer.current;
     }
     if (
       !hasSeriousIssues &&
@@ -165,11 +166,12 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
     ) {
       autoSubmitTimer.current = setTimeout(() => {
         handleConfirm();
-      }, 200); // Auto-submit after 100 milliseconds if no serious issues
+      }, 200); // Auto-submit after 200 milliseconds if no serious issues
     }
     return () => {
       if (autoSubmitTimer.current) {
         clearTimeout(autoSubmitTimer.current);
+        autoSubmitTimer.current = null;
       }
     };
   }, [seriousIssues, runTaskRequested, jobId]);

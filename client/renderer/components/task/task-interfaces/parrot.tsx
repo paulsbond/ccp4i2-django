@@ -22,27 +22,21 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { extraDialogActions, setExtraDialogActions } =
     useContext(RunCheckContext);
 
-  // 3. Use a useEffect to install the extraDialogItems if needed
-  // unmounts
+  // 3. Use a useEffect to install the extraDialogActions
 
   useEffect(() => {
-    // Proceed only if the callback is not already set
-    // This is to avoid setting the callback multiple times, which could lead to unexpected behavior
-    // and to ensure that the callback is set only once when the component mounts
-    if (!processErrorsCallback) {
-      setProcessErrorsCallback(() => myProcessErrorsCallback);
-      setExtraDialogActions([]);
+    if (ASUIN?.dbFileId?.length > 0) {
     }
+  }, [extraDialogActions, setExtraDialogActions]);
+
+  //This is a really important cleanup function to avoid memory leaks
+  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
+  useEffect(() => {
+    // Cleanup function to reset context values when the component unmounts
     return () => {
-      if (processErrorsCallback) setProcessErrorsCallback(null);
-      setExtraDialogActions([]);
+      setExtraDialogActions(null);
     };
-  }, [
-    processErrorsCallback,
-    setProcessErrorsCallback,
-    myProcessErrorsCallback,
-    setExtraDialogActions,
-  ]);
+  }, [setExtraDialogActions]);
 
   return (
     <CCP4i2Tabs {...props}>

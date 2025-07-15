@@ -87,7 +87,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   // to prevent unnecessary re-renders.
   useEffect(() => {
     if (validation) {
-      const newProcessedErrors = { ...validation };
+      const newProcessedErrors = Object.fromEntries(
+        Object.entries(validation as CCP4i2ErrorReport).filter(
+          ([key, _]) =>
+            key !== "servalcat_pipe.metalCoordWrapper.inputData.XYZIN"
+        )
+      );
       if (!(freeRFlag?.dbFileId?.length > 0)) {
         // If the Free R flag is not set, we add an overridable serious error report.
         newProcessedErrors.FREERFLAG = {

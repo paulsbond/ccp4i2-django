@@ -51,13 +51,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   }, [validation, processedErrors, setProcessedErrors]);
 
   //This is a really important cleanup function to avoid memory leaks
-  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
-  //or when setProcessedErrors changes, preventing stale state issues.
+  //It ensures that processedErrors are cleared when the component unmounts
   useEffect(() => {
-    return () => {
-      if (processedErrors) setProcessedErrors(null);
-    };
-  }, [setProcessedErrors, processedErrors]);
+    setProcessedErrors(null);
+  }, [setProcessedErrors]);
 
   return (
     <CCP4i2Tabs {...props}>
