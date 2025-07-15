@@ -30,6 +30,7 @@
   "dependencies": {
     "@rdkit/rdkit": "^2025.3.3-1.0.0",
     "acorn": "^8.15.0",
+    "detect-port": "^2.1.0",
     "electron-store": "^9.0.0",
     "express": "^5.1.0",
     "jquery": "^3.7.1",
@@ -64,7 +65,6 @@
     "chartjs-plugin-annotation": "^3.1.0",
     "concurrently": "latest",
     "copyfiles": "^2.4.1",
-    "detect-port": "^2.1.0",
     "electron": "latest",
     "electron-builder": "^26.0.12",
     "http-proxy-middleware": "^3.0.5",
@@ -93,7 +93,8 @@
       "!renderer/.next/cache",
       "!renderer/.next/cache/**/*",
       "renderer/public/**",
-      "scripts/start-next.js"
+      "scripts/start-next.js",
+      "node_modules/detect-port/**"
     ],
     "extraResources": [
       {
@@ -110,6 +111,13 @@
       {
         "from": "node_modules/next",
         "to": "node_modules/next",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/detect-port",
+        "to": "node_modules/detect-port",
         "filter": [
           "**/*"
         ]
