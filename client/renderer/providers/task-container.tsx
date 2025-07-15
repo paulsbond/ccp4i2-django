@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { CCP4i2Context } from "../app-context";
 import { useApi } from "../api";
 import { Job } from "../types/models";
@@ -16,9 +16,10 @@ import SubstituteLigandInterface from "../components/task/task-interfaces/Substi
 import ProvideAsuContentsInterface from "../components/task/task-interfaces/ProvideAsuContents";
 import ProvideSequenceInterface from "../components/task/task-interfaces/ProvideSequence";
 import ParrotInterface from "../components/task/task-interfaces/parrot";
-import { useJob } from "../utils";
+import { useJob, usePrevious } from "../utils";
 import { ErrorPopper } from "../components/task/task-elements/error-info";
 import { FetchFileForParam } from "../components/task/task-elements/fetch-file-for-param";
+import { RunCheckContext } from "./run-check-provider";
 
 export interface CCP4i2TaskInterfaceProps {
   job: Job;
@@ -57,6 +58,9 @@ export const TaskContainer = () => {
   const [inFlight, setInFlight] = useState<boolean>(false);
   const [fetchItemParams, setFetchItemParams] = useState<any | null>(null);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState<boolean>(false);
+  const { processedErrors, setProcessedErrors } = useContext(RunCheckContext);
+  const { extraDialogActions, setExtraDialogActions } =
+    useContext(RunCheckContext);
 
   const taskInterface = useMemo(() => {
     switch (job?.task_name) {

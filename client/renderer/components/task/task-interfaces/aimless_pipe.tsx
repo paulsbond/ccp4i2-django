@@ -32,24 +32,32 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   // layer, so that they can be used in the run check dialog
 
   useEffect(() => {
-    if (!validation) return;
-    const newProcessedErrors = Object.keys(validation)
-      .filter((key) => !key.startsWith("aimless_pipe.controlParameters.CELL."))
-      .reduce((acc, key) => {
-        acc[key] = validation[key];
-        return acc;
-      }, {} as any);
-    // Important: only update if processedErrors have changed
-    if (
-      JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
-    ) {
-      setProcessedErrors(newProcessedErrors);
+    if (validation) {
+      const newProcessedErrors = Object.keys(validation)
+        .filter(
+          (key) => !key.startsWith("aimless_pipe.controlParameters.CELL.")
+        )
+        .reduce((acc, key) => {
+          acc[key] = validation[key];
+          return acc;
+        }, {} as any);
+      // Important: only update if processedErrors have changed
+      if (
+        JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
+      ) {
+        setProcessedErrors(newProcessedErrors);
+      }
     }
-    //Tidy up on unmount
+  }, [validation, processedErrors, setProcessedErrors]);
+
+  //This is a really important cleanup function to avoid memory leaks
+  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
+  //or when setProcessedErrors changes, preventing stale state issues.
+  useEffect(() => {
     return () => {
       if (processedErrors) setProcessedErrors(null);
     };
-  }, [validation, processedErrors, setProcessedErrors]);
+  }, [setProcessedErrors, processedErrors]);
 
   return (
     <CCP4i2Tabs {...props}>

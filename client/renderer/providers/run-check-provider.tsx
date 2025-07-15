@@ -38,8 +38,8 @@ interface RunCheckContextType {
   runTaskRequested: number | null;
   setRunTaskRequested: (taskId: number | null) => void;
   confirmTaskRun: (taskId: number) => Promise<boolean>;
-  extraDialogActions: CCP4i2RunActions;
-  setExtraDialogActions: (actions: CCP4i2RunActions) => void;
+  extraDialogActions: CCP4i2RunActions | null;
+  setExtraDialogActions: (actions: CCP4i2RunActions | null) => void;
   processedErrors: CCP4i2ErrorReport | null;
   setProcessedErrors: (errors: CCP4i2ErrorReport | null) => void;
 }
@@ -48,7 +48,7 @@ export const RunCheckContext = createContext<RunCheckContextType>({
   runTaskRequested: null,
   setRunTaskRequested: () => {},
   confirmTaskRun: () => Promise.resolve(false),
-  extraDialogActions: {},
+  extraDialogActions: null,
   setExtraDialogActions: () => {},
   processedErrors: null,
   setProcessedErrors: () => {},
@@ -66,7 +66,7 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
     ((value: boolean) => void) | null
   >(null);
   const [extraDialogActions, setExtraDialogActions] =
-    useState<CCP4i2RunActions>({});
+    useState<CCP4i2RunActions | null>(null);
   const [processedErrors, setProcessedErrors] =
     useState<CCP4i2ErrorReport | null>(null);
 
@@ -165,7 +165,7 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
     ) {
       autoSubmitTimer.current = setTimeout(() => {
         handleConfirm();
-      }, 100); // Auto-submit after 100 milliseconds if no serious issues
+      }, 200); // Auto-submit after 100 milliseconds if no serious issues
     }
     return () => {
       if (autoSubmitTimer.current) {
@@ -198,11 +198,12 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
           </pre>
         )}
         <DialogActions>
-          {Object.keys(extraDialogActions)?.map((actionName, index) => (
-            <React.Fragment key={index}>
-              {extraDialogActions[actionName]}
-            </React.Fragment> // Ensure each action is wrapped in a fragment
-          ))}
+          {extraDialogActions &&
+            Object.keys(extraDialogActions)?.map((actionName, index) => (
+              <React.Fragment key={index}>
+                {extraDialogActions[actionName]}
+              </React.Fragment> // Ensure each action is wrapped in a fragment
+            ))}
           <Button onClick={handleCancel}>Cancel</Button>
           <Button
             onClick={handleConfirm}

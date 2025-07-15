@@ -97,35 +97,34 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
   }, [projectId, api, mutateJobs, router]);
 
-  // Process the errors and set them in the context
+  // Process the errors, adding a non-blocking (maxSeverity 3) error if the Free R flag is not set
+  // This is done to ensure that the user is aware of the missing Free R flag,
+  // but it does not block the execution of the task.
+  // The processedErrors state is updated only if the new errors are different from the previous ones
+  // to prevent unnecessary re-renders.
   useEffect(() => {
-    if (!validation) return;
-    const newProcessedErrors = { ...validation };
+    if (validation) {
+      const newProcessedErrors = { ...validation };
+      if (!(freeRFlag?.dbFileId?.length > 0)) {
+        // If the Free R flag is not set, we add an overridable serious error report.
+        newProcessedErrors.FREERFLAG = {
+          messages: [
+            "Setting the Free R flag file is strongly recommended for refinement",
+            "You are advised to select an existing set or create a new one ",
+          ],
+          maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
+          // maxSeverity of 3 causes confirm dialog to show, but allows execution
+        };
+      }
 
-    if (!(freeRFlag?.dbFileId?.length > 0)) {
-      // If the Free R flag is not set, we add an overridable serious error report.
-      if (processedErrors?.FREERFLAG) return;
-      newProcessedErrors.FREERFLAG = {
-        messages: [
-          "Setting the Free R flag file is strongly recommended for refinement",
-          "You are advised to select an existing set or create a new one ",
-        ],
-        maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
-        // maxSeverity of 3 causes confirm dialog to show, but allows execution
-      };
+      // Only update if processedErrors have changed. This prevents unnecessary re-renders. Use JSON.stringify to compare objects
+      // Note: This is a simple way to compare objects.
+      if (
+        JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
+      ) {
+        setProcessedErrors(newProcessedErrors);
+      }
     }
-
-    // Only update if processedErrors have changed
-    if (
-      JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
-    ) {
-      setProcessedErrors(newProcessedErrors);
-    }
-
-    //Tidy up on unmount
-    return () => {
-      if (processedErrors) setProcessedErrors(null);
-    };
   }, [
     validation,
     freeRFlag,
@@ -135,40 +134,30 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   ]);
 
   useEffect(() => {
-    const newExtraDialogActions: CCP4i2RunActions = {};
-
     if (!(freeRFlag?.dbFileId?.length > 0)) {
-      newExtraDialogActions.FREERFLAG = (
-        <Button onClick={createFreeRTask}>Create FreeR task</Button>
-      );
+      // If the Free R flag is not set, we add an action to create a Free R task
+      // This will be shown in the confirm dialog.  As ever when changing state,
+      // we check if the action is already there to avoid unnecessary re-renders.
+      if (!extraDialogActions || !extraDialogActions["FREERFLAG"]) {
+        const newExtraDialogActions = {
+          FREERFLAG: (
+            <Button onClick={createFreeRTask}>Create FreeR task</Button>
+          ),
+        };
+        setExtraDialogActions(newExtraDialogActions);
+      }
     }
+  }, [freeRFlag, setExtraDialogActions, createFreeRTask, extraDialogActions]);
 
-    // To avoid unnecessary updates, we check if the extraDialogActions have changed
-    // before setting them. This prevents unnecessary re-renders and updates.
-    // We use JSON.stringify to compare the objects, which is a simple way to check for
-    // deep equality in this case. Note extraDialogActions is a non-serializable object,
-    // so we compare keys.
-    if (
-      JSON.stringify(Object.keys(newExtraDialogActions)) !==
-      JSON.stringify(Object.keys(extraDialogActions))
-    ) {
-      setExtraDialogActions(newExtraDialogActions);
-    }
-
-    //Tidy up on unmount
+  //This is a really important cleanup function to avoid memory leaks
+  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
+  useEffect(() => {
+    // Cleanup function to reset context values when the component unmounts
     return () => {
-      if (Object.keys(extraDialogActions).length > 0) setExtraDialogActions({});
+      setExtraDialogActions(null);
+      setProcessedErrors(null);
     };
-  }, [
-    validation,
-    freeRFlag,
-    processedErrors,
-    refinementMode,
-    setProcessedErrors,
-    setExtraDialogActions,
-    createFreeRTask,
-    extraDialogActions,
-  ]);
+  }, [setExtraDialogActions, setProcessedErrors]);
 
   // Render the task interface
   return (

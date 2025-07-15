@@ -5,12 +5,44 @@ import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { Grid2 } from "@mui/material";
+import { RunCheckContext } from "../../../providers/run-check-provider";
+import { useCallback, useContext, useEffect } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const { getTaskItem } = useJob(job.id);
   const { value: XYZIN_MODE } = getTaskItem("XYZIN_MODE");
+  const { value: ASUIN } = getTaskItem("ASUIN");
+  const { value: FREERFLAG } = getTaskItem("FREERFLAG");
+
+  // 1. Retrieve the function for installing extraDialogActions from the relevant context
+  // layer
+
+  const { extraDialogActions, setExtraDialogActions } =
+    useContext(RunCheckContext);
+
+  // 3. Use a useEffect to install the extraDialogItems if needed
+  // unmounts
+
+  useEffect(() => {
+    // Proceed only if the callback is not already set
+    // This is to avoid setting the callback multiple times, which could lead to unexpected behavior
+    // and to ensure that the callback is set only once when the component mounts
+    if (!processErrorsCallback) {
+      setProcessErrorsCallback(() => myProcessErrorsCallback);
+      setExtraDialogActions([]);
+    }
+    return () => {
+      if (processErrorsCallback) setProcessErrorsCallback(null);
+      setExtraDialogActions([]);
+    };
+  }, [
+    processErrorsCallback,
+    setProcessErrorsCallback,
+    myProcessErrorsCallback,
+    setExtraDialogActions,
+  ]);
 
   return (
     <CCP4i2Tabs {...props}>
