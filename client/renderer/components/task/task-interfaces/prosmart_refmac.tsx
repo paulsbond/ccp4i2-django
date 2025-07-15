@@ -30,7 +30,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskItem, getFileDigest, validation } = useJob(job.id);
+  const { getTaskItem, getFileDigest, validation, createPeerTask } = useJob(
+    job.id
+  );
 
   const { data: F_SIGFDigest } = getFileDigest(
     "prosmart_refmac.inputData.F_SIGF"
@@ -51,10 +53,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { setRunTaskRequested } = useRunCheck();
 
   const { mutateJobs } = useProject(job.project);
-
-  const projectId = useMemo(() => {
-    return job.project;
-  }, [job]);
 
   const handleF_SIGFDigestChanged = useCallback(
     (digest: any) => {
@@ -79,23 +77,15 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   }, [F_SIGFDigest]);
 
   const createFreeRTask = useCallback(async () => {
-    // This function can be used to create a Free R task
-    // It can be customized to perform specific actions when the button is clicked
-    console.log("Creating Free R task...");
-    // You can add logic here to create the task, e.g., navigating to a new page or opening a dialog
-    const created_job_result: any = await api.post(
-      `projects/${projectId}/create_task/`,
-      {
-        task_name: "freerflag",
+    await createPeerTask("freerflag").then((created_job: Job) => {
+      if (created_job) {
+        // If the task was created successfully, we can navigate to it
+        router.push(`/project/${job.project}/job/${created_job.id}`);
+        //Shut down the run check dialog
+        setRunTaskRequested(null);
       }
-    );
-    if (created_job_result?.status === "Success") {
-      const created_job: Job = created_job_result.new_job;
-      mutateJobs();
-      router.push(`/project/${projectId}/job/${created_job.id}`);
-      setRunTaskRequested(null);
-    }
-  }, [projectId, api, mutateJobs, router]);
+    });
+  }, [job, createPeerTask]);
 
   // Process the errors, adding a non-blocking (maxSeverity 3) error if the Free R flag is not set
   // This is done to ensure that the user is aware of the missing Free R flag,
@@ -141,7 +131,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       if (!extraDialogActions || !extraDialogActions["FREERFLAG"]) {
         const newExtraDialogActions = {
           FREERFLAG: (
-            <Button onClick={createFreeRTask}>Create FreeR task</Button>
+            <Button variant="contained" onClick={createFreeRTask}>
+              Create FreeR task
+            </Button>
           ),
         };
         setExtraDialogActions(newExtraDialogActions);

@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { Button } from "@mui/material";
 import { CCP4i2Context } from "../app-context";
+import { useJob } from "../utils";
 
 /**
  * An error report keyed by parameter name or error type.
@@ -130,20 +131,23 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
   const { extraDialogActions, processedErrors } = useRunCheck();
   const autoSubmitTimer = useRef<NodeJS.Timeout | null>(null);
   const { jobId } = useContext(CCP4i2Context);
+  const { validation } = useJob(jobId);
 
   // ...inside ErrorAwareRunDialog...
+  const receivedErrors: CCP4i2ErrorReport | null =
+    processedErrors || validation || {};
 
-  const seriousIssues: CCP4i2ErrorReport | null = processedErrors
+  const seriousIssues: CCP4i2ErrorReport | null = receivedErrors
     ? Object.fromEntries(
-        Object.entries(processedErrors).filter(
+        Object.entries(receivedErrors).filter(
           ([_, value]) => value.maxSeverity === 2 || value.maxSeverity === 3
         )
       )
     : null;
 
-  const blockingIssues: CCP4i2ErrorReport | null = processedErrors
+  const blockingIssues: CCP4i2ErrorReport | null = receivedErrors
     ? Object.fromEntries(
-        Object.entries(processedErrors).filter(
+        Object.entries(receivedErrors).filter(
           ([_, value]) => value.maxSeverity === 2
         )
       )
