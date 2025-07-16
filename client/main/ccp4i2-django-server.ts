@@ -4,8 +4,34 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Gets the next available run number for log files
+ */
+function getNextRunNumber(logDir: string): number {
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+    return 1;
+  }
+
+  const files = fs.readdirSync(logDir);
+  const logFiles = files.filter((file) => file.match(/^uvicorn-(\d+)\.log$/));
+
+  if (logFiles.length === 0) {
+    return 1;
+  }
+
+  const runNumbers = logFiles.map((file) => {
+    const match = file.match(/^uvicorn-(\d+)\.log$/);
+    return match ? parseInt(match[1], 10) : 0;
+  });
+
+  return Math.max(...runNumbers) + 1;
+}
 
 /**
  * Starts a Django server using Uvicorn and sets up the environment for the server.
@@ -58,11 +84,10 @@ export async function startDjangoServer(
   }
   console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
   const CCP4_PYTHON = path.join(process.env.CCP4 || "", "bin", ccp4_python);
-  //.replace(/\\/g, "/");
   console.log({ CCP4_PYTHON });
   process.env.UVICORN_PORT = `${UVICORN_PORT}`;
   process.env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
-  //console.log(process.env);
+
   const oldCWD = process.cwd();
   const oldPythonPath = process.env.PYTHONPATH || "";
   let serverSrcPath: string;
@@ -80,6 +105,27 @@ export async function startDjangoServer(
   });
   console.log(`🐍 Migrate result: ${migrateResult}`);
   console.log(`🐍 serverSrcPath: ${serverSrcPath} ${typeof serverSrcPath}`);
+
+  // Setup logging for production
+  let logStream: fs.WriteStream | null = null;
+  if (!isDev) {
+    const homeDir = os.homedir();
+    // Try .ccp4x first, fallback to ccp4x
+    let logDir = path.join(homeDir, ".ccp4x");
+    if (!fs.existsSync(logDir)) {
+      logDir = path.join(homeDir, "ccp4x");
+    }
+
+    const runNumber = getNextRunNumber(logDir);
+    const logFile = path.join(logDir, `uvicorn-${runNumber}.log`);
+
+    // Ensure directory exists
+    fs.mkdirSync(logDir, { recursive: true });
+
+    logStream = fs.createWriteStream(logFile, { flags: "a" });
+    console.log(`🐍 Uvicorn logs will be written to: ${logFile}`);
+  }
+
   // 2️⃣ Start Python process with dynamic port
   let pythonProcess: any;
   if (isDev) {
@@ -103,15 +149,29 @@ export async function startDjangoServer(
   process.chdir(path.join(oldCWD));
 
   pythonProcess.stdout.on("data", (data) => {
-    console.log(`🐍 Python Output: ${data}`);
+    if (isDev) {
+      console.log(`🐍 Python Output: ${data}`);
+    } else {
+      logStream?.write(`[STDOUT] ${new Date().toISOString()}: ${data}`);
+    }
   });
 
   pythonProcess.stderr.on("data", (data) => {
-    console.error(`🐍 Python Error: ${data}`);
+    if (isDev) {
+      console.error(`🐍 Python Error: ${data}`);
+    } else {
+      logStream?.write(`[STDERR] ${new Date().toISOString()}: ${data}`);
+    }
   });
 
   pythonProcess.on("close", (code) => {
-    console.log(`🐍 Python process exited with code ${code}`);
+    const message = `🐍 Python process exited with code ${code}`;
+    if (isDev) {
+      console.log(message);
+    } else {
+      logStream?.write(`[EXIT] ${new Date().toISOString()}: ${message}\n`);
+      logStream?.end();
+    }
   });
 
   return pythonProcess;
