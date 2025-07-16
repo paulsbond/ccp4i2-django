@@ -25,7 +25,7 @@
     "package-linux-x64": "npm run build && electron-builder --linux AppImage --x64",
     "package-linux-arm64": "npm run build && electron-builder --linux AppImage --arm64",
     "package-linux-all": "npm run build && electron-builder --linux AppImage --x64 --arm64",
-    "postinstall": "electron-rebuild"
+    "postinstall": "if [ \"$CI\" != \"true\" ]; then electron-rebuild; fi"
   },
   "dependencies": {
     "@rdkit/rdkit": "^2025.3.3-1.0.0",
