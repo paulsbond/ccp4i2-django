@@ -31,7 +31,7 @@ jobs:
         working-directory: client
 
       - name: Rebuild other native modules
-        run: npx electron-rebuild
+        run: npx electron-rebuild --exclude lmdb
         working-directory: client
 
       - name: Build app
@@ -70,7 +70,7 @@ jobs:
         working-directory: client
 
       - name: Rebuild other native modules
-        run: npx electron-rebuild
+        run: npx electron-rebuild --exclude lmdb
         working-directory: client
 
       - name: Build app
@@ -111,8 +111,9 @@ jobs:
         working-directory: client
 
       - name: Rebuild other native modules
-        run: npx electron-rebuild
+        run: npx electron-rebuild --exclude lmdb
         working-directory: client
+
       - name: Build app
         run: npm run build
         working-directory: client
