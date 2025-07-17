@@ -12,6 +12,7 @@ import {
   hoveringStatesReducer,
   modalsReducer,
   mapContourSettingsReducer,
+  glRefSliceReducer,
   moleculeMapUpdateReducer,
   sharedSessionReducer,
   refinementSettingsReducer,
@@ -39,6 +40,7 @@ export const store = configureStore({
     refinementSettings: refinementSettingsReducer,
     lhasa: lhasaReducer,
     overlays: overlaysReducer,
+    glRef: glRefSliceReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

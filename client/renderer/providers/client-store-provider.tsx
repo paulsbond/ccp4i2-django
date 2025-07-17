@@ -22,6 +22,7 @@ export function ClientStoreProvider({ children }: { children: ReactNode }) {
     refinementSettingsReducer,
     lhasaReducer,
     overlaysReducer,
+    glRefSliceReducer,
   } = require("moorhen");
 
   const store = configureStore({
@@ -42,6 +43,7 @@ export function ClientStoreProvider({ children }: { children: ReactNode }) {
       refinementSettings: refinementSettingsReducer,
       lhasa: lhasaReducer,
       overlays: overlaysReducer,
+      glRef: glRefSliceReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
