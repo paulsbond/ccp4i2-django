@@ -86,7 +86,7 @@
   "build": {
     "appId": "com.ccp4.ccp4i2-django",
     "productName": "ccp4i2-django",
-    "icon": "assets/ccp4i2",
+    "icon": "assets/ccp4i2.png",
     "files": [
       "dist/**",
       "renderer/.next/**",
@@ -136,7 +136,12 @@
       ]
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "arch": [
+        "x64",
+        "arm64"
+      ],
+      "artifactName": "__appImage-${arch}.${ext}"
     }
   },
   "overrides": {
