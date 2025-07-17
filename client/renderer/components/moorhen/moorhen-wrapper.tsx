@@ -79,7 +79,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   };
 
   const { origin } = useSelector((state: moorhen.State) => state.glRef);
-  const setRequestDrawScene = null;
+  //const { setRequestDrawScene } = useSelector((state: moorhen.State) => state.glRef);
 
   useEffect(() => {
     //What to do when the component mounts
@@ -87,9 +87,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     window.addEventListener("resize", () => {
       setWindowWidth(window.innerWidth);
       setWindowHeight(window.innerHeight - 75);
-      if (setRequestDrawScene) {
-        dispatch(setRequestDrawScene());
-      }
+      //if (setRequestDrawScene) {
+      //  dispatch(setRequestDrawScene());
+      //}
       console.log("Window resized");
     });
     return () => {
@@ -97,9 +97,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       window.removeEventListener("resize", () => {
         setWindowWidth(window.innerWidth);
         setWindowHeight(window.innerHeight - 75);
-        if (setRequestDrawScene) {
-          dispatch(setRequestDrawScene());
-        }
+        //if (setRequestDrawScene) {
+        //  dispatch(setRequestDrawScene());
+        //}
       });
     };
   }, []);
@@ -165,9 +165,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       await newMolecule.centreOn("/*/*/*/*", false, true);
 
       dispatch(addMolecule(newMolecule));
-      if (setRequestDrawScene) {
-        dispatch(setRequestDrawScene);
-      }
+      //if (setRequestDrawScene) {
+      //  dispatch(setRequestDrawScene);
+      //}
     } catch (err) {
       console.warn(err);
       console.warn(`Cannot fetch PDB entry from ${url}, doing nothing...`);
@@ -251,9 +251,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         newMolecule.addDict(fileContent),
       ]);
       newMolecule.centreAndAlignViewOn("/*/*/*/*", false, 100);
-      if (setRequestDrawScene) {
-        dispatch(setRequestDrawScene());
-      }
+      //if (setRequestDrawScene) {
+      //  dispatch(setRequestDrawScene());
+      //}
       await newMolecule.fetchIfDirtyAndDraw("ligands");
       dispatch(addMolecule(newMolecule));
     }
