@@ -3,8 +3,8 @@ import React, {
   useContext,
   useState,
   ReactNode,
-  useMemo,
   useEffect,
+  useRef,
 } from "react";
 import {
   Dialog,
@@ -13,30 +13,46 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { Button } from "@mui/material";
-import { useJob } from "../utils";
 import { CCP4i2Context } from "../app-context";
+import { useJob } from "../utils";
 
-export type ProcessErrorsCallback = (validation: any) => any;
+/**
+ * An error report keyed by parameter name or error type.
+ * Each entry contains a maxSeverity (number) and an array of messages (strings).
+ */
+export interface CCP4i2ErrorReport {
+  [key: string]: {
+    maxSeverity: number;
+    messages: string[];
+    // You can add more fields here if needed
+  };
+}
+
+/**
+ * An object whose keys are strings and values are ReactNode actions.
+ */
+export interface CCP4i2RunActions {
+  [key: string]: ReactNode;
+}
+
 interface RunCheckContextType {
   runTaskRequested: number | null;
   setRunTaskRequested: (taskId: number | null) => void;
-  processErrorsCallback: null | ProcessErrorsCallback;
-  setProcessErrorsCallback: (fn: null | ProcessErrorsCallback) => void;
   confirmTaskRun: (taskId: number) => Promise<boolean>;
-  extraDialogActions?: React.ReactNode[];
-  setExtraDialogActions: (actions: React.ReactNode[]) => void;
-  processedErrors: any[] | null;
+  extraDialogActions: CCP4i2RunActions | null;
+  setExtraDialogActions: (actions: CCP4i2RunActions | null) => void;
+  processedErrors: CCP4i2ErrorReport | null;
+  setProcessedErrors: (errors: CCP4i2ErrorReport | null) => void;
 }
 
 export const RunCheckContext = createContext<RunCheckContextType>({
   runTaskRequested: null,
   setRunTaskRequested: () => {},
   confirmTaskRun: () => Promise.resolve(false),
-  processErrorsCallback: null,
-  setProcessErrorsCallback: () => {},
-  extraDialogActions: [],
+  extraDialogActions: null,
   setExtraDialogActions: () => {},
   processedErrors: null,
+  setProcessedErrors: () => {},
 });
 
 interface RunCheckProviderProps {
@@ -50,24 +66,10 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
   const [pendingResolve, setPendingResolve] = useState<
     ((value: boolean) => void) | null
   >(null);
-  const [processErrorsCallback, setProcessErrorsCallback] =
-    useState<ProcessErrorsCallback | null>(null);
-  const [extraDialogActions, setExtraDialogActions] = useState<
-    React.ReactNode[]
-  >([]);
-  const { jobId } = useContext(CCP4i2Context);
-  const { validation } = useJob(parseInt(`${jobId}` || "0"));
-
-  const processedErrors = useMemo(() => {
-    if (
-      validation &&
-      processErrorsCallback &&
-      typeof processErrorsCallback === "function"
-    ) {
-      return processErrorsCallback(validation);
-    }
-    return validation;
-  }, [processErrorsCallback, validation, jobId]);
+  const [extraDialogActions, setExtraDialogActions] =
+    useState<CCP4i2RunActions | null>(null);
+  const [processedErrors, setProcessedErrors] =
+    useState<CCP4i2ErrorReport | null>(null);
 
   const confirmTaskRun = (taskId: number): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -94,16 +96,17 @@ export const RunCheckProvider: React.FC<RunCheckProviderProps> = ({
 
   return (
     <RunCheckContext.Provider
-      value={{
-        runTaskRequested,
-        setRunTaskRequested,
-        confirmTaskRun,
-        processErrorsCallback,
-        setProcessErrorsCallback,
-        extraDialogActions,
-        setExtraDialogActions,
-        processedErrors,
-      }}
+      value={
+        {
+          runTaskRequested,
+          setRunTaskRequested,
+          confirmTaskRun,
+          extraDialogActions,
+          setExtraDialogActions,
+          processedErrors,
+          setProcessedErrors,
+        } as RunCheckContextType
+      }
     >
       {children}
       <ErrorAwareRunDialog
@@ -126,27 +129,56 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
   handleCancel,
 }) => {
   const { extraDialogActions, processedErrors } = useRunCheck();
+  const autoSubmitTimer = useRef<NodeJS.Timeout | null>(null);
+  const { jobId } = useContext(CCP4i2Context);
+  const { validation } = useJob(jobId);
 
-  const seriousIssues = processedErrors
-    ? Object.keys(processedErrors)
-        .filter((key: string) =>
-          [2, 3].includes(processedErrors[key].maxSeverity)
+  // ...inside ErrorAwareRunDialog...
+  const receivedErrors: CCP4i2ErrorReport | null =
+    processedErrors || validation || {};
+
+  const seriousIssues: CCP4i2ErrorReport | null = receivedErrors
+    ? Object.fromEntries(
+        Object.entries(receivedErrors).filter(
+          ([_, value]) => value.maxSeverity === 2 || value.maxSeverity === 3
         )
-        .map((key: string) => processedErrors[key].messages)
-    : [];
+      )
+    : null;
 
-  const blockingIssues = processedErrors
-    ? Object.keys(processedErrors)
-        .filter((key: string) => [2].includes(processedErrors[key].maxSeverity))
-        .map((key: string) => processedErrors[key].messages)
-    : [];
+  const blockingIssues: CCP4i2ErrorReport | null = receivedErrors
+    ? Object.fromEntries(
+        Object.entries(receivedErrors).filter(
+          ([_, value]) => value.maxSeverity === 2
+        )
+      )
+    : null;
 
-  // Automatically confirm if there are no serious issues
+  const hasSeriousIssues = seriousIssues
+    ? Object.keys(seriousIssues).length > 0
+    : false;
+
   useEffect(() => {
-    if (runTaskRequested !== null && seriousIssues.length === 0) {
-      handleConfirm();
+    if (autoSubmitTimer.current) {
+      clearTimeout(autoSubmitTimer.current);
+      autoSubmitTimer.current;
     }
-  }, [runTaskRequested, seriousIssues, handleConfirm]);
+    if (
+      !hasSeriousIssues &&
+      runTaskRequested !== null &&
+      jobId !== null &&
+      jobId === runTaskRequested
+    ) {
+      autoSubmitTimer.current = setTimeout(() => {
+        handleConfirm();
+      }, 200); // Auto-submit after 200 milliseconds if no serious issues
+    }
+    return () => {
+      if (autoSubmitTimer.current) {
+        clearTimeout(autoSubmitTimer.current);
+        autoSubmitTimer.current = null;
+      }
+    };
+  }, [seriousIssues, runTaskRequested, jobId]);
 
   return (
     <Dialog
@@ -162,21 +194,29 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
     >
       <DialogContent>
         <DialogTitle>Confirm Task Execution</DialogTitle>
-        {seriousIssues.length > 0 && (
+        {seriousIssues && Object.keys(seriousIssues).length > 0 && (
           <pre style={{ color: "red" }}>
-            {seriousIssues.map((issueSet, index) =>
-              issueSet.map((issue, issueIndex) => (
-                <div key={`${index}_${issueIndex}`}>{issue}</div>
+            {Object.entries(seriousIssues).map(([key, issueSet], index) =>
+              issueSet.messages.map((issue, issueIndex) => (
+                <div key={`${key}_${issueIndex}`}>{issue}</div>
               ))
             )}
           </pre>
         )}
         <DialogActions>
-          {extraDialogActions?.map((action, index) => (
-            <React.Fragment key={index}>{action}</React.Fragment> // Ensure each action is wrapped in a fragment
-          ))}
+          {extraDialogActions &&
+            Object.keys(extraDialogActions)?.map((actionName, index) => (
+              <React.Fragment key={index}>
+                {extraDialogActions[actionName]}
+              </React.Fragment> // Ensure each action is wrapped in a fragment
+            ))}
           <Button onClick={handleCancel}>Cancel</Button>
-          <Button onClick={handleConfirm} disabled={blockingIssues.length > 0}>
+          <Button
+            onClick={handleConfirm}
+            disabled={
+              blockingIssues !== null && Object.keys(blockingIssues).length > 0
+            }
+          >
             Confirm
           </Button>
         </DialogActions>

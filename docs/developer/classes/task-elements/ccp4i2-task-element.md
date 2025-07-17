@@ -27,7 +27,6 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 ### Optional Props
 
 - **`onChange`** (`function`): Callback fired when parameter value changes successfully
-- **`onParameterChangeFailure`** (`function`): Callback fired when parameter validation fails
 - **`disabled`** (`boolean`): Whether the input should be disabled
 - **`size`** (`object`): Grid sizing configuration (e.g., `{ xs: 12, sm: 6 }`)
 - **`key`** (`string`): React key prop for list rendering

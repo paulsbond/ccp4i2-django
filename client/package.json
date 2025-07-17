@@ -25,11 +25,12 @@
     "package-linux-x64": "npm run build && electron-builder --linux AppImage --x64",
     "package-linux-arm64": "npm run build && electron-builder --linux AppImage --arm64",
     "package-linux-all": "npm run build && electron-builder --linux AppImage --x64 --arm64",
-    "postinstall": "electron-rebuild"
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@rdkit/rdkit": "^2025.3.3-1.0.0",
     "acorn": "^8.15.0",
+    "detect-port": "^2.1.0",
     "electron-store": "^9.0.0",
     "express": "^5.1.0",
     "jquery": "^3.7.1",
@@ -41,6 +42,7 @@
   },
   "devDependencies": {
     "@dnd-kit/core": "^6.3.1",
+    "@electron/packager": "^18.3.6",
     "@emotion/cache": "^11.13.1",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
@@ -63,12 +65,11 @@
     "chartjs-plugin-annotation": "^3.1.0",
     "concurrently": "latest",
     "copyfiles": "^2.4.1",
-    "detect-port": "^2.1.0",
     "electron": "latest",
-    "electron-builder": "^26.0.12",
-    "electron-rebuild": "^3.2.9",
+    "electron-builder": "latest",
     "http-proxy-middleware": "^3.0.5",
     "install": "^0.13.0",
+    "lmdb": "^2.8.5",
     "npm": "^11.3.0",
     "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
@@ -93,7 +94,8 @@
       "!renderer/.next/cache",
       "!renderer/.next/cache/**/*",
       "renderer/public/**",
-      "scripts/start-next.js"
+      "scripts/start-next.js",
+      "node_modules/detect-port/**"
     ],
     "extraResources": [
       {
@@ -110,6 +112,13 @@
       {
         "from": "node_modules/next",
         "to": "node_modules/next",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/detect-port",
+        "to": "node_modules/detect-port",
         "filter": [
           "**/*"
         ]

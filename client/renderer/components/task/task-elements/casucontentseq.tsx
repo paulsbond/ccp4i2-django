@@ -39,19 +39,38 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
         !setPolymerType ||
         !setDescription ||
         !item ||
+        !seqinDigest ||
         job?.status != 1
       )
         return;
-      const { name, moleculeType, sequence } = seqinDigest || {};
-      console.log("New values", { name, moleculeType, sequence });
-      await setPolymerType(moleculeType);
-      const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, "_");
-      await setName(sanitizedName);
-      await setSequence(sequence);
-      await setDescription(annotation);
-      await mutateContainer();
-      await mutateValidation();
-      props.onChange?.({ name, moleculeType, sequence });
+      if (seqinDigest?.moleculeType) {
+        console.log("Seqin digest was a sequence file");
+        const { name, moleculeType, sequence } = seqinDigest || {};
+        const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, "_");
+        await setPolymerType(moleculeType);
+        await setName(sanitizedName);
+        await setSequence(sequence);
+        await setDescription(annotation);
+        await mutateContainer();
+        await mutateValidation();
+        props.onChange?.({ name, moleculeType, sequence });
+      } else if (seqinDigest?.composition) {
+        console.log("Seqin digest was a coordinate file");
+        const { name, moleculeType, sequence } = {
+          name: `Chain_${seqinDigest.composition.peptides[0]}`,
+          moleculeType: "PROTEIN",
+          sequence:
+            seqinDigest.sequences[seqinDigest.composition.peptides[0]] || "",
+        };
+        const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, "_");
+        await setPolymerType(moleculeType);
+        await setName(sanitizedName);
+        await setSequence(sequence);
+        await setDescription(annotation);
+        await mutateContainer();
+        await mutateValidation();
+        props.onChange?.({ name, moleculeType, sequence });
+      }
     },
     [
       setSequence,
@@ -126,13 +145,15 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                   guiLabel: key,
                   guiMode: "multiLine",
                   mimeTypeName: "application/CCP4-seq",
-                  downloadModes: ["uniprotFasta"],
+                  downloadModes: ["uniprotFasta", "ebiPdb"],
                 }}
                 onChange={async (updatedItem: any) => {
+                  console.log("Fetch file for param", updatedItem);
                   const { dbFileId, annotation } = valueOfItem(updatedItem);
                   const digest = await fetch(
                     fullUrl(`files/${dbFileId}/digest_by_uuid/`)
                   ).then((response) => response.json());
+                  console.log({ digest, annotation });
                   setSEQUENCEFromSEQIN(digest, annotation);
                 }}
                 suppressMutations={true}

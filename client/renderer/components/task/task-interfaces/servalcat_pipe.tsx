@@ -1,15 +1,24 @@
-import { Grid2, LinearProgress, Paper, Typography } from "@mui/material";
+import {
+  Button,
+  Grid2,
+  LinearProgress,
+  Paper,
+  Typography,
+} from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
-import { useJob, usePrevious } from "../../../utils";
+import { useJob, usePrevious, useProject } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useContext, useEffect, useMemo } from "react";
 import {
-  ProcessErrorsCallback,
-  useRunCheck,
+  CCP4i2ErrorReport,
+  CCP4i2RunActions,
+  RunCheckContext,
 } from "../../../providers/run-check-provider";
+import { Job } from "../../../types/models";
+import { useRouter } from "next/navigation";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -21,41 +30,110 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { setParameter, useAsyncEffect, getTaskItem, getFileDigest } = useJob(
-    job.id
-  );
+  const { getTaskItem, createPeerTask } = useJob(job.id);
 
   const { value: HKLINValue } = getTaskItem("servalcat_pipe.inputData.HKLIN");
   const { value: MAP_SHARP } = getTaskItem("MAP_SHARP");
   const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
+  const { mutateJobs } = useProject(job.project);
 
   const intensitiesAvailable = useMemo(() => {
     return [1, 3].includes(HKLINValue?.contentFlag);
   }, [HKLINValue]);
 
-  const { processErrorsCallback, setProcessErrorsCallback } = useRunCheck();
+  const router = useRouter();
 
-  const myProcessErrorsCallback: ProcessErrorsCallback = (validation) => {
-    // This function is called to process errors from the run check
-    // It can be customized to handle errors in a specific way
-    // Here, it filters a known "spurious" error from the validation object
-    // and returns the rest of the validation errors.
-    const processedErrors = validation
-      ? Object.fromEntries(
-          Object.entries(validation).filter(
-            ([key]) =>
-              key !== "servalcat_pipe.metalCoordWrapper.inputData.XYZIN"
-          )
+  // 1. Retrieve the jobs validation: this will be kept up to date automatically as parameters
+  //change.  Also retrieve getTaskItem function
+  const { validation } = useJob(job.id);
+
+  // 2. get the prevailing value of FREERFLAG: this will be updated on each re-render
+
+  const { value: freeRFlag } = getTaskItem("FREERFLAG");
+
+  // 3. Retrieve the function for setting a processed Error Report
+
+  const {
+    processedErrors,
+    setProcessedErrors,
+    extraDialogActions,
+    setExtraDialogActions,
+    setRunTaskRequested,
+  } = useContext(RunCheckContext);
+
+  const createFreeRTask = useCallback(async () => {
+    await createPeerTask("freerflag").then((created_job: Job) => {
+      if (created_job) {
+        // If the task was created successfully, we can navigate to it
+        router.push(`/project/${job.project}/job/${created_job.id}`);
+        //Shut down the run check dialog
+        setRunTaskRequested(null);
+      }
+    });
+  }, [job, createPeerTask]);
+
+  // Process the errors, adding a non-blocking (maxSeverity 3) error if the Free R flag is not set
+  // This is done to ensure that the user is aware of the missing Free R flag,
+  // but it does not block the execution of the task.
+  // The processedErrors state is updated only if the new errors are different from the previous ones
+  // to prevent unnecessary re-renders.
+  useEffect(() => {
+    if (validation) {
+      const newProcessedErrors = Object.fromEntries(
+        Object.entries(validation as CCP4i2ErrorReport).filter(
+          ([key, _]) =>
+            key !== "servalcat_pipe.metalCoordWrapper.inputData.XYZIN"
         )
-      : {};
-  };
+      );
+      if (!(freeRFlag?.dbFileId?.length > 0)) {
+        // If the Free R flag is not set, we add an overridable serious error report.
+        newProcessedErrors.FREERFLAG = {
+          messages: [
+            "Setting the Free R flag file is strongly recommended for refinement",
+            "You are advised to select an existing set or create a new one ",
+          ],
+          maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
+          // maxSeverity of 3 causes confirm dialog to show, but allows execution
+        };
+      }
+
+      // Only update if processedErrors have changed. This prevents unnecessary re-renders. Use JSON.stringify to compare objects
+      // Note: This is a simple way to compare objects.
+      if (
+        JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
+      ) {
+        setProcessedErrors(newProcessedErrors);
+      }
+    }
+  }, [validation, freeRFlag, processedErrors, setProcessedErrors]);
 
   useEffect(() => {
-    setProcessErrorsCallback(() => myProcessErrorsCallback);
+    if (!(freeRFlag?.dbFileId?.length > 0)) {
+      // If the Free R flag is not set, we add an action to create a Free R task
+      // This will be shown in the confirm dialog.  As ever when changing state,
+      // we check if the action is already there to avoid unnecessary re-renders.
+      if (!extraDialogActions || !extraDialogActions["FREERFLAG"]) {
+        const newExtraDialogActions = {
+          FREERFLAG: (
+            <Button variant="contained" onClick={createFreeRTask}>
+              Create FreeR task
+            </Button>
+          ),
+        };
+        setExtraDialogActions(newExtraDialogActions);
+      }
+    }
+  }, [freeRFlag, setExtraDialogActions, createFreeRTask, extraDialogActions]);
+
+  //This is a really important cleanup function to avoid memory leaks
+  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
+  useEffect(() => {
+    // Cleanup function to reset context values when the component unmounts
     return () => {
-      if (processErrorsCallback) setProcessErrorsCallback(null);
+      setExtraDialogActions(null);
+      setProcessedErrors(null);
     };
-  }, []);
+  }, [setExtraDialogActions, setProcessedErrors]);
 
   return (
     <CCP4i2Tabs>

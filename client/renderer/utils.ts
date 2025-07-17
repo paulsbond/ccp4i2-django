@@ -1,5 +1,5 @@
 import $ from "jquery";
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import { useEffect, useRef } from "react";
 import { fullUrl, useApi } from "./api";
 import {
@@ -10,6 +10,7 @@ import {
   File as DjangoFile,
   nullFile,
 } from "./types/models";
+import { RunCheckContext } from "./providers/run-check-provider";
 
 /**
  * Checks if the given path ends with the specified name, considering dot notation.
@@ -217,6 +218,8 @@ export const useJob = (jobId: number | null | undefined) => {
     endpoint: "validation",
   });
 
+  const { mutateJobs } = useProject(job?.project || 0);
+
   const { data: diagnostic_xml, mutate: mutateDiagnosticXml } =
     api.get_pretty_endpoint_xml({
       type: "jobs",
@@ -303,6 +306,26 @@ export const useJob = (jobId: number | null | undefined) => {
         };
       };
     }, [container, job]),
+
+    createPeerTask: useCallback(
+      async (task_name: string) => {
+        if (!job) return;
+        if (!mutateJobs) return;
+        // This function can be used to create a Free R task
+        // It can be customized to perform specific actions when the button is clicked
+        console.log(`Creating ${task_name} task...`);
+        const created_job_result: any = await api.post(
+          `projects/${job.project}/create_task/`,
+          { task_name }
+        );
+        if (created_job_result?.status === "Success") {
+          const created_job: Job = created_job_result.new_job;
+          mutateJobs();
+          return Promise.resolve(created_job);
+        }
+      },
+      [job, api]
+    ),
 
     getFileContent: useMemo(() => {
       return (param_name: string) => {

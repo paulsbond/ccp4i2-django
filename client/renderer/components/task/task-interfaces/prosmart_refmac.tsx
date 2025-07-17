@@ -6,7 +6,7 @@ import { useApi } from "../../../api";
 import { useJob, usePrevious, useProject } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useContext, useEffect, useMemo } from "react";
-import type { ProcessErrorsCallback } from "../../../providers/run-check-provider";
+import type { CCP4i2RunActions } from "../../../providers/run-check-provider";
 import {
   RunCheckContext,
   useRunCheck,
@@ -18,8 +18,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const {
-    processErrorsCallback,
-    setProcessErrorsCallback,
+    processedErrors,
+    setProcessedErrors,
     setExtraDialogActions,
     extraDialogActions = [],
   } = useContext(RunCheckContext);
@@ -30,7 +30,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskItem, getFileDigest } = useJob(job.id);
+  const { getTaskItem, getFileDigest, validation, createPeerTask } = useJob(
+    job.id
+  );
 
   const { data: F_SIGFDigest } = getFileDigest(
     "prosmart_refmac.inputData.F_SIGF"
@@ -51,10 +53,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { setRunTaskRequested } = useRunCheck();
 
   const { mutateJobs } = useProject(job.project);
-
-  const projectId = useMemo(() => {
-    return job.project;
-  }, [job]);
 
   const handleF_SIGFDigestChanged = useCallback(
     (digest: any) => {
@@ -79,62 +77,81 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   }, [F_SIGFDigest]);
 
   const createFreeRTask = useCallback(async () => {
-    // This function can be used to create a Free R task
-    // It can be customized to perform specific actions when the button is clicked
-    console.log("Creating Free R task...");
-    // You can add logic here to create the task, e.g., navigating to a new page or opening a dialog
-    const created_job_result: any = await api.post(
-      `projects/${projectId}/create_task/`,
-      {
-        task_name: "freerflag",
+    await createPeerTask("freerflag").then((created_job: Job) => {
+      if (created_job) {
+        // If the task was created successfully, we can navigate to it
+        router.push(`/project/${job.project}/job/${created_job.id}`);
+        //Shut down the run check dialog
+        setRunTaskRequested(null);
       }
-    );
-    if (created_job_result?.status === "Success") {
-      const created_job: Job = created_job_result.new_job;
-      mutateJobs();
-      router.push(`/project/${projectId}/job/${created_job.id}`);
-      setRunTaskRequested(null);
-    }
-  }, [projectId, api, mutateJobs, router]);
+    });
+  }, [job, createPeerTask]);
 
-  const myProcessErrorsCallback: ProcessErrorsCallback = useCallback(
-    (validation) => {
-      // This function is called to process errors from the run check
-      // It can be customized to handle errors in a specific way
-      console.log("freeRFlag", freeRFlag, refinementMode);
-      const processedErrors = validation ? { ...validation } : {};
+  // Process the errors, adding a non-blocking (maxSeverity 3) error if the Free R flag is not set
+  // This is done to ensure that the user is aware of the missing Free R flag,
+  // but it does not block the execution of the task.
+  // The processedErrors state is updated only if the new errors are different from the previous ones
+  // to prevent unnecessary re-renders.
+  useEffect(() => {
+    if (validation) {
+      const newProcessedErrors = { ...validation };
       if (!(freeRFlag?.dbFileId?.length > 0)) {
-        processedErrors.FREERFLAG = {
+        // If the Free R flag is not set, we add an overridable serious error report.
+        newProcessedErrors.FREERFLAG = {
           messages: [
             "Setting the Free R flag file is strongly recommended for refinement",
             "You are advised to select an existing set or create a new one ",
           ],
-          maxSeverity: 3,
+          maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
+          // maxSeverity of 3 causes confirm dialog to show, but allows execution
         };
       }
-      return processedErrors;
-    },
-    [freeRFlag, refinementMode]
-  );
+
+      // Only update if processedErrors have changed. This prevents unnecessary re-renders. Use JSON.stringify to compare objects
+      // Note: This is a simple way to compare objects.
+      if (
+        JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
+      ) {
+        setProcessedErrors(newProcessedErrors);
+      }
+    }
+  }, [
+    validation,
+    freeRFlag,
+    refinementMode,
+    processedErrors,
+    setProcessedErrors,
+  ]);
 
   useEffect(() => {
-    if (!processErrorsCallback && !(freeRFlag?.dbFileId?.length > 0)) {
-      setProcessErrorsCallback(() => myProcessErrorsCallback);
+    if (!(freeRFlag?.dbFileId?.length > 0)) {
+      // If the Free R flag is not set, we add an action to create a Free R task
+      // This will be shown in the confirm dialog.  As ever when changing state,
+      // we check if the action is already there to avoid unnecessary re-renders.
+      if (!extraDialogActions || !extraDialogActions["FREERFLAG"]) {
+        const newExtraDialogActions = {
+          FREERFLAG: (
+            <Button variant="contained" onClick={createFreeRTask}>
+              Create FreeR task
+            </Button>
+          ),
+        };
+        setExtraDialogActions(newExtraDialogActions);
+      }
     }
+  }, [freeRFlag, setExtraDialogActions, createFreeRTask, extraDialogActions]);
+
+  //This is a really important cleanup function to avoid memory leaks
+  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
+  useEffect(() => {
+    // Cleanup function to reset context values when the component unmounts
     return () => {
-      if (processErrorsCallback) setProcessErrorsCallback(null);
-      if (extraDialogActions.length > 0) setExtraDialogActions([]);
+      setExtraDialogActions(null);
+      setProcessedErrors(null);
     };
-  }, [freeRFlag, myProcessErrorsCallback]);
+  }, [setExtraDialogActions, setProcessedErrors]);
 
-  useEffect(() => {
-    if (extraDialogActions.length == 0 && !(freeRFlag?.dbFileId?.length > 0)) {
-      setExtraDialogActions([
-        <Button onClick={createFreeRTask}>Create FreeR task</Button>,
-      ]);
-    }
-  }, [freeRFlag, setExtraDialogActions]);
-
+  // Render the task interface
   return (
     <Paper>
       <CCP4i2Tabs>
