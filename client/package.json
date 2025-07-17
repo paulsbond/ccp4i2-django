@@ -136,12 +136,13 @@
       ]
     },
     "linux": {
-      "target": "AppImage",
-      "arch": [
-        "x64",
-        "arm64"
-      ],
-      "artifactName": "__appImage-${arch}.${ext}"
+      "target": {
+        "target": "AppImage",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
     }
   },
   "overrides": {
