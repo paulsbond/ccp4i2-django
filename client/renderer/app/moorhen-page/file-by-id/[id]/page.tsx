@@ -2,6 +2,7 @@
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import MoorhenWrapper from "../../../../components/moorhen/moorhen-wrapper";
+import MoorhenLoader from "../../../../components/moorhen/client-side-moorhen-loader";
 import { ClientStoreProvider } from "../../../../providers/client-store-provider";
 
 const FileByIdPage = () => {
@@ -11,7 +12,7 @@ const FileByIdPage = () => {
   );
   return (
     <ClientStoreProvider>
-      <MoorhenWrapper fileIds={id ? [parseInt(id as string)] : []} />
+      <MoorhenLoader fileIds={id ? [parseInt(id as string)] : []} />
     </ClientStoreProvider>
   );
 };

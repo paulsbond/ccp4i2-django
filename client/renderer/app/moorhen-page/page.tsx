@@ -7,7 +7,7 @@ import { ClientStoreProvider } from "../../providers/client-store-provider";
 export default function MoorhenPage() {
   return (
     <ClientStoreProvider>
-      <MoorhenWrapper fileIds={[]} />
+      <MoorhenLoader fileIds={[]} />
     </ClientStoreProvider>
   );
 }
