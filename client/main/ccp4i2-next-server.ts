@@ -46,7 +46,7 @@ export const startNextServer = async (
   const csp = {
     defaultSrc: "'self'",
     imgSrc: "'self' data: blob:",
-    connectSrc: `http://localhost:${nextServerPort} ws://localhost:${nextServerPort} https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MRC-LMB-ComputationalStructuralBiology/monomers/master/`,
+    connectSrc: `http://localhost:${nextServerPort} ws://localhost:${nextServerPort} https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/`,
     styleSrc:
       "'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.googleapis.com/css2",
     fontSrc:

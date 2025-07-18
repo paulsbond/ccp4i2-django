@@ -20,7 +20,6 @@ import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
 import { CCP4i2Context } from "../../app-context";
-
 export interface MoorhenWrapperProps {
   fileIds?: number[];
 }
@@ -49,7 +48,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   }, [cootModule]);
 
   const monomerLibraryPath =
-    "https://raw.githubusercontent.com/MRC-LMB-ComputationalStructuralBiology/monomers/master/";
+    "https://raw.githubusercontent.com/MonomerLibrary/monomers/master/";
   const baseUrl = "https://www.ebi.ac.uk/pdbe/entry-files";
 
   const backgroundColor = useSelector(
@@ -76,7 +75,11 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     lastHoveredAtom,
     prevActiveMoleculeRef,
     setMoorhenDimensions,
+    monomerLibraryPath,
   };
+
+  const { origin } = useSelector((state: moorhen.State) => state.glRef);
+  //const { setRequestDrawScene } = useSelector((state: moorhen.State) => state.glRef);
 
   useEffect(() => {
     //What to do when the component mounts
@@ -84,9 +87,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     window.addEventListener("resize", () => {
       setWindowWidth(window.innerWidth);
       setWindowHeight(window.innerHeight - 75);
-      if (glRef.current) {
-        glRef.current.drawScene();
-      }
+      //if (setRequestDrawScene) {
+      //  dispatch(setRequestDrawScene());
+      //}
       console.log("Window resized");
     });
     return () => {
@@ -94,9 +97,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       window.removeEventListener("resize", () => {
         setWindowWidth(window.innerWidth);
         setWindowHeight(window.innerHeight - 75);
-        if (glRef.current) {
-          glRef.current.drawScene();
-        }
+        //if (setRequestDrawScene) {
+        //  dispatch(setRequestDrawScene());
+        //}
       });
     };
   }, []);
@@ -142,7 +145,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   };
 
   const fetchMolecule = async (url: string, molName: string) => {
-    if (!glRef.current) return;
+    //if (!glRef.current) return;
     if (!commandCentre.current) return;
     const newMolecule = new MoorhenMolecule(
       commandCentre as RefObject<moorhen.CommandCentre>,
@@ -162,7 +165,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       await newMolecule.centreOn("/*/*/*/*", false, true);
 
       dispatch(addMolecule(newMolecule));
-      glRef.current.drawScene();
+      //if (setRequestDrawScene) {
+      //  dispatch(setRequestDrawScene);
+      //}
     } catch (err) {
       console.warn(err);
       console.warn(`Cannot fetch PDB entry from ${url}, doing nothing...`);
@@ -174,7 +179,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     mapName: string,
     isDiffMap: boolean = false
   ) => {
-    if (!glRef.current) return;
+    //if (!glRef.current) return;
     if (!commandCentre.current) return;
     const newMap = new MoorhenMap(
       commandCentre as RefObject<moorhen.CommandCentre>,
@@ -203,7 +208,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     url: string,
     newMolecules: moorhen.Molecule[] = []
   ) => {
-    if (!glRef.current) return;
+    //if (!glRef.current) return;
     if (!commandCentre.current) return;
     const fileResponse = await fetch(url);
     const fileContent = await fileResponse.text();
@@ -224,7 +229,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         commandArgs: [
           instanceName,
           -999999, // This is a placeholder for the monomer ID
-          ...glRef.current.origin.map((coord) => -coord),
+          ...origin.map((coord) => -coord),
         ],
       },
       true
@@ -246,7 +251,9 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         newMolecule.addDict(fileContent),
       ]);
       newMolecule.centreAndAlignViewOn("/*/*/*/*", false, 100);
-      glRef.current.drawScene();
+      //if (setRequestDrawScene) {
+      //  dispatch(setRequestDrawScene());
+      //}
       await newMolecule.fetchIfDirtyAndDraw("ligands");
       dispatch(addMolecule(newMolecule));
     }

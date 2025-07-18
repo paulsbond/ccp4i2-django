@@ -34,7 +34,6 @@
     "electron-store": "^9.0.0",
     "express": "^5.1.0",
     "jquery": "^3.7.1",
-    "moorhen": "file:moorhen-0.21.1.tgz",
     "next": "latest",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
@@ -43,9 +42,9 @@
   "devDependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@electron/packager": "^18.3.6",
-    "@emotion/cache": "^11.13.1",
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@monaco-editor/react": "^4.6.0",
     "@mui/icons-material": "^6.1.6",
     "@mui/material": "^6.1.6",
@@ -65,11 +64,11 @@
     "chartjs-plugin-annotation": "^3.1.0",
     "concurrently": "latest",
     "copyfiles": "^2.4.1",
-    "electron": "latest",
+    "electron": "^34.5.8",
     "electron-builder": "latest",
     "http-proxy-middleware": "^3.0.5",
     "install": "^0.13.0",
-    "lmdb": "^2.8.5",
+    "moorhen": "^0.22.0-beta.7",
     "npm": "^11.3.0",
     "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
@@ -87,7 +86,7 @@
   "build": {
     "appId": "com.ccp4.ccp4i2-django",
     "productName": "ccp4i2-django",
-    "icon": "assets/ccp4i2",
+    "icon": "assets/ccp4i2.png",
     "files": [
       "dist/**",
       "renderer/.next/**",
@@ -137,7 +136,13 @@
       ]
     },
     "linux": {
-      "target": "AppImage"
+      "target": {
+        "target": "AppImage",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
     }
   },
   "overrides": {

@@ -86,6 +86,9 @@ jobs:
         run: npm run package-linux-all
         working-directory: client
 
+      - name: List dist contents
+        run: ls -lh client/dist
+
       - name: Upload Linux AppImage artifacts
         uses: actions/upload-artifact@v4
         with:

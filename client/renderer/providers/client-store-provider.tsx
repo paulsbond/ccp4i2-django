@@ -3,27 +3,28 @@
 import React, { ReactNode } from "react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
+import { atomInfoCardsReducer, menusReducer, sliceNDiceReducer } from "moorhen";
+import {
+  moleculesReducer,
+  mapsReducer,
+  mouseSettingsReducer,
+  backupSettingsReducer,
+  shortcutSettingsReducer,
+  labelSettingsReducer,
+  sceneSettingsReducer,
+  generalStatesReducer,
+  hoveringStatesReducer,
+  modalsReducer,
+  mapContourSettingsReducer,
+  moleculeMapUpdateReducer,
+  sharedSessionReducer,
+  refinementSettingsReducer,
+  lhasaReducer,
+  overlaysReducer,
+  glRefSliceReducer,
+} from "moorhen";
 
 export function ClientStoreProvider({ children }: { children: ReactNode }) {
-  const {
-    moleculesReducer,
-    mapsReducer,
-    mouseSettingsReducer,
-    backupSettingsReducer,
-    shortcutSettingsReducer,
-    labelSettingsReducer,
-    sceneSettingsReducer,
-    generalStatesReducer,
-    hoveringStatesReducer,
-    modalsReducer,
-    mapContourSettingsReducer,
-    moleculeMapUpdateReducer,
-    sharedSessionReducer,
-    refinementSettingsReducer,
-    lhasaReducer,
-    overlaysReducer,
-  } = require("moorhen");
-
   const store = configureStore({
     reducer: {
       molecules: moleculesReducer,
@@ -41,13 +42,18 @@ export function ClientStoreProvider({ children }: { children: ReactNode }) {
       sharedSession: sharedSessionReducer,
       refinementSettings: refinementSettingsReducer,
       lhasa: lhasaReducer,
+      sliceNDice: sliceNDiceReducer,
+      //jsonValidation: jsonValidationReducer,
+      //mrParse: mrPar,
+      glRef: glRefSliceReducer,
       overlays: overlaysReducer,
+      menus: menusReducer,
+      atomInfoCards: atomInfoCardsReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         serializableCheck: false,
       }),
   });
-
   return <Provider store={store}>{children}</Provider>;
 }
