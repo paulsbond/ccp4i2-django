@@ -182,21 +182,34 @@ export const installIpcHandlers = (
     const ccp4Dir = store.get("CCP4Dir") || "";
     const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
     console.log("In check-requirements", ccp4PythonPath);
+
+    let errorOutput = "";
+
     // Try to import rest_framework using ccp4-python
     const child = spawn(ccp4PythonPath, ["-c", "import rest_framework"], {
-      stdio: "ignore",
+      stdio: ["ignore", "ignore", "pipe"], // Capture stderr
+    });
+
+    child.stderr?.on("data", (data) => {
+      errorOutput += data.toString();
     });
 
     child.on("exit", (code: number) => {
       if (code === 0) {
         event.reply("message-from-main", { message: "requirements-exist" });
       } else {
-        event.reply("message-from-main", { message: "requirements-missing" });
+        event.reply("message-from-main", {
+          message: "requirements-missing",
+          error: errorOutput.trim() || `Process exited with code ${code}`,
+        });
       }
     });
 
-    child.on("error", () => {
-      event.reply("message-from-main", { message: "requirements-missing" });
+    child.on("error", (error) => {
+      event.reply("message-from-main", {
+        message: "requirements-missing",
+        error: error.message,
+      });
     });
   });
 
@@ -207,37 +220,51 @@ export const installIpcHandlers = (
     const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
     console.log("In install-requirements", ccp4PythonPath);
 
-    // You may want to make requirements.txt path configurable or absolute
     const requirementsPath = isDev
       ? path.join(process.cwd(), "..", "server", "requirements.txt")
       : path.join(process.resourcesPath, "server", "requirements.txt");
 
-    // Wrap in quotes to handle spaces
-    // Convert backslashes to forward slashes for cross-platform compatibility
     const normalizedRequirementsPath = requirementsPath.replace(/\\/g, "/");
+
+    let errorOutput = "";
+    let stdOutput = "";
 
     const child = spawn(
       ccp4PythonPath,
       ["-m", "pip", "install", "-r", normalizedRequirementsPath],
-      { stdio: "inherit" }
+      { stdio: ["ignore", "pipe", "pipe"] } // Capture both stdout and stderr
     );
+
+    child.stdout?.on("data", (data) => {
+      stdOutput += data.toString();
+      console.log("pip stdout:", data.toString());
+    });
+
+    child.stderr?.on("data", (data) => {
+      errorOutput += data.toString();
+      console.error("pip stderr:", data.toString());
+    });
 
     child.on("exit", (code: number) => {
       console.log("Child process exited with code:", code);
       if (code === 0) {
         event.reply("message-from-main", {
           message: "requirements-exist",
+          output: stdOutput.trim(),
         });
       } else {
         event.reply("message-from-main", {
           message: "requirements-missing",
+          error: errorOutput.trim() || `Installation failed with code ${code}`,
+          output: stdOutput.trim(),
         });
       }
     });
 
-    child.on("error", () => {
+    child.on("error", (error) => {
       event.reply("message-from-main", {
         message: "requirements-install-failed",
+        error: error.message,
       });
     });
   });
