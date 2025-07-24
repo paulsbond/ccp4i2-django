@@ -91,7 +91,7 @@ export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 
   return inferredVisibility ? (
     <>
-      <Stack direction="column">
+      <Stack direction="column" spacing={0} useFlexGap>
         <CDataFileElement {...props} setFiles={setSelectedFiles} />
       </Stack>
     </>

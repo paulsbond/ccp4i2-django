@@ -331,7 +331,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           {job.status == 1 && (
             <InputFileUpload
               sx={{
-                my: 1,
+                my: 2,
                 borderRadius: "0",
                 "&:first-of-type": {
                   borderTopLeftRadius: "0.5rem",
@@ -352,7 +352,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           {qualifiers?.downloadModes?.length > 0 && job.status == 1 && (
             <InputFileFetch
               sx={{
-                my: 1,
+                my: 2,
                 borderRadius: "0",
                 "&:first-of-type": {
                   borderTopLeftRadius: "0.5rem",
@@ -381,7 +381,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
                 size="small"
                 startIcon={<Menu fontSize="small" />}
                 sx={{
-                  my: 1,
+                  my: 2,
                   borderRadius: "0",
                   "&:first-of-type": {
                     borderTopLeftRadius: "0.5rem",
