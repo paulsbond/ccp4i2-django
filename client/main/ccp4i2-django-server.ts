@@ -141,13 +141,21 @@ export async function startDjangoServer(
       CCP4_PYTHON,
       ["-m", "uvicorn", "asgi:application", "--reload"],
       {
-        env: process.env,
+        env: {
+          ...process.env,
+          MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
+          QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
+        }, // Force matplotlib to use non-GUI backend
         shell: true,
       }
     );
   } else {
     pythonProcess = spawn(CCP4_PYTHON, ["-m", "uvicorn", "asgi:application"], {
-      env: process.env,
+      env: {
+        ...process.env,
+        MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
+        QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
+      },
       shell: true,
     });
   }
