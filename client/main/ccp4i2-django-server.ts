@@ -103,7 +103,11 @@ export async function startDjangoServer(
     process.chdir(path.join(process.resourcesPath, "server"));
   }
   process.env.PYTHONPATH = serverSrcPath;
-  const migrateEnv = { ...process.env };
+  const migrateEnv = {
+    ...process.env,
+    MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
+    QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
+  };
   const migrateResult = execSync(`${CCP4_PYTHON} manage.py migrate`, {
     env: migrateEnv,
   });

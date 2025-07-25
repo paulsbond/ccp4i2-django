@@ -289,7 +289,12 @@ export const installIpcHandlers = (
         {
           stdio: ["ignore", "pipe", "pipe"],
           shell: process.platform === "win32",
-          env: { ...process.env, CCP4: ccp4Dir },
+          env: {
+            ...process.env,
+            CCP4: ccp4Dir,
+            MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
+            QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
+          },
           timeout: 300000, // 5 minute timeout
         }
       );
