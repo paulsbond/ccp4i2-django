@@ -83,18 +83,35 @@ export async function startDjangoServer(
   } else {
     ccp4_setup_sh(CCP4Dir);
   }
+
   if (CCP4I2_PROJECTS_DIR.length > 0) {
     process.env.CCP4I2_DB_FILE = path.join(CCP4I2_PROJECTS_DIR, "db.sqlite3");
   }
+
   console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
   const CCP4_PYTHON = path.join(process.env.CCP4 || "", "bin", ccp4_python);
   console.log({ CCP4_PYTHON });
-  process.env.UVICORN_PORT = `${UVICORN_PORT}`;
-  process.env.NEXT_ADDRESS = `http://localhost:${NEXT_PORT}`;
+
+  // Set environment variables BEFORE any Python operations
+  const pythonEnv = {
+    ...process.env,
+    UVICORN_PORT: `${UVICORN_PORT}`,
+    NEXT_ADDRESS: `http://localhost:${NEXT_PORT}`,
+    MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
+    QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
+    // Windows-specific DLL path fixes
+    ...(process.platform === "win32" && {
+      PATH: `${path.join(CCP4Dir, "bin")};${process.env.PATH}`,
+      CCP4: CCP4Dir,
+      // Force matplotlib to avoid Qt completely
+      MPLCONFIGDIR: path.join(os.tmpdir(), "matplotlib-config"),
+    }),
+  };
 
   const oldCWD = process.cwd();
   const oldPythonPath = process.env.PYTHONPATH || "";
   let serverSrcPath: string;
+
   if (isDev) {
     serverSrcPath = path.join(process.cwd(), "..", "server");
     process.chdir(path.join(process.cwd(), "..", "server"));
@@ -102,23 +119,45 @@ export async function startDjangoServer(
     serverSrcPath = path.join(process.resourcesPath, "server");
     process.chdir(path.join(process.resourcesPath, "server"));
   }
-  process.env.PYTHONPATH = serverSrcPath;
-  const migrateEnv = {
-    ...process.env,
-    MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
-    QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
-  };
-  const migrateResult = execSync(`${CCP4_PYTHON} manage.py migrate`, {
-    env: migrateEnv,
-  });
-  console.log(`🐍 Migrate result: ${migrateResult}`);
+
+  // Set PYTHONPATH in the environment
+  pythonEnv.PYTHONPATH = serverSrcPath;
+
+  // Run migrations with the updated environment
+  try {
+    const migrateResult = execSync(`"${CCP4_PYTHON}" manage.py migrate`, {
+      env: pythonEnv,
+      stdio: "inherit", // Show migration output
+    });
+    console.log(`🐍 Migration completed successfully`);
+  } catch (error) {
+    console.error(`🐍 Migration failed:`, error);
+    // Try alternative approach for Windows
+    if (process.platform === "win32") {
+      try {
+        const altResult = execSync(
+          `"${CCP4_PYTHON}" -c "import os; os.environ['MPLBACKEND']='Agg'; import django; django.setup(); from django.core.management import execute_from_command_line; execute_from_command_line(['manage.py', 'migrate'])"`,
+          {
+            env: pythonEnv,
+            cwd: serverSrcPath,
+          }
+        );
+        console.log(`🐍 Alternative migration completed`);
+      } catch (altError) {
+        console.error(`🐍 Alternative migration also failed:`, altError);
+        throw altError;
+      }
+    } else {
+      throw error;
+    }
+  }
+
   console.log(`🐍 serverSrcPath: ${serverSrcPath} ${typeof serverSrcPath}`);
 
   // Setup logging for production
   let logStream: fs.WriteStream | null = null;
   if (!isDev) {
     const homeDir = os.homedir();
-    // Try .ccp4x first, fallback to ccp4x
     let logDir = path.join(homeDir, ".ccp4x");
     if (!fs.existsSync(logDir)) {
       logDir = path.join(homeDir, "ccp4x");
@@ -126,43 +165,28 @@ export async function startDjangoServer(
 
     const runNumber = getNextRunNumber(logDir);
     const logFile = path.join(logDir, `uvicorn-${runNumber}.log`);
-
-    // Ensure directory exists
     fs.mkdirSync(logDir, { recursive: true });
-
     logStream = fs.createWriteStream(logFile, { flags: "a" });
     console.log(`🐍 Uvicorn logs will be written to: ${logFile}`);
   }
 
-  // 2️⃣ Start Python process with dynamic port
+  // Start Python process with the corrected environment
   let pythonProcess: any;
-  if (isDev) {
-    pythonProcess = spawn(
-      CCP4_PYTHON,
-      ["-m", "uvicorn", "asgi:application", "--reload"],
-      {
-        env: {
-          ...process.env,
-          MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
-          QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
-        }, // Force matplotlib to use non-GUI backend
-        shell: true,
-      }
-    );
-  } else {
-    pythonProcess = spawn(CCP4_PYTHON, ["-m", "uvicorn", "asgi:application"], {
-      env: {
-        ...process.env,
-        MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
-        QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
-      },
-      shell: true,
-    });
-  }
+  const uvicornArgs = isDev
+    ? ["-m", "uvicorn", "asgi:application", "--reload"]
+    : ["-m", "uvicorn", "asgi:application"];
+
+  pythonProcess = spawn(CCP4_PYTHON, uvicornArgs, {
+    env: pythonEnv,
+    shell: true,
+    cwd: serverSrcPath, // Ensure we're in the right directory
+  });
+
   console.log(`🚀 Uvicorn running on http://localhost:${UVICORN_PORT}`);
 
-  process.env.PYTHONPATH = path.join(oldPythonPath);
-  process.chdir(path.join(oldCWD));
+  // Restore original environment
+  process.env.PYTHONPATH = oldPythonPath;
+  process.chdir(oldCWD);
 
   pythonProcess.stdout.on("data", (data) => {
     if (isDev) {
