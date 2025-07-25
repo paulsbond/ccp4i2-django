@@ -181,36 +181,57 @@ export const installIpcHandlers = (
       process.platform === "win32" ? "ccp4-python.bat" : "ccp4-python";
     const ccp4Dir = store.get("CCP4Dir") || "";
     const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
+
     console.log("In check-requirements", ccp4PythonPath);
+
+    // Validate that the executable exists before spawning
+    if (!fs.existsSync(ccp4PythonPath)) {
+      event.reply("message-from-main", {
+        message: "requirements-missing",
+        error: `CCP4 Python executable not found at: ${ccp4PythonPath}`,
+      });
+      return;
+    }
 
     let errorOutput = "";
 
-    // Try to import rest_framework using ccp4-python
-    const child = spawn(ccp4PythonPath, ["-c", "import rest_framework"], {
-      stdio: ["ignore", "ignore", "pipe"], // Capture stderr
-    });
+    // Add error handling for spawn
+    try {
+      const child = spawn(ccp4PythonPath, ["-c", "import rest_framework"], {
+        stdio: ["ignore", "ignore", "pipe"],
+        // Add shell option for Windows compatibility
+        shell: process.platform === "win32",
+      });
 
-    child.stderr?.on("data", (data) => {
-      errorOutput += data.toString();
-    });
+      child.stderr?.on("data", (data) => {
+        errorOutput += data.toString();
+      });
 
-    child.on("exit", (code: number) => {
-      if (code === 0) {
-        event.reply("message-from-main", { message: "requirements-exist" });
-      } else {
+      child.on("exit", (code: number) => {
+        if (code === 0) {
+          event.reply("message-from-main", { message: "requirements-exist" });
+        } else {
+          event.reply("message-from-main", {
+            message: "requirements-missing",
+            error: errorOutput.trim() || `Process exited with code ${code}`,
+          });
+        }
+      });
+
+      child.on("error", (error) => {
+        console.error("Spawn error:", error);
         event.reply("message-from-main", {
           message: "requirements-missing",
-          error: errorOutput.trim() || `Process exited with code ${code}`,
+          error: `Failed to execute: ${error.message}`,
         });
-      }
-    });
-
-    child.on("error", (error) => {
+      });
+    } catch (error) {
+      console.error("Failed to spawn process:", error);
       event.reply("message-from-main", {
         message: "requirements-missing",
-        error: error.message,
+        error: `Spawn failed: ${error.message}`,
       });
-    });
+    }
   });
 
   ipcMain.on("install-requirements", (event, data) => {
