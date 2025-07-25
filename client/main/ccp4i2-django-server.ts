@@ -73,7 +73,8 @@ export async function startDjangoServer(
   CCP4Dir: string,
   UVICORN_PORT: number,
   NEXT_PORT: number,
-  isDev: boolean = false
+  isDev: boolean = false,
+  CCP4I2_PROJECTS_DIR: string = ""
 ) {
   let ccp4_python = "ccp4-python";
   if (process.platform === "win32") {
@@ -81,6 +82,9 @@ export async function startDjangoServer(
     ccp4_python = "ccp4-python.bat";
   } else {
     ccp4_setup_sh(CCP4Dir);
+  }
+  if (CCP4I2_PROJECTS_DIR.length > 0) {
+    process.env.CCP4I2_DB_FILE = path.join(CCP4I2_PROJECTS_DIR, "db.sqlite3");
   }
   console.log(`🚀 Next.js running on http://localhost:${NEXT_PORT}`);
   const CCP4_PYTHON = path.join(process.env.CCP4 || "", "bin", ccp4_python);

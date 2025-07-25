@@ -124,7 +124,8 @@ export const installIpcHandlers = (
       store.get("CCP4Dir"),
       djangoServerPort,
       nextServerPort,
-      isDev
+      isDev,
+      store.get("CCP4I2_PROJECTS_DIR")
     );
     setDjangoServer(djangoServer);
     event.reply("message-from-main", {
