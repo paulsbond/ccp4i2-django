@@ -22,6 +22,7 @@ import {
   lhasaReducer,
   overlaysReducer,
   glRefSliceReducer,
+  MoorhenReduxStore,
 } from "moorhen";
 
 export function ClientStoreProvider({ children }: { children: ReactNode }) {
@@ -55,5 +56,7 @@ export function ClientStoreProvider({ children }: { children: ReactNode }) {
         serializableCheck: false,
       }),
   });
-  return <Provider store={store}>{children}</Provider>;
+  //Note here am discarding the store I just created in favour of staic imported one.
+  //This is *not* good !  Imposes a single store for the whole app.
+  return <Provider store={MoorhenReduxStore}>{children}</Provider>;
 }

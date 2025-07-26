@@ -17,6 +17,7 @@ import { Cancel, Check, Folder } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CCP4i2Context } from "../app-context";
+import { usePopcorn } from "../providers/popcorn-provider";
 
 export const ConfigContent: React.FC = () => {
   const api = useApi();
@@ -25,6 +26,8 @@ export const ConfigContent: React.FC = () => {
   const { devMode, setDevMode } = useContext(CCP4i2Context);
   const [existingFiles, setExistingFiles] = useState<any | null>(null);
   const [requirementsExist, setRequirementsExist] = useState<boolean>(false);
+  const { setMessage } = usePopcorn();
+
   useEffect(() => {
     // Send a message to the main process to get the config
     if (window.electronAPI) {
@@ -76,6 +79,7 @@ export const ConfigContent: React.FC = () => {
         setRequirementsExist(true);
       } else if (data.message === "requirements-missing") {
         setRequirementsExist(false);
+        setMessage(data.error || "Requirements are missing");
       }
     },
     [config]
@@ -292,7 +296,9 @@ export const ConfigContent: React.FC = () => {
             startIcon={<Folder />}
             onClick={onStartUvicorn}
             sx={{ minWidth: 320 }}
-            disabled={!existingFiles?.ccp4_python || !requirementsExist}
+            disabled={
+              !existingFiles?.ccp4_python || (!devMode && !requirementsExist)
+            }
           >
             Launch CCP4i2
           </Button>

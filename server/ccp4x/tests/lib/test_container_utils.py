@@ -9,7 +9,7 @@ import gemmi
 from core import CCP4PerformanceData
 from core import CCP4ErrorHandling
 from core import CCP4Data
-from ccp4i2.pimple import MGQTmatplotlib
+from ccp4i2.googlecode import diff_match_patch_py3
 from ccp4i2.core import CCP4Container
 from ccp4i2.core import CCP4TaskManager
 from ...db.models import Job, File
@@ -158,7 +158,7 @@ class CCP4i2TestCase(TestCase):
 
     def test_gemmi_split_mtz(self):
         os.environ.setdefault(
-            "CCP4I2_TOP", str(Path(MGQTmatplotlib.__file__).parent.parent)
+            "CCP4I2_TOP", str(Path(diff_match_patch_py3.__file__).parent.parent)
         )
         beta_mtz = os.path.expandvars(
             "$CCP4I2_TOP/demo_data/beta_blip/beta_blip_P3221.mtz"

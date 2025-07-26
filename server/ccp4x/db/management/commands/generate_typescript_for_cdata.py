@@ -1,9 +1,9 @@
 import sys
 import pathlib
 from django.core.management.base import BaseCommand
-from ccp4i2.pimple import MGQTmatplotlib
+from ccp4i2.googlecode import diff_match_patch_py3
 
-sys.path.append(str(pathlib.Path(MGQTmatplotlib.__file__).parent.parent))
+sys.path.append(str(pathlib.Path(diff_match_patch_py3.__file__).parent.parent))
 from ccp4i2.core import CCP4DataManager
 from ccp4i2.core.CCP4DataManager import CDataManager
 

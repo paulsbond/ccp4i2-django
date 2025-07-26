@@ -8,6 +8,7 @@ import os from "os";
 export function ccp4_setup_windows(CCP4Dir) {
   // Set CCP4 to the current directory
   let CCP4 = CCP4Dir;
+  process.env.CCP4 = CCP4;
   // Remove trailing backslash
   CCP4 = CCP4.endsWith(path.sep) ? CCP4.slice(0, -1) : CCP4;
 

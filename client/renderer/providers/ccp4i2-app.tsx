@@ -18,29 +18,27 @@ export const CCP4i2App = (props: PropsWithChildren) => {
 
   return (
     <PopcornProvider>
-      <RunningProcessesProvider>
-        <CCP4i2Context.Provider
-          value={{
-            projectId,
-            setProjectId,
-            jobId,
-            setJobId,
-            cootModule,
-            setCootModule,
-            rdkitModule,
-            setRdkitModule,
-            jobPanelSize,
-            setJobPanelSize,
-            devMode,
-            setDevMode,
-            activeDragItem,
-            setActiveDragItem,
-          }}
-        >
-          <CssBaseline />
-          <RunCheckProvider>{props.children}</RunCheckProvider>
-        </CCP4i2Context.Provider>
-      </RunningProcessesProvider>
+      <CCP4i2Context.Provider
+        value={{
+          projectId,
+          setProjectId,
+          jobId,
+          setJobId,
+          cootModule,
+          setCootModule,
+          rdkitModule,
+          setRdkitModule,
+          jobPanelSize,
+          setJobPanelSize,
+          devMode,
+          setDevMode,
+          activeDragItem,
+          setActiveDragItem,
+        }}
+      >
+        <CssBaseline />
+        <RunCheckProvider>{props.children}</RunCheckProvider>
+      </CCP4i2Context.Provider>
     </PopcornProvider>
   );
 };

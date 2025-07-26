@@ -7,7 +7,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
-from ccp4i2.pimple import MGQTmatplotlib
+from ccp4i2.googlecode import diff_match_patch_py3
 
 # BASE_DIR is the directory where your Django project is located (containing manage.py)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -86,10 +86,12 @@ REST_FRAMEWORK = {
 STATIC_URL = "/djangostatic/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [
-    ("qticons", str(Path(MGQTmatplotlib.__file__).parent.parent / "qticons")),
-    ("svgicons", str(Path(MGQTmatplotlib.__file__).parent.parent / "svgicons")),
+    ("qticons", str(Path(diff_match_patch_py3.__file__).parent.parent / "qticons")),
+    ("svgicons", str(Path(diff_match_patch_py3.__file__).parent.parent / "svgicons")),
 ]
-print(str(Path(MGQTmatplotlib.__file__).parent.parent / "qticons"), str(STATIC_ROOT))
+print(
+    str(Path(diff_match_patch_py3.__file__).parent.parent / "qticons"), str(STATIC_ROOT)
+)
 
 # Configure WhiteNoise for static file storage
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

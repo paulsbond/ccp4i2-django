@@ -25,9 +25,11 @@ from ...db.ccp4i2_django_wrapper import using_django_pm
 
 from ...i2run import CCP4i2RunnerDjango
 
-from ccp4i2.pimple import MGQTmatplotlib
+from ccp4i2.googlecode import diff_match_patch_py3
 
-os.environ.setdefault("CCP4I2_TOP", str(Path(MGQTmatplotlib.__file__).parent.parent))
+os.environ.setdefault(
+    "CCP4I2_TOP", str(Path(diff_match_patch_py3.__file__).parent.parent)
+)
 
 case1 = """aimless_pipe \
     --UNMERGEDFILES \
