@@ -672,6 +672,7 @@ export const extractBarChartDataset = (
   if (!barChart?.tcol) return null;
   const result = {
     label: allHeaders[barChart.tcol - 1],
+    type: "bar",
     labels: dataAsGrid.map((row: any) => row[parseInt(`${barChart.col}`) - 1]),
     yAxisID: barChart.rightaxis
       ? barChart.rightaxis === "true"
