@@ -1,5 +1,14 @@
-import { ChartData, ChartOptions } from "chart.js";
+import { Chart, ChartData, ChartOptions, ChartTypeRegistry } from "chart.js";
 import { parseStringPromise } from "xml2js";
+
+// Extend Chart.js types to include the custom backgroundImage plugin
+declare module "chart.js" {
+  interface PluginOptionsByType<TType extends keyof ChartTypeRegistry> {
+    backgroundImage?: {
+      image: HTMLImageElement;
+    };
+  }
+}
 
 const colours = [
   "rgba(255, 99, 132, 1)",
@@ -51,7 +60,7 @@ export class CCP4Table implements CCP4TableInterface {
     if (typeof this.headers === "string" || this.headers instanceof String) {
       headers = this.headers.split(" ");
     } else {
-      console.log("Non string headers: ", this.headers);
+      //console.log("Non string headers: ", this.headers);
       let separator: string | RegExp | undefined = this.headers.separator;
       if (!separator) separator = /\s+/;
       headers = this.headers["_"]
@@ -59,7 +68,7 @@ export class CCP4Table implements CCP4TableInterface {
         .map((header: string) => header.trim())
         .filter((header: string) => header.length > 0);
     }
-    console.log("Headers is", { headers });
+    //console.log("Headers is", { headers });
     return headers;
   }
 
@@ -116,6 +125,25 @@ export class CCP4Table implements CCP4TableInterface {
       addTexts(selectedPlot, result);
     }
 
+    if (selectedPlot?.background) {
+      result.plugins = result.plugins || {};
+
+      // Extract path from the full URL
+      let imagePath: string;
+      try {
+        const url = new URL(selectedPlot.background);
+        imagePath = url.pathname; // This gets just the path part
+      } catch (error) {
+        // Fallback if URL parsing fails - assume it's already a path
+        imagePath = selectedPlot.background;
+      }
+      const img = new Image();
+      img.src = imagePath;
+      result.plugins.backgroundImage = {
+        image: img,
+      };
+    }
+
     if (selectedPlot?.xscale === "oneoversqrt") {
       handleOneOverSqrt(selectedPlot, result);
     }
@@ -137,7 +165,7 @@ export class CCP4Table implements CCP4TableInterface {
       result.aspectRatio = 1;
     }
 
-    console.log({ options: result });
+    //console.log({ options: result });
     return result;
   }
 }
@@ -174,6 +202,7 @@ export class Plot {
   customXLabels?: string;
   showlegend?: "true" | "false";
   fixaspectratio?: "true" | "false";
+  background?: string;
 }
 
 export interface PlotLine {
@@ -295,10 +324,10 @@ function changeTagNameNS(
 ): string {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, "application/xml");
-  console.log({ xmlDoc });
+  //console.log({ xmlDoc });
   // Get all elements with the old tag name in the namespace
   const oldElements = xmlDoc.getElementsByTagNameNS(namespaceURI, oldTagName);
-  console.log({ oldElements });
+  //console.log({ oldElements });
 
   // Convert NodeList to array (since NodeList is live)
   const elementsArray: Element[] = Array.from(oldElements);
@@ -353,7 +382,7 @@ function changeTagName(
 ): string {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, "application/xml");
-  console.log("In changeTagName", { xmlDoc });
+  //console.log("In changeTagName", { xmlDoc });
   function processNode(node: Node): void {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as Element;
@@ -1143,3 +1172,33 @@ export function hexToRGBA(hex: string, alpha: number = 0.5): string {
   // Return the RGBA string
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
+
+// Custom plugin to add background image
+const backgroundImagePlugin = {
+  id: "backgroundImage",
+  beforeDraw: (chart: any, args: any, options: any) => {
+    if (options.image) {
+      const ctx = chart.ctx;
+      const canvas = chart.canvas;
+      const chartArea = chart.chartArea;
+
+      // Save the context
+      ctx.save();
+
+      // Draw the image within the chart area
+      ctx.drawImage(
+        options.image,
+        chartArea.left,
+        chartArea.top,
+        chartArea.right - chartArea.left,
+        chartArea.bottom - chartArea.top
+      );
+
+      // Restore the context
+      ctx.restore();
+    }
+  },
+};
+
+// Register the plugin
+Chart.register(backgroundImagePlugin);
