@@ -293,7 +293,7 @@ export const installIpcHandlers = (
             ...process.env,
             CCP4: ccp4Dir,
             MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
-            QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
+            //QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
           },
           timeout: 300000, // 5 minute timeout
         }

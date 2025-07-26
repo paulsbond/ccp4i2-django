@@ -98,7 +98,7 @@ export async function startDjangoServer(
     UVICORN_PORT: `${UVICORN_PORT}`,
     NEXT_ADDRESS: `http://localhost:${NEXT_PORT}`,
     MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
-    QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
+    //QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
     // Windows-specific DLL path fixes
     ...(process.platform === "win32" && {
       PATH: `${path.join(CCP4Dir, "bin")};${process.env.PATH}`,
@@ -123,6 +123,7 @@ export async function startDjangoServer(
   // Set PYTHONPATH in the environment
   pythonEnv.PYTHONPATH = serverSrcPath;
 
+  console.log(`🐍`, pythonEnv);
   // Run migrations with the updated environment
   try {
     const migrateResult = execSync(`"${CCP4_PYTHON}" manage.py migrate`, {
