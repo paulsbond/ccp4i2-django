@@ -60,7 +60,7 @@ export class CCP4Table implements CCP4TableInterface {
     if (typeof this.headers === "string" || this.headers instanceof String) {
       headers = this.headers.split(" ");
     } else {
-      console.log("Non string headers: ", this.headers);
+      //console.log("Non string headers: ", this.headers);
       let separator: string | RegExp | undefined = this.headers.separator;
       if (!separator) separator = /\s+/;
       headers = this.headers["_"]
@@ -68,7 +68,7 @@ export class CCP4Table implements CCP4TableInterface {
         .map((header: string) => header.trim())
         .filter((header: string) => header.length > 0);
     }
-    console.log("Headers is", { headers });
+    //console.log("Headers is", { headers });
     return headers;
   }
 
@@ -165,7 +165,7 @@ export class CCP4Table implements CCP4TableInterface {
       result.aspectRatio = 1;
     }
 
-    console.log({ options: result });
+    //console.log({ options: result });
     return result;
   }
 }
@@ -324,10 +324,10 @@ function changeTagNameNS(
 ): string {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, "application/xml");
-  console.log({ xmlDoc });
+  //console.log({ xmlDoc });
   // Get all elements with the old tag name in the namespace
   const oldElements = xmlDoc.getElementsByTagNameNS(namespaceURI, oldTagName);
-  console.log({ oldElements });
+  //console.log({ oldElements });
 
   // Convert NodeList to array (since NodeList is live)
   const elementsArray: Element[] = Array.from(oldElements);
@@ -382,7 +382,7 @@ function changeTagName(
 ): string {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlString, "application/xml");
-  console.log("In changeTagName", { xmlDoc });
+  //console.log("In changeTagName", { xmlDoc });
   function processNode(node: Node): void {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as Element;
