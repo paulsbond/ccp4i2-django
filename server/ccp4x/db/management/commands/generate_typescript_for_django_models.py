@@ -17,9 +17,9 @@ from django.db.models.fields.reverse_related import (
     ManyToOneRel,
     OneToOneRel,
 )
-from ccp4i2.pimple import MGQTmatplotlib
+from ccp4i2.googlecode import diff_match_patch_py3
 
-sys.path.append(str(pathlib.Path(MGQTmatplotlib.__file__).parent.parent))
+sys.path.append(str(pathlib.Path(diff_match_patch_py3.__file__).parent.parent))
 
 
 class Command(BaseCommand):
