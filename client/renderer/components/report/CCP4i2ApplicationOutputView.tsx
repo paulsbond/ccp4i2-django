@@ -154,7 +154,15 @@ export const CCP4i2ApplicationOutputView: React.FC<
         />
         <CardContent sx={{ height: "400px" }}>
           {chartArgs && (
-            <Scatter options={chartArgs.options as any} data={chartArgs.data} />
+            <Scatter
+              key={
+                allPlots && selectedPlot
+                  ? `plot-${allPlots.indexOf(selectedPlot)}`
+                  : "scatter-plot"
+              }
+              options={chartArgs.options as any}
+              data={chartArgs.data}
+            />
           )}
         </CardContent>
       </Card>
