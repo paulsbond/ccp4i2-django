@@ -85,6 +85,7 @@ export async function startDjangoServer(
   }
 
   if (CCP4I2_PROJECTS_DIR.length > 0) {
+    process.env.CCP4I2_PROJECTS_DIR = CCP4I2_PROJECTS_DIR;
     process.env.CCP4I2_DB_FILE = path.join(CCP4I2_PROJECTS_DIR, "db.sqlite3");
   }
 
