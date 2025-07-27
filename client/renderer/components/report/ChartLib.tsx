@@ -1018,8 +1018,6 @@ export const handleCustomXLabels = (
  * - If `selectedPlot.xrange.max` is defined, it sets `result.scales.x.max` to this value.
  * - If `selectedPlot.yrange.min` is defined, it sets `result.scales.yAxisLeft.min` to this value.
  * - If `selectedPlot.yrange.max` is defined, it sets `result.scales.yAxisLeft.max` to this value.
- *
- * The function ensures that the `scales` and `x`/`yAxisLeft` objects are initialized before setting the values.
  */
 export const handleRangeSpecifiers = (
   selectedPlot: Plot,
@@ -1173,7 +1171,7 @@ export function hexToRGBA(hex: string, alpha: number = 0.5): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// Custom plugin to add background image
+// Improved custom plugin to add background image
 const backgroundImagePlugin = {
   id: "backgroundImage",
   beforeDraw: (chart: any, args: any, options: any) => {
@@ -1182,20 +1180,38 @@ const backgroundImagePlugin = {
       const canvas = chart.canvas;
       const chartArea = chart.chartArea;
 
-      // Save the context
-      ctx.save();
+      // Check if image is loaded before drawing
+      if (options.image.complete && options.image.naturalHeight !== 0) {
+        // Save the context
+        ctx.save();
 
-      // Draw the image within the chart area
-      ctx.drawImage(
-        options.image,
-        chartArea.left,
-        chartArea.top,
-        chartArea.right - chartArea.left,
-        chartArea.bottom - chartArea.top
-      );
+        try {
+          // Set global alpha for transparency if needed
+          ctx.globalAlpha = options.opacity || 1.0;
 
-      // Restore the context
-      ctx.restore();
+          // Draw the image within the chart area
+          ctx.drawImage(
+            options.image,
+            chartArea.left,
+            chartArea.top,
+            chartArea.right - chartArea.left,
+            chartArea.bottom - chartArea.top
+          );
+        } catch (error) {
+          console.error("Error drawing background image:", error);
+        } finally {
+          // Always restore the context
+          ctx.restore();
+        }
+      } else {
+        // Image not loaded yet, schedule a redraw
+        console.log("Background image not ready, scheduling redraw");
+        setTimeout(() => {
+          if (chart && chart.update) {
+            chart.update("none");
+          }
+        }, 100);
+      }
     }
   },
 };
