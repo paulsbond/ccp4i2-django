@@ -217,7 +217,6 @@ export const TaskContainer = () => {
         <CircularProgress size={150} thickness={4} />
       </Popper>
       <FetchFileForParam
-        itemParams={fetchItemParams}
         open={downloadDialogOpen}
         onClose={() => {
           setDownloadDialogOpen(false);
