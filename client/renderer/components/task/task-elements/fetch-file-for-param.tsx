@@ -14,27 +14,28 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../../app-context";
 import { useJob } from "../../../utils";
 import { usePopcorn } from "../../../providers/popcorn-provider";
+import { TaskInterfaceContext } from "../../../providers/task-container";
 
 interface FetchFileForParamProps {
-  itemParams: any;
   open: boolean;
   onClose: () => void;
   onSuccess?: (updatedItem: any) => void;
 }
 export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
-  itemParams,
   open,
   onClose,
 }) => {
   const api = useApi();
   const { setMessage } = usePopcorn();
+  const { fetchItemParams, setFetchItemParams, setDownloadDialogOpen } =
+    useContext(TaskInterfaceContext);
 
   const { item, modes, onChange } = useMemo(() => {
     //alert(JSON.stringify(itemParams));
-    return itemParams
-      ? itemParams
+    return fetchItemParams
+      ? fetchItemParams
       : { item: null, modes: null, onChange: null };
-  }, [itemParams]);
+  }, [fetchItemParams]);
 
   const downloadModes: string[] = useMemo(
     () => modes || item?._qualifiers?.downloadModes || [],
@@ -67,6 +68,11 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   );
   const [mode, setMode] = useState<string | null>(null);
 
+  //Initialise identifier to empty string
+  useEffect(() => {
+    if (open) setIdentifier("");
+  }, [open]);
+
   useEffect(() => {
     if (modes && modes.length > 0 && (!mode || !modes.includes(mode))) {
       setMode(modes[0]);
@@ -80,18 +86,14 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
     async (fileBlob: Blob, fileName: string) => {
       if (job) {
         const formData = new FormData();
-        formData.append("objectPath", itemParams.item._objectPath);
+        formData.append("objectPath", item._objectPath);
         formData.append("file", fileBlob, fileName);
-        setMessage(
-          `Uploading file ${fileName} for ${itemParams.item._objectPath}`
-        );
+        setMessage(`Uploading file ${fileName} for ${item._objectPath}`);
         const uploadResult = await api.post<any>(
           `jobs/${job.id}/upload_file_param`,
           formData
         );
-        setMessage(
-          `File ${fileName} uploaded for ${itemParams.item._objectPath}`
-        );
+        setMessage(`File ${fileName} uploaded for ${item._objectPath}`);
         if (uploadResult.status === "Success") {
           if (onChange) {
             onChange(uploadResult.updated_item);
@@ -103,7 +105,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         }
       }
     },
-    [itemParams, item, job]
+    [item, job]
   );
 
   const handleEbiCoordFetch = useCallback(async () => {

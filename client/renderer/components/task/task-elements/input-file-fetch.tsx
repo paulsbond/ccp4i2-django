@@ -1,5 +1,5 @@
 import { Button, SxProps } from "@mui/material";
-import { ChangeEvent, useContext } from "react";
+import { ChangeEvent, useCallback, useContext } from "react";
 import { TaskInterfaceContext } from "../../../providers/task-container";
 import { Language } from "@mui/icons-material";
 
@@ -21,6 +21,15 @@ export const InputFileFetch: React.FC<InputFileFetchProps> = ({
   const { setDownloadDialogOpen, setFetchItemParams } =
     useContext(TaskInterfaceContext);
 
+  const handleFetchClick = useCallback(
+    (ev: any) => {
+      ev.stopPropagation();
+      if (setFetchItemParams) setFetchItemParams({ item, modes, onChange });
+      if (setDownloadDialogOpen) setDownloadDialogOpen(true);
+    },
+    [item, modes, onChange, setDownloadDialogOpen, setFetchItemParams]
+  );
+
   return (
     <Button
       disabled={disabled}
@@ -31,13 +40,7 @@ export const InputFileFetch: React.FC<InputFileFetchProps> = ({
       size="small"
       startIcon={<Language fontSize="small" />}
       sx={sx}
-      onClick={(ev: any) => {
-        ev.stopPropagation();
-        if (setDownloadDialogOpen) setDownloadDialogOpen(true);
-        const arg = { item, modes };
-        console.log({ arg });
-        if (setFetchItemParams) setFetchItemParams({ item, modes, onChange });
-      }}
+      onClick={handleFetchClick}
     />
   );
 };
