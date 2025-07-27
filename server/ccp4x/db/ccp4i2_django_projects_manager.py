@@ -99,6 +99,7 @@ class CCP4i2DjangoProjectsManager(object):
                     "Error %s - In getProjectDirectory for non existent projectId %s",
                     err,
                     projectId,
+                    exc_info=True,  # <-- Add this line
                 )
                 return None
         else:
