@@ -311,6 +311,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
           options={fileOptions?.concat([nullFile]) || []}
           getOptionLabel={getOptionLabel}
           getOptionKey={(option) => `${option.uuid}`}
+          freeSolo={false}
           renderInput={(params) => (
             <TextField
               {...params}
