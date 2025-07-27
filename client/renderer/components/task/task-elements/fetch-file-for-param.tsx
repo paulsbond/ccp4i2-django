@@ -103,7 +103,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         }
       }
     },
-    [itemParams, job]
+    [itemParams, item, job]
   );
 
   const handleEbiCoordFetch = useCallback(async () => {
