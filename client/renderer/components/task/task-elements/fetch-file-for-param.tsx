@@ -13,6 +13,7 @@ import { Job } from "../../../types/models";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../../app-context";
 import { useJob } from "../../../utils";
+import { usePopcorn } from "../../../providers/popcorn-provider";
 
 interface FetchFileForParamProps {
   itemParams: any;
@@ -26,6 +27,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   onClose,
 }) => {
   const api = useApi();
+  const { setMessage } = usePopcorn();
 
   const { item, modes, onChange } = useMemo(() => {
     //alert(JSON.stringify(itemParams));
@@ -72,6 +74,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   }, [modes]);
 
   const [identifier, setIdentifier] = useState<string | null>(null);
+  const [inFlight, setInFlight] = useState(false);
 
   const uploadFile = useCallback(
     async (fileBlob: Blob, fileName: string) => {
@@ -79,9 +82,15 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         const formData = new FormData();
         formData.append("objectPath", itemParams.item._objectPath);
         formData.append("file", fileBlob, fileName);
+        setMessage(
+          `Uploading file ${fileName} for ${itemParams.item._objectPath}`
+        );
         const uploadResult = await api.post<any>(
           `jobs/${job.id}/upload_file_param`,
           formData
+        );
+        setMessage(
+          `File ${fileName} uploaded for ${itemParams.item._objectPath}`
         );
         if (uploadResult.status === "Success") {
           if (onChange) {
@@ -109,22 +118,28 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
             let fetchURL = file.PDB.downloads
               .filter((item: any) => item.label === "Archive mmCIF file")
               .at(0).url;
+            setMessage(`Fetching file from ${fetchURL}`);
             const fileContent = await fetch(fetchURL);
+            setMessage(`Fetched file from ${fetchURL}`);
             if (fileContent.ok) {
               const content = await fileContent.blob();
               uploadFile(content, fetchURL.split("/").at(-1));
               onClose();
+            } else {
+              setMessage(await fileContent.text());
             }
           }
         } else {
+          setMessage(await result.text());
           console.log("FetchFileForParam handleFetch result", result);
         }
-      } catch (err) {
+      } catch (err: any) {
+        setMessage(err.message || "Unknown error");
         console.log("FetchFileForParam handleFetch error", err);
         return;
       }
     }
-  }, [identifier, uploadFile, onClose]);
+  }, [identifier, uploadFile, onClose, setMessage]);
 
   const handleEbiSFsFetch = useCallback(async () => {
     if (identifier) {
@@ -137,23 +152,30 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
           let fetchURL = file.PDB.downloads
             .filter((item: any) => item.label === "Structure Factors")
             .at(0).url;
+          setMessage(`Fetching file from ${fetchURL}`);
           const fileContent = await fetch(fetchURL);
+          setMessage(`Fetched file from ${fetchURL}`);
           if (fileContent.ok) {
             const content = await fileContent.blob();
             uploadFile(content, fetchURL.split("/").at(-1));
             onClose();
+          } else {
+            setMessage(await fileContent.text());
           }
         }
       } else {
+        setMessage(await result.text());
         console.log("FetchFileForParam handleFetch result", result);
       }
     }
-  }, [identifier, uploadFile, onClose]);
+  }, [identifier, uploadFile, onClose, setMessage]);
 
   const handleUniprotFastaFetch = useCallback(async () => {
     if (identifier) {
       const url = `/api/proxy/uniprot/${identifier.toUpperCase()}.fasta`;
+      setMessage(`Fetching FASTA file for ${identifier.toUpperCase()}`);
       const result = await fetch(url);
+      setMessage(`Fetched FASTA file for ${identifier.toUpperCase()}`);
       if (result.ok) {
         const data = await result.text();
         const content = new Blob([data], {
@@ -162,20 +184,23 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         uploadFile(content, `${identifier.toUpperCase()}.fasta`);
         onClose();
       } else {
+        setMessage(await result.text());
         console.log("FetchFileForParam handleFetch result", result);
       }
     }
-  }, [identifier, uploadFile, onClose]);
+  }, [identifier, uploadFile, onClose, setMessage]);
 
   const handleFetch = useCallback(async () => {
     if (mode) {
+      setInFlight(true);
       if (mode === "ebiPdb") {
-        handleEbiCoordFetch();
+        await handleEbiCoordFetch();
       } else if (mode === "ebiSFs") {
-        handleEbiSFsFetch();
+        await handleEbiSFsFetch();
       } else if (mode === "uniprotFasta") {
-        handleUniprotFastaFetch();
+        await handleUniprotFastaFetch();
       }
+      setInFlight(false);
     }
   }, [mode, identifier]);
 
@@ -213,8 +238,12 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleFetch}>Fetch</Button>
+        <Button onClick={onClose} disabled={inFlight}>
+          Cancel
+        </Button>
+        <Button onClick={handleFetch} disabled={inFlight}>
+          Fetch
+        </Button>
       </DialogActions>
     </Dialog>
   );
