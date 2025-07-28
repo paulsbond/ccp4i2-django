@@ -135,8 +135,22 @@
     },
     "win": {
       "target": [
-        "portable"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker",
+      "compression": "store"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "linux": {
       "target": {

@@ -17,6 +17,7 @@ import {
   Delete,
   FireExtinguisherRounded,
   Pending,
+  Preview,
   RunCircle,
   SmsFailed,
   TerminalOutlined,
@@ -162,6 +163,10 @@ export const JobMenu: React.FC = () => {
     [job, setStatusMenuAnchorEl]
   );
 
+  const handleOpenInNewWindow = (path: string) => {
+    window.open(path, "_blank", "noopener,noreferrer");
+  };
+
   const handleDelete = useCallback(
     (ev: SyntheticEvent) => {
       if (!job) return;
@@ -248,6 +253,15 @@ export const JobMenu: React.FC = () => {
             onClick={handleDelete}
           >
             <Delete /> Delete
+          </MenuItem>
+          <MenuItem
+            key="Moorhen"
+            disabled={job.status != 6}
+            onClick={() => {
+              handleOpenInNewWindow(`/moorhen-page/job-by-id/${job.id}`);
+            }}
+          >
+            <Preview /> Moorhen
           </MenuItem>
           <MenuItem
             key="Status"
