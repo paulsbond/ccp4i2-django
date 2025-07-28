@@ -89,17 +89,18 @@ REST_FRAMEWORK = {
 # Static files settings
 STATIC_URL = "/djangostatic/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+# Modified settings for Electron
+STATICFILES_STORAGE = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"  # Use default storage
+)
+
+# Keep your existing STATICFILES_DIRS - WhiteNoise will serve directly from these
 STATICFILES_DIRS = [
     ("qticons", str(Path(diff_match_patch_py3.__file__).parent.parent / "qticons")),
     ("svgicons", str(Path(diff_match_patch_py3.__file__).parent.parent / "svgicons")),
 ]
-print(
-    str(Path(diff_match_patch_py3.__file__).parent.parent / "qticons"), str(STATIC_ROOT)
-)
 
-# Configure WhiteNoise for static file storage
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-# Optional compression and caching settings
-WHITENOISE_COMPRESSION = True
-WHITENOISE_MAX_AGE = 31536000
+# Disable manifest storage features that require collectstatic
+WHITENOISE_USE_FINDERS = True  # Serve directly from STATICFILES_DIRS
+WHITENOISE_AUTOREFRESH = True  # Enable in development
