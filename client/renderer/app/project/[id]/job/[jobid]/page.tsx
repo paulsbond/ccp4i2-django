@@ -20,7 +20,8 @@ import { JobDirectoryView } from "../../../../../components/job_directory_view";
 import useSWR from "swr";
 import $ from "jquery";
 import { Calculate } from "@mui/icons-material";
-import Diagnostic from "../../../../../components/diagnostic_formatter/diagnostic";
+import Diagnostic from "../../../../../components/diagnostic";
+import { JobLogViewer } from "../../../../../components/job-log-viewer";
 
 export default function JobPage({
   params,
@@ -97,6 +98,7 @@ export default function JobPage({
           {devMode && <Tab value={7} label="Job container" />}
           <Tab value={8} label="Comments" />
           <Tab value={9} label="Directory" />
+          <Tab value={10} label="Logs" />
         </Tabs>
         {tabValue == 0 && <TaskContainer />}
         {devMode && tabValue == 1 && params_xml && (
@@ -142,6 +144,11 @@ export default function JobPage({
         {tabValue == 9 && job && project && (
           <Paper sx={{ height: "calc(100vh - 20rem)", overflowY: "auto" }}>
             <JobDirectoryView job={job} project={project} />
+          </Paper>
+        )}
+        {tabValue == 10 && job && project && (
+          <Paper sx={{ height: "calc(100vh - 20rem)", overflowY: "auto" }}>
+            <JobLogViewer job={job} project={project} />
           </Paper>
         )}
         <JobMenu />
