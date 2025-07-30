@@ -10,7 +10,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
 ) => {
   const [shown, setShown] = useState(0);
   useEffect(() => {
-    console.log(props.item);
+    //console.log(props.item);
   }, [props.item]);
 
   const xmlGraphs = useMemo(() => {
@@ -41,7 +41,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
           ccp4DataTitle = "Graph " + iGraph;
         }
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
       graphTitles.push(ccp4DataTitle);
     });
@@ -87,7 +87,7 @@ export const CCP4i2ReportFlotGraphGroup: React.FC<CCP4i2ReportElementProps> = (
           //@ts-ignore
           options={options}
           onChange={(ev, newValue) => {
-            console.log(ev, newValue);
+            //console.log(ev, newValue);
             //@ts-ignore
             setShown(newValue.id);
           }}

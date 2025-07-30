@@ -4,7 +4,7 @@ import { Paper, Stack, Tab, Tabs } from "@mui/material";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { CCP4i2Context } from "../../../app-context";
 import { useApi } from "../../../api";
-import { CCP4i2DirectoryViewer } from "../../../components/directory_viewer";
+import { CCP4i2DirectoryViewer } from "../../../components/directory-viewer";
 import { useProject } from "../../../utils";
 import { ClassicJobList } from "../../../components/classic-jobs-list";
 import { DraggableContext } from "../../../providers/draggable-context";

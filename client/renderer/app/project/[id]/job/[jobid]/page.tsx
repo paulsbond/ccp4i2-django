@@ -20,6 +20,8 @@ import { JobDirectoryView } from "../../../../../components/job_directory_view";
 import useSWR from "swr";
 import $ from "jquery";
 import { Calculate } from "@mui/icons-material";
+import Diagnostic from "../../../../../components/diagnostic";
+import { JobLogViewer } from "../../../../../components/job-log-viewer";
 
 export default function JobPage({
   params,
@@ -88,12 +90,15 @@ export default function JobPage({
           {devMode && <Tab value={1} label="Params as xml" />}
           {devMode && <Tab value={2} label="Report as xml" />}
           <Tab value={3} label="Report" />
-          {devMode && <Tab value={4} label="Diagnostic xml" />}
+          {(devMode || job?.status === 5) && (
+            <Tab value={4} label="Diagnostic xml" />
+          )}
           {devMode && <Tab value={5} label="Def xml" />}
           {devMode && <Tab value={6} label="Validation report" />}
           {devMode && <Tab value={7} label="Job container" />}
           <Tab value={8} label="Comments" />
           <Tab value={9} label="Directory" />
+          <Tab value={10} label="Logs" />
         </Tabs>
         {tabValue == 0 && <TaskContainer />}
         {devMode && tabValue == 1 && params_xml && (
@@ -111,12 +116,8 @@ export default function JobPage({
           />
         )}
         {tabValue == 3 && jobid && <CCP4i2ReportXMLView />}
-        {devMode && tabValue == 4 && diagnostic_xml && (
-          <Editor
-            height="calc(100vh - 15rem)"
-            value={diagnostic_xml}
-            language="xml"
-          />
+        {(devMode || job?.status === 5) && tabValue == 4 && diagnostic_xml && (
+          <Diagnostic xmlDocument={diagnostic_xml} />
         )}
         {devMode && tabValue == 5 && def_xml && (
           <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
@@ -143,6 +144,11 @@ export default function JobPage({
         {tabValue == 9 && job && project && (
           <Paper sx={{ height: "calc(100vh - 20rem)", overflowY: "auto" }}>
             <JobDirectoryView job={job} project={project} />
+          </Paper>
+        )}
+        {tabValue == 10 && job && project && (
+          <Paper sx={{ height: "calc(100vh - 20rem)", overflowY: "auto" }}>
+            <JobLogViewer job={job} project={project} />
           </Paper>
         )}
         <JobMenu />
