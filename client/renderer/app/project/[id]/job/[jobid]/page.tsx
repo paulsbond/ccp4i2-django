@@ -88,7 +88,9 @@ export default function JobPage({
           {devMode && <Tab value={1} label="Params as xml" />}
           {devMode && <Tab value={2} label="Report as xml" />}
           <Tab value={3} label="Report" />
-          {devMode && <Tab value={4} label="Diagnostic xml" />}
+          {(devMode || job?.status === 5) && (
+            <Tab value={4} label="Diagnostic xml" />
+          )}
           {devMode && <Tab value={5} label="Def xml" />}
           {devMode && <Tab value={6} label="Validation report" />}
           {devMode && <Tab value={7} label="Job container" />}
@@ -111,7 +113,7 @@ export default function JobPage({
           />
         )}
         {tabValue == 3 && jobid && <CCP4i2ReportXMLView />}
-        {devMode && tabValue == 4 && diagnostic_xml && (
+        {(devMode || job?.status === 5) && tabValue == 4 && diagnostic_xml && (
           <Editor
             height="calc(100vh - 15rem)"
             value={diagnostic_xml}
