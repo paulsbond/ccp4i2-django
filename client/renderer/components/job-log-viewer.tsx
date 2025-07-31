@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Job, Project } from "../types/models";
-import { FileTree } from "../providers/file-browser";
 import { useProject } from "../utils";
 import LogViewer from "./log-viewer";
 

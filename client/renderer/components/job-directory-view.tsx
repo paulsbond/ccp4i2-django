@@ -1,22 +1,21 @@
-"use client";
-import { useApi } from "../api";
-import { LinearProgress } from "@mui/material";
+import { useContext, useEffect, useMemo } from "react";
+import { Job, Project } from "../types/models";
 import { useProject } from "../utils";
-import { useContext, useEffect } from "react";
-import DirectoryBrowser, { FileSystemItem } from "./directory-browser";
-import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
+import { useApi } from "../api";
 import { FilePreviewContext } from "../providers/file-preview-context";
+import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
+import DirectoryBrowser, { FileSystemItem } from "./directory-browser";
 import { FileSystemFileMenu } from "./file-system-file-menu";
+import { LinearProgress } from "@mui/material";
 
-interface CCP4i2DirectoryViewerProps {
-  projectId: number;
+interface JobDirectoryViewProps {
+  job: Job;
+  project: Project;
 }
+export const JobDirectoryView = ({ job, project }) => {
+  const { directory } = useProject(project.id);
 
-export const CCP4i2DirectoryViewer: React.FC<CCP4i2DirectoryViewerProps> = ({
-  projectId,
-}) => {
   const api = useApi();
-  const { directory } = useProject(projectId);
   const { contentSpecification, setContentSpecification } =
     useContext(FilePreviewContext);
 
@@ -72,11 +71,40 @@ export const CCP4i2DirectoryViewer: React.FC<CCP4i2DirectoryViewerProps> = ({
     };
   }, []);
 
+  const directoryData = useMemo(() => {
+    console.log(directory.container);
+    if (!directory || !job || !directory.container) {
+      return null;
+    }
+    let dirNode = directory.container.find(
+      (item: any) => item.name === "CCP4_JOBS"
+    );
+    if (!dirNode) return [];
+    const jobNumberElements = job.number.split(".").reverse();
+    let cumulativePath: string = dirNode.path;
+    while (jobNumberElements.length > 0) {
+      const jobNumber = jobNumberElements.pop();
+      dirNode = dirNode.contents.find(
+        (item: any) => item.name === `job_${jobNumber}`
+      );
+      cumulativePath += `/job_${jobNumber}`;
+      console.log({ cumulativePath });
+      if (!dirNode) {
+        return null;
+      }
+      if (jobNumberElements.length === 0) {
+        return dirNode.contents.map((item: FileSystemItem) => {
+          return { ...item, path: item.path.slice(cumulativePath.length) };
+        });
+      }
+    }
+  }, [job, project, directory]);
+
   return directory ? (
     <>
       <DirectoryBrowser
         onMenuOpen={onMenuOpen}
-        directoryTree={directory.container}
+        directoryTree={directoryData || []}
       />
       <FileSystemFileMenu onClose={handleMenuClose} />
     </>

@@ -16,7 +16,7 @@ import {
 import ToolBar from "../../../../../components/tool-bar";
 import { JobCommentEditor } from "../../../../../components/job-comment-editor";
 import { JobMenu } from "../../../../../providers/job-context-menu";
-import { JobDirectoryView } from "../../../../../components/job_directory_view";
+import { JobDirectoryView } from "../../../../../components/job-directory-view";
 import useSWR from "swr";
 import $ from "jquery";
 import { Calculate } from "@mui/icons-material";
