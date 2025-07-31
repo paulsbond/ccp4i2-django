@@ -18,6 +18,7 @@ import {
   Clear as ClearIcon,
   MoreVert as MoreVertIcon,
 } from "@mui/icons-material";
+import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
 
 export interface FileSystemItem {
   path: string;
@@ -47,7 +48,6 @@ export interface DirectoryBrowserProps {
   onItemClick?: (item: FileSystemItem, event: React.MouseEvent) => void;
   onItemDoubleClick?: (item: FileSystemItem, event: React.MouseEvent) => void;
   onItemRightClick?: (item: FileSystemItem, event: React.MouseEvent) => void;
-  onMenuOpen?: (item: FileSystemItem, anchorEl: HTMLElement) => void;
   selectedItems?: Set<string>;
   multiSelect?: boolean;
 }
@@ -63,7 +63,6 @@ interface TreeNodeProps {
   onItemClick?: (item: FileSystemItem, event: React.MouseEvent) => void;
   onItemDoubleClick?: (item: FileSystemItem, event: React.MouseEvent) => void;
   onItemRightClick?: (item: FileSystemItem, event: React.MouseEvent) => void;
-  onMenuOpen?: (item: FileSystemItem, anchorEl: HTMLElement) => void;
   selectedItems?: Set<string>;
 }
 
@@ -78,12 +77,14 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
   onItemClick,
   onItemDoubleClick,
   onItemRightClick,
-  onMenuOpen,
   selectedItems = new Set(),
   multiSelect = false,
 }) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState<string>("");
+
+  // Use the FileSystemFileBrowser context
+  const { openMenu, anchorEl, menuNode } = useFileSystemFileBrowser();
 
   // Filter directory tree based on provided filter function
   const filteredTree = useMemo(() => {
@@ -154,6 +155,33 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
     });
   }, []);
 
+  // Handle menu opening using the context
+  const handleMenuOpen = useCallback(
+    (item: FileSystemItem, element: HTMLElement) => {
+      // Capture the position immediately while the element is still valid
+      const rect = element.getBoundingClientRect();
+
+      // Create a stable virtual anchor to avoid DOM removal issues
+      const virtualAnchor = document.createElement("div");
+      virtualAnchor.style.position = "fixed";
+      virtualAnchor.style.top = `${rect.bottom}px`;
+      virtualAnchor.style.left = `${rect.left}px`;
+      virtualAnchor.style.width = "1px";
+      virtualAnchor.style.height = "1px";
+      virtualAnchor.style.pointerEvents = "none";
+      virtualAnchor.style.visibility = "hidden";
+      virtualAnchor.style.zIndex = "9999";
+      virtualAnchor.id = "file-menu-anchor";
+
+      // Add to DOM immediately
+      document.body.appendChild(virtualAnchor);
+
+      // Use the context's openMenu function
+      openMenu(virtualAnchor, item);
+    },
+    [openMenu]
+  );
+
   const TreeNode: React.FC<TreeNodeProps> = ({
     item,
     level,
@@ -165,7 +193,6 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
     onItemClick,
     onItemDoubleClick,
     onItemRightClick,
-    onMenuOpen,
     selectedItems,
   }) => {
     const isExpanded = expandedNodes.has(item.path);
@@ -211,13 +238,13 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
     const handleMenuClick = (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      onMenuOpen?.(item, event.currentTarget as HTMLElement);
+      handleMenuOpen(item, event.currentTarget as HTMLElement);
     };
 
     return (
       <Box>
         <Box
-          data-tree-item-row={item.path} // Add this specific identifier
+          data-tree-item-row={item.path}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -319,22 +346,20 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
             </Typography>
           )}
 
-          {onMenuOpen && (
-            <IconButton
-              className="menu-button"
-              size="small"
-              sx={{
-                opacity: 0,
-                transition: "opacity 0.2s",
-                padding: 0.25,
-                marginLeft: 0.5,
-                flexShrink: 0,
-              }}
-              onClick={handleMenuClick}
-            >
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
-          )}
+          <IconButton
+            className="menu-button"
+            size="small"
+            sx={{
+              opacity: 0,
+              transition: "opacity 0.2s",
+              padding: 0.25,
+              marginLeft: 0.5,
+              flexShrink: 0,
+            }}
+            onClick={handleMenuClick}
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
         </Box>
 
         {item.type === "directory" && hasChildren && (
@@ -353,7 +378,6 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
                   onItemClick={onItemClick}
                   onItemDoubleClick={onItemDoubleClick}
                   onItemRightClick={onItemRightClick}
-                  onMenuOpen={onMenuOpen}
                   selectedItems={selectedItems}
                 />
               ))}
@@ -422,7 +446,6 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
               onItemClick={onItemClick}
               onItemDoubleClick={onItemDoubleClick}
               onItemRightClick={onItemRightClick}
-              onMenuOpen={onMenuOpen}
               selectedItems={selectedItems}
             />
           ))

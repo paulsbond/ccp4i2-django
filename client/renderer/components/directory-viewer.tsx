@@ -3,9 +3,8 @@ import { useApi } from "../api";
 import { LinearProgress } from "@mui/material";
 import { useProject } from "../utils";
 import { useContext, useEffect } from "react";
-import DirectoryBrowser, { FileSystemItem } from "./directory-browser";
+import DirectoryBrowser from "./directory-browser";
 import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
-import { FilePreviewContext } from "../providers/file-preview-context";
 import { FileSystemFileMenu } from "./file-system-file-menu";
 
 interface CCP4i2DirectoryViewerProps {
@@ -15,54 +14,10 @@ interface CCP4i2DirectoryViewerProps {
 export const CCP4i2DirectoryViewer: React.FC<CCP4i2DirectoryViewerProps> = ({
   projectId,
 }) => {
-  const api = useApi();
   const { directory } = useProject(projectId);
-  const { contentSpecification, setContentSpecification } =
-    useContext(FilePreviewContext);
+  const { closeMenu } = useFileSystemFileBrowser();
 
-  const {
-    anchorEl,
-    menuNode,
-    previewNode,
-    openMenu,
-    closeMenu,
-    setPreviewNode,
-  } = useFileSystemFileBrowser();
-
-  const onMenuOpen = (item: FileSystemItem, element: HTMLElement) => {
-    // Capture the position immediately while the element is still valid
-    const rect = element.getBoundingClientRect();
-
-    // Always create a stable virtual anchor to avoid DOM removal issues
-    const virtualAnchor = document.createElement("div");
-    virtualAnchor.style.position = "fixed";
-    virtualAnchor.style.top = `${rect.bottom}px`;
-    virtualAnchor.style.left = `${rect.left}px`;
-    virtualAnchor.style.width = "1px";
-    virtualAnchor.style.height = "1px";
-    virtualAnchor.style.pointerEvents = "none";
-    virtualAnchor.style.visibility = "hidden";
-    virtualAnchor.style.zIndex = "9999";
-    virtualAnchor.id = "file-menu-anchor";
-
-    // Add to DOM immediately
-    document.body.appendChild(virtualAnchor);
-
-    // Use the virtual anchor instead of the original element
-    openMenu(virtualAnchor, item);
-  };
-
-  // Clean up virtual anchor when component unmounts or menu closes
-  const handleMenuClose = () => {
-    const existing = document.getElementById("file-menu-anchor");
-    if (existing && document.body.contains(existing)) {
-      document.body.removeChild(existing);
-    }
-
-    closeMenu();
-  };
-
-  // Clean up on unmount
+  // Clean up virtual anchor when component unmounts
   useEffect(() => {
     return () => {
       const existing = document.getElementById("file-menu-anchor");
@@ -72,12 +27,18 @@ export const CCP4i2DirectoryViewer: React.FC<CCP4i2DirectoryViewerProps> = ({
     };
   }, []);
 
+  // Handle cleanup when menu closes
+  const handleMenuClose = () => {
+    const existing = document.getElementById("file-menu-anchor");
+    if (existing && document.body.contains(existing)) {
+      document.body.removeChild(existing);
+    }
+    closeMenu();
+  };
+
   return directory ? (
     <>
-      <DirectoryBrowser
-        onMenuOpen={onMenuOpen}
-        directoryTree={directory.container}
-      />
+      <DirectoryBrowser directoryTree={directory.container} />
       <FileSystemFileMenu onClose={handleMenuClose} />
     </>
   ) : (

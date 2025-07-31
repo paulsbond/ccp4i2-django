@@ -28,29 +28,6 @@ export const JobDirectoryView = ({ job, project }) => {
     setPreviewNode,
   } = useFileSystemFileBrowser();
 
-  const onMenuOpen = (item: FileSystemItem, element: HTMLElement) => {
-    // Capture the position immediately while the element is still valid
-    const rect = element.getBoundingClientRect();
-
-    // Always create a stable virtual anchor to avoid DOM removal issues
-    const virtualAnchor = document.createElement("div");
-    virtualAnchor.style.position = "fixed";
-    virtualAnchor.style.top = `${rect.bottom}px`;
-    virtualAnchor.style.left = `${rect.left}px`;
-    virtualAnchor.style.width = "1px";
-    virtualAnchor.style.height = "1px";
-    virtualAnchor.style.pointerEvents = "none";
-    virtualAnchor.style.visibility = "hidden";
-    virtualAnchor.style.zIndex = "9999";
-    virtualAnchor.id = "file-menu-anchor";
-
-    // Add to DOM immediately
-    document.body.appendChild(virtualAnchor);
-
-    // Use the virtual anchor instead of the original element
-    openMenu(virtualAnchor, item);
-  };
-
   // Clean up virtual anchor when component unmounts or menu closes
   const handleMenuClose = () => {
     const existing = document.getElementById("file-menu-anchor");
@@ -93,19 +70,14 @@ export const JobDirectoryView = ({ job, project }) => {
         return null;
       }
       if (jobNumberElements.length === 0) {
-        return dirNode.contents.map((item: FileSystemItem) => {
-          return { ...item, path: item.path.slice(cumulativePath.length) };
-        });
+        return dirNode.contents;
       }
     }
   }, [job, project, directory]);
 
   return directory ? (
     <>
-      <DirectoryBrowser
-        onMenuOpen={onMenuOpen}
-        directoryTree={directoryData || []}
-      />
+      <DirectoryBrowser directoryTree={directoryData || []} />
       <FileSystemFileMenu onClose={handleMenuClose} />
     </>
   ) : (
