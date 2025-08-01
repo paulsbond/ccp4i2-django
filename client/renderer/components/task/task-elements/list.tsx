@@ -18,6 +18,7 @@ import { MyExpandMore } from "../../expand-more";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { CCP4i2Context } from "../../../app-context";
 import { Project } from "../../../types/models";
+import { ErrorTrigger } from "./error-info";
 
 interface CListElementProps extends CCP4i2TaskElementProps {
   initiallyOpen?: boolean;
@@ -26,7 +27,7 @@ interface CListElementProps extends CCP4i2TaskElementProps {
 export const CListElement: React.FC<CListElementProps> = (props) => {
   const { itemName, job, qualifiers } = props;
   const api = useApi();
-  const { getTaskItem, setParameter } = useJob(job.id);
+  const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
   const { projectId } = useContext(CCP4i2Context);
   const { project } = projectId ? useProject(projectId) : {};
   const { item } = getTaskItem(itemName);
@@ -105,6 +106,29 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
     },
     [item]
   );
+  // Get validation color for border when itemName is provided
+  const validationBorderColor = useMemo(() => {
+    if (itemName && item) {
+      return getValidationColor(item);
+    }
+    return "divider"; // Default border color
+  }, [itemName, item, getValidationColor]);
+
+  // Card styling with validation color
+  const cardSx = useMemo(
+    () => ({
+      mx: 2,
+      border: 2,
+      borderColor: validationBorderColor,
+      "&:hover": {
+        borderColor:
+          validationBorderColor === "divider"
+            ? "primary.light"
+            : validationBorderColor,
+      },
+    }),
+    [validationBorderColor]
+  );
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
@@ -115,7 +139,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
   }, [props.visibility]);
 
   return inferredVisibility ? (
-    <Card sx={{ mx: 2 }}>
+    <Card sx={cardSx}>
       <CardHeader
         variant="primary"
         title={<>{guiLabel}</>}
@@ -136,6 +160,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
             <Button disabled={!(job.status == 1)} onClick={extendListItem}>
               <Add sx={{ color: "primary.contrastText" }} />
             </Button>
+            <ErrorTrigger item={item} job={job} />
           </>
         }
       />

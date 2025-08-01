@@ -582,7 +582,8 @@ const errorsInValidation = (
     // Check if the validation path matches exactly or starts with the item path followed by a dot
     if (
       validationPath === itemPath ||
-      validationPath.startsWith(`${itemPath}.`)
+      validationPath.startsWith(`${itemPath}.`) ||
+      validationPath.startsWith(`${itemPath}[`)
     ) {
       matchingErrors.push({
         path: validationPath,
