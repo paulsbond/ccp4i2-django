@@ -10,13 +10,7 @@ import {
   SxProps,
   Typography,
 } from "@mui/material";
-import React, {
-  PropsWithChildren,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { PropsWithChildren, useMemo, useRef, useState } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useJob } from "../../../utils";
 import { ErrorInfo } from "./error-info";
