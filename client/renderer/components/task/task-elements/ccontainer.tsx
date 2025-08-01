@@ -30,6 +30,7 @@ interface CCP4i2ContainerElementProps extends CCP4i2TaskElementProps {
   initiallyOpen?: boolean;
   containerHint?: "FolderLevel" | "BlockLevel" | "RowLevel";
   elementSx?: SxProps;
+  excludeItems?: string[];
 }
 
 export const CCP4i2ContainerElement: React.FC<
@@ -71,18 +72,26 @@ export const CCP4i2ContainerElement: React.FC<
 
   const childNames = useMemo(() => {
     if (item) {
+      let names: string[] = [];
+
       if (
         Array.isArray(item?._CONTENTS_ORDER) &&
         item._CONTENTS_ORDER.length > 0
       ) {
-        return item._CONTENTS_ORDER;
+        names = item._CONTENTS_ORDER;
       } else if (item._value && item._value.constructor == Object) {
-        return Object.keys(item._value);
+        names = Object.keys(item._value);
       }
-      return [];
+
+      // Filter out excluded items if excludeItems prop is provided
+      if (props.excludeItems && props.excludeItems.length > 0) {
+        names = names.filter((name) => !props.excludeItems?.includes(name));
+      }
+
+      return names;
     }
     return [];
-  }, [item]);
+  }, [item, props.excludeItems]);
 
   const calculatedContent = useMemo(() => {
     return item ? (

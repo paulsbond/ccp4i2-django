@@ -256,7 +256,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               }}
               key="SOLVENT_ADVANCED"
               visibility={() => {
-                console.log("In visibility");
+                //console.log("In visibility");
                 return solventMaskType === "EXPLICIT";
               }}
             />
@@ -460,11 +460,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
 
-        <CCP4i2Tab label="Prosmart">
+        <CCP4i2Tab label="Prosmart - protein" key="Prosmart protein">
+          <CCP4i2TaskElement
+            {...props}
+            itemName="prosmartProtein.REFERENCE_MODELS"
+            qualifiers={{ guiLabel: "Protein reference models" }}
+          />
           <CCP4i2ContainerElement
             {...props}
             itemName="prosmartProtein"
             containerHint="FolderLevel"
+            excludeItems={["REFERENCE_MODELS"]}
             qualifiers={{
               guiLabel: "Prosmart - protein",
             }}
