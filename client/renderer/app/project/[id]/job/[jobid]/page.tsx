@@ -91,7 +91,7 @@ export default function JobPage({
           {devMode && <Tab value={2} label="Report as xml" />}
           <Tab value={3} label="Report" />
           {(devMode || job?.status === 5) && (
-            <Tab value={4} label="Diagnostic xml" />
+            <Tab value={4} label="Diagnostics" />
           )}
           {devMode && <Tab value={5} label="Def xml" />}
           {devMode && <Tab value={6} label="Validation report" />}

@@ -86,9 +86,56 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
   // Use the FileSystemFileBrowser context
   const { openMenu, anchorEl, menuNode } = useFileSystemFileBrowser();
 
+  const sortedDirectoryTree = useMemo(() => {
+    if (!directoryTree) return [];
+
+    // Helper to extract trailing integer from name pattern "name_{integer}"
+    const extractTrailingInt = (name: string) => {
+      const match = name.match(/_(\d+)$/);
+      return match ? parseInt(match[1], 10) : null;
+    };
+
+    // Recursive sorting function
+    const sortItems = (items: FileSystemItem[]): FileSystemItem[] => {
+      return items
+        .slice()
+        .sort((a: FileSystemItem, b: FileSystemItem) => {
+          // Directories first
+          if (a.type === "directory" && b.type !== "directory") return -1;
+          if (a.type !== "directory" && b.type === "directory") return 1;
+
+          // Check for name_{int} pattern
+          const aInt = extractTrailingInt(a.name);
+          const bInt = extractTrailingInt(b.name);
+
+          if (aInt !== null && bInt !== null) {
+            // If both have trailing ints, sort numerically
+            if (a.name.replace(/_\d+$/, "") === b.name.replace(/_\d+$/, "")) {
+              return aInt - bInt;
+            }
+          }
+
+          // Fallback to lexicographical
+          return a.name.localeCompare(b.name);
+        })
+        .map((item) => {
+          // Recursively sort directory contents
+          if (item.type === "directory" && item.contents) {
+            return {
+              ...item,
+              contents: sortItems(item.contents),
+            };
+          }
+          return item;
+        });
+    };
+
+    return sortItems(directoryTree);
+  }, [directoryTree]);
+
   // Filter directory tree based on provided filter function
   const filteredTree = useMemo(() => {
-    if (!fileFilter) return directoryTree;
+    if (!fileFilter) return sortedDirectoryTree;
 
     const filterItems = (items: FileSystemItem[]): FileSystemItem[] => {
       return items
@@ -109,8 +156,8 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
         .filter((item): item is FileSystemItem => item !== null);
     };
 
-    return filterItems(directoryTree);
-  }, [directoryTree, fileFilter]);
+    return filterItems(sortedDirectoryTree);
+  }, [sortedDirectoryTree, fileFilter]);
 
   // Search functionality
   const searchFilteredTree = useMemo(() => {
@@ -232,6 +279,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
     const handleRightClick = (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
+      handleMenuOpen(item, event.currentTarget as HTMLElement);
       onItemRightClick?.(item, event);
     };
 
@@ -392,7 +440,6 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
     <Paper
       sx={{
         width,
-        height,
         display: "flex",
         flexDirection: "column",
         borderRadius: 0,
@@ -400,9 +447,13 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
         borderColor: "divider",
         minWidth: 0,
         flex: width === "100%" ? 1 : undefined,
+        height: "calc(100vh - 2rem)", // Use fixed height instead of maxHeight
+        overflow: "hidden", // Keep this as hidden for the container
       }}
     >
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+      <Box
+        sx={{ p: 2, borderBottom: 1, borderColor: "divider", flexShrink: 0 }}
+      >
         <Typography variant="h6" gutterBottom>
           {title}
         </Typography>
@@ -431,7 +482,14 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
         )}
       </Box>
 
-      <Box sx={{ flex: 1, overflow: "auto", p: 1 }}>
+      <Box
+        sx={{
+          flex: 1, // This will take remaining space
+          overflow: "auto", // This creates the scrollable area
+          p: 1,
+          // Remove the maxHeight - it's not needed with flex: 1
+        }}
+      >
         {searchFilteredTree.length > 0 ? (
           searchFilteredTree.map((item) => (
             <TreeNode

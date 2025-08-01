@@ -2,7 +2,7 @@
 import { useApi } from "../api";
 import { LinearProgress } from "@mui/material";
 import { useProject } from "../utils";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import DirectoryBrowser from "./directory-browser";
 import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
 import { FileSystemFileMenu } from "./file-system-file-menu";
@@ -38,7 +38,7 @@ export const CCP4i2DirectoryViewer: React.FC<CCP4i2DirectoryViewerProps> = ({
 
   return directory ? (
     <>
-      <DirectoryBrowser directoryTree={directory.container} />
+      <DirectoryBrowser directoryTree={directory.container || []} />
       <FileSystemFileMenu onClose={handleMenuClose} />
     </>
   ) : (
