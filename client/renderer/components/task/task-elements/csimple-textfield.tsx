@@ -168,6 +168,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
   const calculatedSx = useMemo(
     () => ({
       minWidth: DEFAULT_MIN_WIDTH,
+      ml: 2,
       ...sx,
     }),
     [sx]
@@ -310,7 +311,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
   return (
     <Stack
       direction="row"
-      sx={{ mb: 2 }}
+      sx={{ mt: 1 }}
       role="group"
       aria-label={`${processedItem.guiLabel} input`}
     >

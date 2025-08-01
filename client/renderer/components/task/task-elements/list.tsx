@@ -115,7 +115,7 @@ export const CListElement: React.FC<CListElementProps> = (props) => {
   }, [props.visibility]);
 
   return inferredVisibility ? (
-    <Card>
+    <Card sx={{ mx: 2 }}>
       <CardHeader
         variant="primary"
         title={<>{guiLabel}</>}

@@ -179,6 +179,7 @@ export const CSimpleAutocompleteElement: React.FC<
   const calculatedSx = useMemo(
     () => ({
       minWidth: DEFAULT_MIN_WIDTH,
+      ml: 2,
       ...sx,
     }),
     [sx]
@@ -306,7 +307,7 @@ export const CSimpleAutocompleteElement: React.FC<
       <FormControlLabel
         control={<></>}
         label={config.guiLabel}
-        sx={{ marginRight: 2 }}
+        sx={{ mr: 2 }}
       />
       {config.enumerators.map((enumerator, index) => (
         <FormControlLabel
@@ -377,7 +378,7 @@ export const CSimpleAutocompleteElement: React.FC<
   return (
     <Stack
       direction="row"
-      sx={{ mb: 2 }}
+      sx={{ mt: 1 }}
       role="group"
       aria-label={`${config.guiLabel} selection`}
     >
