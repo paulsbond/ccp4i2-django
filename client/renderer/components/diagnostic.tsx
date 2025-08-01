@@ -146,7 +146,13 @@ const Diagnostic: React.FC<DiagnosticProps> = ({ xmlDocument }) => {
 
   if (!errorReports.length) {
     return (
-      <Box p={2}>
+      <Box
+        sx={{
+          height: "calc(100vh - 19rem)",
+          overflowY: "auto",
+          p: 2,
+        }}
+      >
         <Alert severity="info">
           No error reports found in the diagnostic data.
         </Alert>
@@ -155,7 +161,14 @@ const Diagnostic: React.FC<DiagnosticProps> = ({ xmlDocument }) => {
   }
 
   return (
-    <Box sx={{ width: "100%", p: 2 }}>
+    <Box
+      sx={{
+        height: "calc(100vh - 21rem)",
+        overflowY: "auto",
+        width: "100%",
+        p: 2,
+      }}
+    >
       {/* Header Information */}
       {header.pluginName && (
         <Card sx={{ mb: 2 }}>

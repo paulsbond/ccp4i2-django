@@ -245,38 +245,47 @@ export const useJob = (jobId: number | null | undefined) => {
     },
 
     setParameter: useCallback(
-      async (setParameterArg: SetParameterArg) => {
+      async (
+        setParameterArg: SetParameterArg
+      ): Promise<SetParameterResponse | undefined> => {
         if (job?.status == 1) {
-          const result = await api.post<Job>(
+          const result = await api.post<SetParameterResponse>(
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
           await mutateContainer();
           await mutateParams_xml();
           await mutateValidation();
+          console.log({ result });
           return result;
-        } else
+        } else {
           console.log(
             "Alert attempting to edit interface of task not in pending state"
           );
+          return undefined;
+        }
       },
       [job, mutateContainer, mutateValidation, mutateParams_xml]
     ),
 
     setParameterNoMutate: useCallback(
-      async (setParameterArg: SetParameterArg) => {
+      async (
+        setParameterArg: SetParameterArg
+      ): Promise<SetParameterResponse | undefined> => {
         if (job?.status == 1) {
-          const result = await api.post<Job>(
+          const result = await api.post<SetParameterResponse>(
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
           await mutateParams_xml();
           await mutateValidation();
           return result;
-        } else
+        } else {
           console.log(
             "Alert attempting to edit interface of task not in pending state"
           );
+          return undefined;
+        }
       },
       [job]
     ),
@@ -342,7 +351,8 @@ export const useJob = (jobId: number | null | undefined) => {
     }, [validation]),
 
     getErrors: useMemo(() => {
-      return (item: any) => errorsInValidation(item, validation);
+      return (item: any): ValidationError[] =>
+        errorsInValidation(item, validation);
     }, [validation]),
 
     getFileDigest: useMemo(() => {
@@ -493,17 +503,40 @@ export const valueOfItem = (item: any): any => {
 /**
  * Determines the appropriate validation color based on the presence and severity of field errors.
  *
- * @param {any} fieldErrors - An array of field error objects.
- * @returns {string} - Returns "success.light" if there are no errors, "warning.light" if there are warnings, and "error.light" if there are errors.
+ * @param {any} fieldErrors - A single field error object or an array of field error objects, each with a maxSeverity property.
+ * @returns {string} - Returns "success.light" if there are no errors or maxSeverity is 0,
+ *                     "warning.light" if the highest maxSeverity is 1, and "error.light" if the highest maxSeverity is 2 or higher.
  */
 export const validationColor = (fieldErrors: any): string => {
-  return !fieldErrors
-    ? "success.light"
-    : fieldErrors.maxSeverity == 0
-    ? "success.light"
-    : fieldErrors && fieldErrors.maxSeverity == 1
-    ? "warning.light"
-    : "error.light";
+  // Handle null, undefined, or empty array cases
+  if (
+    !fieldErrors ||
+    (Array.isArray(fieldErrors) && fieldErrors.length === 0)
+  ) {
+    return "success.light";
+  }
+
+  let maxSeverity: number;
+
+  if (Array.isArray(fieldErrors)) {
+    // Find the highest maxSeverity in the array
+    maxSeverity = fieldErrors.reduce((highest, error) => {
+      const currentSeverity = error?.error.maxSeverity ?? 0;
+      return Math.max(highest, currentSeverity);
+    }, 0);
+  } else {
+    // Single object case
+    maxSeverity = fieldErrors.maxSeverity ?? 0;
+  }
+
+  // Return appropriate color based on severity level
+  if (maxSeverity === 0) {
+    return "success.light";
+  } else if (maxSeverity === 1) {
+    return "warning.light";
+  } else {
+    return "error.light";
+  }
 };
 
 /**
@@ -525,19 +558,41 @@ export const usePrevious = <T>(value: T): T | undefined => {
 
 /**
  * Extracts validation errors for a given item based on the provided validation object.
+ * Returns all validation errors that match the item's object path or are nested under it.
  *
  * @param item - The item to check for validation errors. It can be of any type.
- * @param validation - An XML Document containing validation details.
+ * @param validation - An object containing validation details with keys as object paths.
  *
- * @returns An object comprising "message" (an array of errror messages, and the parameter "maxSeverity
- *          where 0 implies no error, 1 implies a WARNING, and 2 implies a ERRPR
- *          If no errors are found, null is returned.
+ * @returns An array of validation error objects where each object has the validation data
+ *          and the matching object path. Returns an empty array if no errors are found.
  */
-const errorsInValidation = (item: any, validation: any): any | null => {
-  if (validation) {
-    return validation[item._objectPath];
+const errorsInValidation = (
+  item: any,
+  validation: any
+): Array<{ path: string; error: any }> => {
+  if (!validation || !item?._objectPath) {
+    return [];
   }
-  return null;
+
+  const itemPath = item._objectPath;
+  const matchingErrors: Array<{ path: string; error: any }> = [];
+
+  // Iterate through all validation keys
+  Object.keys(validation).forEach((validationPath) => {
+    // Check if the validation path matches exactly or starts with the item path followed by a dot
+    if (
+      validationPath === itemPath ||
+      validationPath.startsWith(`${itemPath}.`) ||
+      validationPath.startsWith(`${itemPath}[`)
+    ) {
+      matchingErrors.push({
+        path: validationPath,
+        error: validation[validationPath],
+      });
+    }
+  });
+
+  return matchingErrors;
 };
 
 export const prettifyXml = (sourceXml: Document) => {
@@ -550,7 +605,7 @@ export const prettifyXml = (sourceXml: Document) => {
       theNode = $(sourceXml).get(0);
     } catch (err) {
       console.error(
-        `Source XML is not something from hwhich JQuery can extract an HTMLElemeent for processing`
+        `Source XML is not something from hwich JQuery can extract an HTMLElemeent for processing`
       );
     }
     //console.log('theNode', theNode)
@@ -579,3 +634,20 @@ export const prettifyXml = (sourceXml: Document) => {
   var resultXml = new XMLSerializer().serializeToString(resultDoc);
   return resultXml;
 };
+
+// More precise typing with discriminated union
+export type SetParameterResponse =
+  | {
+      status: "Success";
+      updated_item: any;
+    }
+  | {
+      status: "Failed";
+      updated_item?: never; // This ensures updated_item is not present when status is "Failed"
+    };
+
+// Add this type definition near the top of your file with other types
+export interface ValidationError {
+  path: string;
+  error: any;
+}

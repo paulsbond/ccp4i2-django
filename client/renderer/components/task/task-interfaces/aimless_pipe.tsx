@@ -92,7 +92,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           {...props}
           itemName=""
           key="Parameters"
-          containerHint="FolderLevel"
+          containerHint="BlockLevel"
           qualifiers={{
             guiLabel: "Parameters",
             initiallyOpen: true,
@@ -121,7 +121,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           {...props}
           key="ChoosingSpace"
           itemName=""
-          containerHint="FolderLevel"
+          containerHint="BlockLevel"
           qualifiers={{
             guiLabel: "Choosing spacegroup",
             initiallyOpen: true,

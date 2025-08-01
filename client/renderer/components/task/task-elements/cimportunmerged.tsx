@@ -12,6 +12,7 @@ import { CCellElement } from "./ccell";
 import { ErrorInfo } from "./error-info";
 import { CSimpleDataFileElement } from "./csimpledatafile";
 import { useApi } from "../../../api";
+import { CDataFileElement } from "./cdatafile";
 
 export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   props
@@ -88,6 +89,12 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     return props.visibility;
   }, [props.visibility]);
 
+  const hasValidationError = useMemo(() => {
+    if (!item) return false;
+    const result = getValidationColor(item) === "error.light";
+    return result;
+  }, [getValidationColor, item]);
+
   return inferredVisibility ? (
     <Card
       sx={{
@@ -102,7 +109,11 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
       />
       <CardContent>
         {fileObjectPath && (
-          <CSimpleDataFileElement {...props} itemName={fileObjectPath}>
+          <CSimpleDataFileElement
+            {...props}
+            hasValidationError={hasValidationError}
+            itemName={fileObjectPath}
+          >
             {cellObjectPath && item._value["cell"] && (
               <CCP4i2TaskElement
                 {...props}

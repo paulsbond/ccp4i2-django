@@ -6,7 +6,11 @@ import { useApi } from "../../../api";
 import { readFilePromise, useJob } from "../../../utils";
 import { Job } from "../../../types/models";
 
-export const CSimpleDataFileElement: React.FC<CCP4i2TaskElementProps> = (
+interface CSimpleDataFileElementProps extends CCP4i2TaskElementProps {
+  hasValidationError?: boolean;
+}
+
+export const CSimpleDataFileElement: React.FC<CSimpleDataFileElementProps> = (
   props
 ) => {
   const { job, itemName } = props;

@@ -8,7 +8,7 @@ import { CFloatElement } from "./cfloat";
 import { CPdbDataFileElement } from "./cpdbdatafile";
 import { CMiniMtzDataFileElement } from "./cminimtzdatafile";
 import { CBooleanElement } from "./cboolean";
-import { CListElement } from "./list";
+import { CListElement } from "./clist";
 import { CCP4i2ContainerElement } from "./ccontainer";
 import { CImportUnmergedElement } from "./cimportunmerged";
 import { CCellElement } from "./ccell";
