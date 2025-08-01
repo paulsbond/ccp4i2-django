@@ -243,13 +243,14 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
   const borderColor = getValidationColor(item);
   const computedValidationError = useMemo(() => {
     const hasError = borderColor === "error.light";
-    // Add some debugging
+    /* Add some debugging
     console.log(`CDataFileElement ${itemName}:`, {
       borderColor,
       hasError,
       itemPath: item?._objectPath,
       overrideValidationError,
     });
+    */
     return hasError;
   }, [borderColor, itemName, item?._objectPath, overrideValidationError]);
 
@@ -270,7 +271,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     hasValidationError
   );
 
-  // Add debugging for the collapsible state
+  /* Add debugging for the collapsible state
   console.log(`CDataFileElement ${itemName} collapsible:`, {
     hasChildren,
     hasValidationError,
@@ -278,6 +279,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     computedValidationError,
     isExpanded,
   });
+  */
 
   // Drag and drop setup
   const { isOver, setNodeRef } = useDroppable({
