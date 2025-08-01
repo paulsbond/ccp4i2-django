@@ -176,11 +176,20 @@ export const CCP4i2ContainerElement: React.FC<
     inferredVisibility ? (
       <Card sx={cardSx}>
         <CardHeader
-          variant="primary"
           title={qualifiers.guiLabel}
           onClick={(ev) => {
             ev.stopPropagation();
             setOpen(!open);
+          }}
+          sx={{
+            backgroundColor: "grey.100", // Very light grey background
+            color: "text.primary", // Black text (uses theme's primary text color)
+            "& .MuiCardHeader-title": {
+              color: "text.primary", // Ensure title is black
+            },
+            "&:hover": {
+              backgroundColor: "grey.200", // Slightly darker on hover
+            },
           }}
           action={
             <Stack direction="row">
@@ -189,7 +198,8 @@ export const CCP4i2ContainerElement: React.FC<
                 aria-expanded={open}
                 aria-label="show more"
               >
-                <ExpandMore sx={{ color: "primary.contrastText" }} />
+                <ExpandMore sx={{ color: "text.primary" }} />{" "}
+                {/* Change icon color to black */}
               </MyExpandMore>
               {item && <ErrorInfo {...props} />}
             </Stack>
