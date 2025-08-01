@@ -245,38 +245,47 @@ export const useJob = (jobId: number | null | undefined) => {
     },
 
     setParameter: useCallback(
-      async (setParameterArg: SetParameterArg) => {
+      async (
+        setParameterArg: SetParameterArg
+      ): Promise<SetParameterResponse | undefined> => {
         if (job?.status == 1) {
-          const result = await api.post<Job>(
+          const result = await api.post<SetParameterResponse>(
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
           await mutateContainer();
           await mutateParams_xml();
           await mutateValidation();
+          console.log({ result });
           return result;
-        } else
+        } else {
           console.log(
             "Alert attempting to edit interface of task not in pending state"
           );
+          return undefined;
+        }
       },
       [job, mutateContainer, mutateValidation, mutateParams_xml]
     ),
 
     setParameterNoMutate: useCallback(
-      async (setParameterArg: SetParameterArg) => {
+      async (
+        setParameterArg: SetParameterArg
+      ): Promise<SetParameterResponse | undefined> => {
         if (job?.status == 1) {
-          const result = await api.post<Job>(
+          const result = await api.post<SetParameterResponse>(
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
           await mutateParams_xml();
           await mutateValidation();
           return result;
-        } else
+        } else {
           console.log(
             "Alert attempting to edit interface of task not in pending state"
           );
+          return undefined;
+        }
       },
       [job]
     ),
@@ -550,7 +559,7 @@ export const prettifyXml = (sourceXml: Document) => {
       theNode = $(sourceXml).get(0);
     } catch (err) {
       console.error(
-        `Source XML is not something from hwhich JQuery can extract an HTMLElemeent for processing`
+        `Source XML is not something from hwich JQuery can extract an HTMLElemeent for processing`
       );
     }
     //console.log('theNode', theNode)
@@ -579,3 +588,14 @@ export const prettifyXml = (sourceXml: Document) => {
   var resultXml = new XMLSerializer().serializeToString(resultDoc);
   return resultXml;
 };
+
+// More precise typing with discriminated union
+export type SetParameterResponse =
+  | {
+      status: "Success";
+      updated_item: any;
+    }
+  | {
+      status: "Failed";
+      updated_item?: never; // This ensures updated_item is not present when status is "Failed"
+    };

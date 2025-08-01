@@ -1,21 +1,4 @@
-import {
-  Autocomplete,
-  AutocompleteChangeReason,
-  Avatar,
-  Button,
-  LinearProgress,
-  Stack,
-  TextField,
-} from "@mui/material";
-import { useApi } from "../../../api";
-import { CCP4i2TaskElementProps } from "./task-element";
-import {
-  File as CCP4i2File,
-  Job,
-  nullFile,
-  Project,
-} from "../../../types/models";
-import {
+import React, {
   ChangeEvent,
   PropsWithChildren,
   ReactNode,
@@ -26,66 +9,141 @@ import {
   useMemo,
   useState,
 } from "react";
+import {
+  Autocomplete,
+  AutocompleteChangeReason,
+  Avatar,
+  Button,
+  LinearProgress,
+  Stack,
+  TextField,
+} from "@mui/material";
+import { Menu as MenuIcon } from "@mui/icons-material";
+import { useDndContext, useDroppable } from "@dnd-kit/core";
+
+import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
-import { ErrorTrigger } from "./error-info";
+import { CCP4i2TaskElementProps } from "./task-element";
+import {
+  File as CCP4i2File,
+  Job,
+  nullFile,
+  Project,
+} from "../../../types/models";
 import { TaskInterfaceContext } from "../../../providers/task-container";
+import { FileMenuContext } from "../../../providers/file-context-menu";
+import { ErrorTrigger } from "./error-info";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
-import { useDndContext, useDroppable } from "@dnd-kit/core";
-import { FileMenuContext } from "../../../providers/file-context-menu";
-import { Menu } from "@mui/icons-material";
 
-export const inverseFileTypeMapping: { [key: string]: string } = {
-  CDataFile: "Unknown",
-  CSeqDataFile: "application/CCP4-seq",
-  CPdbDataFile: "chemical/x-pdb",
-  C: "Dummy",
-  CMtzDataFile: "application/CCP4-unmerged-mtz",
-  CUnmergedDataFile: "application/CCP4-unmerged-experimental",
-  CMapDataFile: "application/CCP4-map",
-  CDictDataFile: "application/refmac-dictionary",
-  CTLSDataFile: "application/refmac-TLS",
-  CFreeRDataFile: "application/CCP4-mtz-freerflag",
-  CObsDataFile: "application/CCP4-mtz-observed",
-  CPhsDataFile: "application/CCP4-mtz-phases",
-  CMapCoeffsDataFile: "application/CCP4-mtz-map",
-  CSeqAlignDataFile: "application/CCP4-seqalign",
-  CMiniMtzDataFile: "application/CCP4-mtz-mini",
-  CCootHistoryDataFile: "application/coot-script",
-  CRefmacRestraintsDataFile: "application/refmac-external-restraints",
-  CSceneDataFile: "application/CCP4-scene",
-  CShelxFADataFile: "application/CCP4-shelx-FA",
-  CPhaserSolDataFile: "application/phaser-sol",
-  CMDLMolDataFile: "chemical/x-mdl-molfile",
-  CImosflmXmlDataFile: "application/iMosflm-xml",
-  CImageFile: "application/CCP4-image",
-  CGenericReflDataFile: "application/CCP4-generic-reflections",
-  CHhpredDataFile: "application/HHPred-alignments",
-  CBlastDataFile: "application/Blast-alignments",
-  CEnsemblePdbDataFile: "chemical/x-pdb-ensemble",
-  CAsuDataFile: "application/CCP4-asu-content",
-  CDialsJsonFile: "application/dials-jfile",
-  CDialsPickleFile: "application/dials-pfile",
-  CPhaserRFileDataFile: "application/phaser-rfile",
-  CRefmacKeywordFile: "application/refmac-keywords",
-  CPDFDataFile: "application/x-pdf",
-  CPostscriptDataFile: "application/postscript",
-  CEBIValidationXMLDataFile: "application/EBI-validation-xml",
-  CMmcifReflDataFile: "chemical/x-cif",
-};
+const BORDER_RADIUS_STYLES = {
+  none: { borderRadius: 0 },
+  left: {
+    borderTopLeftRadius: "0.5rem",
+    borderBottomLeftRadius: "0.5rem",
+  },
+  right: {
+    borderTopRightRadius: "0.5rem",
+    borderBottomRightRadius: "0.5rem",
+  },
+  full: { borderRadius: "0.5rem" },
+} as const;
 
+// Types
 export interface CCP4i2DataFileElementProps
   extends CCP4i2TaskElementProps,
     PropsWithChildren {
-  setFileContent?: (fileContent: ArrayBuffer | null | string | File) => void;
+  setFileContent?: (fileContent: ArrayBuffer | string | File | null) => void;
   setFiles?: (files: FileList | null) => void;
   infoContent?: ReactNode;
   onChange?: (updatedItem: any) => void;
 }
-export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
-  props
-) => {
-  const { job, sx, itemName, onChange } = props;
+
+interface FileTypeConfig {
+  allowedTypes: string[] | null;
+  acceptedExtensions: string;
+}
+
+// Custom hooks
+const useFileConfiguration = (item: any, qualifiers: any): FileTypeConfig => {
+  return useMemo(() => {
+    if (!qualifiers?.mimeTypeName) {
+      return { allowedTypes: null, acceptedExtensions: "" };
+    }
+
+    const allowedTypes = Array.isArray(qualifiers.mimeTypeName)
+      ? qualifiers.mimeTypeName
+      : [qualifiers.mimeTypeName];
+
+    const acceptedExtensions =
+      qualifiers?.fileExtensions?.map((ext: string) => `.${ext}`).join(",") ||
+      "";
+
+    return { allowedTypes, acceptedExtensions };
+  }, [qualifiers]);
+};
+
+const useFilteredFileOptions = (
+  projectFiles: CCP4i2File[] | undefined,
+  projectJobs: Job[] | undefined,
+  allowedTypes: string[] | null
+): CCP4i2File[] => {
+  return useMemo(() => {
+    if (!projectFiles || !allowedTypes) return [];
+
+    return projectFiles
+      .filter((file) => {
+        const fileJob = projectJobs?.find((job) => job.id === file.job);
+        const isValidType =
+          allowedTypes.includes(file.type) || allowedTypes.includes("Unknown");
+        const isNotParentJob = fileJob ? !fileJob.parent : true;
+
+        return isValidType && isNotParentJob;
+      })
+      .sort((a, b) => b.job - a.job);
+  }, [projectFiles, projectJobs, allowedTypes]);
+};
+
+const useCurrentValue = (
+  item: any,
+  fileOptions: CCP4i2File[],
+  objectPath: string | null
+): [CCP4i2File, React.Dispatch<React.SetStateAction<CCP4i2File>>] => {
+  const [value, setValue] = useState<CCP4i2File>(nullFile);
+
+  useEffect(() => {
+    if (!objectPath || !fileOptions || !item) return;
+
+    const dbFileId = item._value?.dbFileId?._value?.trim();
+    if (!dbFileId) {
+      setValue(nullFile);
+      return;
+    }
+
+    const selectedFile = fileOptions.find((file) => {
+      const normalizedFileUuid = file.uuid.replace(/-/g, "");
+      const normalizedDbFileId = dbFileId.replace(/-/g, "");
+      return normalizedFileUuid === normalizedDbFileId;
+    });
+
+    setValue(selectedFile || nullFile);
+  }, [objectPath, fileOptions, item]);
+
+  return [value, setValue];
+};
+
+// Main component
+export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
+  job,
+  sx,
+  itemName,
+  onChange,
+  setFiles,
+  children,
+  visibility,
+  disabled: disabledProp,
+  qualifiers: propsQualifiers,
+}) => {
   const api = useApi();
   const {
     getTaskItem,
@@ -94,32 +152,20 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     fileItemToParameterArg,
     mutateContainer,
   } = useJob(job.id);
+
   const { item } = getTaskItem(itemName);
-
-  const { isOver, setNodeRef } = useDroppable({
-    id: `job_${job.uuid}_${itemName}`,
-    data: { job, item },
-  });
-
-  const { active } = useDndContext();
-
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
+  const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
 
-  const [value, setValue] = useState<CCP4i2File>(nullFile);
-
-  const { _objectPath: objectPath, _qualifiers: itemQualifiers } = item || {
-    _objectPath: null,
-    _qualifiers: null,
-  };
-
+  // Merge qualifiers
   const qualifiers = useMemo(() => {
-    if (itemQualifiers) {
-      return { ...itemQualifiers, ...props?.qualifiers };
-    }
-    return null;
-  }, [itemQualifiers]);
+    return item?._qualifiers
+      ? { ...item._qualifiers, ...propsQualifiers }
+      : propsQualifiers || null;
+  }, [item?._qualifiers, propsQualifiers]);
 
-  const { data: project_files, mutate: mutateFiles } = api.get_endpoint<
+  // Data fetching
+  const { data: projectFiles, mutate: mutateFiles } = api.get_endpoint<
     CCP4i2File[]
   >({
     type: "projects",
@@ -127,7 +173,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
     endpoint: "files",
   });
 
-  const { data: project_jobs } = api.get_endpoint<Job[]>({
+  const { data: projectJobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: job.project,
     endpoint: "jobs",
@@ -136,186 +182,191 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
   const { data: projects } = api.get<Project[]>("projects");
 
   const { mutate: mutateDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=${item._objectPath}`
+    `jobs/${job.id}/digest?object_path=${item?._objectPath}`
   );
 
-  const fileTypes = useMemo<string[] | null>(() => {
-    //console.log(qualifiers);
+  // Configuration and options
+  const { allowedTypes, acceptedExtensions } = useFileConfiguration(
+    item,
+    qualifiers
+  );
+  const fileOptions = useFilteredFileOptions(
+    projectFiles,
+    projectJobs,
+    allowedTypes
+  );
+  const [value, setValue] = useCurrentValue(
+    item,
+    fileOptions,
+    item?._objectPath || null
+  );
 
-    if (!qualifiers?.mimeTypeName) return null;
-    if (Array.isArray(qualifiers?.mimeTypeName)) {
-      // If multiple mime types are allowed, return them as array
-      return qualifiers.mimeTypeName;
-    }
-    return [qualifiers.mimeTypeName];
-  }, [item]);
+  // Drag and drop setup
+  const { isOver, setNodeRef } = useDroppable({
+    id: `job_${job.uuid}_${itemName}`,
+    data: { job, item },
+  });
 
+  const { active } = useDndContext();
+
+  // Computed values
   const isValidDrop = useMemo(() => {
-    if (!active?.data?.current?.file) return false;
-    if (!item) return false;
-    if (job?.status !== 1) return false;
-    return fileTypes?.includes((active.data.current?.file as CCP4i2File).type);
-  }, [active, item, job]);
+    if (!active?.data?.current?.file || !item || job.status !== 1) return false;
+    const activeFile = active.data.current.file as CCP4i2File;
+    return allowedTypes?.includes(activeFile.type) || false;
+  }, [active, item, job.status, allowedTypes]);
 
-  if (!project_files || !project_jobs) return <LinearProgress />;
+  const guiLabel = useMemo(() => {
+    return qualifiers?.guiLabel || item?._objectPath?.split(".").at(-1) || "";
+  }, [qualifiers?.guiLabel, item?._objectPath]);
 
-  const fileOptions = useMemo<CCP4i2File[] | null>(() => {
-    return project_files
-      .filter((file: CCP4i2File) => {
-        const fileJob: Job | undefined = project_jobs?.find(
-          (job: Job) => job.id == file.job
-        );
-        //console.log(file.type, fileType);
-        if (fileJob)
-          return (
-            (fileTypes?.includes(file.type) ||
-              fileTypes?.includes("Unknown")) &&
-            !fileJob.parent
-          );
-        return fileTypes?.includes(file.type) || fileTypes?.includes("Unknown");
-      })
-      .sort((a, b) => {
-        return b.job - a.job;
-      });
-  }, [project_files, project_jobs, fileTypes]);
-
-  const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
-
-  useEffect(() => {
-    if (objectPath && fileOptions && item) {
-      const result = item._value;
-      if (
-        result &&
-        result.dbFileId &&
-        result.dbFileId._value &&
-        result.dbFileId._value.trim().length > 0
-      ) {
-        const chosenOption = fileOptions.find((file: CCP4i2File) => {
-          const dehyphentatedUUID = file.uuid.replace(/-/g, "");
-          const dehyphentatedDbFileId = result.dbFileId._value.replace(
-            /-/g,
-            ""
-          );
-          return dehyphentatedUUID === dehyphentatedDbFileId;
-        });
-        if (chosenOption) setValue(chosenOption);
-        else setValue(nullFile);
-      }
-      //Here if no dbFileId.  In principle, I think this should not happen
-      else setValue(nullFile);
+  const isDisabled = useMemo(() => {
+    if (typeof disabledProp === "function") {
+      return disabledProp() || inFlight || job.status !== 1;
     }
-  }, [objectPath, fileOptions, item]);
+    return disabledProp || inFlight || job.status !== 1;
+  }, [disabledProp, inFlight, job.status]);
 
-  const guiLabel = useMemo<string>(() => {
-    return qualifiers?.guiLabel
-      ? qualifiers.guiLabel
-      : objectPath?.split(".").at(-1);
-  }, [objectPath, qualifiers]);
+  const isVisible = useMemo(() => {
+    if (typeof visibility === "function") return visibility();
+    return visibility !== false;
+  }, [visibility]);
 
-  const handleSelect = useCallback(
+  // Event handlers
+  const handleFileSelect = useCallback(
     async (
       event: SyntheticEvent<Element, Event>,
-      value: CCP4i2File | null,
+      selectedFile: CCP4i2File | null,
       reason: AutocompleteChangeReason
     ) => {
-      let setParameterArg: any = {};
+      const objectPath = item?._objectPath;
       if (!objectPath || !projects) return;
-      if (reason === "clear" || value === nullFile) {
-        setParameterArg.value = null;
-        setParameterArg.object_path = objectPath;
+
+      let parameterArg: any = {};
+
+      if (reason === "clear" || selectedFile === nullFile) {
+        parameterArg = { value: null, object_path: objectPath };
         setValue(nullFile);
-      } else if (value) {
-        setValue(value);
-        setParameterArg = fileItemToParameterArg(
-          value,
+      } else if (selectedFile) {
+        setValue(selectedFile);
+        parameterArg = fileItemToParameterArg(
+          selectedFile,
           objectPath,
-          project_jobs,
+          projectJobs || [],
           projects
         );
       }
+
       setInFlight(true);
       try {
-        const updatedResult: any = await setParameter(setParameterArg);
-        if (updatedResult?.status === "Success" && onChange) {
-          onChange(updatedResult.updated_item);
+        const result = await setParameter(parameterArg);
+        if (result?.status === "Success" && onChange) {
+          onChange(result.updated_item);
         }
-      } catch (err) {
-        alert(err);
+      } catch (error) {
+        console.error("Error setting parameter:", error);
+        alert(`Error: ${error}`);
       } finally {
         setInFlight(false);
         mutateDigest();
         mutateContainer();
       }
     },
-    [job, objectPath, project_jobs, projects]
+    [
+      item?._objectPath,
+      projects,
+      projectJobs,
+      fileItemToParameterArg,
+      setParameter,
+      onChange,
+      setInFlight,
+      mutateDigest,
+      mutateContainer,
+    ]
+  );
+
+  const handleFileChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setFiles?.(event.currentTarget.files);
+    },
+    [setFiles]
+  );
+
+  const handleMenuClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      event.preventDefault();
+      setFileMenuAnchorEl(event.currentTarget);
+      setFile(value);
+    },
+    [setFileMenuAnchorEl, setFile, value]
   );
 
   const getOptionLabel = useCallback(
     (option: CCP4i2File) => {
-      const fileJob: Job | undefined = project_jobs?.find(
-        (job: Job) => job.id == option.job
-      );
-      if (fileJob) return `${fileJob.number}: ${option.annotation}`;
-      return `${option.annotation}`;
+      const fileJob = projectJobs?.find((job) => job.id === option.job);
+      return fileJob
+        ? `${fileJob.number}: ${option.annotation}`
+        : option.annotation;
     },
-    [project_jobs]
+    [projectJobs]
   );
 
-  const inferredVisibility = useMemo(() => {
-    if (!props.visibility) return true;
-    if (typeof props.visibility === "function") {
-      return props.visibility();
-    }
-    return props.visibility;
-  }, [props.visibility]);
+  const getOptionKey = useCallback((option: CCP4i2File) => option.uuid, []);
 
-  const handleFileChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    if (props.setFiles) props.setFiles(ev.currentTarget.files);
-  };
+  // Loading state
+  if (!projectFiles || !projectJobs) {
+    return <LinearProgress />;
+  }
 
-  const disabled = useMemo(() => {
-    if (typeof props.disabled === "undefined")
-      return inFlight || job.status !== 1;
-    if (typeof props.disabled === "function") {
-      return props.disabled() || inFlight || job.status !== 1;
-    }
-    return props.disabled || inFlight || job.status !== 1;
-  }, [props.disabled, inFlight, job]);
+  // Visibility check
+  if (!isVisible) {
+    return null;
+  }
 
-  return inferredVisibility ? (
+  const borderColor = getValidationColor(item);
+  const backgroundColor = isOver
+    ? isValidDrop
+      ? "success.light"
+      : "error.light"
+    : "background.paper";
+
+  const showMenuButton = value && value !== nullFile;
+  const canUpload = job.status === 1;
+  const canFetch = qualifiers?.downloadModes?.length > 0 && job.status === 1;
+
+  return (
     <Stack
       sx={{
         border: "3px solid",
-        borderColor: getValidationColor(item),
-        backgroundColor: isOver
-          ? isValidDrop
-            ? "success.light"
-            : "error.light"
-          : "background.paper",
+        borderColor,
+        backgroundColor,
         borderRadius: "0.5rem",
         mx: 2,
         my: 1,
       }}
       direction="column"
     >
-      <Stack ref={setNodeRef} direction="row">
+      <Stack ref={setNodeRef} direction="row" alignItems="center">
         <Avatar
-          src={`/api/proxy/djangostatic/qticons/${item._class.slice(1)}.png`}
+          src={`/api/proxy/djangostatic/qticons/${item?._class?.slice(1)}.png`}
+          alt={item?._class || "File type"}
         />
+
         <Autocomplete
-          disabled={disabled}
+          disabled={isDisabled}
           sx={{ m: 1, width: "80rem", maxWidth: "80rem", ...sx }}
           size="small"
           value={value}
-          onChange={handleSelect}
-          options={fileOptions?.concat([nullFile]) || []}
+          onChange={handleFileSelect}
+          options={[...fileOptions, nullFile]}
           getOptionLabel={getOptionLabel}
-          getOptionKey={(option) => `${option.uuid}`}
+          getOptionKey={getOptionKey}
           freeSolo={false}
           renderInput={(params) => (
             <TextField
               {...params}
-              error={getValidationColor(item) === "error.light"}
+              error={borderColor === "error.light"}
               slotProps={{
                 inputLabel: {
                   shrink: true,
@@ -326,86 +377,64 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = (
               size="small"
             />
           )}
-          title={objectPath || item._className || "Title"}
+          title={item?._objectPath || item?._className || "File selector"}
         />
+
         <Stack direction="row">
-          {job.status == 1 && (
+          {canUpload && (
             <InputFileUpload
               sx={{
                 my: 2,
-                borderRadius: "0",
-                "&:first-of-type": {
-                  borderTopLeftRadius: "0.5rem",
-                  borderBottomLeftRadius: "0.5rem",
-                },
-                "&:last-of-type": {
-                  borderTopRightRadius: "0.5rem",
-                  borderBottomRightRadius: "0.5rem",
-                },
+                ...BORDER_RADIUS_STYLES.none,
+                "&:first-of-type": BORDER_RADIUS_STYLES.left,
+                "&:last-of-type": BORDER_RADIUS_STYLES.right,
               }}
-              disabled={disabled}
-              accept={qualifiers?.fileExtensions
-                .map((ext: string) => `.${ext}`)
-                .join(",")}
+              disabled={isDisabled}
+              accept={acceptedExtensions}
               handleFileChange={handleFileChange}
             />
           )}
-          {qualifiers?.downloadModes?.length > 0 && job.status == 1 && (
+
+          {canFetch && (
             <InputFileFetch
               sx={{
                 my: 2,
-                borderRadius: "0",
-                "&:first-of-type": {
-                  borderTopLeftRadius: "0.5rem",
-                  borderBottomLeftRadius: "0.5rem",
-                },
-                "&:last-of-type": {
-                  borderTopRightRadius: "0.5rem",
-                  borderBottomRightRadius: "0.5rem",
-                },
+                ...BORDER_RADIUS_STYLES.none,
+                "&:first-of-type": BORDER_RADIUS_STYLES.left,
+                "&:last-of-type": BORDER_RADIUS_STYLES.right,
               }}
-              disabled={disabled}
+              disabled={isDisabled}
               modes={qualifiers.downloadModes}
               handleFileChange={handleFileChange}
               onChange={onChange}
               item={item}
             />
           )}
-          {value && value != nullFile && (
-            <>
-              <Button
-                disabled={false}
-                component="label"
-                role={undefined}
-                variant="outlined"
-                tabIndex={-1}
-                size="small"
-                startIcon={<Menu fontSize="small" />}
-                sx={{
-                  my: 2,
-                  borderRadius: "0",
-                  "&:first-of-type": {
-                    borderTopLeftRadius: "0.5rem",
-                    borderBottomLeftRadius: "0.5rem",
-                  },
-                  "&:last-of-type": {
-                    borderTopRightRadius: "0.5rem",
-                    borderBottomRightRadius: "0.5rem",
-                  },
-                }}
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  ev.preventDefault();
-                  setFileMenuAnchorEl(ev.currentTarget);
-                  setFile(value);
-                }}
-              ></Button>
-            </>
+
+          {showMenuButton && (
+            <Button
+              disabled={false}
+              role="button"
+              variant="outlined"
+              tabIndex={-1}
+              size="small"
+              startIcon={<MenuIcon fontSize="small" />}
+              sx={{
+                my: 2,
+                ...BORDER_RADIUS_STYLES.none,
+                "&:first-of-type": BORDER_RADIUS_STYLES.left,
+                "&:last-of-type": BORDER_RADIUS_STYLES.right,
+              }}
+              onClick={handleMenuClick}
+              aria-label="Open file menu"
+            />
           )}
         </Stack>
-        <ErrorTrigger {...{ item, job }} />
+
+        <ErrorTrigger item={item} job={job} />
       </Stack>
-      {props.children}
+
+      {children}
     </Stack>
-  ) : null;
+  );
 };

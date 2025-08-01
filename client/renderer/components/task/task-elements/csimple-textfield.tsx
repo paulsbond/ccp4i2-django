@@ -1,6 +1,6 @@
-import {
-  ChangeEventHandler,
-  KeyboardEventHandler,
+import React, {
+  ChangeEvent,
+  KeyboardEvent,
   useCallback,
   useContext,
   useEffect,
@@ -9,217 +9,332 @@ import {
   useState,
 } from "react";
 import { Stack, TextField } from "@mui/material";
+
 import { CCP4i2CSimpleElementProps } from "./csimple";
-import { useJob } from "../../../utils";
+import { useJob, SetParameterResponse } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
 import { TaskInterfaceContext } from "../../../providers/task-container";
 import { usePopcorn } from "../../../providers/popcorn-provider";
 
-export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = (
-  props
-) => {
-  const { itemName, job, type, sx, qualifiers } = props;
-  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
-  const { getTaskItem, getValidationColor } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
-  //return <Typography>"{itemName}",</Typography>;
+// Types
+type InputValue = string | number | boolean;
+type InputType = "text" | "int" | "float" | "checkbox";
 
-  const inputRef = useRef<HTMLElement | null>(null);
+interface ProcessedItem {
+  objectPath: string | null;
+  value: InputValue;
+  guiLabel: string;
+  isMultiLine: boolean;
+  tooltipText: string;
+}
 
-  const [value, setValue] = useState<number | string | boolean>(
-    item._value || ""
-  );
+// Constants
+const DEFAULT_MIN_WIDTH = "20rem";
+const DEBOUNCE_DELAY = 500;
+const INPUT_TYPES = {
+  TEXT: "text",
+  INT: "int",
+  FLOAT: "float",
+  CHECKBOX: "checkbox",
+} as const;
 
-  const { setParameter, setParameterNoMutate } = useJob(job.id);
+// Custom hooks
+const useProcessedItem = (
+  item: any,
+  qualifiers: any,
+  objectPath: string | null
+): ProcessedItem => {
+  return useMemo(() => {
+    const guiLabel =
+      qualifiers?.guiLabel || objectPath?.split(".").at(-1) || "";
+    const isMultiLine = qualifiers?.guiMode === "multiLine";
+    const tooltipText = qualifiers?.toolTip || objectPath || "";
 
-  const changeCountdown = useRef<any | null>(null);
+    return {
+      objectPath,
+      value: item?._value || "",
+      guiLabel,
+      isMultiLine,
+      tooltipText,
+    };
+  }, [item, qualifiers, objectPath]);
+};
 
-  const { setMessage } = usePopcorn();
+const useFormState = (initialValue: InputValue, type: InputType) => {
+  const [value, setValue] = useState<InputValue>(initialValue);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Sync with prop changes
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  // Cleanup debounce on unmount
   useEffect(() => {
     return () => {
-      if (changeCountdown.current) {
-        clearTimeout(changeCountdown.current);
-        changeCountdown.current = null;
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
       }
     };
   }, []);
 
-  useEffect(() => {
-    setValue(item._value || "");
-    if (type === "checkbox" && inputRef.current)
-      //@ts-ignore
-      inputRef.current.checked = item._value;
-  }, [item]);
-
-  const { objectPath } = useMemo<{
-    objectPath: string | null;
-  }>(() => {
-    if (item) return { objectPath: item._objectPath };
-    return { objectPath: null };
-  }, [item]);
-
-  const handleChange: ChangeEventHandler<
-    HTMLTextAreaElement | HTMLInputElement
-  > = useCallback(
-    (ev) => {
-      if (type === "int") {
-        setValue(parseInt(ev.target.value));
-        setCountdown(parseInt(ev.target.value));
-      } else if (type === "float") {
-        setValue(parseFloat(ev.target.value));
-        setCountdown(parseFloat(ev.target.value));
-      } else if (type === "text") {
-        setValue(ev.target.value);
-        setCountdown(ev.target.value);
-      } else if (type === "checkbox") {
-        //@ts-ignore
-        const newValue = ev.currentTarget.checked;
-        setValue(newValue);
-        console.log(`Sending ${newValue}`);
-        sendExplicitValue(newValue);
+  const setDebouncedValue = useCallback(
+    (newValue: InputValue, callback: (value: InputValue) => void) => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
       }
+
+      debounceRef.current = setTimeout(() => {
+        callback(newValue);
+        debounceRef.current = null;
+      }, DEBOUNCE_DELAY);
     },
-    [type]
+    []
   );
 
-  const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = useCallback(
-    async (ev) => {
-      if (ev.key === "Enter") {
-        sendValue();
+  return {
+    value,
+    setValue,
+    isSubmitting,
+    setIsSubmitting,
+    setDebouncedValue,
+  };
+};
+
+// Utility functions
+const parseValueByType = (inputValue: string, type: InputType): InputValue => {
+  switch (type) {
+    case INPUT_TYPES.INT:
+      return parseInt(inputValue, 10);
+    case INPUT_TYPES.FLOAT:
+      return parseFloat(inputValue);
+    case INPUT_TYPES.TEXT:
+    default:
+      return inputValue;
+  }
+};
+
+const isValueValid = (value: InputValue, type: InputType): boolean => {
+  if (type === INPUT_TYPES.INT || type === INPUT_TYPES.FLOAT) {
+    return !Number.isNaN(value);
+  }
+  return true;
+};
+
+// Main component
+export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
+  itemName,
+  job,
+  type,
+  sx,
+  qualifiers,
+  onChange,
+  visibility,
+  disabled: disabledProp,
+  suppressMutations = false,
+}) => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const {
+    getTaskItem,
+    getValidationColor,
+    setParameter,
+    setParameterNoMutate,
+  } = useJob(job.id);
+  const { item } = getTaskItem(itemName);
+  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
+  const { setMessage } = usePopcorn();
+
+  // Process item data
+  const objectPath = useMemo(() => item?._objectPath || null, [item]);
+  const processedItem = useProcessedItem(item, qualifiers, objectPath);
+  const { value, setValue, isSubmitting, setIsSubmitting, setDebouncedValue } =
+    useFormState(processedItem.value, type as InputType);
+
+  // Computed properties
+  const isVisible = useMemo(() => {
+    if (typeof visibility === "function") return visibility();
+    return visibility !== false;
+  }, [visibility]);
+
+  const isDisabled = useMemo(() => {
+    if (typeof disabledProp === "function") {
+      return disabledProp() || inFlight || isSubmitting || job.status !== 1;
+    }
+    return disabledProp || inFlight || isSubmitting || job.status !== 1;
+  }, [disabledProp, inFlight, isSubmitting, job.status]);
+
+  const calculatedSx = useMemo(
+    () => ({
+      minWidth: DEFAULT_MIN_WIDTH,
+      ...sx,
+    }),
+    [sx]
+  );
+
+  const validationColor = useMemo(
+    () => getValidationColor(item),
+    [getValidationColor, item]
+  );
+
+  const hasError = useMemo(
+    () =>
+      validationColor === "error.light" ||
+      !isValueValid(value, type as InputType),
+    [validationColor, value, type]
+  );
+
+  const slotProps = useMemo(() => {
+    const baseProps = {
+      inputLabel: {
+        shrink: true,
+        disableAnimation: true,
+      },
+    };
+
+    if (type === INPUT_TYPES.CHECKBOX) {
+      return {
+        ...baseProps,
+        htmlInput: {
+          checked: Boolean(value),
+          sx: { my: 1 },
+          "aria-label": processedItem.guiLabel,
+        },
+      };
+    }
+
+    return baseProps;
+  }, [type, value, processedItem.guiLabel]);
+
+  // Event handlers
+  const handleParameterUpdate = useCallback(
+    async (newValue: InputValue) => {
+      if (!objectPath) {
+        console.error("No object path available for parameter update");
+        return;
+      }
+
+      const setParameterArg = {
+        object_path: objectPath,
+        value: newValue,
+      };
+
+      setInFlight(true);
+      setIsSubmitting(true);
+
+      try {
+        const updateFn = suppressMutations
+          ? setParameterNoMutate
+          : setParameter;
+        const result: SetParameterResponse | undefined = await updateFn(
+          setParameterArg
+        );
+
+        if (result?.status === "Failed") {
+          setMessage(`Unacceptable value provided: "${newValue}"`);
+          setValue(item?._value || ""); // Revert to original value
+        } else if (result?.status === "Success" && onChange) {
+          await onChange(result.updated_item);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        setMessage(`Error updating parameter: ${errorMessage}`);
+        console.error("Parameter update failed:", error);
+        setValue(item?._value || ""); // Revert to original value
+      } finally {
+        setInFlight(false);
+        setIsSubmitting(false);
       }
     },
-    [value]
+    [
+      objectPath,
+      suppressMutations,
+      setParameterNoMutate,
+      setParameter,
+      setInFlight,
+      setIsSubmitting,
+      setMessage,
+      onChange,
+      item,
+    ]
+  );
+
+  const handleChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (type === INPUT_TYPES.CHECKBOX) {
+        const newValue = (event.target as HTMLInputElement).checked;
+        setValue(newValue);
+        // Immediately update checkbox values
+        handleParameterUpdate(newValue);
+      } else {
+        const inputValue = event.target.value;
+        const parsedValue = parseValueByType(inputValue, type as InputType);
+        setValue(parsedValue);
+
+        // Debounce updates for text inputs
+        setDebouncedValue(parsedValue, handleParameterUpdate);
+      }
+    },
+    [type, handleParameterUpdate, setDebouncedValue]
+  );
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Enter" && value !== item?._value) {
+        handleParameterUpdate(value);
+      }
+    },
+    [value, item, handleParameterUpdate]
   );
 
   const handleBlur = useCallback(() => {
-    if (value !== item._value) sendValue();
-  }, [item, value]);
-
-  const sendValue = useCallback(async () => {
-    sendExplicitValue(value);
-  }, [objectPath, value]);
-
-  const setCountdown = useCallback(
-    (valueToSend: any) => {
-      if (changeCountdown.current) {
-        clearTimeout(changeCountdown.current);
-        changeCountdown.current = null;
-      }
-      changeCountdown.current = setTimeout(() => {
-        //console.log("sending value", valueToSend);
-        sendExplicitValue(valueToSend);
-        changeCountdown.current = null;
-      }, 500);
-    },
-    [sendValue]
-  );
-
-  const sendExplicitValue = useCallback(
-    async (explicitValue: any) => {
-      //This method to allow sending of state *and non-state* values.  For example, a
-      //checkbox willtry to update and send the value, so the state value might lag
-      setInFlight(true);
-      const setParameterArg = {
-        object_path: item._objectPath,
-        value: explicitValue,
-      };
-      try {
-        const result: any = props.suppressMutations
-          ? await setParameterNoMutate(setParameterArg)
-          : await setParameter(setParameterArg);
-        if (result.status === "Failed") {
-          setMessage(`Unacceptable new value provided: "${explicitValue}"`);
-          setValue(item._value);
-        } else if (props.onChange) {
-          await props.onChange(result.updated_item);
-        }
-      } catch (err) {
-        setMessage(err);
-        console.log("Here's an", err);
-      } finally {
-        setInFlight(false);
-      }
-    },
-    [objectPath, value]
-  );
-
-  const guiLabel = useMemo<string>(() => {
-    return qualifiers?.guiLabel
-      ? qualifiers.guiLabel
-      : objectPath?.split(".").at(-1);
-  }, [objectPath, qualifiers]);
-
-  const multiLine = useMemo<boolean>(() => {
-    return Boolean(qualifiers?.guiMode === "multiLine");
-  }, [qualifiers]);
-
-  const inferredVisibility = useMemo(() => {
-    if (!props.visibility) return true;
-    if (typeof props.visibility === "function") {
-      return props.visibility();
+    if (value !== item?._value) {
+      handleParameterUpdate(value);
     }
-    return props.visibility;
-  }, [props.visibility]);
+  }, [value, item, handleParameterUpdate]);
 
-  const compositedSx = useMemo(() => {
-    return { minWidth: "20rem", ...sx };
-  }, [sx]);
-
-  const calculatedTitle = useMemo(
-    () => (qualifiers?.toolTip ? qualifiers.toolTip : objectPath),
-    [qualifiers, objectPath]
-  );
-
-  const calculatedSlotProps = useMemo(
-    () =>
-      type === "checkbox"
-        ? {
-            inputLabel: {
-              shrink: true,
-              disableAnimation: true,
-            },
-            htmlInput: { checked: value, sx: { my: 1 } },
-          }
-        : {
-            inputLabel: {
-              shrink: true,
-              disableAnimation: true,
-            },
-          },
-    [type, value]
-  );
-
-  const disabled = useMemo(() => {
-    if (typeof props.disabled === "undefined")
-      return inFlight || job.status != 1;
-    if (typeof props.disabled === "function") {
-      return props.disabled() || inFlight || job.status != 1;
+  // Sync checkbox state with ref
+  useEffect(() => {
+    if (type === INPUT_TYPES.CHECKBOX && inputRef.current) {
+      inputRef.current.checked = Boolean(item?._value);
     }
-    return props.disabled || inFlight || job.status != 1;
-  }, [props.disabled, inFlight, job]);
+  }, [type, item]);
 
-  return inferredVisibility ? (
-    <Stack direction="row" sx={{ mb: 2 }}>
+  // Early return for invisible components
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <Stack
+      direction="row"
+      sx={{ mb: 2 }}
+      role="group"
+      aria-label={`${processedItem.guiLabel} input`}
+    >
       <TextField
-        multiline={multiLine}
         inputRef={inputRef}
-        disabled={disabled}
+        disabled={isDisabled}
+        multiline={processedItem.isMultiLine}
         size="small"
-        sx={compositedSx}
-        slotProps={calculatedSlotProps}
-        type={type}
-        value={value}
-        label={guiLabel}
-        title={calculatedTitle}
+        sx={calculatedSx}
+        slotProps={slotProps}
+        type={type === INPUT_TYPES.CHECKBOX ? "checkbox" : "text"}
+        value={type === INPUT_TYPES.CHECKBOX ? undefined : value}
+        label={processedItem.guiLabel}
+        title={processedItem.tooltipText}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onBlur={handleBlur} // This handles when the element loses focus
-        error={
-          getValidationColor(item) === "error.light" || Number.isNaN(value)
-        }
+        onBlur={handleBlur}
+        error={hasError}
+        inputProps={{
+          "aria-describedby": hasError ? `${itemName}-error` : undefined,
+          "aria-invalid": hasError,
+        }}
       />
-      <ErrorTrigger {...{ item, job }} />
+      <ErrorTrigger item={item} job={job} />
     </Stack>
-  ) : null;
+  );
 };

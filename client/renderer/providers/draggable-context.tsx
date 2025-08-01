@@ -6,7 +6,6 @@ import { File, Job, Project } from "../types/models";
 import { useJob } from "../utils";
 import { useApi } from "../api";
 import { TaskInterfaceContext } from "./task-container";
-import { inverseFileTypeMapping } from "../components/task/task-elements/cdatafile";
 
 export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
   const { jobId } = useContext(CCP4i2Context);
@@ -65,10 +64,9 @@ export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
   );
 
   const isValidDrop = (file: File, item: any) => {
-    console.log(file, item, file.type === inverseFileTypeMapping[item._class]);
     if (!file) return false;
     if (!item) return false;
-    return file.type === inverseFileTypeMapping[item._class];
+    return file.type === item._qualifiers?.mimeTypeName;
   };
 
   const handleDragEnd = async (event: any) => {
