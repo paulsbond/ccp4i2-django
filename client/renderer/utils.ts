@@ -351,7 +351,8 @@ export const useJob = (jobId: number | null | undefined) => {
     }, [validation]),
 
     getErrors: useMemo(() => {
-      return (item: any) => errorsInValidation(item, validation);
+      return (item: any): ValidationError[] =>
+        errorsInValidation(item, validation);
     }, [validation]),
 
     getFileDigest: useMemo(() => {
@@ -643,3 +644,9 @@ export type SetParameterResponse =
       status: "Failed";
       updated_item?: never; // This ensures updated_item is not present when status is "Failed"
     };
+
+// Add this type definition near the top of your file with other types
+export interface ValidationError {
+  path: string;
+  error: any;
+}
