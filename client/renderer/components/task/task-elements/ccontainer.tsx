@@ -181,16 +181,7 @@ export const CCP4i2ContainerElement: React.FC<
             ev.stopPropagation();
             setOpen(!open);
           }}
-          sx={{
-            backgroundColor: "grey.100", // Very light grey background
-            color: "text.primary", // Black text (uses theme's primary text color)
-            "& .MuiCardHeader-title": {
-              color: "text.primary", // Ensure title is black
-            },
-            "&:hover": {
-              backgroundColor: "grey.200", // Slightly darker on hover
-            },
-          }}
+          variant="lightGrey"
           action={
             <Stack direction="row">
               <MyExpandMore

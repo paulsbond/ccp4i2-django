@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useContext } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useContext,
+  useEffect,
+} from "react";
 import {
   Box,
   Paper,
@@ -38,7 +44,7 @@ export interface FileSystemItem {
 }
 
 export interface DirectoryBrowserProps {
-  directoryTree: FileSystemItem[];
+  directoryTree: any[];
   title?: string;
   width?: string | number;
   height?: string | number;
@@ -50,6 +56,9 @@ export interface DirectoryBrowserProps {
   onItemRightClick?: (item: FileSystemItem, event: React.MouseEvent) => void;
   selectedItems?: Set<string>;
   multiSelect?: boolean;
+  searchTerm?: string;
+  autoExpandedPaths?: Set<string>;
+  isSearchActive?: boolean;
 }
 
 interface TreeNodeProps {
@@ -79,9 +88,12 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
   onItemRightClick,
   selectedItems = new Set(),
   multiSelect = false,
+  searchTerm,
+  autoExpandedPaths = new Set(),
+  isSearchActive = false,
 }) => {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchTermState, setSearchTerm] = useState<string>("");
 
   // Use the FileSystemFileBrowser context
   const { openMenu, anchorEl, menuNode } = useFileSystemFileBrowser();
@@ -161,7 +173,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
 
   // Search functionality
   const searchFilteredTree = useMemo(() => {
-    if (!searchTerm.trim()) return filteredTree;
+    if (!searchTermState.trim()) return filteredTree;
 
     const filterBySearch = (items: FileSystemItem[]): FileSystemItem[] => {
       return items
@@ -172,13 +184,13 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
               : [];
             if (
               filteredContents.length > 0 ||
-              item.name.toLowerCase().includes(searchTerm.toLowerCase())
+              item.name.toLowerCase().includes(searchTermState.toLowerCase())
             ) {
               return { ...item, contents: filteredContents };
             }
             return null;
           } else if (
-            item.name.toLowerCase().includes(searchTerm.toLowerCase())
+            item.name.toLowerCase().includes(searchTermState.toLowerCase())
           ) {
             return item;
           }
@@ -188,7 +200,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
     };
 
     return filterBySearch(filteredTree);
-  }, [filteredTree, searchTerm]);
+  }, [filteredTree, searchTermState]);
 
   const handleToggleExpand = useCallback((path: string) => {
     setExpandedNodes((prev) => {
@@ -420,7 +432,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
                   level={level + 1}
                   expandedNodes={expandedNodes}
                   onToggleExpand={onToggleExpand}
-                  searchTerm={searchTerm}
+                  searchTerm={searchTerm ?? ""}
                   fileFilter={fileFilter}
                   showFileSizes={showFileSizes}
                   onItemClick={onItemClick}
@@ -435,6 +447,95 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
       </Box>
     );
   };
+
+  // Local state for manually expanded items (user clicked)
+  const [manuallyExpanded, setManuallyExpanded] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Function to check if an item should be expanded
+  const isExpanded = useCallback(
+    (itemPath: string) => {
+      if (isSearchActive) {
+        // During search, use auto-expanded paths
+        return autoExpandedPaths.has(itemPath);
+      } else {
+        // When not searching, use manually expanded paths
+        return manuallyExpanded.has(itemPath);
+      }
+    },
+    [isSearchActive, autoExpandedPaths, manuallyExpanded]
+  );
+
+  // Handle manual toggle (user clicking expand/collapse)
+  const toggleExpansion = useCallback(
+    (itemPath: string) => {
+      if (isSearchActive) {
+        // Don't allow manual toggle during search
+        return;
+      }
+
+      setManuallyExpanded((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(itemPath)) {
+          newSet.delete(itemPath);
+        } else {
+          newSet.add(itemPath);
+        }
+        return newSet;
+      });
+    },
+    [isSearchActive]
+  );
+
+  // Clear manual expansions when search becomes active
+  useEffect(() => {
+    if (isSearchActive) {
+      setManuallyExpanded(new Set());
+    }
+  }, [isSearchActive]);
+
+  // Recursive function to render directory items
+  const renderDirectoryItem = useCallback(
+    (item: any, currentPath: string = "") => {
+      const itemPath = currentPath ? `${currentPath}/${item.name}` : item.name;
+      const expanded = isExpanded(itemPath);
+      const hasChildren = item.children && item.children.length > 0;
+
+      // Check if this item or any children match the search
+      const matchesSearch = searchTerm
+        ? item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        : false;
+
+      return (
+        <div key={itemPath}>
+          <div
+            onClick={() => hasChildren && toggleExpansion(itemPath)}
+            style={{
+              cursor: hasChildren ? "pointer" : "default",
+              padding: "4px 8px",
+              backgroundColor: matchesSearch ? "#ffeb3b" : "transparent", // Highlight matches
+              fontWeight: matchesSearch ? "bold" : "normal",
+            }}
+          >
+            {hasChildren && (
+              <span style={{ marginRight: "8px" }}>{expanded ? "▼" : "▶"}</span>
+            )}
+            {item.name}
+          </div>
+
+          {hasChildren && expanded && (
+            <div style={{ marginLeft: "20px" }}>
+              {item.children.map((child: any) =>
+                renderDirectoryItem(child, itemPath)
+              )}
+            </div>
+          )}
+        </div>
+      );
+    },
+    [isExpanded, toggleExpansion, searchTerm]
+  );
 
   return (
     <Paper
@@ -461,7 +562,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
           <TextField
             size="small"
             placeholder="Search files..."
-            value={searchTerm}
+            value={searchTermState}
             onChange={(e) => setSearchTerm(e.target.value)}
             fullWidth
             InputProps={{
@@ -470,7 +571,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
                   <SearchIcon fontSize="small" />
                 </InputAdornment>
               ),
-              endAdornment: searchTerm && (
+              endAdornment: searchTermState && (
                 <InputAdornment position="end">
                   <IconButton size="small" onClick={() => setSearchTerm("")}>
                     <ClearIcon fontSize="small" />
@@ -498,7 +599,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
               level={0}
               expandedNodes={expandedNodes}
               onToggleExpand={handleToggleExpand}
-              searchTerm={searchTerm}
+              searchTerm={searchTerm || ""}
               fileFilter={fileFilter}
               showFileSizes={showFileSizes}
               onItemClick={onItemClick}
