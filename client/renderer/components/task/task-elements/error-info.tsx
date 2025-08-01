@@ -292,7 +292,7 @@ export const ErrorPopper: React.FC<ErrorPopperProps> = ({ job }) => {
 
   const processedErrorInfo = useProcessedErrorInfo(
     errorInfoItem,
-    fieldErrors,
+    fieldErrors ?? [],
     validationColor
   );
   const itemValue = useItemValue(errorInfoItem);
