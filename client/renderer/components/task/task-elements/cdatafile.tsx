@@ -14,11 +14,18 @@ import {
   AutocompleteChangeReason,
   Avatar,
   Button,
+  Collapse,
+  IconButton,
   LinearProgress,
   Stack,
   TextField,
+  Typography,
 } from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
+import {
+  Menu as MenuIcon,
+  ExpandMore as ExpandMoreIcon,
+  ChevronRight as ChevronRightIcon,
+} from "@mui/icons-material";
 import { useDndContext, useDroppable } from "@dnd-kit/core";
 
 import { useApi } from "../../../api";
@@ -57,6 +64,7 @@ export interface CCP4i2DataFileElementProps
   setFiles?: (files: FileList | null) => void;
   infoContent?: ReactNode;
   onChange?: (updatedItem: any) => void;
+  hasValidationError?: boolean; // Add this new optional prop
 }
 
 interface FileTypeConfig {
@@ -132,6 +140,35 @@ const useCurrentValue = (
   return [value, setValue];
 };
 
+const useCollapsibleState = (
+  hasChildren: boolean,
+  forceExpanded: boolean = false
+) => {
+  const [isManuallyExpanded, setIsManuallyExpanded] = useState(false);
+
+  const handleToggle = useCallback(() => {
+    // Don't allow collapsing if forceExpanded is true
+    if (!forceExpanded) {
+      setIsManuallyExpanded((prev) => !prev);
+    }
+  }, [forceExpanded]);
+
+  // Reset when children disappear
+  useEffect(() => {
+    if (!hasChildren) {
+      setIsManuallyExpanded(false);
+    }
+  }, [hasChildren]);
+
+  // The actual expanded state is either forced or manually set
+  const isExpanded = forceExpanded || isManuallyExpanded;
+
+  return {
+    isExpanded,
+    handleToggle,
+  };
+};
+
 // Main component
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
   job,
@@ -143,6 +180,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
   visibility,
   disabled: disabledProp,
   qualifiers: propsQualifiers,
+  hasValidationError: overrideValidationError, // Destructure the new prop
 }) => {
   const api = useApi();
   const {
@@ -200,6 +238,46 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     fileOptions,
     item?._objectPath || null
   );
+
+  // Get validation color and determine if there's an error
+  const borderColor = getValidationColor(item);
+  const computedValidationError = useMemo(() => {
+    const hasError = borderColor === "error.light";
+    // Add some debugging
+    console.log(`CDataFileElement ${itemName}:`, {
+      borderColor,
+      hasError,
+      itemPath: item?._objectPath,
+      overrideValidationError,
+    });
+    return hasError;
+  }, [borderColor, itemName, item?._objectPath, overrideValidationError]);
+
+  // Use override if provided, otherwise use computed value
+  const hasValidationError = useMemo(() => {
+    return overrideValidationError !== undefined
+      ? overrideValidationError
+      : computedValidationError;
+  }, [overrideValidationError, computedValidationError]);
+
+  // Children state - pass the validation error state
+  const hasChildren = useMemo(() => {
+    return React.Children.count(children) > 0;
+  }, [children]);
+
+  const { isExpanded, handleToggle } = useCollapsibleState(
+    hasChildren,
+    hasValidationError
+  );
+
+  // Add debugging for the collapsible state
+  console.log(`CDataFileElement ${itemName} collapsible:`, {
+    hasChildren,
+    hasValidationError,
+    overrideValidationError,
+    computedValidationError,
+    isExpanded,
+  });
 
   // Drag and drop setup
   const { isOver, setNodeRef } = useDroppable({
@@ -324,7 +402,6 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     return null;
   }
 
-  const borderColor = getValidationColor(item);
   const backgroundColor = isOver
     ? isValidDrop
       ? "success.light"
@@ -431,10 +508,69 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
           )}
         </Stack>
 
+        {hasChildren && (
+          <IconButton
+            onClick={handleToggle}
+            size="small"
+            disabled={hasValidationError} // Disable toggle when there's an error
+            sx={{
+              ml: 1,
+              transition: "transform 0.2s ease-in-out",
+              transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+              opacity: hasValidationError ? 0.6 : 1, // Visual indication when disabled
+            }}
+            aria-label={
+              hasValidationError
+                ? "Options expanded due to validation error"
+                : isExpanded
+                ? "Collapse options"
+                : "Expand options"
+            }
+          >
+            {isExpanded ? (
+              <ExpandMoreIcon fontSize="small" />
+            ) : (
+              <ChevronRightIcon fontSize="small" />
+            )}
+          </IconButton>
+        )}
+
         <ErrorTrigger item={item} job={job} />
       </Stack>
 
-      {children}
+      {hasChildren && (
+        <Collapse in={isExpanded} timeout={200}>
+          <Stack
+            sx={{
+              px: 2,
+              pb: 1,
+              pt: 0,
+              backgroundColor: hasValidationError ? "error.lighter" : "grey.50", // Different background for errors
+              borderTop: "1px solid",
+              borderTopColor: hasValidationError ? "error.light" : "divider",
+              borderBottomLeftRadius: "0.4rem",
+              borderBottomRightRadius: "0.4rem",
+            }}
+            spacing={0.5}
+          >
+            <Typography
+              variant="caption"
+              color={hasValidationError ? "error.main" : "text.secondary"}
+              sx={{
+                fontWeight: 500,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                mb: 0.5,
+              }}
+            >
+              {hasValidationError
+                ? "Required Options (Error)"
+                : "Additional Options"}
+            </Typography>
+            {children}
+          </Stack>
+        </Collapse>
+      )}
     </Stack>
   );
 };
