@@ -45,7 +45,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       if (
         modeValue === "MATCH" &&
         aimlessRefValue &&
-        reference_datasetValue === "HKL"
+        reference_datasetValue === "HKL" &&
+        !HKLIN_REF.dbFileId
       ) {
         newProcessedErrors["aimless_pipe.inputData.HKLIN_REF"] = {
           messages: ["HKLIN_REF must be set when being used for match"],
