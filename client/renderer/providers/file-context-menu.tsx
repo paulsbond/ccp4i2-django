@@ -12,6 +12,7 @@ import { Download, Preview, Terminal } from "@mui/icons-material";
 import { FilePreviewContext } from "./file-preview-context";
 import { File as DjangoFile } from "../types/models";
 import { useRouter } from "next/navigation";
+import { CCP4i2MoorhenIcon } from "../components/General/CCP4i2Icons";
 
 interface FileMenuContextProps {
   fileMenuAnchorEl: HTMLElement | null;
@@ -212,7 +213,7 @@ export const FileMenu: React.FC = () => {
           "application/refmac-dictionary",
         ].includes(file.type) && (
           <MenuItem key="Moorhen" onClick={handlePreviewFileInMoorhen}>
-            <Preview /> Moorhen
+            <CCP4i2MoorhenIcon /> Moorhen
           </MenuItem>
         )}
       {file && file.type.startsWith("application/CCP4-mtz") && (
