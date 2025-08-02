@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { SetParameterArg, useJob, usePrevious } from "../../../utils";
+import {
+  SetParameterArg,
+  useAsyncEffect,
+  useJob,
+  usePrevious,
+} from "../../../utils";
 import {
   Card,
   CardContent,
@@ -19,14 +24,8 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const api = useApi();
   const { itemName, job } = props;
-  const {
-    getTaskItem,
-    getFileDigest,
-    getValidationColor,
-    setParameter,
-    container,
-    useAsyncEffect,
-  } = useJob(job.id);
+  const { getTaskItem, getFileDigest, getValidationColor, setParameter } =
+    useJob(job.id);
   const { item } = getTaskItem(itemName);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;

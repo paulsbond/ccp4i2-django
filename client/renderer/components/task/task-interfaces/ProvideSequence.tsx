@@ -10,13 +10,7 @@ import { useCallback, useEffect, useMemo } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const {
-    setParameter,
-    useAsyncEffect,
-    getTaskItem,
-    getFileDigest,
-    mutateContainer,
-  } = useJob(job.id);
+  const { getTaskItem, mutateContainer } = useJob(job.id);
   //const { value: ID_RMSValue } = getTaskItem("ID_RMS");
 
   const { value: SEQUENCETEXT, update: setSEQUENCETEXT } =
