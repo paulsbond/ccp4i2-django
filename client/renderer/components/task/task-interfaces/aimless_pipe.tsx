@@ -16,6 +16,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   const { value: chooseModeValue } = getTaskItem("CHOOSE_MODE");
   const { value: modeValue } = getTaskItem("MODE");
+  const { value: HKLIN_REF } = getTaskItem("HKLIN_REF");
   const { value: aimlessRefValue } = getTaskItem("REFERENCE_FOR_AIMLESS");
   const { value: reference_datasetValue } = getTaskItem("REFERENCE_DATASET");
 
@@ -41,6 +42,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           acc[key] = validation[key];
           return acc;
         }, {} as any);
+      if (
+        modeValue === "MATCH" &&
+        aimlessRefValue &&
+        reference_datasetValue === "HKL"
+      ) {
+        newProcessedErrors["aimless_pipe.inputData.HKLIN_REF"] = {
+          messages: ["HKLIN_REF must be set when being used for match"],
+          maxSeverity: 2, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
+          // maxSeverity of 3 causes confirm dialog to show, but allows execution
+        };
+      }
       // Important: only update if processedErrors have changed
       if (
         JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)

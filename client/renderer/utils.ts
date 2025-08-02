@@ -233,6 +233,8 @@ export const useJob = (jobId: number | null | undefined) => {
     endpoint: "def_xml",
   });
 
+  const { processedErrors } = useContext(RunCheckContext);
+
   return {
     useAsyncEffect: (effect: () => Promise<void>, dependencies: any[]) => {
       useEffect(() => {
@@ -345,10 +347,13 @@ export const useJob = (jobId: number | null | undefined) => {
 
     getValidationColor: useMemo(() => {
       return (item: any) => {
-        const fieldErrors = errorsInValidation(item, validation);
+        const fieldErrors = errorsInValidation(
+          item,
+          processedErrors || validation
+        );
         return validationColor(fieldErrors);
       };
-    }, [validation]),
+    }, [processedErrors, validation]),
 
     getErrors: useMemo(() => {
       return (item: any): ValidationError[] =>
