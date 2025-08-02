@@ -1,6 +1,6 @@
+import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import $ from "jquery";
-import { useCallback, useContext, useMemo } from "react";
-import { useEffect, useRef } from "react";
+
 import { fullUrl, useApi } from "./api";
 import {
   Job,
@@ -8,144 +8,557 @@ import {
   JobFloatValue,
   Project,
   File as DjangoFile,
-  nullFile,
 } from "./types/models";
 import { RunCheckContext } from "./providers/run-check-provider";
 
+// ============================================================================
+// Types and Interfaces
+// ============================================================================
+
+export interface SetParameterArg {
+  object_path: string;
+  value: any;
+}
+
+export type SetParameterResponse =
+  | {
+      status: "Success";
+      updated_item: any;
+    }
+  | {
+      status: "Failed";
+      updated_item?: never;
+    };
+
+export interface ValidationError {
+  path: string;
+  error: {
+    maxSeverity: number;
+    [key: string]: any;
+  };
+}
+
+export interface TaskItem {
+  item: any;
+  value: any;
+  update: (value: any) => Promise<boolean | Response>;
+}
+
+export interface ProjectData {
+  project: Project | undefined;
+  mutateProject: () => void;
+  directory: any;
+  mutateDirectory: () => void;
+  jobs: Job[] | undefined;
+  mutateJobs: () => void;
+  files: DjangoFile[] | undefined;
+  mutateFiles: () => void;
+  jobCharValues: JobCharValue[] | undefined;
+  mutateJobCharValues: () => void;
+  jobFloatValues: JobFloatValue[] | undefined;
+  mutateJobFloatValues: () => void;
+}
+
+export interface JobData {
+  job: Job | undefined;
+  mutateJob: () => void;
+  container: any;
+  mutateContainer: () => void;
+  params_xml: any;
+  mutateParams_xml: () => void;
+  validation: any;
+  mutateValidation: () => void;
+  diagnostic_xml: any;
+  mutateDiagnosticXml: () => void;
+  def_xml: any;
+  mutateDef_xml: () => void;
+  setParameter: (
+    arg: SetParameterArg
+  ) => Promise<SetParameterResponse | undefined>;
+  setParameterNoMutate: (
+    arg: SetParameterArg
+  ) => Promise<SetParameterResponse | undefined>;
+  getTaskItem: (paramName: string) => TaskItem;
+  createPeerTask: (taskName: string) => Promise<Job | undefined>;
+  getFileContent: (paramName: string) => Promise<string>;
+  getValidationColor: (item: any) => string;
+  getErrors: (item: any) => ValidationError[];
+  getFileDigest: (objectPath: string) => Promise<any>;
+  fileItemToParameterArg: (
+    value: DjangoFile,
+    objectPath: string,
+    projectJobs: Job[],
+    projects: Project[]
+  ) => SetParameterArg;
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const VALIDATION_COLORS = {
+  SUCCESS: "success.light",
+  WARNING: "warning.light",
+  ERROR: "error.light",
+} as const;
+
+const SEVERITY_LEVELS = {
+  SUCCESS: 0,
+  WARNING: 1,
+  ERROR: 2,
+} as const;
+
+const JOB_STATUS = {
+  PENDING: 1,
+} as const;
+
+const FILE_DIRECTORIES = {
+  JOB_OUTPUT: 1,
+  IMPORTED: 2,
+} as const;
+
+const FILE_PATHS = {
+  IMPORTED_FILES: "CCP4_IMPORTED_FILES",
+  JOB_PREFIX: "job_",
+  JOBS_DIR: "CCP4_JOBS",
+} as const;
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
 /**
  * Checks if the given path ends with the specified name, considering dot notation.
- *
- * @param path - The path to check, which can be a string, null, or undefined.
- * @param name - The name to match at the end of the path.
- * @returns A boolean indicating whether the path ends with the specified name.
  */
-const pathMatch = (path: string | null | undefined, name: string) => {
-  if (!path) return false;
-  const dottedName = `.${name}`.replace("..", ".");
-  const dottedPath = `.${path}`.replace("..", ".");
-  return dottedPath.endsWith(dottedName);
-};
-/**
- * Recursively searches for items within a container that match a specified name.
- *
- * @param name - The name to search for within the container's `_objectPath`.
- * @param container - The container object to search within. This can be an object with nested items.
- * @param multiple - A boolean indicating whether to find multiple items (default is true). If false, the search stops after finding the first match.
- * @param growingList - An optional array to accumulate found items. If not provided, a new array is created.
- * @returns An array of found items that match the specified name.
- */
-const findItems = (
-  name: string,
-  container: any,
-  multiple: boolean = false,
-  growingList?: any[]
-): any[] => {
-  const listToGrow = growingList ? growingList : [];
-  const originalLength = listToGrow.length;
-  if (pathMatch(container?._objectPath, name)) {
-    listToGrow.push(container);
-    if (!multiple) return listToGrow;
-  } else if (container._baseClass === "CList") {
-    container._value.forEach((item: any) => {
-      if (pathMatch(item?._objectPath, name)) {
-        listToGrow.push(item);
-        if (!multiple) return listToGrow;
-      } else {
-        findItems(name, item, multiple, listToGrow);
-        if (!multiple && listToGrow.length > originalLength) return listToGrow;
-      }
-    });
-  } else if (container._value?.constructor == Object) {
-    try {
-      Object.keys(container._value).forEach((key: string) => {
-        const item = container._value[key];
-        if (pathMatch(item?._objectPath, name)) {
-          listToGrow.push(item);
-          if (!multiple) return listToGrow;
-        } else {
-          findItems(name, item, multiple, listToGrow);
-          if (!multiple && listToGrow.length > originalLength)
-            return listToGrow;
-        }
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  }
-  return listToGrow;
+const pathMatches = (
+  path: string | null | undefined,
+  name: string
+): boolean => {
+  if (!path || !name) return false;
+
+  const normalizedName = `.${name}`.replace(/\.+/g, ".");
+  const normalizedPath = `.${path}`.replace(/\.+/g, ".");
+
+  return normalizedPath.endsWith(normalizedName);
 };
 
 /**
+ * Safely checks if an object has a constructor matching the expected type.
+ */
+const hasConstructor = (obj: any, constructor: any): boolean => {
+  return obj && typeof obj === "object" && obj.constructor === constructor;
+};
+
+/**
+ * Recursively searches for items within a container that match a specified name.
+ */
+const findItemsRecursively = (
+  name: string,
+  container: any,
+  multiple: boolean = true,
+  accumulator: any[] = []
+): any[] => {
+  if (!container || !name) return accumulator;
+
+  const initialLength = accumulator.length;
+
+  try {
+    // Check if current container matches
+    if (pathMatches(container?._objectPath, name)) {
+      accumulator.push(container);
+      if (!multiple) return accumulator;
+    }
+
+    // Handle CList containers
+    if (container._baseClass === "CList" && Array.isArray(container._value)) {
+      for (const item of container._value) {
+        if (pathMatches(item?._objectPath, name)) {
+          accumulator.push(item);
+          if (!multiple) return accumulator;
+        }
+
+        // Recursive search
+        findItemsRecursively(name, item, multiple, accumulator);
+        if (!multiple && accumulator.length > initialLength) {
+          return accumulator;
+        }
+      }
+    }
+    // Handle object containers
+    else if (hasConstructor(container._value, Object)) {
+      for (const key of Object.keys(container._value)) {
+        const item = container._value[key];
+
+        if (pathMatches(item?._objectPath, name)) {
+          accumulator.push(item);
+          if (!multiple) return accumulator;
+        }
+
+        // Recursive search
+        findItemsRecursively(name, item, multiple, accumulator);
+        if (!multiple && accumulator.length > initialLength) {
+          return accumulator;
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error searching for items with name "${name}":`, error);
+  }
+
+  return accumulator;
+};
+
+/**
+ * Extracts validation errors for a given item based on the provided validation object.
+ */
+const extractValidationErrors = (
+  item: any,
+  validation: any
+): ValidationError[] => {
+  if (!validation || !item?._objectPath) {
+    return [];
+  }
+
+  const itemPath = item._objectPath;
+  const matchingErrors: ValidationError[] = [];
+
+  try {
+    for (const validationPath of Object.keys(validation)) {
+      if (
+        validationPath === itemPath ||
+        validationPath.startsWith(`${itemPath}.`) ||
+        validationPath.startsWith(`${itemPath}[`)
+      ) {
+        matchingErrors.push({
+          path: validationPath,
+          error: validation[validationPath],
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error extracting validation errors:", error);
+  }
+
+  return matchingErrors;
+};
+
+/**
+ * Determines the appropriate validation color based on error severity.
+ */
+const determineValidationColor = (
+  fieldErrors: ValidationError[] | any
+): string => {
+  if (
+    !fieldErrors ||
+    (Array.isArray(fieldErrors) && fieldErrors.length === 0)
+  ) {
+    return VALIDATION_COLORS.SUCCESS;
+  }
+
+  let maxSeverity = SEVERITY_LEVELS.SUCCESS;
+
+  try {
+    if (Array.isArray(fieldErrors)) {
+      maxSeverity = fieldErrors.reduce((highest, error) => {
+        const currentSeverity =
+          error?.error?.maxSeverity ?? SEVERITY_LEVELS.SUCCESS;
+        return Math.max(highest, currentSeverity);
+      }, SEVERITY_LEVELS.SUCCESS);
+    } else {
+      maxSeverity = fieldErrors?.maxSeverity ?? SEVERITY_LEVELS.SUCCESS;
+    }
+  } catch (error) {
+    console.error("Error determining validation color:", error);
+    return VALIDATION_COLORS.ERROR;
+  }
+
+  if (maxSeverity === SEVERITY_LEVELS.SUCCESS) {
+    return VALIDATION_COLORS.SUCCESS;
+  } else if (maxSeverity === SEVERITY_LEVELS.WARNING) {
+    return VALIDATION_COLORS.WARNING;
+  } else {
+    return VALIDATION_COLORS.ERROR;
+  }
+};
+
+/**
+ * Recursively extracts values from complex data structures.
+ */
+const extractValueRecursively = (item: any): any => {
+  if (!item) return null;
+
+  const { _value } = item;
+
+  // Handle primitive values
+  if (
+    _value === undefined ||
+    _value === null ||
+    typeof _value === "string" ||
+    typeof _value === "number" ||
+    typeof _value === "boolean"
+  ) {
+    return _value;
+  }
+
+  // Handle objects
+  if (hasConstructor(_value, Object)) {
+    const result: Record<string, any> = {};
+    try {
+      for (const key of Object.keys(_value)) {
+        result[key] = extractValueRecursively(_value[key]);
+      }
+    } catch (error) {
+      console.error("Error extracting object values:", error);
+    }
+    return result;
+  }
+
+  // Handle arrays
+  if (Array.isArray(_value)) {
+    if (_value.length === 0) return [];
+
+    try {
+      return _value.map((value) => extractValueRecursively(value));
+    } catch (error) {
+      console.error("Error extracting array values:", error);
+      return [];
+    }
+  }
+
+  console.warn("Unknown item type:", _value);
+  return _value;
+};
+
+/**
+ * Creates a safe file reader promise with proper error handling.
+ */
+const createFileReaderPromise = (
+  file: File,
+  readAs: "Text" | "ArrayBuffer" | "File" = "Text"
+): Promise<string | ArrayBuffer | File> => {
+  return new Promise((resolve, reject) => {
+    if (readAs === "File") {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+
+    const cleanup = () => {
+      reader.onabort = null;
+      reader.onerror = null;
+      reader.onloadend = null;
+    };
+
+    reader.onabort = () => {
+      cleanup();
+      reject(new Error("File reading was aborted"));
+    };
+
+    reader.onerror = () => {
+      cleanup();
+      reject(new Error("File reading failed"));
+    };
+
+    reader.onloadend = () => {
+      cleanup();
+      if (reader.result !== null) {
+        resolve(reader.result);
+      } else {
+        reject(new Error("File reading returned null"));
+      }
+    };
+
+    try {
+      if (readAs === "Text") {
+        reader.readAsText(file);
+      } else if (readAs === "ArrayBuffer") {
+        reader.readAsArrayBuffer(file);
+      }
+    } catch (error) {
+      cleanup();
+      reject(error);
+    }
+  });
+};
+
+/**
+ * Prettifies XML using XSLT transformation with error handling.
+ */
+const prettifyXmlSafely = (sourceXml: Document): string => {
+  if (!sourceXml) return "";
+
+  try {
+    let targetNode: Document | Element | undefined = sourceXml;
+
+    // Handle jQuery nodes
+    if (!targetNode?.nodeName) {
+      try {
+        targetNode = $(sourceXml).get(0) as Element;
+      } catch (error) {
+        console.error("Cannot extract HTML element from jQuery object:", error);
+        return "";
+      }
+    }
+
+    if (!targetNode) return "";
+
+    const xsltStylesheet = [
+      '<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
+      '  <xsl:strip-space elements="*"/>',
+      '  <xsl:template match="para[content-style][not(text())]">',
+      '    <xsl:value-of select="normalize-space(.)"/>',
+      "  </xsl:template>",
+      '  <xsl:template match="node()|@*">',
+      '    <xsl:copy><xsl:apply-templates select="node()|@*"/></xsl:copy>',
+      "  </xsl:template>",
+      '  <xsl:output indent="yes"/>',
+      "</xsl:stylesheet>",
+    ].join("\n");
+
+    const xsltDoc = new DOMParser().parseFromString(
+      xsltStylesheet,
+      "application/xml"
+    );
+    const xsltProcessor = new XSLTProcessor();
+    xsltProcessor.importStylesheet(xsltDoc);
+
+    const resultDoc = xsltProcessor.transformToDocument(targetNode);
+    return new XMLSerializer().serializeToString(resultDoc);
+  } catch (error) {
+    console.error("Error prettifying XML:", error);
+    return "";
+  }
+};
+
+// ============================================================================
+// Exported Functions
+// ============================================================================
+
+/**
  * Retrieves items from a container that match the specified name.
- *
- * @param name - The name of the items to search for.
- * @param container - The container in which to search for items.
- * @param multiple - A boolean indicating whether to return multiple items. Defaults to `false`.
- * @returns An array of items that match the specified name.
  */
 export const itemsForName = (
   name: string,
   container: any,
-  multiple: boolean = false
-) => {
-  const itemMatches = findItems(name, container, multiple);
-  return itemMatches;
+  multiple: boolean = true
+): any[] => {
+  if (!name || !container) return [];
+  return findItemsRecursively(name, container, multiple);
 };
 
-export interface SetParameterArg {
-  object_path: any;
-  value: any;
-}
+/**
+ * Extracts the value of an item, handling various data types.
+ */
+export const valueOfItem = extractValueRecursively;
+
+/**
+ * Determines the appropriate validation color based on field errors.
+ */
+export const validationColor = determineValidationColor;
+
+/**
+ * Reads file contents with proper error handling.
+ */
+export const readFilePromise = createFileReaderPromise;
+
+/**
+ * Prettifies XML with error handling.
+ */
+export const prettifyXml = prettifyXmlSafely;
+
+/**
+ * Custom hook for async effects with proper cleanup.
+ */
+export const useAsyncEffect = (
+  effect: () => Promise<void>,
+  dependencies: any[]
+): void => {
+  useEffect(() => {
+    let cancelled = false;
+
+    const executeEffect = async () => {
+      try {
+        if (!cancelled) {
+          await effect();
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Async effect error:", error);
+        }
+      }
+    };
+
+    executeEffect();
+
+    return () => {
+      cancelled = true;
+    };
+  }, dependencies);
+};
+
+// ============================================================================
+// Custom Hooks
+// ============================================================================
+
+/**
+ * Custom hook that returns the previous value of the given input.
+ */
+export const usePrevious = <T>(value: T): T | undefined => {
+  const ref = useRef<T | undefined>(undefined);
+
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+
+  return ref.current;
+};
 
 /**
  * Custom hook to fetch and manage project-related data.
- *
- * @param {number} projectId - The ID of the project to fetch data for.
- * @returns {object} An object containing project data and mutate functions:
- * - `project`: The project data.
- * - `mutateProject`: Function to mutate the project data.
- * - `directory`: The directory data of the project.
- * - `mutateDirectory`: Function to mutate the directory data.
- * - `jobs`: The jobs associated with the project.
- * - `mutateJobs`: Function to mutate the jobs data.
- * - `files`: The files associated with the project.
- * - `mutateFiles`: Function to mutate the files data.
- * - `jobFloatValues`: The float values of the jobs.
- * - `mutateJobFloatValues`: Function to mutate the job float values data.
- * - `jobCharValues`: The char values of the jobs.
- * - `mutateJobCharValues`: Function to mutate the job char values data.
  */
-export const useProject = (projectId: number) => {
+export const useProject = (projectId: number): ProjectData => {
   const api = useApi();
+
   const { data: project, mutate: mutateProject } = api.get_endpoint<Project>({
     type: "projects",
     id: projectId,
     endpoint: "",
   });
+
   const { data: directory, mutate: mutateDirectory } = api.get_endpoint<any>({
     type: "projects",
     id: projectId,
     endpoint: "directory",
   });
+
   const { data: jobs, mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",
     id: projectId,
     endpoint: "jobs",
   });
+
   const { data: files, mutate: mutateFiles } = api.get_endpoint<DjangoFile[]>({
     type: "projects",
     id: projectId,
     endpoint: "files",
   });
+
   const { data: jobFloatValues, mutate: mutateJobFloatValues } =
     api.get_endpoint<JobFloatValue[]>({
       type: "projects",
       id: projectId,
       endpoint: "job_float_values/",
     });
+
   const { data: jobCharValues, mutate: mutateJobCharValues } = api.get_endpoint<
     JobCharValue[]
-  >({ type: "projects", id: projectId, endpoint: "job_char_values/" });
+  >({
+    type: "projects",
+    id: projectId,
+    endpoint: "job_char_values/",
+  });
+
   return {
     project,
     mutateProject,
@@ -164,31 +577,10 @@ export const useProject = (projectId: number) => {
 
 /**
  * Custom hook to manage job-related data and actions.
- *
- * @param job - The job object containing job details.
- * @returns An object containing various utilities and data related to the job.
- *
- * @property useAsyncEffect - A function to run an asynchronous effect with dependencies.
- * @property setParameter - A function to set a parameter for the job if it is in a pending state.
- * @property getTaskItem - A function to get a task item and value by its parameter name.
- * @property getValidationColor - A function to get the validation color for a given item.
- * @property getErrors - A function to get validation errors for a given item.
- * @property container - The container data for the job.
- * @property mutateContainer - A function to mutate the container data.
- * @property params_xml - The parameters XML data for the job.
- * @property mutateParams_xml - A function to mutate the parameters XML data.
- * @property validation - The validation data for the job.
- * @property mutateValidation - A function to mutate the validation data.
- * @property report_xml - The report XML data for the job.
- * @property mutateReport_xml - A function to mutate the report XML data.
- * @property diagnostic_xml - The diagnostic XML data for the job.
- * @property mutateDiagnosticXml - A function to mutate the diagnostic XML data.
- * @property def_xml - The definition XML data for the job.
- * @property mutateDef_xml - A function to mutate the definition XML data.
  */
-const api = useApi();
+export const useJob = (jobId: number | null | undefined): JobData => {
+  const api = useApi();
 
-export const useJob = (jobId: number | null | undefined) => {
   const { data: job, mutate: mutateJob } = api.get_endpoint<Job>(
     {
       type: "jobs",
@@ -218,8 +610,6 @@ export const useJob = (jobId: number | null | undefined) => {
     endpoint: "validation",
   });
 
-  const { mutateJobs } = useProject(job?.project || 0);
-
   const { data: diagnostic_xml, mutate: mutateDiagnosticXml } =
     api.get_pretty_endpoint_xml({
       type: "jobs",
@@ -233,186 +623,240 @@ export const useJob = (jobId: number | null | undefined) => {
     endpoint: "def_xml",
   });
 
+  const { mutateJobs } = useProject(job?.project || 0);
   const { processedErrors } = useContext(RunCheckContext);
 
-  return {
-    useAsyncEffect: (effect: () => Promise<void>, dependencies: any[]) => {
-      useEffect(() => {
-        const executeEffect = async () => {
-          await effect();
-        };
+  // Memoized functions
+  const setParameter = useCallback(
+    async (
+      setParameterArg: SetParameterArg
+    ): Promise<SetParameterResponse | undefined> => {
+      if (job?.status !== JOB_STATUS.PENDING) {
+        console.warn(
+          "Attempting to edit interface of task not in pending state"
+        );
+        return undefined;
+      }
 
-        executeEffect();
-      }, dependencies);
+      try {
+        const result = await api.post<SetParameterResponse>(
+          `jobs/${job.id}/set_parameter`,
+          setParameterArg
+        );
+
+        // Update all related data
+        await Promise.all([
+          mutateContainer(),
+          mutateParams_xml(),
+          mutateValidation(),
+        ]);
+
+        console.log("Parameter set successfully:", result);
+        return result;
+      } catch (error) {
+        console.error("Error setting parameter:", error);
+        throw error;
+      }
     },
+    [job, mutateContainer, mutateValidation, mutateParams_xml, api]
+  );
 
-    setParameter: useCallback(
-      async (
-        setParameterArg: SetParameterArg
-      ): Promise<SetParameterResponse | undefined> => {
-        if (job?.status == 1) {
-          const result = await api.post<SetParameterResponse>(
-            `jobs/${job.id}/set_parameter`,
-            setParameterArg
-          );
-          await mutateContainer();
-          await mutateParams_xml();
-          await mutateValidation();
-          console.log({ result });
-          return result;
-        } else {
-          console.log(
-            "Alert attempting to edit interface of task not in pending state"
-          );
-          return undefined;
+  const setParameterNoMutate = useCallback(
+    async (
+      setParameterArg: SetParameterArg
+    ): Promise<SetParameterResponse | undefined> => {
+      if (job?.status !== JOB_STATUS.PENDING) {
+        console.warn(
+          "Attempting to edit interface of task not in pending state"
+        );
+        return undefined;
+      }
+
+      try {
+        const result = await api.post<SetParameterResponse>(
+          `jobs/${job.id}/set_parameter`,
+          setParameterArg
+        );
+
+        // Update only validation data
+        await Promise.all([mutateParams_xml(), mutateValidation()]);
+
+        return result;
+      } catch (error) {
+        console.error("Error setting parameter (no mutate):", error);
+        throw error;
+      }
+    },
+    [job, mutateParams_xml, mutateValidation, api]
+  );
+
+  const getTaskItem = useMemo(() => {
+    return (paramName: string): TaskItem => {
+      if (!paramName?.length || !container?.lookup) {
+        return { item: null, value: null, update: async () => false };
+      }
+
+      const item = container.lookup[paramName];
+      const value = valueOfItem(item);
+
+      const update = async (newValue: any): Promise<boolean | Response> => {
+        if (!job || job.status !== JOB_STATUS.PENDING) return false;
+
+        // Check if value actually changed
+        if (JSON.stringify({ value }) === JSON.stringify({ value: newValue })) {
+          return false;
         }
-      },
-      [job, mutateContainer, mutateValidation, mutateParams_xml]
-    ),
 
-    setParameterNoMutate: useCallback(
-      async (
-        setParameterArg: SetParameterArg
-      ): Promise<SetParameterResponse | undefined> => {
-        if (job?.status == 1) {
-          const result = await api.post<SetParameterResponse>(
-            `jobs/${job.id}/set_parameter`,
-            setParameterArg
-          );
-          await mutateParams_xml();
-          await mutateValidation();
-          return result;
-        } else {
-          console.log(
-            "Alert attempting to edit interface of task not in pending state"
-          );
-          return undefined;
-        }
-      },
-      [job]
-    ),
-
-    getTaskItem: useMemo(() => {
-      return (param_name: string) => {
-        if (param_name?.length == 0) return { item: null, value: null };
-        return {
-          item: container.lookup[param_name],
-          value: valueOfItem(container.lookup[param_name]),
-          update: async (value: any) => {
-            if (
-              JSON.stringify({
-                value: valueOfItem(container.lookup[param_name]),
-              }) === JSON.stringify({ value })
-            )
-              return false;
-            if (job?.status != 1) return false;
-            return fetch(fullUrl(`jobs/${job.id}/set_parameter`), {
+        try {
+          const response = await fetch(
+            fullUrl(`jobs/${job.id}/set_parameter`),
+            {
               method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
               body: JSON.stringify({
-                object_path: container.lookup[param_name]._objectPath,
-                value: value,
+                object_path: item._objectPath,
+                value: newValue,
               }),
-            });
-          },
-        };
-      };
-    }, [container, job]),
+            }
+          );
 
-    createPeerTask: useCallback(
-      async (task_name: string) => {
-        if (!job) return;
-        if (!mutateJobs) return;
-        // This function can be used to create a Free R task
-        // It can be customized to perform specific actions when the button is clicked
-        console.log(`Creating ${task_name} task...`);
-        const created_job_result: any = await api.post(
-          `projects/${job.project}/create_task/`,
-          { task_name }
-        );
-        if (created_job_result?.status === "Success") {
-          const created_job: Job = created_job_result.new_job;
-          mutateJobs();
-          return Promise.resolve(created_job);
+          return response;
+        } catch (error) {
+          console.error("Error updating task item:", error);
+          return false;
         }
-      },
-      [job, api]
-    ),
-
-    getFileContent: useMemo(() => {
-      return (param_name: string) => {
-        const djangoFile = valueOfItem(container.lookup[param_name]);
-        return api.fileTextContent(djangoFile);
       };
-    }, [container]),
 
-    getValidationColor: useMemo(() => {
-      return (item: any) => {
-        const fieldErrors = errorsInValidation(
-          item,
-          processedErrors || validation
-        );
-        return validationColor(fieldErrors);
-      };
-    }, [processedErrors, validation]),
+      return { item, value, update };
+    };
+  }, [container, job]);
 
-    getErrors: useMemo(() => {
-      return (item: any): ValidationError[] =>
-        errorsInValidation(item, validation);
-    }, [validation]),
+  const createPeerTask = useCallback(
+    async (taskName: string): Promise<Job | undefined> => {
+      if (!job || !mutateJobs) {
+        console.warn("Cannot create peer task: missing job or mutateJobs");
+        return undefined;
+      }
 
-    getFileDigest: useMemo(() => {
-      return (objectPath: string) => {
-        //console.log("Inside getFileDigest");
-        return api.digest<any>(
-          `jobs/${job?.id}/digest?object_path=${objectPath}`
-        );
-      };
-    }, [job]),
+      try {
+        console.log(`Creating ${taskName} task...`);
 
-    fileItemToParameterArg: (
+        const result = await api.post(`projects/${job.project}/create_task/`, {
+          task_name: taskName,
+        });
+
+        if (result?.status === "Success") {
+          const createdJob: Job = result.new_job;
+          await mutateJobs();
+          return createdJob;
+        }
+
+        console.warn("Failed to create peer task:", result);
+        return undefined;
+      } catch (error) {
+        console.error("Error creating peer task:", error);
+        return undefined;
+      }
+    },
+    [job, api, mutateJobs]
+  );
+
+  const getFileContent = useMemo(() => {
+    return (paramName: string): Promise<string> => {
+      if (!container?.lookup?.[paramName]) {
+        return Promise.reject(new Error("Parameter not found"));
+      }
+
+      const djangoFile = valueOfItem(container.lookup[paramName]);
+      return api.fileTextContent(djangoFile);
+    };
+  }, [container, api]);
+
+  const getValidationColor = useMemo(() => {
+    return (item: any): string => {
+      const fieldErrors = extractValidationErrors(
+        item,
+        processedErrors || validation
+      );
+      return determineValidationColor(fieldErrors);
+    };
+  }, [processedErrors, validation]);
+
+  const getErrors = useMemo(() => {
+    return (item: any): ValidationError[] => {
+      return extractValidationErrors(item, validation);
+    };
+  }, [validation]);
+
+  const getFileDigest = useMemo(() => {
+    return (objectPath: string): Promise<any> => {
+      if (!job?.id) {
+        return Promise.reject(new Error("No job ID available"));
+      }
+
+      return api.digest<any>(`jobs/${job.id}/digest?object_path=${objectPath}`);
+    };
+  }, [job, api]);
+
+  const fileItemToParameterArg = useCallback(
+    (
       value: DjangoFile,
       objectPath: string,
-      project_jobs: Job[],
+      projectJobs: Job[],
       projects: Project[]
-    ) => {
-      const setParameterArg: any = {
+    ): SetParameterArg => {
+      const setParameterArg: SetParameterArg = {
         object_path: objectPath,
+        value: {
+          dbFileId: value.uuid.replace(/-/g, ""),
+          subType: value.sub_type,
+          contentFlag: value.content,
+          annotation: value.annotation,
+          baseName: value.name,
+        },
       };
-      setParameterArg.value = {
-        dbFileId: value.uuid.replace(/-/g, ""),
-        subType: value.sub_type,
-        contentFlag: value.content,
-        annotation: value.annotation,
-        baseName: value.name,
-      };
-      if (value.directory == 2) {
-        setParameterArg.value.relPath = "CCP4_IMPORTED_FILES";
+
+      // Handle imported files
+      if (value.directory === FILE_DIRECTORIES.IMPORTED) {
+        setParameterArg.value.relPath = FILE_PATHS.IMPORTED_FILES;
       }
-      if (job && project_jobs) {
-        const job_of_file = project_jobs?.find((the_job: Job) => {
-          return the_job.id === value.job;
-        });
-        if (job_of_file) {
-          if (value.directory == 1) {
-            const jobDir = job_of_file.number
-              .split(".")
-              .map((ele: string) => `job_${ele}`)
-              .join("/");
-            setParameterArg.value.relPath = `CCP4_JOBS/${jobDir}`;
-          }
+
+      // Handle job output files
+      if (
+        job &&
+        projectJobs &&
+        value.directory === FILE_DIRECTORIES.JOB_OUTPUT
+      ) {
+        const jobOfFile = projectJobs.find((theJob) => theJob.id === value.job);
+
+        if (jobOfFile) {
+          const jobDir = jobOfFile.number
+            .split(".")
+            .map((element) => `${FILE_PATHS.JOB_PREFIX}${element}`)
+            .join("/");
+
+          setParameterArg.value.relPath = `${FILE_PATHS.JOBS_DIR}/${jobDir}`;
+
+          // Add project information
           if (projects) {
-            const project = projects?.find((the_project: Project) => {
-              return the_project.id === job_of_file.project;
-            });
+            const project = projects.find(
+              (theProject) => theProject.id === jobOfFile.project
+            );
             if (project) {
               setParameterArg.value.project = project.uuid.replace(/-/g, "");
             }
           }
         }
       }
+
       return setParameterArg;
     },
+    [job]
+  );
 
+  return {
     job,
     mutateJob,
     container,
@@ -425,234 +869,14 @@ export const useJob = (jobId: number | null | undefined) => {
     mutateDiagnosticXml,
     def_xml,
     mutateDef_xml,
+    setParameter,
+    setParameterNoMutate,
+    getTaskItem,
+    createPeerTask,
+    getFileContent,
+    getValidationColor,
+    getErrors,
+    getFileDigest,
+    fileItemToParameterArg,
   };
 };
-
-/**
- * Reads the contents of a file and returns a promise that resolves with the file's contents.
- *
- * @param file - The file to be read.
- * @param readAs - The format in which to read the file. Can be "Text", "ArrayBuffer", or "File". Defaults to "Text".
- * @returns A promise that resolves with the file's contents as a string, ArrayBuffer, or the File object itself.
- *
- * @example
- * ```typescript
- * const file = new File(["Hello, world!"], "hello.txt", { type: "text/plain" });
- * readFilePromise(file, "Text").then((content) => {
- *   console.log(content); // "Hello, world!"
- * });
- * ```
- */
-export const readFilePromise = async (
-  file: File,
-  readAs: "Text" | "ArrayBuffer" | "File" = "Text"
-): Promise<string | ArrayBuffer | null | File> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onabort = () => reject();
-    reader.onerror = () => reject();
-    reader.onloadend = () => {
-      // Do whatever you want with the file contents
-      const textOrBuffer = reader.result;
-      return resolve(textOrBuffer);
-    };
-    if (readAs === "Text") {
-      reader.readAsText(file);
-    } else if (readAs === "ArrayBuffer") {
-      reader.readAsArrayBuffer(file);
-    } else if (readAs === "File") {
-      return resolve(file);
-    }
-  });
-};
-
-/**
- * Extracts the value of an item, handling various data types including primitives, objects, and arrays.
- *
- * @param item - The item from which to extract the value. It can be of any type.
- * @returns The extracted value, which can be of any type, or `null` if the item is falsy.
- *
- * The function handles the following cases:
- * - If the item is falsy, it returns `null`.
- * - If the item's `_value` is `undefined`, `null`, a string, a number, or a boolean, it returns `_value`.
- * - If the item's `_value` is an object, it recursively extracts values for each key in the object.
- * - If the item's `_value` is an array, it recursively extracts values for each element in the array.
- * - If the item's `_value` is of an unknown type, it logs the item to the console.
- */
-export const valueOfItem = (item: any): any => {
-  if (!item) return null;
-  else if (
-    typeof item._value === "undefined" ||
-    item._value === undefined ||
-    item._value === null ||
-    typeof item._value === "string" ||
-    typeof item._value === "number" ||
-    typeof item._value === "boolean"
-  ) {
-    return item._value;
-  } else if (item._value.constructor == Object) {
-    const result: any = {};
-    Object.keys(item._value).forEach(
-      (key: string) => (result[key] = valueOfItem(item._value[key]))
-    );
-    return result;
-  } else if (Array.isArray(item._value)) {
-    if (item._value.length == 0) return [];
-    const result: any[] = item._value.map((value: any) => valueOfItem(value));
-    return result;
-  } else {
-    console.log("Unknown item", item._value);
-  }
-};
-
-/**
- * Determines the appropriate validation color based on the presence and severity of field errors.
- *
- * @param {any} fieldErrors - A single field error object or an array of field error objects, each with a maxSeverity property.
- * @returns {string} - Returns "success.light" if there are no errors or maxSeverity is 0,
- *                     "warning.light" if the highest maxSeverity is 1, and "error.light" if the highest maxSeverity is 2 or higher.
- */
-export const validationColor = (fieldErrors: any): string => {
-  // Handle null, undefined, or empty array cases
-  if (
-    !fieldErrors ||
-    (Array.isArray(fieldErrors) && fieldErrors.length === 0)
-  ) {
-    return "success.light";
-  }
-
-  let maxSeverity: number;
-
-  if (Array.isArray(fieldErrors)) {
-    // Find the highest maxSeverity in the array
-    maxSeverity = fieldErrors.reduce((highest, error) => {
-      const currentSeverity = error?.error.maxSeverity ?? 0;
-      return Math.max(highest, currentSeverity);
-    }, 0);
-  } else {
-    // Single object case
-    maxSeverity = fieldErrors.maxSeverity ?? 0;
-  }
-
-  // Return appropriate color based on severity level
-  if (maxSeverity === 0) {
-    return "success.light";
-  } else if (maxSeverity === 1) {
-    return "warning.light";
-  } else {
-    return "error.light";
-  }
-};
-
-/**
- * Custom hook that returns the previous value of the given input.
- *
- * @template T - The type of the value.
- * @param {T} value - The current value.
- * @returns {T | undefined} - The previous value of the input, or undefined if there is no previous value.
- */
-export const usePrevious = <T>(value: T): T | undefined => {
-  const ref = useRef<T | undefined>(undefined);
-
-  useEffect(() => {
-    ref.current = value;
-  }, [value]);
-
-  return ref.current;
-};
-
-/**
- * Extracts validation errors for a given item based on the provided validation object.
- * Returns all validation errors that match the item's object path or are nested under it.
- *
- * @param item - The item to check for validation errors. It can be of any type.
- * @param validation - An object containing validation details with keys as object paths.
- *
- * @returns An array of validation error objects where each object has the validation data
- *          and the matching object path. Returns an empty array if no errors are found.
- */
-const errorsInValidation = (
-  item: any,
-  validation: any
-): Array<{ path: string; error: any }> => {
-  if (!validation || !item?._objectPath) {
-    return [];
-  }
-
-  const itemPath = item._objectPath;
-  const matchingErrors: Array<{ path: string; error: any }> = [];
-
-  // Iterate through all validation keys
-  Object.keys(validation).forEach((validationPath) => {
-    // Check if the validation path matches exactly or starts with the item path followed by a dot
-    if (
-      validationPath === itemPath ||
-      validationPath.startsWith(`${itemPath}.`) ||
-      validationPath.startsWith(`${itemPath}[`)
-    ) {
-      matchingErrors.push({
-        path: validationPath,
-        error: validation[validationPath],
-      });
-    }
-  });
-
-  return matchingErrors;
-};
-
-export const prettifyXml = (sourceXml: Document) => {
-  if (!sourceXml) return "";
-  let theNode: Document | Element | undefined = sourceXml;
-  if (!theNode?.nodeName) {
-    //Possible explanation is that the is a jQuery node
-    //@ts-ignore
-    try {
-      theNode = $(sourceXml).get(0);
-    } catch (err) {
-      console.error(
-        `Source XML is not something from hwich JQuery can extract an HTMLElemeent for processing`
-      );
-    }
-    //console.log('theNode', theNode)
-  }
-  if (!theNode) return "";
-
-  var xsltDoc = new DOMParser().parseFromString(
-    [
-      // describes how we want to modify the XML - indent everything
-      '<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">',
-      '  <xsl:strip-space elements="*"/>',
-      '  <xsl:template match="para[content-style][not(text())]">', // change to just text() to strip space in text nodes
-      '    <xsl:value-of select="normalize-space(.)"/>',
-      "  </xsl:template>",
-      '  <xsl:template match="node()|@*">',
-      '    <xsl:copy><xsl:apply-templates select="node()|@*"/></xsl:copy>',
-      "  </xsl:template>",
-      '  <xsl:output indent="yes"/>',
-      "</xsl:stylesheet>",
-    ].join("\n"),
-    "application/xml"
-  );
-  var xsltProcessor = new XSLTProcessor();
-  xsltProcessor.importStylesheet(xsltDoc);
-  var resultDoc = xsltProcessor.transformToDocument(theNode);
-  var resultXml = new XMLSerializer().serializeToString(resultDoc);
-  return resultXml;
-};
-
-// More precise typing with discriminated union
-export type SetParameterResponse =
-  | {
-      status: "Success";
-      updated_item: any;
-    }
-  | {
-      status: "Failed";
-      updated_item?: never; // This ensures updated_item is not present when status is "Failed"
-    };
-
-// Add this type definition near the top of your file with other types
-export interface ValidationError {
-  path: string;
-  error: any;
-}
