@@ -165,7 +165,8 @@ export const CCP4i2ContainerElement: React.FC<
       mx: 2,
       px: 2,
       py: 1,
-      border: itemName ? 2 : 0, // Only add border if itemName is provided
+      pb: 3,
+      border: 2,
       borderColor: validationBorderColor,
       borderRadius: 1,
     }),
