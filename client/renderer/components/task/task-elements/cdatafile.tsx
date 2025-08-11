@@ -29,7 +29,7 @@ import {
 import { useDndContext, useDroppable } from "@dnd-kit/core";
 
 import { useApi } from "../../../api";
-import { useJob } from "../../../utils";
+import { useJob, useProject } from "../../../utils";
 import { CCP4i2TaskElementProps } from "./task-element";
 import {
   File as CCP4i2File,
@@ -45,14 +45,8 @@ import { InputFileUpload } from "./input-file-upload";
 
 const BORDER_RADIUS_STYLES = {
   none: { borderRadius: 0 },
-  left: {
-    borderTopLeftRadius: "0.5rem",
-    borderBottomLeftRadius: "0.5rem",
-  },
-  right: {
-    borderTopRightRadius: "0.5rem",
-    borderBottomRightRadius: "0.5rem",
-  },
+  left: { borderTopLeftRadius: "0.5rem", borderBottomLeftRadius: "0.5rem" },
+  right: { borderTopRightRadius: "0.5rem", borderBottomRightRadius: "0.5rem" },
   full: { borderRadius: "0.5rem" },
 } as const;
 
@@ -64,110 +58,8 @@ export interface CCP4i2DataFileElementProps
   setFiles?: (files: FileList | null) => void;
   infoContent?: ReactNode;
   onChange?: (updatedItem: any) => void;
-  hasValidationError?: boolean; // Add this new optional prop
+  hasValidationError?: boolean;
 }
-
-interface FileTypeConfig {
-  allowedTypes: string[] | null;
-  acceptedExtensions: string;
-}
-
-// Custom hooks
-const useFileConfiguration = (item: any, qualifiers: any): FileTypeConfig => {
-  return useMemo(() => {
-    if (!qualifiers?.mimeTypeName) {
-      return { allowedTypes: null, acceptedExtensions: "" };
-    }
-
-    const allowedTypes = Array.isArray(qualifiers.mimeTypeName)
-      ? qualifiers.mimeTypeName
-      : [qualifiers.mimeTypeName];
-
-    const acceptedExtensions =
-      qualifiers?.fileExtensions?.map((ext: string) => `.${ext}`).join(",") ||
-      "";
-
-    return { allowedTypes, acceptedExtensions };
-  }, [qualifiers]);
-};
-
-const useFilteredFileOptions = (
-  projectFiles: CCP4i2File[] | undefined,
-  projectJobs: Job[] | undefined,
-  allowedTypes: string[] | null
-): CCP4i2File[] => {
-  return useMemo(() => {
-    if (!projectFiles || !allowedTypes) return [];
-
-    return projectFiles
-      .filter((file) => {
-        const fileJob = projectJobs?.find((job) => job.id === file.job);
-        const isValidType =
-          allowedTypes.includes(file.type) || allowedTypes.includes("Unknown");
-        const isNotParentJob = fileJob ? !fileJob.parent : true;
-
-        return isValidType && isNotParentJob;
-      })
-      .sort((a, b) => b.job - a.job);
-  }, [projectFiles, projectJobs, allowedTypes]);
-};
-
-const useCurrentValue = (
-  item: any,
-  fileOptions: CCP4i2File[],
-  objectPath: string | null
-): [CCP4i2File, React.Dispatch<React.SetStateAction<CCP4i2File>>] => {
-  const [value, setValue] = useState<CCP4i2File>(nullFile);
-
-  useEffect(() => {
-    if (!objectPath || !fileOptions || !item) return;
-
-    const dbFileId = item._value?.dbFileId?._value?.trim();
-    if (!dbFileId) {
-      setValue(nullFile);
-      return;
-    }
-
-    const selectedFile = fileOptions.find((file) => {
-      const normalizedFileUuid = file.uuid.replace(/-/g, "");
-      const normalizedDbFileId = dbFileId.replace(/-/g, "");
-      return normalizedFileUuid === normalizedDbFileId;
-    });
-
-    setValue(selectedFile || nullFile);
-  }, [objectPath, fileOptions, item]);
-
-  return [value, setValue];
-};
-
-const useCollapsibleState = (
-  hasChildren: boolean,
-  forceExpanded: boolean = false
-) => {
-  const [isManuallyExpanded, setIsManuallyExpanded] = useState(false);
-
-  const handleToggle = useCallback(() => {
-    // Don't allow collapsing if forceExpanded is true
-    if (!forceExpanded) {
-      setIsManuallyExpanded((prev) => !prev);
-    }
-  }, [forceExpanded]);
-
-  // Reset when children disappear
-  useEffect(() => {
-    if (!hasChildren) {
-      setIsManuallyExpanded(false);
-    }
-  }, [hasChildren]);
-
-  // The actual expanded state is either forced or manually set
-  const isExpanded = forceExpanded || isManuallyExpanded;
-
-  return {
-    isExpanded,
-    handleToggle,
-  };
-};
 
 // Main component
 export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
@@ -180,7 +72,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
   visibility,
   disabled: disabledProp,
   qualifiers: propsQualifiers,
-  hasValidationError: overrideValidationError, // Destructure the new prop
+  hasValidationError: overrideValidationError,
 }) => {
   const api = useApi();
   const {
@@ -189,167 +81,141 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     getValidationColor,
     fileItemToParameterArg,
     mutateContainer,
+    useFileDigest,
+    useFileContent,
   } = useJob(job.id);
 
   const { item } = getTaskItem(itemName);
   const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
   const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
 
-  // Merge qualifiers
-  const qualifiers = useMemo(() => {
-    return item?._qualifiers
-      ? { ...item._qualifiers, ...propsQualifiers }
-      : propsQualifiers || null;
-  }, [item?._qualifiers, propsQualifiers]);
-
-  // Data fetching
-  const { data: projectFiles, mutate: mutateFiles } = api.get_endpoint<
-    CCP4i2File[]
-  >({
-    type: "projects",
-    id: job.project,
-    endpoint: "files",
-  });
-
-  const { data: projectJobs } = api.get_endpoint<Job[]>({
-    type: "projects",
-    id: job.project,
-    endpoint: "jobs",
-  });
-
+  // Data and state
+  const { files: projectFiles, jobs: projectJobs } = useProject(job.project);
   const { data: projects } = api.get<Project[]>("projects");
+  const { mutate: mutateDigest } = useFileDigest(`${item?._objectPath}`);
+  const { mutate: mutateContent } = useFileContent(`${item?._objectPath}`);
+  const [value, setValue] = useState<CCP4i2File>(nullFile);
+  const [isManuallyExpanded, setIsManuallyExpanded] = useState(false);
 
-  const { mutate: mutateDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=${item?._objectPath}`
-  );
-
-  // Configuration and options
-  const { allowedTypes, acceptedExtensions } = useFileConfiguration(
-    item,
-    qualifiers
-  );
-  const fileOptions = useFilteredFileOptions(
-    projectFiles,
-    projectJobs,
-    allowedTypes
-  );
-  const [value, setValue] = useCurrentValue(
-    item,
-    fileOptions,
-    item?._objectPath || null
+  // Computed values
+  const qualifiers = useMemo(
+    () => ({
+      ...item?._qualifiers,
+      ...propsQualifiers,
+    }),
+    [item?._qualifiers, propsQualifiers]
   );
 
-  // Get validation color and determine if there's an error
+  const fileConfig = useMemo(() => {
+    const allowedTypes = qualifiers?.mimeTypeName
+      ? Array.isArray(qualifiers.mimeTypeName)
+        ? qualifiers.mimeTypeName
+        : [qualifiers.mimeTypeName]
+      : null;
+    const acceptedExtensions =
+      qualifiers?.fileExtensions?.map((ext: string) => `.${ext}`).join(",") ||
+      "";
+    return { allowedTypes, acceptedExtensions };
+  }, [qualifiers]);
+
+  const fileOptions = useMemo(() => {
+    if (!projectFiles || !fileConfig.allowedTypes) return [];
+    return projectFiles
+      .filter((file) => {
+        const fileJob = projectJobs?.find((job) => job.id === file.job);
+        const isValidType =
+          fileConfig.allowedTypes!.includes(file.type) ||
+          fileConfig.allowedTypes!.includes("Unknown");
+        const isNotParentJob = fileJob ? !fileJob.parent : true;
+        return isValidType && isNotParentJob;
+      })
+      .sort((a, b) => b.job - a.job);
+  }, [projectFiles, projectJobs, fileConfig.allowedTypes]);
+
   const borderColor = getValidationColor(item);
-  const computedValidationError = useMemo(() => {
-    const hasError = borderColor === "error.light";
-    /* Add some debugging
-    console.log(`CDataFileElement ${itemName}:`, {
-      borderColor,
-      hasError,
-      itemPath: item?._objectPath,
-      overrideValidationError,
-    });
-    */
-    return hasError;
-  }, [borderColor, itemName, item?._objectPath, overrideValidationError]);
+  const computedValidationError = borderColor === "error.light";
+  const hasValidationError = overrideValidationError ?? computedValidationError;
+  const hasChildren = React.Children.count(children) > 0;
+  const isExpanded = hasValidationError || isManuallyExpanded;
 
-  // Use override if provided, otherwise use computed value
-  const hasValidationError = useMemo(() => {
-    return overrideValidationError !== undefined
-      ? overrideValidationError
-      : computedValidationError;
-  }, [overrideValidationError, computedValidationError]);
+  const guiLabel =
+    qualifiers?.guiLabel || item?._objectPath?.split(".").at(-1) || "";
+  const isDisabled =
+    (typeof disabledProp === "function" ? disabledProp() : disabledProp) ||
+    inFlight ||
+    job.status !== 1;
+  const isVisible =
+    typeof visibility === "function" ? visibility() : visibility !== false;
 
-  // Children state - pass the validation error state
-  const hasChildren = useMemo(() => {
-    return React.Children.count(children) > 0;
-  }, [children]);
-
-  const { isExpanded, handleToggle } = useCollapsibleState(
-    hasChildren,
-    hasValidationError
-  );
-
-  /* Add debugging for the collapsible state
-  console.log(`CDataFileElement ${itemName} collapsible:`, {
-    hasChildren,
-    hasValidationError,
-    overrideValidationError,
-    computedValidationError,
-    isExpanded,
-  });
-  */
-
-  // Drag and drop setup
+  // Drag and drop
   const { isOver, setNodeRef } = useDroppable({
     id: `job_${job.uuid}_${itemName}`,
     data: { job, item },
   });
-
   const { active } = useDndContext();
+  const isValidDrop =
+    active?.data?.current?.file &&
+    (fileConfig.allowedTypes?.includes(active.data.current.file.type) ||
+      false) &&
+    job.status === 1;
 
-  // Computed values
-  const isValidDrop = useMemo(() => {
-    if (!active?.data?.current?.file || !item || job.status !== 1) return false;
-    const activeFile = active.data.current.file as CCP4i2File;
-    return allowedTypes?.includes(activeFile.type) || false;
-  }, [active, item, job.status, allowedTypes]);
+  const backgroundColor = isOver
+    ? isValidDrop
+      ? "success.light"
+      : "error.light"
+    : "background.paper";
 
-  const guiLabel = useMemo(() => {
-    return qualifiers?.guiLabel || item?._objectPath?.split(".").at(-1) || "";
-  }, [qualifiers?.guiLabel, item?._objectPath]);
-
-  const isDisabled = useMemo(() => {
-    if (typeof disabledProp === "function") {
-      return disabledProp() || inFlight || job.status !== 1;
+  // Update value when item changes
+  useEffect(() => {
+    if (!item?._objectPath || !fileOptions) return;
+    const dbFileId = item._value?.dbFileId?._value?.trim();
+    if (!dbFileId) {
+      setValue(nullFile);
+      return;
     }
-    return disabledProp || inFlight || job.status !== 1;
-  }, [disabledProp, inFlight, job.status]);
+    const selectedFile = fileOptions.find(
+      (file) => file.uuid.replace(/-/g, "") === dbFileId.replace(/-/g, "")
+    );
+    setValue(selectedFile || nullFile);
+  }, [item, fileOptions]);
 
-  const isVisible = useMemo(() => {
-    if (typeof visibility === "function") return visibility();
-    return visibility !== false;
-  }, [visibility]);
+  // Reset expansion when children disappear
+  useEffect(() => {
+    if (!hasChildren) setIsManuallyExpanded(false);
+  }, [hasChildren]);
 
   // Event handlers
   const handleFileSelect = useCallback(
     async (
-      event: SyntheticEvent<Element, Event>,
+      event: SyntheticEvent,
       selectedFile: CCP4i2File | null,
       reason: AutocompleteChangeReason
     ) => {
       const objectPath = item?._objectPath;
       if (!objectPath || !projects) return;
 
-      let parameterArg: any = {};
+      const parameterArg =
+        reason === "clear" || selectedFile === nullFile
+          ? { value: null, object_path: objectPath }
+          : fileItemToParameterArg(
+              selectedFile!,
+              objectPath,
+              projectJobs || [],
+              projects
+            );
 
-      if (reason === "clear" || selectedFile === nullFile) {
-        parameterArg = { value: null, object_path: objectPath };
-        setValue(nullFile);
-      } else if (selectedFile) {
-        setValue(selectedFile);
-        parameterArg = fileItemToParameterArg(
-          selectedFile,
-          objectPath,
-          projectJobs || [],
-          projects
-        );
-      }
-
+      setValue(selectedFile || nullFile);
       setInFlight(true);
+
       try {
         const result = await setParameter(parameterArg);
-        if (result?.status === "Success" && onChange) {
-          onChange(result.updated_item);
-        }
+        if (result?.status === "Success") onChange?.(result.updated_item);
       } catch (error) {
         console.error("Error setting parameter:", error);
         alert(`Error: ${error}`);
       } finally {
         setInFlight(false);
-        mutateDigest();
-        mutateContainer();
+        await Promise.all([mutateContainer(), mutateContent(), mutateDigest()]);
       }
     },
     [
@@ -360,8 +226,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
       setParameter,
       onChange,
       setInFlight,
-      mutateDigest,
       mutateContainer,
+      mutateContent,
+      mutateDigest,
     ]
   );
 
@@ -382,6 +249,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     [setFileMenuAnchorEl, setFile, value]
   );
 
+  const handleToggle = useCallback(() => {
+    if (!hasValidationError) setIsManuallyExpanded((prev) => !prev);
+  }, [hasValidationError]);
+
   const getOptionLabel = useCallback(
     (option: CCP4i2File) => {
       const fileJob = projectJobs?.find((job) => job.id === option.job);
@@ -392,23 +263,9 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     [projectJobs]
   );
 
-  const getOptionKey = useCallback((option: CCP4i2File) => option.uuid, []);
-
-  // Loading state
-  if (!projectFiles || !projectJobs) {
-    return <LinearProgress />;
-  }
-
-  // Visibility check
-  if (!isVisible) {
-    return null;
-  }
-
-  const backgroundColor = isOver
-    ? isValidDrop
-      ? "success.light"
-      : "error.light"
-    : "background.paper";
+  // Loading and visibility checks
+  if (!projectFiles || !projectJobs) return <LinearProgress />;
+  if (!isVisible) return null;
 
   const showMenuButton = value && value !== nullFile;
   const canUpload = job.status === 1;
@@ -440,17 +297,14 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
           onChange={handleFileSelect}
           options={[...fileOptions, nullFile]}
           getOptionLabel={getOptionLabel}
-          getOptionKey={getOptionKey}
+          getOptionKey={(option: CCP4i2File) => option.uuid}
           freeSolo={false}
           renderInput={(params) => (
             <TextField
               {...params}
               error={borderColor === "error.light"}
               slotProps={{
-                inputLabel: {
-                  shrink: true,
-                  disableAnimation: true,
-                },
+                inputLabel: { shrink: true, disableAnimation: true },
               }}
               label={guiLabel}
               size="small"
@@ -469,7 +323,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
                 "&:last-of-type": BORDER_RADIUS_STYLES.right,
               }}
               disabled={isDisabled}
-              accept={acceptedExtensions}
+              accept={fileConfig.acceptedExtensions}
               handleFileChange={handleFileChange}
             />
           )}
@@ -514,12 +368,12 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
           <IconButton
             onClick={handleToggle}
             size="small"
-            disabled={hasValidationError} // Disable toggle when there's an error
+            disabled={hasValidationError}
             sx={{
               ml: 1,
               transition: "transform 0.2s ease-in-out",
               transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
-              opacity: hasValidationError ? 0.6 : 1, // Visual indication when disabled
+              opacity: hasValidationError ? 0.6 : 1,
             }}
             aria-label={
               hasValidationError
@@ -547,7 +401,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
               px: 2,
               pb: 1,
               pt: 0,
-              backgroundColor: hasValidationError ? "error.lighter" : "grey.50", // Different background for errors
+              backgroundColor: hasValidationError ? "error.lighter" : "grey.50",
               borderTop: "1px solid",
               borderTopColor: hasValidationError ? "error.light" : "divider",
               borderBottomLeftRadius: "0.4rem",

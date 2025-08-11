@@ -25,6 +25,7 @@ import {
 import { createContext } from "react";
 import { usePopcorn } from "./popcorn-provider";
 import { useRunCheck } from "./run-check-provider";
+import { CCP4i2MoorhenIcon } from "../components/General/CCP4i2Icons";
 
 interface JobMenuContextDataProps {
   jobMenuAnchorEl: HTMLElement | null;
@@ -261,7 +262,7 @@ export const JobMenu: React.FC = () => {
               handleOpenInNewWindow(`/moorhen-page/job-by-id/${job.id}`);
             }}
           >
-            <Preview /> Moorhen
+            <CCP4i2MoorhenIcon /> Moorhen
           </MenuItem>
           <MenuItem
             key="Status"

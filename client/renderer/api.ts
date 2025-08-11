@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import $ from "jquery";
 import { prettifyXml } from "./utils";
-import { File as DjangoFile } from "./types/models";
+import { useRadioGroup } from "@mui/material";
 
 export function fullUrl(endpoint: string): string {
   let api_path = `/api/proxy/${endpoint}`;
@@ -117,7 +117,9 @@ const buildLookup = (container: any, lookup_in?: any): any => {
 };
 
 const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
-  if (!endpointFetch.id) return Promise.reject();
+  if (!endpointFetch.id || !endpointFetch.type) {
+    throw new Error("Invalid endpointFetch: and id are required");
+  }
   const url = fullUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
@@ -125,6 +127,9 @@ const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
 };
 
 const digest_fetcher = (url: string) => {
+  if (url.includes("/undefined/")) {
+    throw new Error("Invalid URL: " + url);
+  }
   return fetch(url).then((r) => {
     //console.log(r);
     return r.json();
@@ -181,9 +186,13 @@ export function useApi() {
     },
 
     digest: function <T>(endpoint: string) {
-      //console.log(endpoint);
-      const result = useSWR<T>(fullUrl(endpoint), digest_fetcher);
-      //console.log(result.data);
+      const result = useSWR<T>(fullUrl(endpoint), digest_fetcher, {
+        onError: (error) => {
+          console.warn(`Digest error for endpoint "${endpoint}":`, error);
+        },
+        fallbackData: null as T,
+        shouldRetryOnError: false,
+      });
       return result;
     },
 
@@ -202,25 +211,6 @@ export function useApi() {
         const errorText = await response.text(); // Or `res.json()` if the response is JSON
         throw new Error(`Failed to fetch: ${response.status} - ${errorText}`);
       }
-      return response.json() as Promise<T>;
-    },
-
-    postNoSlash: async function <T>(
-      endpoint: string,
-      body: any = {}
-    ): Promise<T> {
-      const headers: HeadersInit = { Accept: "application/json" };
-      if (body instanceof FormData) {
-        //headers["Content-Type"] = "multipart/form-data";
-      } else {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify(body);
-      }
-      const response = await fetch(noSlashUrl(endpoint), {
-        method: "POST",
-        headers: headers,
-        body: body,
-      });
       return response.json() as Promise<T>;
     },
 

@@ -10,13 +10,7 @@ import { useCallback, useEffect, useMemo } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const {
-    setParameter,
-    useAsyncEffect,
-    getTaskItem,
-    getFileDigest,
-    mutateContainer,
-  } = useJob(job.id);
+  const { getTaskItem, mutateContainer } = useJob(job.id);
   //const { value: ID_RMSValue } = getTaskItem("ID_RMS");
 
   const { value: SEQUENCETEXT, update: setSEQUENCETEXT } =
@@ -41,10 +35,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         `jobs/${job.id}/digest?object_path=ProvideSequence.inputData.SEQIN`
       )
     ).then((response) => response.json());
-    const newSequence = seqinDigest?.digest?.sequence || "";
+    const newSequence = seqinDigest?.sequence || "";
     if (job?.status == 1 && newSequence !== SEQUENCETEXT) {
       await setSEQUENCETEXT(
-        `>${seqinDigest?.digest?.identifier}\n${seqinDigest?.digest?.sequence}`.replace(
+        `>${seqinDigest?.identifier}\n${seqinDigest?.sequence}`.replace(
           "*",
           ""
         ) || ""

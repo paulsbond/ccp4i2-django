@@ -24,18 +24,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
 
-  //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
-  //const { data: HKLINDigest } = api.digest<any>(
-  //  `jobs/${job.id}/digest?object_path=servalcat_pipe.inputData.HKLIN`
-  //);
-
-  //This magic means that the following variables will be kept up to date with the values of the associated parameters
   const { getTaskItem, createPeerTask } = useJob(job.id);
 
   const { value: HKLINValue } = getTaskItem("servalcat_pipe.inputData.HKLIN");
   const { value: MAP_SHARP } = getTaskItem("MAP_SHARP");
   const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
-  const { mutateJobs } = useProject(job.project);
 
   const intensitiesAvailable = useMemo(() => {
     return [1, 3].includes(HKLINValue?.contentFlag);

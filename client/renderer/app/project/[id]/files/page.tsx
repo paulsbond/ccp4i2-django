@@ -6,6 +6,7 @@ import { File, Project } from "../../../../types/models";
 import EditableTypography from "../../../../components/editable-typography";
 import FilesTable from "../../../../components/files-table";
 import FileUpload from "../../../../components/file-upload";
+import { useProject } from "../../../../utils";
 
 export default function FilesPage({
   params,
@@ -15,9 +16,7 @@ export default function FilesPage({
   const api = useApi();
   const { id } = use(params);
   const { data: project } = api.get<Project>(`projects/${id}`);
-  const { data: files, mutate: mutateFiles } = api.get<File[]>(
-    `files?project=${id}`
-  );
+  const { files, mutateFiles } = useProject(parseInt(id || "0"));
 
   function importFiles(event: ChangeEvent<HTMLInputElement>) {
     const fileList = event.target.files;

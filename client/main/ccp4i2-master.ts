@@ -34,7 +34,7 @@ const getProjectsDir = () => {
     : path.join(homeDir, ".ccp4x", "CCP4X_PROJECTS");
 };
 
-const store = new Store<StoreSchema>({
+export const store = new Store<StoreSchema>({
   defaults: {
     CCP4Dir: "/Applications/CCP4-9",
     devMode: false,
@@ -80,7 +80,7 @@ app
       setDjangoServer
     );
     installWillDownloadHandler(session.defaultSession);
-    addNewWindowMenuItem(nextServerPort);
+    addNewWindowMenuItem(nextServerPort, djangoServerPort);
     setupZoomLevel(store);
     process.env.BACKEND_URL = `http://localhost:${djangoServerPort}`;
     nextServer = await startNextServer(isDev, nextServerPort, djangoServerPort);

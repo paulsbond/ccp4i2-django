@@ -10,22 +10,13 @@ import { useCallback, useEffect, useMemo } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { setParameter, useAsyncEffect, getTaskItem, getFileDigest } = useJob(
-    job.id
-  );
+  const { getTaskItem } = useJob(job.id);
   const { value: F_SIGFValue } = getTaskItem("F_SIGF");
   const { value: F_OR_IValue, update: updateF_or_I } = getTaskItem("F_OR_I");
   const { value: INPUT_FIXedValue } = getTaskItem("INPUT_FIXED");
   const { value: COMP_BYValue } = getTaskItem("COMP_BY");
   const { value: ID_RMSValue } = getTaskItem("ID_RMS");
   const { value: SGALT_SELECTValue } = getTaskItem("SGALT_SELECT");
-
-  //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
-  //const { data: HKLINDigest } = api.digest<any>(
-  //  `jobs/${job.id}/digest?object_path=servalcat_pipe.inputData.HKLIN`
-  //);
-
-  //This magic means that the following variables will be kept up to date with the values of the associated parameters
 
   return (
     <CCP4i2Tabs {...props}>

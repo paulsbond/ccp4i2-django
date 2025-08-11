@@ -11,16 +11,8 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const api = useApi();
   const { itemName, job } = props;
-  const {
-    getTaskItem,
-    getFileDigest,
-    getValidationColor,
-    setParameter,
-    container,
-    useAsyncEffect,
-    mutateContainer,
-    mutateValidation,
-  } = useJob(job.id);
+  const { getTaskItem, getValidationColor, mutateContainer, mutateValidation } =
+    useJob(job.id);
 
   const { item } = getTaskItem(itemName);
   const { update: setPolymerType } = getTaskItem(

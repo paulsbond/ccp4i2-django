@@ -38,7 +38,11 @@ export const CCP4i2ReportXMLView = () => {
     return $.parseXML(report_xml_json.xml);
   }, [report_xml_json]);
 
-  const { data: what_next } = api.get<any>(`jobs/${job?.id}/what_next/`);
+  const { data: what_next } = api.get_endpoint<any>({
+    type: "jobs",
+    id: job?.id,
+    endpoint: "what_next",
+  });
 
   const oldJob = usePrevious(job);
 

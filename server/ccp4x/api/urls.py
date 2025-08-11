@@ -7,6 +7,8 @@ from .ProjectTagViewSet import ProjectTagViewSet
 from .FileViewSet import FileViewSet
 from .JobViewSet import JobViewSet
 from .FileTypeViewSet import FileTypeViewSet
+from .FileImportViewSet import FileImportViewSet
+from .FileUseViewSet import FileUseViewSet
 from . import views
 
 router = routers.DefaultRouter()
@@ -15,6 +17,8 @@ router.register("project-tags", ProjectTagViewSet)
 router.register("files", FileViewSet)
 router.register("jobs", JobViewSet)
 router.register("filetypes", FileTypeViewSet)
+router.register("fileimports", FileImportViewSet)
+router.register("fileuses", FileUseViewSet)
 
 
 urlpatterns = [
