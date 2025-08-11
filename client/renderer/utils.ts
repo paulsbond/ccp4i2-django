@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import $ from "jquery";
-import useSWR, { mutate, SWRResponse } from "swr";
+import useSWR, { KeyedMutator, mutate, SWRResponse } from "swr";
 
 import { fullUrl, useApi } from "./api";
 import {
@@ -62,9 +62,9 @@ export interface ProjectData {
   directory: any;
   mutateDirectory: () => void;
   jobs: Job[] | undefined;
-  mutateJobs: () => void;
+  mutateJobs: KeyedMutator<Job[]>;
   files: DjangoFile[] | undefined;
-  mutateFiles: () => void;
+  mutateFiles: KeyedMutator<DjangoFile[]>;
   jobCharValues: JobCharValue[] | undefined;
   mutateJobCharValues: () => void;
   jobFloatValues: JobFloatValue[] | undefined;
@@ -892,8 +892,10 @@ export const useJob = (jobId: number | null | undefined): JobData => {
   // Custom hook to fetch file content using SWR
   const useFileContent = (paramName: string): SWRResponse<string, Error> => {
     // Create a unique key for SWR caching
-    const dbFileId = container?.lookup?.[paramName]?.dbFileId;
+    const item = container?.lookup[paramName];
+    const dbFileId = valueOfItem(item)?.dbFileId;
 
+    console.log("dbFileId", JSON.stringify(dbFileId));
     // Return null key when dbFileId is falsey - this prevents SWR from fetching
     const swrKey = dbFileId ? `files/${dbFileId}/download_by_uuid/` : null;
 
@@ -903,7 +905,6 @@ export const useJob = (jobId: number | null | undefined): JobData => {
           `Parameter "${paramName}" not found or has no dbFileId`
         );
       }
-
       const url = `/api/proxy/${swrKey}`;
       return fetch(url).then((response) => {
         if (!response.ok) {

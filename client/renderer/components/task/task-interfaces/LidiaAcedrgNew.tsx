@@ -10,12 +10,12 @@ import { RDKitView } from "../../rdkit-view";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskItem, getFileContent } = useJob(job.id);
+  const { getTaskItem, useFileContent } = useJob(job.id);
   const { value: MOLSMILESORSKETCH } = getTaskItem("MOLSMILESORSKETCH");
   const { value: ATOMMATCHOPTION } = getTaskItem("ATOMMATCHOPTION");
   const { data: MOLINContent, mutate: mutateMOLINContent } =
-    getFileContent("MOLIN");
-  const { data: SMILESFILEContent } = getFileContent("SMILESFILE");
+    useFileContent("MOLIN");
+  const { data: SMILESFILEContent } = useFileContent("SMILESFILE");
 
   ATOMMATCHOPTION;
   return (
@@ -55,11 +55,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 visibility={() => {
                   return MOLSMILESORSKETCH === "MOL";
                 }}
-                onChange={(value) => {
-                  if (value) {
-                    //mutateMOLINContent();
-                  }
-                }}
               />
             </Grid2>
             <Grid2 size={{ xs: 12, sm: 6 }}>
@@ -76,17 +71,23 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               return MOLSMILESORSKETCH === "DICT";
             }}
           />
-          <CCP4i2TaskElement
-            {...props}
-            itemName="SMILESFILEIN"
-            qualifiers={{ guiLabel: "File containg SMILES string" }}
-            visibility={() => {
-              return MOLSMILESORSKETCH === "SMILESFILE";
-            }}
-          />
-          {MOLSMILESORSKETCH === "SMILESFILE" && SMILESFILEContent && (
-            <RDKitView smiles={SMILESFILEContent.trim()} />
-          )}
+          <Grid2 container>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SMILESFILEIN"
+                qualifiers={{ guiLabel: "File containg SMILES string" }}
+                visibility={() => {
+                  return MOLSMILESORSKETCH === "SMILESFILE";
+                }}
+              />
+            </Grid2>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              {MOLSMILESORSKETCH === "SMILESFILE" && SMILESFILEContent && (
+                <RDKitView smiles={SMILESFILEContent.trim()} />
+              )}
+            </Grid2>
+          </Grid2>
           <CCP4i2ContainerElement
             {...props}
             itemName=""
