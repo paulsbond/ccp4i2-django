@@ -239,33 +239,36 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   useEffect(() => {
     const parseMtzFile = async (): Promise<void> => {
       if (!file || !cootModule) return;
+      if (file.name.endsWith(".mtz")) {
+        try {
+          const fileContent = await readFilePromise(file, "ArrayBuffer");
+          if (!fileContent) return;
 
-      try {
-        const fileContent = await readFilePromise(file, "ArrayBuffer");
-        if (!fileContent) return;
+          const fileName = `File_${uuid4()}`;
+          const byteArray = new Uint8Array(fileContent as ArrayBuffer);
 
-        const fileName = `File_${uuid4()}`;
-        const byteArray = new Uint8Array(fileContent as ArrayBuffer);
+          cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
+          const headerInfo = cootModule.get_mtz_columns(fileName);
+          cootModule.FS_unlink(`./${fileName}`);
 
-        cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
-        const headerInfo = cootModule.get_mtz_columns(fileName);
-        cootModule.FS_unlink(`./${fileName}`);
+          const newColumns: ColumnNames = {};
+          for (let i = 0; i < headerInfo.size(); i += 2) {
+            newColumns[headerInfo.get(i + 1)] = headerInfo.get(i);
+          }
 
-        const newColumns: ColumnNames = {};
-        for (let i = 0; i < headerInfo.size(); i += 2) {
-          newColumns[headerInfo.get(i + 1)] = headerInfo.get(i);
-        }
+          if (Object.keys(newColumns).length === 0) {
+            console.error("Error parsing MTZ file");
+            handleCancel?.();
+            return;
+          }
 
-        if (Object.keys(newColumns).length === 0) {
-          console.error("Error parsing MTZ file");
+          setAllColumnNames(newColumns);
+        } catch (error) {
+          console.error("Failed to parse MTZ file:", error);
           handleCancel?.();
-          return;
         }
-
-        setAllColumnNames(newColumns);
-      } catch (error) {
-        console.error("Failed to parse MTZ file:", error);
-        handleCancel?.();
+      } else {
+        handleAccept?.("/*/*/[FP,SIGFP]"); // Default to FP,SIGFP if not an MTZ file
       }
     };
 
