@@ -62,7 +62,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     (digest: any) => {
       if (
         !digest ||
-        Object.keys(digest.digest).length == 0 ||
+        Object.keys(digest).length == 0 ||
         !updateSPACEGROUP ||
         !updateWAVELENGTH ||
         !updateHKLIN_FORMAT ||
@@ -75,23 +75,21 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         let parametersChanged = false;
         {
           const result = await updateSPACEGROUP(
-            digest.digest.spaceGroup.replace(/\s+/g, "")
+            digest.spaceGroup.replace(/\s+/g, "")
           );
           parametersChanged = parametersChanged || Boolean(result);
         }
-        if (digest.digest.wavelength) {
+        if (digest.wavelength) {
           //Note some ancient MTZ files lack a wavelength
-          const result = await updateWAVELENGTH(digest.digest.wavelength);
+          const result = await updateWAVELENGTH(digest.wavelength);
           parametersChanged = parametersChanged || Boolean(result);
         }
         {
-          const result = await updateHKLIN_FORMAT(
-            digest.digest.format.toUpperCase()
-          );
+          const result = await updateHKLIN_FORMAT(digest.format.toUpperCase());
           parametersChanged = parametersChanged || Boolean(result);
         }
         {
-          const result = await updateUNITCELL(digest.digest.cell);
+          const result = await updateUNITCELL(digest.cell);
           parametersChanged = parametersChanged || Boolean(result);
         }
         if (parametersChanged) {
@@ -337,7 +335,7 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
       if (!digest?.digest?.format || digest?.digest?.format !== "mmcif") return;
       const asyncFunc = async () => {
         if (digest?.digest?.rblock_infos) {
-          const selectedBlock = digest.digest.rblock_infos.find(
+          const selectedBlock = digest.rblock_infos.find(
             (info: { bname: string }) => info.bname === mmcifSelectedBlockName
           );
           if (selectedBlock) {
@@ -390,7 +388,7 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
                 guiLabel: "Selected block",
                 guiMode: "multiLineRadio",
                 onlyEnumerators: true,
-                enumerators: digest.digest.rblock_infos.map(
+                enumerators: digest.rblock_infos.map(
                   (info: { bname: string }) => info.bname
                 ),
               }}
