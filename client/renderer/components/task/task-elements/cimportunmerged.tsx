@@ -1,99 +1,80 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import {
-  SetParameterArg,
-  useAsyncEffect,
-  useJob,
-  usePrevious,
-} from "../../../utils";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  Grid2,
-  Typography,
-} from "@mui/material";
-import { CCellElement } from "./ccell";
-import { ErrorInfo } from "./error-info";
+import { useJob } from "../../../utils";
+import { Grid2, Typography } from "@mui/material";
 import { CSimpleDataFileElement } from "./csimpledatafile";
-import { useApi } from "../../../api";
-import { CDataFileElement } from "./cdatafile";
-import { mutate } from "swr";
-import { get } from "jquery";
 
 export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
-  const api = useApi();
   const { itemName, job } = props;
   const {
     getTaskItem,
     useFileDigest,
     getValidationColor,
     setParameterNoMutate,
-    setParameter,
     mutateContainer,
+    mutateValidation,
+    mutateParams_xml,
   } = useJob(job.id);
+
   const { item } = getTaskItem(itemName);
   const { value: cell } = getTaskItem(`${itemName}.cell`);
   const { value: wavelength } = getTaskItem(`${itemName}.wavelength`);
   const { value: crystalName } = getTaskItem(`${itemName}.crystalName`);
   const { value: dataset } = getTaskItem(`${itemName}.dataset`);
 
-  const fileObjectPath = useMemo<string | null>(() => {
-    return item?._objectPath ? `${item._objectPath}.file` : null;
-  }, [item]);
+  const fileObjectPath = item?._objectPath ? `${item._objectPath}.file` : null;
+  const { data: fileDigest } = useFileDigest(fileObjectPath || "");
 
-  const { data: fileDigest, mutate: mutateDigest } = useFileDigest(
-    fileObjectPath || ""
-  );
+  // Parameter update mappings
+  const parameterMappings = [
+    { key: "cell", digestValue: fileDigest?.cell, currentValue: cell },
+    {
+      key: "wavelength",
+      digestValue: fileDigest?.wavelength,
+      currentValue: wavelength,
+    },
+    {
+      key: "crystalName",
+      digestValue: fileDigest?.crystalName,
+      currentValue: crystalName,
+    },
+    {
+      key: "dataset",
+      digestValue: fileDigest?.datasetName,
+      currentValue: dataset,
+    },
+  ];
 
   const handleChange = useCallback(async () => {
     if (!item || !setParameterNoMutate || !fileDigest) return;
 
-    //Here if the file Digest has changed
-    const newCell = fileDigest?.cell || null;
-    let parametersUpdated = false;
+    const updates = parameterMappings
+      .filter(
+        ({ digestValue, currentValue }) =>
+          digestValue &&
+          JSON.stringify(digestValue) !== JSON.stringify(currentValue)
+      )
+      .map(({ key, digestValue }) =>
+        setParameterNoMutate({
+          object_path: `${item._objectPath}.${key}`,
+          value: digestValue,
+        })
+      );
 
-    if (newCell && JSON.stringify(newCell) !== JSON.stringify(cell)) {
-      console.log("Updating cell parameter due to fileDigest change");
-      await setParameterNoMutate({
-        object_path: `${item._objectPath}.cell`,
-        value: newCell,
-      });
-      parametersUpdated = true;
+    if (updates.length > 0) {
+      await Promise.all(updates);
+      await Promise.all([
+        mutateContainer(),
+        mutateValidation(),
+        mutateParams_xml(),
+      ]);
     }
-    if (fileDigest?.wavelength && fileDigest?.wavelength !== wavelength) {
-      await setParameterNoMutate({
-        object_path: `${item._objectPath}.wavelength`,
-        value: fileDigest.wavelength,
-      });
-      parametersUpdated = true;
-    }
-    if (fileDigest?.crystalName && fileDigest?.crystalName !== crystalName) {
-      await setParameterNoMutate({
-        object_path: `${item._objectPath}.crystalName`,
-        value: fileDigest.crystalName,
-      });
-      parametersUpdated = true;
-    }
-
-    if (fileDigest?.datasetName && fileDigest?.datasetName !== dataset) {
-      await setParameterNoMutate({
-        object_path: `${item._objectPath}.dataset`,
-        value: fileDigest.datasetName,
-      });
-      parametersUpdated = true;
-    }
-
-    //Mutate the file digest to update the UI immediately
-    if (parametersUpdated) mutateContainer();
-    else console.log("No parameters updated");
   }, [
     item,
     fileDigest,
     setParameterNoMutate,
-    setParameter,
     cell,
     wavelength,
     crystalName,
@@ -101,123 +82,83 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     mutateContainer,
   ]);
 
-  const crystalNameObjectPath = useMemo<string | null>(() => {
-    if (item) return `${item._objectPath}.crystalName`;
-    return null;
-  }, [item]);
+  // Helper function for object paths
+  const getObjectPath = (field: string) =>
+    item ? `${item._objectPath}.${field}` : null;
 
-  const datasetObjectPath = useMemo<string | null>(() => {
-    if (item) return `${item._objectPath}.dataset`;
-    return null;
-  }, [item]);
-
-  const wavelengthObjectPath = useMemo<string | null>(() => {
-    if (item) return `${item._objectPath}.wavelength`;
-    return null;
-  }, [item]);
-
-  const cellObjectPath = useMemo<string | null>(() => {
-    if (item) return `${item._objectPath}.cell`;
-    return null;
-  }, [item]);
+  // Grid items configuration
+  const gridItems = [
+    { path: getObjectPath("crystalName"), label: "Crystal name" },
+    { path: getObjectPath("dataset"), label: "Dataset name" },
+    { path: getObjectPath("wavelength"), label: "Wavelength" },
+  ];
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
-    if (typeof props.visibility === "function") {
-      return props.visibility();
-    }
-    return props.visibility;
+    return typeof props.visibility === "function"
+      ? props.visibility()
+      : props.visibility;
   }, [props.visibility]);
 
-  const hasValidationError = useMemo(() => {
-    if (!item) return false;
-    const result = getValidationColor(item) === "error.light";
-    return result;
-  }, [getValidationColor, item]);
+  const hasValidationError = useMemo(
+    () => (item ? getValidationColor(item) === "error.light" : false),
+    [getValidationColor, item]
+  );
+
+  if (!inferredVisibility || !fileObjectPath) return null;
 
   return (
-    inferredVisibility &&
-    fileObjectPath && (
-      <CSimpleDataFileElement
-        {...props}
-        hasValidationError={hasValidationError}
-        itemName={fileObjectPath}
-        onChange={async () => {
-          await handleChange();
-        }}
-      >
-        {cellObjectPath && item._value["cell"] && (
+    <CSimpleDataFileElement
+      {...props}
+      hasValidationError={hasValidationError}
+      itemName={fileObjectPath}
+      onChange={handleChange}
+    >
+      {getObjectPath("cell") && item._value["cell"] && (
+        <CCP4i2TaskElement
+          {...props}
+          itemName={getObjectPath("cell")!}
+          qualifiers={{ guiLabel: "Cell" }}
+        />
+      )}
+
+      <Grid2 container rowSpacing={0} sx={{ mt: 2 }}>
+        {gridItems.map(({ path, label }) => (
+          <Grid2 key={label} size={{ xs: 4 }}>
+            <CCP4i2TaskElement
+              {...props}
+              sx={{ my: 0, py: 0, minWidth: "10rem" }}
+              itemName={path!}
+              qualifiers={{
+                ...props.qualifiers,
+                guiLabel: label,
+              }}
+            />
+          </Grid2>
+        ))}
+
+        <Grid2 size={{ xs: 4 }}>
+          <Typography variant="body1">Batches in file</Typography>
+        </Grid2>
+        <Grid2 size={{ xs: 8 }}>
+          <Typography variant="body1">
+            {fileDigest?.batchs && JSON.stringify(fileDigest.batchs)}
+          </Typography>
+        </Grid2>
+
+        <Grid2 size={{ xs: 12 }}>
           <CCP4i2TaskElement
             {...props}
-            itemName={cellObjectPath}
-            qualifiers={{ guiLabel: "Cell" }}
+            sx={{ mt: 1, mb: 0, py: 0, minWidth: "30rem" }}
+            itemName={`${itemName}.excludeSelection`}
+            qualifiers={{
+              ...props.qualifiers,
+              guiLabel: "Batch range(s) to exclude",
+              guiMode: "multiLine",
+            }}
           />
-        )}
-        {true && (
-          <Grid2 container rowSpacing={0} sx={{ mt: 2 }}>
-            <Grid2 size={{ xs: 4 }}>
-              <CCP4i2TaskElement
-                key="crystalName"
-                {...props}
-                sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                itemName={`${crystalNameObjectPath}`}
-                qualifiers={{
-                  ...props.qualifiers,
-                  guiLabel: "Crystal name",
-                }}
-              />
-            </Grid2>
-            <Grid2 size={{ xs: 4 }}>
-              <CCP4i2TaskElement
-                key="datasetName"
-                {...props}
-                sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                itemName={`${datasetObjectPath}`}
-                qualifiers={{
-                  ...props.qualifiers,
-                  guiLabel: "Dataset name",
-                }}
-              />
-            </Grid2>
-            <Grid2 size={{ xs: 4 }}>
-              <CCP4i2TaskElement
-                key="wavelength"
-                {...props}
-                sx={{ my: 0, py: 0, minWidth: "10rem" }}
-                itemName={`${wavelengthObjectPath}`}
-                qualifiers={{
-                  ...props.qualifiers,
-                  guiLabel: "Wavelength",
-                }}
-              />
-            </Grid2>
-            <Grid2 size={{ xs: 4 }}>
-              <Typography variant="body1">Batches in file</Typography>
-            </Grid2>{" "}
-            <Grid2 size={{ xs: 8 }}>
-              <Typography variant="body1">
-                {true &&
-                  fileDigest &&
-                  fileDigest?.batchs &&
-                  JSON.stringify(fileDigest.batchs)}
-              </Typography>
-            </Grid2>
-            <Grid2 size={{ xs: 12 }}>
-              <CCP4i2TaskElement
-                key="selected batch string"
-                {...props}
-                sx={{ mt: 1, mb: 0, py: 0, minWidth: "30rem" }}
-                itemName={`${itemName}.excludeSelection`}
-                qualifiers={{
-                  ...props.qualifiers,
-                  guiLabel: "Batch range(s) to exclude",
-                  guiMode: "multiLine",
-                }}
-              />
-            </Grid2>
-          </Grid2>
-        )}
-      </CSimpleDataFileElement>
-    )
+        </Grid2>
+      </Grid2>
+    </CSimpleDataFileElement>
   );
 };
