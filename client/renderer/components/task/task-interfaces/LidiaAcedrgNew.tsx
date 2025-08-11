@@ -13,7 +13,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { getTaskItem, getFileContent } = useJob(job.id);
   const { value: MOLSMILESORSKETCH } = getTaskItem("MOLSMILESORSKETCH");
   const { value: ATOMMATCHOPTION } = getTaskItem("ATOMMATCHOPTION");
-  const { data: MOLINContent } = getFileContent("MOLIN");
+  const { data: MOLINContent, mutate: mutateMOLINContent } =
+    getFileContent("MOLIN");
   const { data: SMILESFILEContent } = getFileContent("SMILESFILE");
 
   ATOMMATCHOPTION;
@@ -53,6 +54,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 qualifiers={{ guiLabel: "MDL Mol File" }}
                 visibility={() => {
                   return MOLSMILESORSKETCH === "MOL";
+                }}
+                onChange={(value) => {
+                  if (value) {
+                    //mutateMOLINContent();
+                  }
                 }}
               />
             </Grid2>

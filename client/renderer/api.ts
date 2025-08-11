@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import $ from "jquery";
 import { prettifyXml } from "./utils";
-import { File as DjangoFile } from "./types/models";
+import { useRadioGroup } from "@mui/material";
 
 export function fullUrl(endpoint: string): string {
   let api_path = `/api/proxy/${endpoint}`;
@@ -125,6 +125,9 @@ const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
 };
 
 const digest_fetcher = (url: string) => {
+  if (url.includes("/undefined/")) {
+    throw new Error("Invalid URL: " + url);
+  }
   return fetch(url).then((r) => {
     //console.log(r);
     return r.json();
@@ -181,9 +184,13 @@ export function useApi() {
     },
 
     digest: function <T>(endpoint: string) {
-      //console.log(endpoint);
-      const result = useSWR<T>(fullUrl(endpoint), digest_fetcher);
-      //console.log(result.data);
+      const result = useSWR<T>(fullUrl(endpoint), digest_fetcher, {
+        onError: (error) => {
+          console.warn(`Digest error for endpoint "${endpoint}":`, error);
+        },
+        fallbackData: null as T,
+        shouldRetryOnError: false,
+      });
       return result;
     },
 

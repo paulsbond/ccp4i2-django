@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import {
   SetParameterArg,
@@ -18,47 +18,90 @@ import { ErrorInfo } from "./error-info";
 import { CSimpleDataFileElement } from "./csimpledatafile";
 import { useApi } from "../../../api";
 import { CDataFileElement } from "./cdatafile";
+import { mutate } from "swr";
+import { get } from "jquery";
 
 export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
   const api = useApi();
   const { itemName, job } = props;
-  const { getTaskItem, getFileDigest, getValidationColor, setParameter } =
-    useJob(job.id);
+  const {
+    getTaskItem,
+    getFileDigest,
+    useFileDigest,
+    getValidationColor,
+    setParameterNoMutate,
+    setParameter,
+    mutateContainer,
+  } = useJob(job.id);
   const { item } = getTaskItem(itemName);
+  const { value: cell } = getTaskItem(`${itemName}.cell`);
+  const { value: wavelength } = getTaskItem(`${itemName}.wavelength`);
+  const { value: crystalName } = getTaskItem(`${itemName}.crystalName`);
+  const { value: dataset } = getTaskItem(`${itemName}.dataset`);
   const fileObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.file`;
     return null;
   }, [item]);
 
-  const { data: fileDigest } = getFileDigest(`${item._objectPath}.file`);
-  const oldFileDigest = usePrevious<any>(fileDigest);
+  const { data: fileDigest, mutate: mutateDigest } = useFileDigest(
+    fileObjectPath || ""
+  );
+
+  const handleChange = useCallback(async () => {
+    mutateDigest();
+  }, [mutateDigest]);
 
   useAsyncEffect(async () => {
-    if (
-      fileDigest &&
-      oldFileDigest !== undefined &&
-      JSON.stringify(fileDigest) !== JSON.stringify(oldFileDigest) && // Only if change
-      item && //Only if item is known
-      setParameter //Only if setParameter hook in place
-    ) {
-      console.log({ fileDigest, oldFileDigest });
-      //Here if the file Digest has changed
-      if (fileDigest?.digest?.cell) {
-        await setParameter({
-          object_path: `${item._objectPath}.cell`,
-          value: fileDigest.digest.cell,
-        });
-      }
-      if (fileDigest?.digest?.wavelength) {
-        await setParameter({
-          object_path: `${item._objectPath}.wavelength`,
-          value: fileDigest.digest.wavelength,
-        });
-      }
+    if (!item || !setParameterNoMutate || !fileDigest) return;
+    console.log("File digest", fileDigest);
+    //Here if the file Digest has changed
+    const newCell = fileDigest?.cell || null;
+    let parametersUpdated = false;
+    if (newCell && JSON.stringify(newCell) !== JSON.stringify(cell)) {
+      await setParameterNoMutate({
+        object_path: `${item._objectPath}.cell`,
+        value: newCell,
+      });
+      parametersUpdated = true;
     }
-  }, [fileDigest, item, setParameter]);
+    if (fileDigest?.wavelength && fileDigest?.wavelength !== wavelength) {
+      await setParameterNoMutate({
+        object_path: `${item._objectPath}.wavelength`,
+        value: fileDigest.wavelength,
+      });
+      parametersUpdated = true;
+    }
+    if (fileDigest?.crystalName && fileDigest?.crystalName !== crystalName) {
+      await setParameterNoMutate({
+        object_path: `${item._objectPath}.crystalName`,
+        value: fileDigest.crystalName,
+      });
+      parametersUpdated = true;
+    }
+
+    if (fileDigest?.datasetName && fileDigest?.datasetName !== dataset) {
+      await setParameterNoMutate({
+        object_path: `${item._objectPath}.dataset`,
+        value: fileDigest.datasetName,
+      });
+      parametersUpdated = true;
+    }
+
+    //Mutate the file digest to update the UI immediately
+    if (parametersUpdated) mutateContainer();
+  }, [
+    item,
+    fileDigest,
+    setParameterNoMutate,
+    setParameter,
+    cell,
+    wavelength,
+    crystalName,
+    dataset,
+    mutateContainer,
+  ]);
 
   const crystalNameObjectPath = useMemo<string | null>(() => {
     if (item) return `${item._objectPath}.crystalName`;
@@ -101,6 +144,9 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
         {...props}
         hasValidationError={hasValidationError}
         itemName={fileObjectPath}
+        onChange={async () => {
+          await handleChange();
+        }}
       >
         {cellObjectPath && item._value["cell"] && (
           <CCP4i2TaskElement
@@ -154,8 +200,8 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
               <Typography variant="body1">
                 {true &&
                   fileDigest &&
-                  fileDigest?.digest?.batchs &&
-                  JSON.stringify(fileDigest.digest.batchs)}
+                  fileDigest?.batchs &&
+                  JSON.stringify(fileDigest.batchs)}
               </Typography>
             </Grid2>
             <Grid2 size={{ xs: 12 }}>

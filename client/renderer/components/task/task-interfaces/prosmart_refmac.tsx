@@ -30,11 +30,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   //);
 
   //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskItem, getFileDigest, validation, createPeerTask } = useJob(
+  const { getTaskItem, useFileDigest, validation, createPeerTask } = useJob(
     job.id
   );
 
-  const { data: F_SIGFDigest } = getFileDigest(
+  const { data: F_SIGFDigest } = useFileDigest(
     "prosmart_refmac.inputData.F_SIGF"
   );
   const { value: refinementMode } = getTaskItem("REFINEMENT_MODE");
@@ -63,8 +63,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       const asyncFunc = async () => {
         console.log(digest);
         //Here if the file Digest has changed
-        if (digest?.digest?.wavelengths?.at(-1) < 9) {
-          await updateWAVELENGTH(digest.digest.wavelengths.at(-1));
+        if (digest?.wavelengths?.at(-1) < 9) {
+          await updateWAVELENGTH(digest.wavelengths.at(-1));
         }
       };
       asyncFunc();

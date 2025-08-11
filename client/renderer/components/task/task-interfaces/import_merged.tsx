@@ -24,7 +24,7 @@ import { useState } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getFileDigest, getTaskItem, mutateContainer, mutateValidation } =
+  const { useFileDigest, getTaskItem, mutateContainer, mutateValidation } =
     useJob(job.id);
   const [HKLINFile, setHKLINFile] = useState<File | null>(null);
 
@@ -32,7 +32,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   const oldHKLINValue = usePrevious(HKLINValue);
 
-  const { data: HKLINDigest } = getFileDigest(HKLINItem?._objectPath);
+  const { data: HKLINDigest } = useFileDigest(HKLINItem?._objectPath);
 
   const { item: HKLIN_OBSItem } = getTaskItem("HKLIN_OBS");
 

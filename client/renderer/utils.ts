@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import $ from "jquery";
+import useSWR, { mutate, SWRResponse } from "swr";
 
 import { fullUrl, useApi } from "./api";
 import {
@@ -30,6 +31,10 @@ export type SetParameterResponse =
       updated_item?: never;
     };
 
+interface CreateTaskResponse {
+  status: "Success" | "Failed";
+  new_job: Job;
+}
 export interface ValidationError {
   path: string;
   error: {
@@ -80,10 +85,11 @@ export interface JobData {
   ) => Promise<SetParameterResponse | undefined>;
   getTaskItem: (paramName: string) => TaskItem;
   createPeerTask: (taskName: string) => Promise<Job | undefined>;
-  getFileContent: (paramName: string) => Promise<string>;
+  getFileContent: (paramName: string) => SWRResponse<string, Error>;
   getValidationColor: (item: any) => string;
   getErrors: (item: any) => ValidationError[];
-  getFileDigest: (objectPath: string) => Promise<any>;
+  useFileDigest: (objectPath: string) => SWRResponse<any, Error>;
+  getFileDigest: (objectPath: string) => any | null;
   fileItemToParameterArg: (
     value: DjangoFile,
     objectPath: string,
@@ -385,7 +391,7 @@ const createFileReaderPromise = (
 /**
  * Prettifies XML using XSLT transformation with error handling.
  */
-const prettifyXmlSafely = (sourceXml: Document): string => {
+const prettifyXmlSafely = (sourceXml: Document | Element): string => {
   if (!sourceXml) return "";
 
   try {
@@ -394,7 +400,17 @@ const prettifyXmlSafely = (sourceXml: Document): string => {
     // Handle jQuery nodes
     if (!targetNode?.nodeName) {
       try {
-        targetNode = $(sourceXml).get(0) as Element;
+        const node = $(sourceXml).get(0);
+        if (node && node.nodeType === Node.ELEMENT_NODE) {
+          targetNode = node as Element;
+        } else if (node && node.nodeType === Node.DOCUMENT_NODE) {
+          targetNode = node as Document;
+        } else {
+          console.error(
+            "Cannot extract HTML element from jQuery object: unexpected node type"
+          );
+          return "";
+        }
       } catch (error) {
         console.error("Cannot extract HTML element from jQuery object:", error);
         return "";
@@ -743,9 +759,12 @@ export const useJob = (jobId: number | null | undefined): JobData => {
       try {
         console.log(`Creating ${taskName} task...`);
 
-        const result = await api.post(`projects/${job.project}/create_task/`, {
-          task_name: taskName,
-        });
+        const result = await api.post<CreateTaskResponse>(
+          `projects/${job.project}/create_task/`,
+          {
+            task_name: taskName,
+          }
+        );
 
         if (result?.status === "Success") {
           const createdJob: Job = result.new_job;
@@ -763,16 +782,110 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     [job, api, mutateJobs]
   );
 
-  const getFileContent = useMemo(() => {
-    return (paramName: string): Promise<string> => {
-      if (!container?.lookup?.[paramName]) {
-        return Promise.reject(new Error("Parameter not found"));
+  const getFileDigest = useMemo(() => {
+    return (paramName: string): Promise<any | undefined> => {
+      const dbFileId = container?.lookup?.[paramName]?.dbFileId;
+      const url = dbFileId
+        ? `/api/proxy/files/${dbFileId}/download_by_uuid/`
+        : null;
+      if (!url) {
+        console.warn(`Parameter ${paramName} not found in container`);
+        return Promise.resolve(null);
+      }
+      return fetch(url)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .catch((error) => {
+          console.error(`Error fetching file digest for ${paramName}:`, error);
+          return null;
+        });
+    };
+  }, [container]);
+
+  // Custom hook to fetch file content using SWR
+  const useFileContent = (paramName: string): SWRResponse<string, Error> => {
+    // Create a unique key for SWR caching
+    const dbFileId = container?.lookup?.[paramName]?.dbFileId;
+
+    // Return null key when dbFileId is falsey - this prevents SWR from fetching
+    const swrKey = dbFileId ? `files/${dbFileId}/download_by_uuid/` : null;
+
+    const fetcher = async (): Promise<string> => {
+      if (!dbFileId) {
+        throw new Error(
+          `Parameter "${paramName}" not found or has no dbFileId`
+        );
       }
 
-      const djangoFile = valueOfItem(container.lookup[paramName]);
-      return api.fileTextContent(djangoFile);
+      const url = `/api/proxy/${swrKey}`;
+      return fetch(url).then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+      });
     };
-  }, [container, api]);
+
+    return useSWR<string, Error>(swrKey, swrKey ? fetcher : null, {
+      // SWR options
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      errorRetryCount: 3,
+      errorRetryInterval: 1000,
+      // Cache for 5 minutes
+      dedupingInterval: 5 * 60 * 1000,
+      onError: (error) => {
+        console.warn(
+          `Error fetching file content for parameter "${paramName}":`,
+          error
+        );
+        // Clear the cache for this key
+        mutate(swrKey, null, false); // false = don't revalidate
+      },
+    });
+  };
+
+  // Return a function that calls the custom hook
+  const getFileContent = useFileContent;
+
+  // Custom hook to fetch file digest using SWR
+  const useFileDigest = (paramName: string): SWRResponse<any, Error> => {
+    const objectPath = container?.lookup?.[paramName]?._objectPath;
+    // Create a unique key for SWR caching
+    const swrKey = objectPath
+      ? `jobs/${job?.id}/digest?object_path=${objectPath}/`
+      : null;
+    const fetcher = async (): Promise<string> => {
+      if (!swrKey) {
+        throw new Error("Parameter not found");
+      }
+      const url = `/api/proxy/${swrKey}`;
+      return fetch(url).then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      });
+    };
+
+    return useSWR<string, Error>(swrKey, swrKey ? fetcher : null, {
+      // SWR options
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      errorRetryCount: 3,
+      errorRetryInterval: 1000,
+      // Cache for 5 minutes
+      dedupingInterval: 5 * 60 * 1000,
+      onError: () => {
+        // Clear the cache for this key
+        mutate(swrKey, null, false); // false = don't revalidate
+      },
+    });
+  };
 
   const getValidationColor = useMemo(() => {
     return (item: any): string => {
@@ -789,16 +902,6 @@ export const useJob = (jobId: number | null | undefined): JobData => {
       return extractValidationErrors(item, validation);
     };
   }, [validation]);
-
-  const getFileDigest = useMemo(() => {
-    return (objectPath: string): Promise<any> => {
-      if (!job?.id) {
-        return Promise.reject(new Error("No job ID available"));
-      }
-
-      return api.digest<any>(`jobs/${job.id}/digest?object_path=${objectPath}`);
-    };
-  }, [job, api]);
 
   const fileItemToParameterArg = useCallback(
     (
@@ -876,6 +979,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     getFileContent,
     getValidationColor,
     getErrors,
+    useFileDigest,
     getFileDigest,
     fileItemToParameterArg,
   };

@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { setParameter, getTaskItem, getFileDigest } = useJob(job.id);
+  const { getTaskItem } = useJob(job.id);
   const { value: F_SIGFValue } = getTaskItem("F_SIGF");
   const { value: F_OR_IValue, update: updateF_or_I } = getTaskItem("F_OR_I");
   const { value: INPUT_FIXedValue } = getTaskItem("INPUT_FIXED");

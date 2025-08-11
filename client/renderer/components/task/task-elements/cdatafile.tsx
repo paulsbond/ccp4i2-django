@@ -42,6 +42,7 @@ import { FileMenuContext } from "../../../providers/file-context-menu";
 import { ErrorTrigger } from "./error-info";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
+import { mutate } from "swr";
 
 const BORDER_RADIUS_STYLES = {
   none: { borderRadius: 0 },
@@ -189,6 +190,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     getValidationColor,
     fileItemToParameterArg,
     mutateContainer,
+    useFileDigest,
   } = useJob(job.id);
 
   const { item } = getTaskItem(itemName);
@@ -219,8 +221,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
 
   const { data: projects } = api.get<Project[]>("projects");
 
-  const { mutate: mutateDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=${item?._objectPath}`
+  const { mutate: mutateDigest } = useFileDigest(`${item?._objectPath}`);
+
+  const { mutate: mutateContent } = api.digest<any>(
+    `files/${item?.dbFileId}/download_by_uuid/`
   );
 
   // Configuration and options
@@ -348,8 +352,10 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
         alert(`Error: ${error}`);
       } finally {
         setInFlight(false);
-        mutateDigest();
+        //Maybe don't need to mutateDigest since mutating container will do this ?
         mutateContainer();
+        mutateContent();
+        mutateDigest();
       }
     },
     [

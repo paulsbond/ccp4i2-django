@@ -438,7 +438,7 @@ class JobViewSet(ModelViewSet):
             response_dict = digest_param_file(
                 the_job, request.GET.get("object_path")[:-1]
             )
-            return Response({"status": "Success", "digest": response_dict})
+            return Response(response_dict)
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
