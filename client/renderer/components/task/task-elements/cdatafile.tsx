@@ -191,6 +191,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     fileItemToParameterArg,
     mutateContainer,
     useFileDigest,
+    useFileContent,
   } = useJob(job.id);
 
   const { item } = getTaskItem(itemName);
@@ -223,9 +224,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
 
   const { mutate: mutateDigest } = useFileDigest(`${item?._objectPath}`);
 
-  const { mutate: mutateContent } = api.digest<any>(
-    `files/${item?.dbFileId}/download_by_uuid/`
-  );
+  const { mutate: mutateContent } = useFileContent(`${item?._objectPath}`);
 
   // Configuration and options
   const { allowedTypes, acceptedExtensions } = useFileConfiguration(

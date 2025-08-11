@@ -1,4 +1,13 @@
 "use client";
+
+import React, {
+  SyntheticEvent,
+  useCallback,
+  useContext,
+  useEffect,
+  useReducer,
+  useState,
+} from "react";
 import {
   Autocomplete,
   AutocompleteChangeReason,
@@ -11,36 +20,165 @@ import {
   RadioGroup,
   Stack,
   TextField,
-  Typography,
 } from "@mui/material";
 import SimpleDialog from "@mui/material/Dialog";
-import {
-  SyntheticEvent,
-  useCallback,
-  useContext,
-  useEffect,
-  useReducer,
-  useState,
-} from "react";
 import { v4 as uuid4 } from "uuid";
+
 import { CCP4i2Context } from "../../../app-context";
 import { readFilePromise } from "../../../utils";
 
-const signatureMap = {
+// Constants
+const SIGNATURE_MAP: Record<string, string> = {
   KMKM: "Intensity Friedel pairs",
   GLGL: "Structure factor Friedel pairs",
   JQ: "Intensities",
   FQ: "Structure factors",
-};
+} as const;
+
+const GENERIC_SIGNATURES = ["KMKM", "GLGL", "JQ", "FQ"] as const;
+
+// Types
+interface ColumnOptions {
+  [signature: string]: string[];
+}
+
+interface ColumnNames {
+  [columnLabel: string]: string;
+}
+
+interface ColumnCounters {
+  [columnType: string]: number;
+}
+
+interface ValuesState {
+  [signature: string]: string;
+}
+
+interface ValuesAction {
+  type: "SET_VALUE";
+  signature: string;
+  value: string;
+}
+
+interface ItemQualifiers {
+  correctColumns?: string[];
+}
+
+interface ParseMtzItem {
+  _class?: string;
+  _objectPath?: string;
+  _qualifiers?: ItemQualifiers;
+}
 
 interface ParseMtzProps {
   file: File;
-  item: any;
+  item: ParseMtzItem;
   setFiles: (files: FileList | null) => void;
   handleAccept?: (signature: string) => void;
   handleCancel?: () => void;
 }
 
+// Reducer
+const valuesReducer = (
+  state: ValuesState,
+  action: ValuesAction
+): ValuesState => {
+  switch (action.type) {
+    case "SET_VALUE":
+      return {
+        ...state,
+        [action.signature]: action.value,
+      };
+    default:
+      return state;
+  }
+};
+
+// Helper functions
+const createSignatureOptions = (
+  signature: string,
+  sortedColumnNames: Record<string, string[]>
+): string[] => {
+  const signatureOptions: string[][] = [];
+  let optionIndex = 0;
+
+  const columnCounters: ColumnCounters = {};
+  Object.keys(sortedColumnNames).forEach((key) => {
+    columnCounters[key] = 0;
+  });
+
+  let shouldContinue = true;
+
+  while (shouldContinue) {
+    signatureOptions[optionIndex] = [];
+
+    for (let i = 0; i < signature.length; i++) {
+      const columnType = signature.charAt(i);
+
+      if (!Object.keys(sortedColumnNames).includes(columnType)) {
+        shouldContinue = false;
+        break;
+      }
+
+      if (columnCounters[columnType] >= sortedColumnNames[columnType].length) {
+        shouldContinue = false;
+        break;
+      }
+
+      signatureOptions[optionIndex].push(
+        sortedColumnNames[columnType][columnCounters[columnType]]
+      );
+      columnCounters[columnType] += 1;
+    }
+
+    optionIndex += 1;
+  }
+
+  return signatureOptions
+    .filter((option) => option.length > 0)
+    .map((option) => `/*/*/[${option.join(",")}]`);
+};
+
+const buildColumnOptions = (
+  allColumnNames: ColumnNames,
+  item: ParseMtzItem
+): ColumnOptions => {
+  const sortedColumnNames: Record<string, string[]> = {};
+
+  // Group columns by type
+  Object.entries(allColumnNames).forEach(([label, columnType]) => {
+    if (!sortedColumnNames[columnType]) {
+      sortedColumnNames[columnType] = [];
+    }
+    sortedColumnNames[columnType].push(label);
+  });
+
+  // Determine signatures to process
+  const signatures =
+    item._class === "CGenericReflDataFile"
+      ? [...GENERIC_SIGNATURES]
+      : [...(item._qualifiers?.correctColumns || [])];
+
+  const options: ColumnOptions = {};
+
+  signatures.forEach((signature) => {
+    const signatureOptions = createSignatureOptions(
+      signature,
+      sortedColumnNames
+    );
+    if (signatureOptions.length > 0) {
+      options[signature] = signatureOptions;
+    }
+  });
+
+  return options;
+};
+
+const getSignatureLabel = (signature: string): string => {
+  return SIGNATURE_MAP[signature] || signature;
+};
+
+// Component
 export const ParseMtz: React.FC<ParseMtzProps> = ({
   file,
   setFiles,
@@ -48,208 +186,169 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   handleAccept,
   handleCancel,
 }) => {
-  const [columnOptions, setColumnOptions] = useState<{
-    [signature: string]: [keySelectors: string];
-  }>({});
-  const [allColumnNames, setAllColumnNames] = useState<{ [key: string]: any }>(
-    []
-  );
+  // State
+  const [columnOptions, setColumnOptions] = useState<ColumnOptions>({});
+  const [allColumnNames, setAllColumnNames] = useState<ColumnNames>({});
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [values, dispatch] = useReducer(valuesReducer, {});
 
-  const handleChangeGroup = useCallback(
+  // Context
+  const { cootModule } = useContext(CCP4i2Context);
+
+  // Handlers
+  const handleGroupChange = useCallback(
     (event: SyntheticEvent<Element, Event>, newValue: string | null) => {
       setSelectedGroup(newValue);
     },
     []
   );
 
-  const { cootModule } = useContext(CCP4i2Context);
+  const handleColumnChange = useCallback(
+    (signature: string) =>
+      (
+        event: SyntheticEvent<Element, Event>,
+        value: string | null,
+        reason: AutocompleteChangeReason
+      ) => {
+        dispatch({
+          type: "SET_VALUE",
+          signature,
+          value: value || "",
+        });
+      },
+    []
+  );
 
-  const valuesReducer = (
-    state: { [key: string]: string },
-    action: { type: string; signature: string; value: string }
-  ) => {
-    switch (action.type) {
-      case "SET_VALUE":
-        return { ...state, [action.signature]: action.value };
-      default:
-        return state;
+  const handleAcceptClick = useCallback(() => {
+    if (selectedGroup && handleAccept) {
+      handleAccept(values[selectedGroup]);
     }
-  };
+  }, [values, handleAccept, selectedGroup]);
 
-  const [values, dispatch] = useReducer(valuesReducer, {});
+  const handleDialogClose = useCallback(() => {
+    setFiles(null);
+  }, [setFiles]);
 
+  const handleCancelClick = useCallback(() => {
+    if (handleCancel) {
+      handleCancel();
+    }
+  }, [handleCancel]);
+
+  // Effects
   useEffect(() => {
-    const asyncFunc = async () => {
-      if (file && cootModule) {
+    const parseMtzFile = async (): Promise<void> => {
+      if (!file || !cootModule) return;
+
+      try {
         const fileContent = await readFilePromise(file, "ArrayBuffer");
-        if (fileContent) {
-          const fileName = `File_${uuid4()}`;
-          const byteArray = new Uint8Array(fileContent as ArrayBuffer);
-          cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
-          const header_info = cootModule.get_mtz_columns(fileName);
-          cootModule.FS_unlink(`./${fileName}`);
-          const newColumns: { [colType: string]: string } = {};
-          for (let ih = 0; ih < header_info.size(); ih += 2) {
-            newColumns[header_info.get(ih + 1)] = header_info.get(ih);
-          }
-          if (Object.keys(newColumns).length === 0) {
-            console.error("Error parsing MTZ file");
-            if (handleCancel) handleCancel();
-          }
-          setAllColumnNames(newColumns);
+        if (!fileContent) return;
+
+        const fileName = `File_${uuid4()}`;
+        const byteArray = new Uint8Array(fileContent as ArrayBuffer);
+
+        cootModule.FS_createDataFile(".", fileName, byteArray, true, true);
+        const headerInfo = cootModule.get_mtz_columns(fileName);
+        cootModule.FS_unlink(`./${fileName}`);
+
+        const newColumns: ColumnNames = {};
+        for (let i = 0; i < headerInfo.size(); i += 2) {
+          newColumns[headerInfo.get(i + 1)] = headerInfo.get(i);
         }
+
+        if (Object.keys(newColumns).length === 0) {
+          console.error("Error parsing MTZ file");
+          handleCancel?.();
+          return;
+        }
+
+        setAllColumnNames(newColumns);
+      } catch (error) {
+        console.error("Failed to parse MTZ file:", error);
+        handleCancel?.();
       }
     };
-    asyncFunc();
-    return () => {};
-  }, [file, cootModule]);
+
+    parseMtzFile();
+  }, [file, cootModule, handleCancel]);
 
   useEffect(() => {
-    if (!item) return;
-    const sortedColumnNames: any = {};
-    const options: any = {};
-    Object.keys(allColumnNames).forEach((label) => {
-      const columnType: string = allColumnNames[label];
-      if (!Object.keys(sortedColumnNames).includes(columnType))
-        sortedColumnNames[columnType] = [];
-      sortedColumnNames[columnType].push(label);
-    });
-    const signatures =
-      item?._class === "CGenericReflDataFile"
-        ? ["KMKM", "GLGL", "JQ", "FQ"]
-        : [...item._qualifiers.correctColumns];
-    signatures.forEach((signature) => {
-      const signatureOptions: string[][] = [];
-      let iOption = 0;
-      const columnCounters: any = {};
-      Object.keys(sortedColumnNames).forEach(
-        (key) => (columnCounters[key] = 0)
-      );
-      let doContinue = true;
-      while (doContinue) {
-        signatureOptions[iOption] = [];
-        for (let i = 0; i < signature.length; i++) {
-          const columnType = signature.charAt(i);
-          if (!Object.keys(sortedColumnNames).includes(columnType)) {
-            doContinue = false;
-            break;
-          }
-          if (
-            columnCounters[columnType] >= sortedColumnNames[columnType].length
-          ) {
-            doContinue = false;
-            break;
-          }
-          signatureOptions[iOption].push(
-            sortedColumnNames[columnType][columnCounters[columnType]]
-          );
-          columnCounters[columnType] += 1;
-        }
-        iOption += 1;
-      }
-      if (signatureOptions.length > 0) {
-        options[signature] = signatureOptions
-          .filter((signatureOption) => signatureOption.length > 0)
-          .map((signatureOption) => `/*/*/[${signatureOption.join(",")}]`);
-      }
-    });
+    if (!item || Object.keys(allColumnNames).length === 0) return;
+
+    const options = buildColumnOptions(allColumnNames, item);
     setColumnOptions(options);
+
     if (Object.keys(options).length > 0) {
-      const initialValues: { [key: string]: string } = {};
-      Object.keys(options).forEach((signature) => {
-        initialValues[signature] = options[signature][0];
+      // Set initial values
+      const initialValues: ValuesState = {};
+      Object.entries(options).forEach(([signature, signatureOptions]) => {
+        initialValues[signature] = signatureOptions[0];
       });
+
       Object.entries(initialValues).forEach(([signature, value]) => {
         dispatch({ type: "SET_VALUE", signature, value });
       });
+
       setSelectedGroup(Object.keys(options)[0]);
     }
   }, [allColumnNames, item]);
 
-  const onAcceptClicked = useCallback(() => {
-    if (selectedGroup) {
-      //alert(JSON.stringify(values[selectedGroup]));
-      if (handleAccept) handleAccept(values[selectedGroup]);
-    }
-  }, [values, handleAccept, selectedGroup]);
+  // Computed values
+  const isDialogOpen = Boolean(
+    file && allColumnNames && Object.keys(allColumnNames).length > 0
+  );
+
+  const isAcceptDisabled = !selectedGroup;
 
   return (
-    <>
-      <SimpleDialog
-        open={
-          file != null &&
-          allColumnNames &&
-          Object.keys(allColumnNames).length > 0
-        }
-        onClose={() => {
-          setFiles(null);
-        }}
-        slotProps={{
-          paper: {
-            sx: { width: "80%", maxWidth: "none" },
-          },
-        }}
-      >
-        <DialogTitle>{item?._objectPath}</DialogTitle>
-        <DialogContent>
-          <RadioGroup value={selectedGroup} onChange={handleChangeGroup}>
-            {Object.keys(columnOptions).map(
-              (signature: string, index: number) =>
-                columnOptions[signature].length > 0 && (
-                  <Stack key={signature} direction="row">
-                    <FormControlLabel
-                      sx={{ minWidth: "20rem" }}
-                      key={index}
-                      value={signature}
-                      control={<Radio size="small" />}
-                      label={
-                        Object.keys(signatureMap).includes(signature)
-                          ? //@ts-ignore
-                            signatureMap[signature]
-                          : signature
-                      }
-                    />
-                    <Autocomplete
-                      options={columnOptions[signature]}
-                      value={values[signature] || ""}
-                      onChange={(
-                        event: SyntheticEvent<Element, Event>,
-                        value: any | null,
-                        reason: AutocompleteChangeReason
-                      ) => {
-                        dispatch({
-                          type: "SET_VALUE",
-                          signature,
-                          value: value || "",
-                        });
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          sx={{ my: 2, minWidth: "20rem" }}
-                          {...params}
-                          label="Columns"
-                        />
-                      )}
-                    />
-                  </Stack>
-                )
-            )}
-          </RadioGroup>
-        </DialogContent>
-        <DialogActions>
-          <Button disabled={!Boolean(selectedGroup)} onClick={onAcceptClicked}>
-            OK
-          </Button>
-          <Button
-            onClick={(ev) => {
-              if (handleCancel) handleCancel();
-            }}
-          >
-            Cancel
-          </Button>
-        </DialogActions>
-      </SimpleDialog>
-    </>
+    <SimpleDialog
+      open={isDialogOpen}
+      onClose={handleDialogClose}
+      slotProps={{
+        paper: {
+          sx: { width: "80%", maxWidth: "none" },
+        },
+      }}
+    >
+      <DialogTitle>{item._objectPath}</DialogTitle>
+
+      <DialogContent>
+        <RadioGroup value={selectedGroup} onChange={handleGroupChange}>
+          {Object.entries(columnOptions).map(
+            ([signature, options]) =>
+              options.length > 0 && (
+                <Stack key={signature} direction="row" spacing={2}>
+                  <FormControlLabel
+                    sx={{ minWidth: "20rem" }}
+                    value={signature}
+                    control={<Radio size="small" />}
+                    label={getSignatureLabel(signature)}
+                  />
+
+                  <Autocomplete
+                    options={options}
+                    value={values[signature] || ""}
+                    onChange={handleColumnChange(signature)}
+                    renderInput={(params) => (
+                      <TextField
+                        sx={{ my: 2, minWidth: "20rem" }}
+                        {...params}
+                        label="Columns"
+                      />
+                    )}
+                  />
+                </Stack>
+              )
+          )}
+        </RadioGroup>
+      </DialogContent>
+
+      <DialogActions>
+        <Button disabled={isAcceptDisabled} onClick={handleAcceptClick}>
+          OK
+        </Button>
+        <Button onClick={handleCancelClick}>Cancel</Button>
+      </DialogActions>
+    </SimpleDialog>
   );
 };

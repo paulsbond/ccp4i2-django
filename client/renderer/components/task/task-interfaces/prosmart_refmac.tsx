@@ -24,12 +24,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     extraDialogActions = [],
   } = useContext(RunCheckContext);
 
-  //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
-  //const { data: F_SIGFDigest } = api.digest<any>(
-  //  `jobs/${job.id}/digest?object_path=prosmart_refmac.inputData.F_SIGF`
-  //);
-
-  //This magic means that the following variables will be kept up to date with the values of the associated parameters
   const { getTaskItem, useFileDigest, validation, createPeerTask } = useJob(
     job.id
   );

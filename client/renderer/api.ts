@@ -117,7 +117,9 @@ const buildLookup = (container: any, lookup_in?: any): any => {
 };
 
 const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
-  if (!endpointFetch.id) return Promise.reject();
+  if (!endpointFetch.id || !endpointFetch.type) {
+    throw new Error("Invalid endpointFetch: and id are required");
+  }
   const url = fullUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
@@ -209,25 +211,6 @@ export function useApi() {
         const errorText = await response.text(); // Or `res.json()` if the response is JSON
         throw new Error(`Failed to fetch: ${response.status} - ${errorText}`);
       }
-      return response.json() as Promise<T>;
-    },
-
-    postNoSlash: async function <T>(
-      endpoint: string,
-      body: any = {}
-    ): Promise<T> {
-      const headers: HeadersInit = { Accept: "application/json" };
-      if (body instanceof FormData) {
-        //headers["Content-Type"] = "multipart/form-data";
-      } else {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify(body);
-      }
-      const response = await fetch(noSlashUrl(endpoint), {
-        method: "POST",
-        headers: headers,
-        body: body,
-      });
       return response.json() as Promise<T>;
     },
 

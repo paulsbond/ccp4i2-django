@@ -18,13 +18,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { value: ID_RMSValue } = getTaskItem("ID_RMS");
   const { value: SGALT_SELECTValue } = getTaskItem("SGALT_SELECT");
 
-  //These here to show how the Next useSWR aproach can furnish up to date digests of nput files
-  //const { data: HKLINDigest } = api.digest<any>(
-  //  `jobs/${job.id}/digest?object_path=servalcat_pipe.inputData.HKLIN`
-  //);
-
-  //This magic means that the following variables will be kept up to date with the values of the associated parameters
-
   return (
     <CCP4i2Tabs {...props}>
       <CCP4i2Tab label="Main inputs">

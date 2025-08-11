@@ -24,13 +24,13 @@ def using_django_pm(func):
     4. Executes the decorated function.
     5. If an exception occurs, logs the exception and prints the traceback.
     6. Restores the original CCP4ProjectsManager instance.
-    7. Logs a warning message after the function is called.
+    7. Logs a debug message after the function is called.
     """
 
     def wrapper(*args, **kwargs):
         logger.debug("Something is happening before the function is called.")
         oldPM = CCP4ProjectsManager.CProjectsManager.insts
-        # result = None
+        result = None  # Initialize result before try block
         try:
             CCP4ProjectsManager.CProjectsManager.insts = CCP4i2DjangoProjectsManager()
             result = func(*args, **kwargs)
@@ -43,6 +43,6 @@ def using_django_pm(func):
             if oldPM is not None:
                 CCP4ProjectsManager.CProjectsManager.insts = oldPM
             logger.debug("Something is happening after the function is called.")
-        return result
+        return result if result is not None else ""
 
     return wrapper

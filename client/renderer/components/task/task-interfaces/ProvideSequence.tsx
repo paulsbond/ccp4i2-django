@@ -35,10 +35,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         `jobs/${job.id}/digest?object_path=ProvideSequence.inputData.SEQIN`
       )
     ).then((response) => response.json());
-    const newSequence = seqinDigest?.digest?.sequence || "";
+    const newSequence = seqinDigest?.sequence || "";
     if (job?.status == 1 && newSequence !== SEQUENCETEXT) {
       await setSEQUENCETEXT(
-        `>${seqinDigest?.digest?.identifier}\n${seqinDigest?.digest?.sequence}`.replace(
+        `>${seqinDigest?.identifier}\n${seqinDigest?.sequence}`.replace(
           "*",
           ""
         ) || ""

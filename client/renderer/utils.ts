@@ -1,4 +1,11 @@
-import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import $ from "jquery";
 import useSWR, { mutate, SWRResponse } from "swr";
 
@@ -85,7 +92,7 @@ export interface JobData {
   ) => Promise<SetParameterResponse | undefined>;
   getTaskItem: (paramName: string) => TaskItem;
   createPeerTask: (taskName: string) => Promise<Job | undefined>;
-  getFileContent: (paramName: string) => SWRResponse<string, Error>;
+  useFileContent: (paramName: string) => SWRResponse<string, Error>;
   getValidationColor: (item: any) => string;
   getErrors: (item: any) => ValidationError[];
   useFileDigest: (objectPath: string) => SWRResponse<any, Error>;
@@ -591,9 +598,77 @@ export const useProject = (projectId: number): ProjectData => {
   };
 };
 
-/**
- * Custom hook to manage job-related data and actions.
- */
+// ============================================================================
+// Parameter Setting Queue
+// ============================================================================
+
+interface QueuedParameterOperation {
+  id: string;
+  operation: () => Promise<SetParameterResponse | undefined>;
+  resolve: (value: SetParameterResponse | undefined) => void;
+  reject: (error: any) => void;
+}
+
+class ParameterQueue {
+  private queue: QueuedParameterOperation[] = [];
+  private isProcessing = false;
+
+  async enqueue(
+    operation: () => Promise<SetParameterResponse | undefined>
+  ): Promise<SetParameterResponse | undefined> {
+    return new Promise((resolve, reject) => {
+      const queueItem: QueuedParameterOperation = {
+        id: `param_${Date.now()}_${Math.random()}`,
+        operation,
+        resolve,
+        reject,
+      };
+
+      this.queue.push(queueItem);
+      this.processQueue();
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
+    }
+
+    this.isProcessing = true;
+
+    while (this.queue.length > 0) {
+      const item = this.queue.shift();
+      if (!item) break;
+
+      try {
+        console.log(`Processing parameter operation ${item.id}`);
+        const result = await item.operation();
+        item.resolve(result);
+      } catch (error) {
+        console.error(`Error in parameter operation ${item.id}:`, error);
+        item.reject(error);
+      }
+    }
+
+    this.isProcessing = false;
+  }
+
+  getQueueLength(): number {
+    return this.queue.length;
+  }
+
+  isQueueProcessing(): boolean {
+    return this.isProcessing;
+  }
+}
+
+// Global parameter queue instance
+const parameterQueue = new ParameterQueue();
+
+// ============================================================================
+// Modified useJob Hook
+// ============================================================================
+
 export const useJob = (jobId: number | null | undefined): JobData => {
   const api = useApi();
 
@@ -654,25 +729,33 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         return undefined;
       }
 
-      try {
-        const result = await api.post<SetParameterResponse>(
-          `jobs/${job.id}/set_parameter`,
-          setParameterArg
-        );
+      // Enqueue the operation to ensure sequential execution
+      return parameterQueue.enqueue(async () => {
+        try {
+          console.log(
+            "Executing setParameter for:",
+            setParameterArg.object_path
+          );
 
-        // Update all related data
-        await Promise.all([
-          mutateContainer(),
-          mutateParams_xml(),
-          mutateValidation(),
-        ]);
+          const result = await api.post<SetParameterResponse>(
+            `jobs/${job.id}/set_parameter`,
+            setParameterArg
+          );
 
-        console.log("Parameter set successfully:", result);
-        return result;
-      } catch (error) {
-        console.error("Error setting parameter:", error);
-        throw error;
-      }
+          // Update all related data
+          await Promise.all([
+            mutateContainer(),
+            mutateParams_xml(),
+            mutateValidation(),
+          ]);
+
+          console.log("Parameter set successfully:", result);
+          return result;
+        } catch (error) {
+          console.error("Error setting parameter:", error);
+          throw error;
+        }
+      });
     },
     [job, mutateContainer, mutateValidation, mutateParams_xml, api]
   );
@@ -688,20 +771,28 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         return undefined;
       }
 
-      try {
-        const result = await api.post<SetParameterResponse>(
-          `jobs/${job.id}/set_parameter`,
-          setParameterArg
-        );
+      // Enqueue the operation to ensure sequential execution
+      return parameterQueue.enqueue(async () => {
+        try {
+          console.log(
+            "Executing setParameterNoMutate for:",
+            setParameterArg.object_path
+          );
 
-        // Update only validation data
-        await Promise.all([mutateParams_xml(), mutateValidation()]);
+          const result = await api.post<SetParameterResponse>(
+            `jobs/${job.id}/set_parameter`,
+            setParameterArg
+          );
 
-        return result;
-      } catch (error) {
-        console.error("Error setting parameter (no mutate):", error);
-        throw error;
-      }
+          // Update only validation data
+          //await Promise.all([mutateParams_xml(), mutateValidation()]);
+
+          return result;
+        } catch (error) {
+          console.error("Error setting parameter (no mutate):", error);
+          throw error;
+        }
+      });
     },
     [job, mutateParams_xml, mutateValidation, api]
   );
@@ -723,22 +814,14 @@ export const useJob = (jobId: number | null | undefined): JobData => {
           return false;
         }
 
+        // Use the queued setParameter instead of direct fetch
         try {
-          const response = await fetch(
-            fullUrl(`jobs/${job.id}/set_parameter`),
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                object_path: item._objectPath,
-                value: newValue,
-              }),
-            }
-          );
+          const result = await setParameter({
+            object_path: item._objectPath,
+            value: newValue,
+          });
 
-          return response;
+          return result?.status === "Success" ? true : false;
         } catch (error) {
           console.error("Error updating task item:", error);
           return false;
@@ -747,7 +830,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
 
       return { item, value, update };
     };
-  }, [container, job]);
+  }, [container, job, setParameter]);
 
   const createPeerTask = useCallback(
     async (taskName: string): Promise<Job | undefined> => {
@@ -848,9 +931,6 @@ export const useJob = (jobId: number | null | undefined): JobData => {
       },
     });
   };
-
-  // Return a function that calls the custom hook
-  const getFileContent = useFileContent;
 
   // Custom hook to fetch file digest using SWR
   const useFileDigest = (paramName: string): SWRResponse<any, Error> => {
@@ -976,11 +1056,34 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     setParameterNoMutate,
     getTaskItem,
     createPeerTask,
-    getFileContent,
+    useFileContent,
     getValidationColor,
     getErrors,
     useFileDigest,
     getFileDigest,
     fileItemToParameterArg,
   };
+};
+
+// ============================================================================
+// Optional: Queue Status Hooks
+// ============================================================================
+
+/**
+ * Hook to monitor parameter queue status
+ */
+export const useParameterQueueStatus = () => {
+  const [queueLength, setQueueLength] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQueueLength(parameterQueue.getQueueLength());
+      setIsProcessing(parameterQueue.isQueueProcessing());
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return { queueLength, isProcessing };
 };

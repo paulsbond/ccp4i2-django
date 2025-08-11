@@ -40,9 +40,9 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   const { value: wavelength } = getTaskItem(`${itemName}.wavelength`);
   const { value: crystalName } = getTaskItem(`${itemName}.crystalName`);
   const { value: dataset } = getTaskItem(`${itemName}.dataset`);
+
   const fileObjectPath = useMemo<string | null>(() => {
-    if (item) return `${item._objectPath}.file`;
-    return null;
+    return item?._objectPath ? `${item._objectPath}.file` : null;
   }, [item]);
 
   const { data: fileDigest, mutate: mutateDigest } = useFileDigest(
@@ -91,6 +91,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
 
     //Mutate the file digest to update the UI immediately
     if (parametersUpdated) mutateContainer();
+    else console.log("No parameters updated");
   }, [
     item,
     fileDigest,

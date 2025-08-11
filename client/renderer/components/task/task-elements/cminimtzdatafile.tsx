@@ -13,7 +13,7 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { job, itemName } = props;
   const api = useApi();
-  const { getTaskItem } = useJob(job.id);
+  const { getTaskItem, useFileDigest } = useJob(job.id);
   const { item } = getTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
@@ -39,8 +39,8 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
     `projects/${job.project}/files`
   );
 
-  const { data: fileDigest, mutate: mutateDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=${item._objectPath}`
+  const { data: fileDigest, mutate: mutateDigest } = useFileDigest(
+    item?._objectPath || ""
   );
 
   const infoContent = useMemo(

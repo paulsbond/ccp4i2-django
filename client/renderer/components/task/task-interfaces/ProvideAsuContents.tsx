@@ -22,11 +22,11 @@ import useSWR from "swr";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskItem, mutateContainer } = useJob(job.id);
+  const { getTaskItem, mutateContainer, useFileDigest } = useJob(job.id);
   const { update: setAsuContent } = getTaskItem("ASU_CONTENT");
 
-  const { data: HKLINDigest } = api.digest<any>(
-    `jobs/${job.id}/digest?object_path=ProvideAsuContents.inputData.HKLIN`
+  const { data: HKLINDigest } = useFileDigest(
+    `ProvideAsuContents.inputData.HKLIN`
   );
   const oldHKLINDigest = usePrevious(HKLINDigest?.digest);
 
