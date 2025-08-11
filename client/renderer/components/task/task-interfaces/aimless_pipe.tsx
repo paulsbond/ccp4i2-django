@@ -1,144 +1,199 @@
 import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
-import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useMemo } from "react";
 import { RunCheckContext } from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
-  const api = useApi();
   const { job } = props;
-
-  //This magic means that the following variables will be kept up to date with the values of the associated parameters
-  const { getTaskItem } = useJob(job.id);
-
-  const { value: chooseModeValue } = getTaskItem("CHOOSE_MODE");
-  const { value: modeValue } = getTaskItem("MODE");
-  const { value: HKLIN_REF } = getTaskItem("HKLIN_REF");
-  const { value: aimlessRefValue } = getTaskItem("REFERENCE_FOR_AIMLESS");
-  const { value: reference_datasetValue } = getTaskItem("REFERENCE_DATASET");
-
-  //1. Retrieve the jobs validation: this will be kept up to date automatically as parameters
-  //change
-  const { validation } = useJob(job.id);
-
-  // 2. Retrieve the function for setting a processed Error Report
-
+  const { getTaskItem, validation } = useJob(job.id);
   const { processedErrors, setProcessedErrors } = useContext(RunCheckContext);
 
-  // 3. Provide a useEffect which will filter out the errors related to the cell parameters
-  // of the aimless_pipe task, and set the processedErrors in the appropriate context
-  // layer, so that they can be used in the run check dialog
+  // Extract task values
+  const taskValues = {
+    chooseMode: getTaskItem("CHOOSE_MODE").value,
+    mode: getTaskItem("MODE").value,
+    hklinRef: getTaskItem("HKLIN_REF").value,
+    aimlessRef: getTaskItem("REFERENCE_FOR_AIMLESS").value,
+    referenceDataset: getTaskItem("REFERENCE_DATASET").value,
+  };
 
-  useEffect(() => {
-    if (validation) {
-      const newProcessedErrors = Object.keys(validation)
-        .filter(
-          (key) => !key.startsWith("aimless_pipe.controlParameters.CELL.")
-        )
-        .reduce((acc, key) => {
-          acc[key] = validation[key];
-          return acc;
-        }, {} as any);
-      if (
-        modeValue === "MATCH" &&
-        aimlessRefValue &&
-        reference_datasetValue === "HKL" &&
-        !HKLIN_REF.dbFileId
-      ) {
-        newProcessedErrors["aimless_pipe.inputData.HKLIN_REF"] = {
-          messages: ["HKLIN_REF must be set when being used for match"],
-          maxSeverity: 2, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
-          // maxSeverity of 3 causes confirm dialog to show, but allows execution
-        };
-      }
-      // Important: only update if processedErrors have changed
-      if (
-        JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
-      ) {
-        setProcessedErrors(newProcessedErrors);
-      }
+  // Process validation errors
+  const processedValidationErrors = useMemo(() => {
+    if (!validation) return null;
+
+    const filtered = Object.keys(validation)
+      .filter((key) => !key.startsWith("aimless_pipe.controlParameters.CELL."))
+      .reduce((acc, key) => ({ ...acc, [key]: validation[key] }), {});
+
+    // Add custom validation for HKLIN_REF
+    if (
+      taskValues.mode === "MATCH" &&
+      taskValues.aimlessRef &&
+      taskValues.referenceDataset === "HKL" &&
+      !taskValues.hklinRef.dbFileId
+    ) {
+      filtered["aimless_pipe.inputData.HKLIN_REF"] = {
+        messages: ["HKLIN_REF must be set when being used for match"],
+        maxSeverity: 2,
+      };
     }
-  }, [validation, processedErrors, setProcessedErrors]);
 
-  //This is a really important cleanup function to avoid memory leaks
-  //It ensures that processedErrors are cleared when the component unmounts
+    return filtered;
+  }, [
+    validation,
+    taskValues.mode,
+    taskValues.aimlessRef,
+    taskValues.referenceDataset,
+    taskValues.hklinRef,
+  ]);
+
+  // Update processed errors only when they change
   useEffect(() => {
-    setProcessedErrors(null);
-  }, [setProcessedErrors]);
+    if (
+      JSON.stringify(processedValidationErrors) !==
+      JSON.stringify(processedErrors)
+    ) {
+      setProcessedErrors(processedValidationErrors);
+    }
+  }, [processedValidationErrors, processedErrors, setProcessedErrors]);
+
+  // Cleanup on unmount
+  useEffect(() => () => setProcessedErrors(null), [setProcessedErrors]);
+
+  // Visibility conditions
+  const isChooseMode = () => taskValues.mode === "CHOOSE";
+  const isMatchMode = () => taskValues.mode === "MATCH";
+  const isChooseSolution = () =>
+    isChooseMode() && taskValues.chooseMode === "SOLUTION_NO";
+  const isChooseSpacegroup = () =>
+    isChooseMode() &&
+    ["SPACEGROUP", "REINDEX_SPACE"].includes(taskValues.chooseMode);
+  const isReindexSpace = () =>
+    isChooseMode() && taskValues.chooseMode === "REINDEX_SPACE";
+  const isChooseLauegroup = () =>
+    isChooseMode() && taskValues.chooseMode === "LAUEGROUP";
+  const hasAimlessRef = () => isMatchMode() && taskValues.aimlessRef;
+  const isHklReference = () =>
+    hasAimlessRef() && taskValues.referenceDataset === "HKL";
+  const isXyzReference = () =>
+    hasAimlessRef() && taskValues.referenceDataset === "XYZ";
+
+  // Component configurations
+  const fileInputs = [
+    { key: "UNMERGEDFILES", label: "Unmerged files" },
+    { key: "FREERFLAG", label: "Free R set to use/extend" },
+    {
+      key: "HKLIN_IS_SCALED",
+      label: "Analyse data without determining scales",
+    },
+  ];
+
+  const parameters = [
+    { key: "AUTOCUTOFF", label: "Apply auto. data cutoff" },
+    { key: "RESOLUTION_RANGE", label: "Resolution" },
+    { key: "OVERRIDE_CELL_DIFFERENCE", label: "Override cell difference" },
+  ];
+
+  const choiceOptions = [
+    {
+      key: "CHOOSE_MODE",
+      label: "Symmetry choice mode",
+      visible: isChooseMode,
+    },
+    {
+      key: "CHOOSE_SOLUTION_NO",
+      label: "Solution no. to choose",
+      visible: isChooseSolution,
+    },
+    {
+      key: "CHOOSE_SPACEGROUP",
+      label: "Spacegroup to choose",
+      visible: isChooseSpacegroup,
+    },
+    {
+      key: "REINDEX_OPERATOR",
+      label: "Reindexing operator",
+      visible: isReindexSpace,
+    },
+    {
+      key: "CHOOSE_LAUEGROUP",
+      label: "Lauegroup to choose",
+      visible: isChooseLauegroup,
+    },
+  ];
+
+  const referenceOptions = [
+    { key: "REFERENCE_FOR_AIMLESS", label: "Reference", visible: isMatchMode },
+    {
+      key: "REFERENCE_DATASET",
+      label: "Reference type",
+      visible: hasAimlessRef,
+    },
+    {
+      key: "HKLIN_REF",
+      label: "Reference reflections",
+      visible: isHklReference,
+    },
+    {
+      key: "XYZIN_REF",
+      label: "Reference coordinates",
+      visible: isXyzReference,
+    },
+  ];
+
+  const renderElements = (elements: typeof fileInputs) =>
+    elements.map(({ key, label }) => (
+      <CCP4i2TaskElement
+        {...props}
+        key={key}
+        itemName={key}
+        qualifiers={{ guiLabel: label }}
+      />
+    ));
+
+  const renderConditionalElements = (elements: typeof choiceOptions) =>
+    elements.map(({ key, label, visible }) => (
+      <CCP4i2TaskElement
+        {...props}
+        key={key}
+        itemName={key}
+        qualifiers={{ guiLabel: label }}
+        visibility={visible}
+      />
+    ));
 
   return (
     <CCP4i2Tabs {...props}>
       <CCP4i2Tab label="Main inputs" key="1">
         <CCP4i2ContainerElement
+          {...props}
           key="Files"
           itemName=""
           containerHint="BlockLevel"
-          {...props}
-          qualifiers={{
-            initiallyOpen: true,
-            guiLabel: "File inputs",
-          }}
+          qualifiers={{ initiallyOpen: true, guiLabel: "File inputs" }}
         >
-          <CCP4i2TaskElement
-            {...props}
-            key="UNMERGEDFILES"
-            itemName="UNMERGEDFILES"
-            qualifiers={{ guiLabel: "Unmerged files" }}
-          />
-          <CCP4i2TaskElement
-            {...props}
-            key="FREERFLAG"
-            itemName="FREERFLAG"
-            qualifiers={{ guiLabel: "Free R set to use/extend" }}
-          />
-          <CCP4i2TaskElement
-            {...props}
-            key="HKLIN_IS_SCALED"
-            itemName="HKLIN_IS_SCALED"
-            qualifiers={{ guiLabel: "Analyse data without determining scales" }}
-          />
+          {renderElements(fileInputs)}
         </CCP4i2ContainerElement>
+
         <CCP4i2ContainerElement
           {...props}
-          itemName=""
           key="Parameters"
+          itemName=""
           containerHint="BlockLevel"
-          qualifiers={{
-            guiLabel: "Parameters",
-            initiallyOpen: true,
-          }}
+          qualifiers={{ guiLabel: "Parameters", initiallyOpen: true }}
         >
-          <CCP4i2TaskElement
-            {...props}
-            key="AUTOCUTOFF"
-            itemName="AUTOCUTOFF"
-            qualifiers={{ guiLabel: "Apply auto. data cutoff" }}
-          />
-          <CCP4i2TaskElement
-            {...props}
-            key="RESOLUTION_RANGE"
-            itemName="RESOLUTION_RANGE"
-            qualifiers={{ guiLabel: "Resolution" }}
-          />
-          <CCP4i2TaskElement
-            {...props}
-            key="OVERRIDE_CELL_DIFFERENCE"
-            qualifiers={{ guiLabel: "Override cell difference" }}
-            itemName="OVERRIDE_CELL_DIFFERENCE"
-          />
+          {renderElements(parameters)}
         </CCP4i2ContainerElement>
+
         <CCP4i2ContainerElement
           {...props}
           key="ChoosingSpace"
           itemName=""
           containerHint="BlockLevel"
-          qualifiers={{
-            guiLabel: "Choosing spacegroup",
-            initiallyOpen: true,
-          }}
+          qualifiers={{ guiLabel: "Choosing spacegroup", initiallyOpen: true }}
         >
           <CCP4i2TaskElement
             {...props}
@@ -146,127 +201,27 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName="MODE"
             qualifiers={{ guiLabel: "Pipeline mode" }}
           />
+
           <CCP4i2ContainerElement
             {...props}
             key="ChoiceOptions"
             itemName=""
             containerHint="BlockLevel"
-            qualifiers={{
-              guiLabel: "Choice options",
-            }}
-            visibility={() => {
-              return modeValue === "CHOOSE";
-            }}
+            qualifiers={{ guiLabel: "Choice options" }}
+            visibility={isChooseMode}
           >
-            <CCP4i2TaskElement
-              {...props}
-              key="CHOOSE_MODE"
-              itemName="CHOOSE_MODE"
-              qualifiers={{ guiLabel: "Symmetry choice mode" }}
-              visibility={() => {
-                return modeValue === "CHOOSE";
-              }}
-            />
-            <CCP4i2TaskElement
-              {...props}
-              key="CHOOSE_SOLUTION_NO"
-              itemName="CHOOSE_SOLUTION_NO"
-              qualifiers={{ guiLabel: "Solution no. to choose" }}
-              visibility={() => {
-                return (
-                  modeValue === "CHOOSE" && chooseModeValue === "SOLUTION_NO"
-                );
-              }}
-            />
-            <CCP4i2TaskElement
-              {...props}
-              key="CHOOSE_SPACEGROUP"
-              itemName="CHOOSE_SPACEGROUP"
-              qualifiers={{
-                guiLabel: "Spacegroup to choose",
-              }}
-              visibility={() => {
-                //console.log({ modeValue, chooseModeValue });
-                return (
-                  modeValue === "CHOOSE" &&
-                  (chooseModeValue === "SPACEGROUP" ||
-                    chooseModeValue === "REINDEX_SPACE")
-                );
-              }}
-            />
-            <CCP4i2TaskElement
-              {...props}
-              key="REINDEX_OPERATOR"
-              itemName="REINDEX_OPERATOR"
-              qualifiers={{ guiLabel: "Reindexing operator" }}
-              visibility={() => {
-                return (
-                  modeValue === "CHOOSE" && chooseModeValue === "REINDEX_SPACE"
-                );
-              }}
-            />
-            <CCP4i2TaskElement
-              {...props}
-              key="CHOOSE_LAUEGROUP"
-              itemName="CHOOSE_LAUEGROUP"
-              qualifiers={{ guiLabel: "Lauegroup to choose" }}
-              visibility={() => {
-                return (
-                  modeValue === "CHOOSE" && chooseModeValue === "LAUEGROUP"
-                );
-              }}
-            />
+            {renderConditionalElements(choiceOptions)}
           </CCP4i2ContainerElement>
+
           <CCP4i2ContainerElement
             {...props}
+            key="SpecifyReference"
             itemName=""
-            key="Specify refrence"
             containerHint="BlockLevel"
-            qualifiers={{
-              guiLabel: "Specify reference",
-            }}
-            visibility={() => {
-              return modeValue === "MATCH";
-            }}
+            qualifiers={{ guiLabel: "Specify reference" }}
+            visibility={isMatchMode}
           >
-            <CCP4i2TaskElement
-              {...props}
-              key="REFERENCE_FOR_AIMLESS"
-              itemName="REFERENCE_FOR_AIMLESS"
-              qualifiers={{ guiLabel: "Reference" }}
-            />
-            <CCP4i2TaskElement
-              {...props}
-              itemName="REFERENCE_DATASET"
-              qualifiers={{ guiLabel: "Reference type" }}
-              visibility={() => {
-                return modeValue === "MATCH" && aimlessRefValue;
-              }}
-            />
-            <CCP4i2TaskElement
-              {...props}
-              itemName="HKLIN_REF"
-              qualifiers={{ guiLabel: "Reference reflections" }}
-              visibility={() => {
-                return (
-                  modeValue === "MATCH" &&
-                  aimlessRefValue &&
-                  reference_datasetValue === "HKL"
-                );
-              }}
-            />
-            <CCP4i2TaskElement
-              {...props}
-              itemName="XYZIN_REF"
-              qualifiers={{ guiLabel: "Reference coordinates" }}
-              visibility={() => {
-                return (
-                  modeValue === "MATCH" &&
-                  aimlessRefValue &&
-                  reference_datasetValue === "XYZ"
-                );
-              }}
-            />
+            {renderConditionalElements(referenceOptions)}
           </CCP4i2ContainerElement>
         </CCP4i2ContainerElement>
       </CCP4i2Tab>
