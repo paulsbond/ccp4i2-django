@@ -11,6 +11,12 @@ class FileTypeSerializer(ModelSerializer):
         fields = "__all__"
 
 
+class FileImportSerializer(ModelSerializer):
+    class Meta:
+        model = models.FileImport
+        fields = "__all__"
+
+
 class ProjectSerializer(ModelSerializer):
     class Meta:
         model = models.Project
@@ -89,12 +95,6 @@ class JobSerializer(ModelSerializer):
 class FileUseSerializer(ModelSerializer):
     class Meta:
         model = models.FileUse
-        fields = "__all__"
-
-
-class FileImportSerializer(ModelSerializer):
-    class Meta:
-        model = models.FileImport
         fields = "__all__"
 
 

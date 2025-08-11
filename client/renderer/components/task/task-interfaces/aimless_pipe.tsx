@@ -1,9 +1,9 @@
+import { useCallback, useContext, useEffect, useMemo } from "react";
 import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useContext, useEffect, useMemo } from "react";
 import { RunCheckContext } from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -11,14 +11,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { getTaskItem, validation } = useJob(job.id);
   const { processedErrors, setProcessedErrors } = useContext(RunCheckContext);
 
-  // Extract task values
-  const taskValues = {
-    chooseMode: getTaskItem("CHOOSE_MODE").value,
-    mode: getTaskItem("MODE").value,
-    hklinRef: getTaskItem("HKLIN_REF").value,
-    aimlessRef: getTaskItem("REFERENCE_FOR_AIMLESS").value,
-    referenceDataset: getTaskItem("REFERENCE_DATASET").value,
-  };
+  // Consolidated task values
+  const taskValues = useMemo(
+    () => ({
+      chooseMode: getTaskItem("CHOOSE_MODE").value,
+      mode: getTaskItem("MODE").value,
+      hklinRef: getTaskItem("HKLIN_REF").value,
+      aimlessRef: getTaskItem("REFERENCE_FOR_AIMLESS").value,
+      referenceDataset: getTaskItem("REFERENCE_DATASET").value,
+    }),
+    [getTaskItem]
+  );
 
   // Process validation errors
   const processedValidationErrors = useMemo(() => {
@@ -33,7 +36,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       taskValues.mode === "MATCH" &&
       taskValues.aimlessRef &&
       taskValues.referenceDataset === "HKL" &&
-      !taskValues.hklinRef.dbFileId
+      !taskValues.hklinRef?.dbFileId
     ) {
       filtered["aimless_pipe.inputData.HKLIN_REF"] = {
         messages: ["HKLIN_REF must be set when being used for match"],
@@ -42,15 +45,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
 
     return filtered;
-  }, [
-    validation,
-    taskValues.mode,
-    taskValues.aimlessRef,
-    taskValues.referenceDataset,
-    taskValues.hklinRef,
-  ]);
+  }, [validation, taskValues]);
 
-  // Update processed errors only when they change
+  // Update processed errors efficiently
   useEffect(() => {
     if (
       JSON.stringify(processedValidationErrors) !==
@@ -63,107 +60,130 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   // Cleanup on unmount
   useEffect(() => () => setProcessedErrors(null), [setProcessedErrors]);
 
-  // Visibility conditions
-  const isChooseMode = () => taskValues.mode === "CHOOSE";
-  const isMatchMode = () => taskValues.mode === "MATCH";
-  const isChooseSolution = () =>
-    isChooseMode() && taskValues.chooseMode === "SOLUTION_NO";
-  const isChooseSpacegroup = () =>
-    isChooseMode() &&
-    ["SPACEGROUP", "REINDEX_SPACE"].includes(taskValues.chooseMode);
-  const isReindexSpace = () =>
-    isChooseMode() && taskValues.chooseMode === "REINDEX_SPACE";
-  const isChooseLauegroup = () =>
-    isChooseMode() && taskValues.chooseMode === "LAUEGROUP";
-  const hasAimlessRef = () => isMatchMode() && taskValues.aimlessRef;
-  const isHklReference = () =>
-    hasAimlessRef() && taskValues.referenceDataset === "HKL";
-  const isXyzReference = () =>
-    hasAimlessRef() && taskValues.referenceDataset === "XYZ";
+  // Visibility helpers
+  const visibility = useMemo(
+    () => ({
+      isChooseMode: () => taskValues.mode === "CHOOSE",
+      isMatchMode: () => taskValues.mode === "MATCH",
+      isChooseSolution: () =>
+        taskValues.mode === "CHOOSE" && taskValues.chooseMode === "SOLUTION_NO",
+      isChooseSpacegroup: () =>
+        taskValues.mode === "CHOOSE" &&
+        ["SPACEGROUP", "REINDEX_SPACE"].includes(taskValues.chooseMode),
+      isReindexSpace: () =>
+        taskValues.mode === "CHOOSE" &&
+        taskValues.chooseMode === "REINDEX_SPACE",
+      isChooseLauegroup: () =>
+        taskValues.mode === "CHOOSE" && taskValues.chooseMode === "LAUEGROUP",
+      hasAimlessRef: () => taskValues.mode === "MATCH" && taskValues.aimlessRef,
+      isHklReference: () =>
+        taskValues.mode === "MATCH" &&
+        taskValues.aimlessRef &&
+        taskValues.referenceDataset === "HKL",
+      isXyzReference: () =>
+        taskValues.mode === "MATCH" &&
+        taskValues.aimlessRef &&
+        taskValues.referenceDataset === "XYZ",
+    }),
+    [taskValues]
+  );
 
-  // Component configurations
-  const fileInputs = [
-    { key: "UNMERGEDFILES", label: "Unmerged files" },
-    { key: "FREERFLAG", label: "Free R set to use/extend" },
-    {
-      key: "HKLIN_IS_SCALED",
-      label: "Analyse data without determining scales",
-    },
-  ];
+  // Element configurations
+  const elementConfigs = useMemo(
+    () => ({
+      fileInputs: [
+        { key: "UNMERGEDFILES", label: "Unmerged files" },
+        { key: "FREERFLAG", label: "Free R set to use/extend" },
+        {
+          key: "HKLIN_IS_SCALED",
+          label: "Analyse data without determining scales",
+        },
+      ],
+      parameters: [
+        { key: "AUTOCUTOFF", label: "Apply auto. data cutoff" },
+        { key: "RESOLUTION_RANGE", label: "Resolution" },
+        { key: "OVERRIDE_CELL_DIFFERENCE", label: "Override cell difference" },
+      ],
+      choiceOptions: [
+        {
+          key: "CHOOSE_MODE",
+          label: "Symmetry choice mode",
+          visible: visibility.isChooseMode,
+        },
+        {
+          key: "CHOOSE_SOLUTION_NO",
+          label: "Solution no. to choose",
+          visible: visibility.isChooseSolution,
+        },
+        {
+          key: "CHOOSE_SPACEGROUP",
+          label: "Spacegroup to choose",
+          visible: visibility.isChooseSpacegroup,
+        },
+        {
+          key: "REINDEX_OPERATOR",
+          label: "Reindexing operator",
+          visible: visibility.isReindexSpace,
+        },
+        {
+          key: "CHOOSE_LAUEGROUP",
+          label: "Lauegroup to choose",
+          visible: visibility.isChooseLauegroup,
+        },
+      ],
+      referenceOptions: [
+        {
+          key: "REFERENCE_FOR_AIMLESS",
+          label: "Reference",
+          visible: visibility.isMatchMode,
+        },
+        {
+          key: "REFERENCE_DATASET",
+          label: "Reference type",
+          visible: visibility.hasAimlessRef,
+        },
+        {
+          key: "HKLIN_REF",
+          label: "Reference reflections",
+          visible: visibility.isHklReference,
+        },
+        {
+          key: "XYZIN_REF",
+          label: "Reference coordinates",
+          visible: visibility.isXyzReference,
+        },
+      ],
+    }),
+    [visibility]
+  );
 
-  const parameters = [
-    { key: "AUTOCUTOFF", label: "Apply auto. data cutoff" },
-    { key: "RESOLUTION_RANGE", label: "Resolution" },
-    { key: "OVERRIDE_CELL_DIFFERENCE", label: "Override cell difference" },
-  ];
+  // Render helpers
+  const renderElements = useCallback(
+    (elements: typeof elementConfigs.fileInputs) =>
+      elements.map(({ key, label }) => (
+        <CCP4i2TaskElement
+          {...props}
+          key={key}
+          itemName={key}
+          qualifiers={{ guiLabel: label }}
+        />
+      )),
+    [props]
+  );
 
-  const choiceOptions = [
-    {
-      key: "CHOOSE_MODE",
-      label: "Symmetry choice mode",
-      visible: isChooseMode,
-    },
-    {
-      key: "CHOOSE_SOLUTION_NO",
-      label: "Solution no. to choose",
-      visible: isChooseSolution,
-    },
-    {
-      key: "CHOOSE_SPACEGROUP",
-      label: "Spacegroup to choose",
-      visible: isChooseSpacegroup,
-    },
-    {
-      key: "REINDEX_OPERATOR",
-      label: "Reindexing operator",
-      visible: isReindexSpace,
-    },
-    {
-      key: "CHOOSE_LAUEGROUP",
-      label: "Lauegroup to choose",
-      visible: isChooseLauegroup,
-    },
-  ];
-
-  const referenceOptions = [
-    { key: "REFERENCE_FOR_AIMLESS", label: "Reference", visible: isMatchMode },
-    {
-      key: "REFERENCE_DATASET",
-      label: "Reference type",
-      visible: hasAimlessRef,
-    },
-    {
-      key: "HKLIN_REF",
-      label: "Reference reflections",
-      visible: isHklReference,
-    },
-    {
-      key: "XYZIN_REF",
-      label: "Reference coordinates",
-      visible: isXyzReference,
-    },
-  ];
-
-  const renderElements = (elements: typeof fileInputs) =>
-    elements.map(({ key, label }) => (
-      <CCP4i2TaskElement
-        {...props}
-        key={key}
-        itemName={key}
-        qualifiers={{ guiLabel: label }}
-      />
-    ));
-
-  const renderConditionalElements = (elements: typeof choiceOptions) =>
-    elements.map(({ key, label, visible }) => (
-      <CCP4i2TaskElement
-        {...props}
-        key={key}
-        itemName={key}
-        qualifiers={{ guiLabel: label }}
-        visibility={visible}
-      />
-    ));
+  const renderConditionalElements = useCallback(
+    (elements: typeof elementConfigs.choiceOptions) =>
+      elements.map(({ key, label, visible }) => (
+        <CCP4i2TaskElement
+          {...props}
+          key={key}
+          itemName={key}
+          qualifiers={{ guiLabel: label }}
+          visibility={visible}
+        />
+      )),
+    [props]
+  );
 
   return (
     <CCP4i2Tabs {...props}>
@@ -175,7 +195,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           containerHint="BlockLevel"
           qualifiers={{ initiallyOpen: true, guiLabel: "File inputs" }}
         >
-          {renderElements(fileInputs)}
+          {renderElements(elementConfigs.fileInputs)}
         </CCP4i2ContainerElement>
 
         <CCP4i2ContainerElement
@@ -185,7 +205,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           containerHint="BlockLevel"
           qualifiers={{ guiLabel: "Parameters", initiallyOpen: true }}
         >
-          {renderElements(parameters)}
+          {renderElements(elementConfigs.parameters)}
         </CCP4i2ContainerElement>
 
         <CCP4i2ContainerElement
@@ -208,9 +228,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName=""
             containerHint="BlockLevel"
             qualifiers={{ guiLabel: "Choice options" }}
-            visibility={isChooseMode}
+            visibility={visibility.isChooseMode}
           >
-            {renderConditionalElements(choiceOptions)}
+            {renderConditionalElements(elementConfigs.choiceOptions)}
           </CCP4i2ContainerElement>
 
           <CCP4i2ContainerElement
@@ -219,9 +239,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             itemName=""
             containerHint="BlockLevel"
             qualifiers={{ guiLabel: "Specify reference" }}
-            visibility={isMatchMode}
+            visibility={visibility.isMatchMode}
           >
-            {renderConditionalElements(referenceOptions)}
+            {renderConditionalElements(elementConfigs.referenceOptions)}
           </CCP4i2ContainerElement>
         </CCP4i2ContainerElement>
       </CCP4i2Tab>

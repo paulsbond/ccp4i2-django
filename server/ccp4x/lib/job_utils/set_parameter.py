@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Union
 from ccp4i2.core.CCP4Container import CContainer
 import json
@@ -10,6 +11,7 @@ from .save_params_for_job import save_params_for_job
 from .find_objects import find_object_by_path
 from .get_job_plugin import get_job_plugin
 from .json_encoder import CCP4i2JsonEncoder
+from .value_dict_for_object import value_dict_for_object
 from ...db import models
 import xml.etree.ElementTree as ET
 
@@ -24,6 +26,27 @@ def set_parameter(
     the_container: CContainer = the_job_plugin.container
 
     try:
+        previous_object_element = find_object_by_path(the_container, object_path)
+        if isinstance(previous_object_element, (CCP4File.CDataFile, CDataFile)):
+            previous_value = value_dict_for_object(previous_object_element)
+            previous_file_id = previous_value.get("dbFileId", None)
+            if previous_file_id is not None:
+                try:
+                    previous_file = models.File.objects.get(
+                        uuid=uuid.UUID(previous_file_id)
+                    )
+                    if previous_file.job.uuid == job.uuid:
+                        try:
+                            previous_file_import = models.FileImport.objects.get(
+                                file=previous_file
+                            )
+                            previous_file_import.delete()
+                        except models.FileImport.DoesNotExist:
+                            pass
+                        previous_file.path.unlink(missing_ok=True)
+                        previous_file.delete()
+                except models.File.DoesNotExist:
+                    pass
         object_element = set_parameter_container(the_container, object_path, value)
         logger.debug(
             "Parameter %s now has value %s in job number %s",

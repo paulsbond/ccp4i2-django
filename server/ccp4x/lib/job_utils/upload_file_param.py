@@ -45,23 +45,42 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
 
     job_param_name = extract_from_first_bracketed(object_path)
 
-    existing_files = models.File.objects.filter(job=job, job_param_name=job_param_name)
+    # Look to see if file import(s) already exist(s) for this param in the current job
     try:
-        for existing_file in existing_files:
-            logger.warning("Upload will replace existing files [%s]", existing_file)
-            existing_file.path.unlink()
+        previous_files = models.File.objects.filter(
+            job=job, job_param_name=job_param_name
+        )
+        for previous_file in previous_files:
+            logger.warning(
+                "Upload will replace existing imported file [%s]", previous_file
+            )
             try:
-                file_import = models.FileImport.objects.get(file=existing_file)
+                file_import = models.FileImport.objects.get(file=previous_file)
                 file_import.delete()
             except models.FileImport.DoesNotExist:
-                logger.debug("Existing file had no import [%s]", existing_file.path)
-            existing_file.delete()
-    except Exception as err:
-        logger.exception(
-            "Error deleting existing files for job %s job_param_name %s",
+                logger.warning(
+                    "No file import for job %s job_param_name %s",
+                    job.uuid,
+                    job_param_name,
+                )
+            try:
+                previous_file.path.unlink()
+                previous_file.delete()
+            except Exception as err:
+                logger.exception(
+                    "Error deleting file import %s for job %s job_param_name %s",
+                    previous_file,
+                    job.uuid,
+                    job_param_name,
+                    exc_info=err,
+                )
+                continue
+
+    except models.File.DoesNotExist:
+        logger.warning(
+            "No previous file import for job %s job_param_name %s",
             job.uuid,
             job_param_name,
-            exc_info=err,
         )
 
     assert isinstance(

@@ -1,7 +1,7 @@
 import { Stack } from "@mui/material";
 import { CDataFileElement } from "./cdatafile";
 import { CCP4i2TaskElementProps } from "./task-element";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApi } from "../../../api";
 import { readFilePromise, useJob, useProject } from "../../../utils";
 
@@ -22,10 +22,12 @@ export const CSimpleDataFileElement: React.FC<CSimpleDataFileElementProps> = (
   const { data: fileDigest, mutate: mutateDigest } = useFileDigest(
     item?._objectPath
   );
+  const previousSelectedFiles = useRef<FileList | null>(null);
 
   const processFirstFile = useCallback(async () => {
-    if (!selectedFiles || !item) return;
-
+    if (!selectedFiles || selectedFiles.length == 0 || !item) return;
+    if (selectedFiles === previousSelectedFiles.current) return;
+    previousSelectedFiles.current = selectedFiles;
     const fileBuffer = await readFilePromise(selectedFiles[0], "ArrayBuffer");
     const formData = new FormData();
 
@@ -67,7 +69,7 @@ export const CSimpleDataFileElement: React.FC<CSimpleDataFileElementProps> = (
 
   // Auto-process files when selected
   useEffect(() => {
-    if (selectedFiles) processFirstFile();
+    if (selectedFiles && processFirstFile) processFirstFile();
   }, [selectedFiles, processFirstFile]);
 
   const isVisible = useMemo(

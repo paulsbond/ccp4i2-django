@@ -5,8 +5,7 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob, usePrevious, useProject } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useCallback, useContext, useEffect, useMemo } from "react";
-import type { CCP4i2RunActions } from "../../../providers/run-check-provider";
+import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import {
   RunCheckContext,
   useRunCheck,
@@ -14,9 +13,50 @@ import {
 import { useRouter } from "next/navigation";
 import { Job } from "../../../types/models";
 
+// Helper function for safe object comparison
+const isEqual = (a: any, b: any): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (typeof a !== typeof b) return false;
+
+  // Handle React elements and functions
+  if (typeof a === "function" || typeof a === "object") {
+    // For React elements, compare their key properties
+    if (a.$$typeof && b.$$typeof) {
+      return a.type === b.type && a.key === b.key;
+    }
+
+    // For objects, do a shallow comparison of serializable properties
+    try {
+      const aKeys = Object.keys(a).filter(
+        (key) => typeof a[key] !== "function" && !key.startsWith("_")
+      );
+      const bKeys = Object.keys(b).filter(
+        (key) => typeof b[key] !== "function" && !key.startsWith("_")
+      );
+
+      if (aKeys.length !== bKeys.length) return false;
+
+      return aKeys.every((key) => {
+        if (typeof a[key] === "object") {
+          return isEqual(a[key], b[key]);
+        }
+        return a[key] === b[key];
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+};
+
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
+  const router = useRouter();
+  const { setRunTaskRequested } = useRunCheck();
+
   const {
     processedErrors,
     setProcessedErrors,
@@ -27,172 +67,319 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { getTaskItem, useFileDigest, validation, createPeerTask } = useJob(
     job.id
   );
+  const { mutateJobs } = useProject(job.project);
 
+  // Use refs to track previous values without causing circular references
+  const prevProcessedErrors = useRef(processedErrors);
+  const prevExtraDialogActions = useRef(extraDialogActions);
+
+  // Consolidated task values
+  const taskValues = useMemo(
+    () => ({
+      refinementMode: getTaskItem("REFINEMENT_MODE").value,
+      freeRFlag: getTaskItem("FREERFLAG").value,
+      solventAdvanced: getTaskItem("SOLVENT_ADVANCED").value,
+      solventMaskType: getTaskItem("SOLVENT_MASK_TYPE").value,
+      tlsMode: getTaskItem("TLSMODE").value,
+      bfacSetUse: getTaskItem("BFACSETUSE").value,
+      wavelength: getTaskItem("WAVELENGTH").value,
+      mapSharp: getTaskItem("MAP_SHARP").value,
+      mapSharpCustom: getTaskItem("MAP_SHARP_CUSTOM").value,
+    }),
+    [getTaskItem]
+  );
+
+  // File digest handling
   const { data: F_SIGFDigest } = useFileDigest(
     "prosmart_refmac.inputData.F_SIGF"
   );
-  const { value: refinementMode } = getTaskItem("REFINEMENT_MODE");
-  const { value: freeRFlag } = getTaskItem("FREERFLAG");
-  const { value: solventAdvanced } = getTaskItem("SOLVENT_ADVANCED");
-  const { value: solventMaskType } = getTaskItem("SOLVENT_MASK_TYPE");
-  const { value: tlsMode } = getTaskItem("TLSMODE");
-  const { value: bfacSetUse } = getTaskItem("BFACSETUSE");
-  const { update: updateWAVELENGTH, value: wavelength } =
-    getTaskItem("WAVELENGTH");
-  const { value: MAP_SHARP } = getTaskItem("MAP_SHARP");
-  const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
-
+  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
   const oldFileDigest = usePrevious<any>(F_SIGFDigest);
-  const router = useRouter();
-  const { setRunTaskRequested } = useRunCheck();
 
-  const { mutateJobs } = useProject(job.project);
-
-  const handleF_SIGFDigestChanged = useCallback(
-    (digest: any) => {
-      if (!updateWAVELENGTH) return;
-      if (!digest || JSON.stringify(digest) === JSON.stringify(oldFileDigest))
-        return;
-      if (!job || job.status != 1) return;
-      const asyncFunc = async () => {
-        console.log(digest);
-        //Here if the file Digest has changed
-        if (digest?.wavelengths?.at(-1) < 9) {
-          await updateWAVELENGTH(digest.wavelengths.at(-1));
-        }
-      };
-      asyncFunc();
-    },
-    [updateWAVELENGTH, job]
+  // Visibility conditions
+  const visibility = useMemo(
+    () => ({
+      isRigidMode: () => taskValues.refinementMode === "RIGID",
+      isRestrMode: () => taskValues.refinementMode === "RESTR",
+      isExplicitSolvent: () => taskValues.solventMaskType === "EXPLICIT",
+      hasAdvancedSolvent: () =>
+        taskValues.solventMaskType === "EXPLICIT" && taskValues.solventAdvanced,
+      hasTLS: () => taskValues.tlsMode !== "NONE",
+      isTLSFromFile: () => taskValues.tlsMode === "FILE",
+      hasBfacSet: () => taskValues.bfacSetUse,
+      hasMapSharp: () => taskValues.mapSharp,
+      hasCustomSharp: () => taskValues.mapSharp && taskValues.mapSharpCustom,
+    }),
+    [taskValues]
   );
 
+  // Element configurations
+  const elementConfigs = useMemo(
+    () => ({
+      inputData: [
+        { key: "F_SIGF", label: "Reflection" },
+        { key: "WAVELENGTH", label: "Wavelength" },
+        { key: "FREERFLAG" },
+        { key: "XYZIN", label: "Coordinates" },
+        { key: "DICT_LIST", label: "Dictionaries" },
+        {
+          key: "NCYCRIGID",
+          label: "Number of rigid body cycles",
+          visible: visibility.isRigidMode,
+        },
+        {
+          key: "NCYCLES",
+          label: "Number of cycles",
+          visible: visibility.isRestrMode,
+        },
+        { key: "REFINEMENT_MODE", label: "Refinement mode" },
+      ],
+      bFactors: [{ key: "B_REFINEMENT_MODE", label: "B-factors" }],
+      scaling: [
+        { key: "SCALE_TYPE", label: "Use", gridSize: { xs: 6 } },
+        {
+          key: "SOLVENT_MASK_TYPE",
+          label: (
+            <span style={{ marginLeft: "1rem", marginRight: "1rem" }}>
+              solvent scaling, with mask type
+            </span>
+          ),
+          gridSize: { xs: 6 },
+        },
+        {
+          key: "SOLVENT_ADVANCED",
+          label: "Use custom solvent mask parameters",
+          visible: visibility.isExplicitSolvent,
+        },
+      ],
+      customSolventParams: [
+        {
+          key: "SOLVENT_VDW_RADIUS",
+          label: "Increase VDW Radius of non-ion atoms by ",
+        },
+        {
+          key: "SOLVENT_IONIC_RADIUS",
+          label: "Increase VDW Radius of potential ion atoms by ",
+        },
+        { key: "SOLVENT_SHRINK", label: "Shrink the mask area by a factor of" },
+      ],
+      tlsParams: [
+        { key: "TLSMODE", label: "TLS parameters", gridSize: { xs: 6 } },
+        {
+          key: "NTLSCYCLES",
+          label: "Number of TLS cycles",
+          gridSize: { xs: 6 },
+          visible: visibility.hasTLS,
+        },
+      ],
+      customTLSParams: [
+        {
+          key: "TLSIN",
+          label: "TLS coefficients",
+          visible: visibility.isTLSFromFile,
+        },
+        {
+          key: "BFACSETUSE",
+          label: "Reset all B-factors at start ",
+          gridSize: { xs: 6 },
+        },
+        {
+          key: "BFACSET",
+          label: "...to a value of",
+          gridSize: { xs: 6 },
+          visible: visibility.hasBfacSet,
+        },
+        {
+          key: "TLSOUT_ADDU",
+          label:
+            "Add TLS contribution to output B-factors (only for analysis and deposition)",
+        },
+      ],
+      outputOptions: [
+        {
+          key: "OUTPUT_HYDROGENS",
+          label: "Output calculated riding hydrogens to file",
+        },
+      ],
+      mapCalculation: [
+        {
+          key: "MAP_SHARP",
+          label: "Perform map sharpening when calculating maps",
+        },
+        {
+          key: "MAP_SHARP_CUSTOM",
+          label: "Use custom sharpening parameter (B-factor)",
+          gridSize: { xs: 6 },
+          visible: visibility.hasMapSharp,
+        },
+        {
+          key: "BSHARP",
+          label: "B factor to use",
+          gridSize: { xs: 6 },
+          visible: visibility.hasCustomSharp,
+        },
+      ],
+      validation: [
+        { key: "VALIDATE_BAVERAGE", label: "Analyse B-factor distributions" },
+        { key: "VALIDATE_RAMACHANDRAN", label: "Calculate Ramachandran plots" },
+        {
+          key: "VALIDATE_MOLPROBITY",
+          label: "Run MolProbity to analyse geometry",
+        },
+      ],
+      prosmartProtein: [
+        {
+          key: "prosmartProtein.REFERENCE_MODELS",
+          label: "Protein reference models",
+        },
+      ],
+    }),
+    [visibility]
+  );
+
+  // Handle file digest changes
+  const handleF_SIGFDigestChanged = useCallback(
+    async (digest: any) => {
+      if (!updateWAVELENGTH || !digest || !job || job.status !== 1) return;
+
+      // Use a safer comparison that avoids circular references
+      const digestString = digest ? String(digest.wavelengths?.at(-1)) : "";
+      const oldDigestString = oldFileDigest
+        ? String(oldFileDigest.wavelengths?.at(-1))
+        : "";
+
+      if (digestString === oldDigestString) return;
+
+      console.log(digest);
+      if (digest?.wavelengths?.at(-1) < 9) {
+        await updateWAVELENGTH(digest.wavelengths.at(-1));
+      }
+    },
+    [updateWAVELENGTH, job, oldFileDigest]
+  );
+
+  // Create FreeR task
+  const createFreeRTask = useCallback(async () => {
+    const created_job: Job | undefined = await createPeerTask("freerflag");
+    if (created_job) {
+      router.push(`/project/${job.project}/job/${created_job.id}`);
+      setRunTaskRequested(null);
+    }
+  }, [job, createPeerTask, router, setRunTaskRequested]);
+
+  // Process validation errors
+  const processedValidationErrors = useMemo(() => {
+    if (!validation) return null;
+
+    const newProcessedErrors = { ...validation };
+    if (!taskValues.freeRFlag?.dbFileId?.length) {
+      newProcessedErrors.FREERFLAG = {
+        messages: [
+          "Setting the Free R flag file is strongly recommended for refinement",
+          "You are advised to select an existing set or create a new one ",
+        ],
+        maxSeverity: 3,
+      };
+    }
+
+    return newProcessedErrors;
+  }, [validation, taskValues.freeRFlag]);
+
+  // Extra dialog actions
+  const freeRAction = useMemo(() => {
+    if (taskValues.freeRFlag?.dbFileId?.length > 0) return null;
+
+    return {
+      FREERFLAG: (
+        <Button variant="contained" onClick={createFreeRTask}>
+          Create FreeR task
+        </Button>
+      ),
+    };
+  }, [taskValues.freeRFlag, createFreeRTask]);
+
+  // Effects with safe comparisons
   useEffect(() => {
     handleF_SIGFDigestChanged(F_SIGFDigest);
-  }, [F_SIGFDigest]);
+  }, [F_SIGFDigest, handleF_SIGFDigestChanged]);
 
-  const createFreeRTask = useCallback(async () => {
-    await createPeerTask("freerflag").then((created_job: Job) => {
-      if (created_job) {
-        // If the task was created successfully, we can navigate to it
-        router.push(`/project/${job.project}/job/${created_job.id}`);
-        //Shut down the run check dialog
-        setRunTaskRequested(null);
-      }
-    });
-  }, [job, createPeerTask]);
-
-  // Process the errors, adding a non-blocking (maxSeverity 3) error if the Free R flag is not set
-  // This is done to ensure that the user is aware of the missing Free R flag,
-  // but it does not block the execution of the task.
-  // The processedErrors state is updated only if the new errors are different from the previous ones
-  // to prevent unnecessary re-renders.
   useEffect(() => {
-    if (validation) {
-      const newProcessedErrors = { ...validation };
-      if (!(freeRFlag?.dbFileId?.length > 0)) {
-        // If the Free R flag is not set, we add an overridable serious error report.
-        newProcessedErrors.FREERFLAG = {
-          messages: [
-            "Setting the Free R flag file is strongly recommended for refinement",
-            "You are advised to select an existing set or create a new one ",
-          ],
-          maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
-          // maxSeverity of 3 causes confirm dialog to show, but allows execution
-        };
-      }
-
-      // Only update if processedErrors have changed. This prevents unnecessary re-renders. Use JSON.stringify to compare objects
-      // Note: This is a simple way to compare objects.
-      if (
-        JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
-      ) {
-        setProcessedErrors(newProcessedErrors);
-      }
+    // Use shallow comparison instead of JSON.stringify
+    if (!isEqual(processedValidationErrors, prevProcessedErrors.current)) {
+      setProcessedErrors(processedValidationErrors);
+      prevProcessedErrors.current = processedValidationErrors;
     }
-  }, [
-    validation,
-    freeRFlag,
-    refinementMode,
-    processedErrors,
-    setProcessedErrors,
-  ]);
+  }, [processedValidationErrors, setProcessedErrors]);
 
   useEffect(() => {
-    if (!(freeRFlag?.dbFileId?.length > 0)) {
-      // If the Free R flag is not set, we add an action to create a Free R task
-      // This will be shown in the confirm dialog.  As ever when changing state,
-      // we check if the action is already there to avoid unnecessary re-renders.
-      if (!extraDialogActions || !extraDialogActions["FREERFLAG"]) {
-        const newExtraDialogActions = {
-          FREERFLAG: (
-            <Button variant="contained" onClick={createFreeRTask}>
-              Create FreeR task
-            </Button>
-          ),
-        };
-        setExtraDialogActions(newExtraDialogActions);
-      }
+    // Use shallow comparison instead of JSON.stringify
+    if (!isEqual(freeRAction, prevExtraDialogActions.current)) {
+      setExtraDialogActions(freeRAction);
+      prevExtraDialogActions.current = freeRAction;
     }
-  }, [freeRFlag, setExtraDialogActions, createFreeRTask, extraDialogActions]);
+  }, [freeRAction, setExtraDialogActions]);
 
-  //This is a really important cleanup function to avoid memory leaks
-  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
-  useEffect(() => {
-    // Cleanup function to reset context values when the component unmounts
-    return () => {
+  // Cleanup on unmount
+  useEffect(
+    () => () => {
       setExtraDialogActions(null);
       setProcessedErrors(null);
-    };
-  }, [setExtraDialogActions, setProcessedErrors]);
+    },
+    [setExtraDialogActions, setProcessedErrors]
+  );
 
-  // Render the task interface
+  // Render helpers
+  const renderElements = useCallback(
+    (elements: any[]) =>
+      elements.map(
+        ({ key, label, visible = () => true, gridSize, ...extraProps }) => {
+          const element = (
+            <CCP4i2TaskElement
+              {...props}
+              key={key}
+              itemName={key}
+              qualifiers={{ guiLabel: label, ...extraProps }}
+              visibility={visible}
+            />
+          );
+
+          return gridSize ? (
+            <Grid2 key={key} size={gridSize}>
+              {element}
+            </Grid2>
+          ) : (
+            element
+          );
+        }
+      ),
+    [props]
+  );
+
+  const renderGridElements = useCallback(
+    (elements: any[]) => {
+      const gridElements = elements.filter((el) => el.gridSize);
+      const regularElements = elements.filter((el) => !el.gridSize);
+
+      return (
+        <>
+          {regularElements.length > 0 && renderElements(regularElements)}
+          {gridElements.length > 0 && (
+            <Grid2 container spacing={2}>
+              {renderElements(gridElements)}
+            </Grid2>
+          )}
+        </>
+      );
+    },
+    [renderElements]
+  );
+
   return (
     <Paper>
       <CCP4i2Tabs>
         <CCP4i2Tab label="Input data">
-          <CCP4i2TaskElement
-            itemName="F_SIGF"
-            {...props}
-            qualifiers={{ guiLabel: "Reflection" }}
-          />
-          <CCP4i2TaskElement
-            itemName="WAVELENGTH"
-            {...props}
-            qualifiers={{ guiLabel: "Wavelength" }}
-          />
-          <CCP4i2TaskElement itemName="FREERFLAG" {...props} />
-          <CCP4i2TaskElement
-            itemName="XYZIN"
-            {...props}
-            qualifiers={{ guiLabel: "Coordinates" }}
-          />
-          <CCP4i2TaskElement
-            itemName="DICT_LIST"
-            {...props}
-            qualifiers={{ guiLabel: "Dictionaries" }}
-          />
-          <CCP4i2TaskElement
-            itemName="NCYCRIGID"
-            {...props}
-            qualifiers={{ guiLabel: "Number of rigid body cycles" }}
-            visibility={() => refinementMode === "RIGID"}
-          />
-          <CCP4i2TaskElement
-            itemName="NCYCLES"
-            {...props}
-            qualifiers={{ guiLabel: "Number of cycles" }}
-            visibility={() => refinementMode === "RESTR"}
-          />
-          <CCP4i2TaskElement
-            itemName="REFINEMENT_MODE"
-            {...props}
-            qualifiers={{ guiLabel: "Refinement mode" }}
-          />
+          {renderElements(elementConfigs.inputData)}
         </CCP4i2Tab>
-
-        {/*}
-        The parameterisation tab
-        */}
 
         <CCP4i2Tab label="Parameterisation" key="Parameterisation">
           <CCP4i2ContainerElement
@@ -202,15 +389,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             qualifiers={{ guiLabel: "B-factors" }}
             containerHint="BlockLevel"
           >
-            <Grid2 container key="Row1">
-              <Grid2 size={{ xs: 12 }} key="solscale">
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName="B_REFINEMENT_MODE"
-                  qualifiers={{ guiLabel: "B-factors" }}
-                />
-              </Grid2>
-            </Grid2>
+            {renderElements(elementConfigs.bFactors)}
           </CCP4i2ContainerElement>
 
           <CCP4i2ContainerElement
@@ -220,40 +399,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             qualifiers={{ guiLabel: "Scaling" }}
             containerHint="BlockLevel"
           >
-            <Grid2 container key="Row1">
-              <Grid2 size={{ xs: 6 }} key="solscale">
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName="SCALE_TYPE"
-                  qualifiers={{ guiLabel: "Use" }}
-                />
-              </Grid2>
-              <Grid2 size={{ xs: 6 }} key="masktype">
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName="SOLVENT_MASK_TYPE"
-                  qualifiers={{
-                    guiLabel: (
-                      <span style={{ marginLeft: "1rem", marginRight: "1rem" }}>
-                        solvent scaling, with mask type
-                      </span>
-                    ),
-                  }}
-                />
-              </Grid2>
-            </Grid2>
-            <CCP4i2TaskElement
-              {...props}
-              itemName="SOLVENT_ADVANCED"
-              qualifiers={{
-                guiLabel: "Use custom solvent mask parameters",
-              }}
-              key="SOLVENT_ADVANCED"
-              visibility={() => {
-                //console.log("In visibility");
-                return solventMaskType === "EXPLICIT";
-              }}
-            />
+            {renderGridElements(elementConfigs.scaling)}
+
             <CCP4i2ContainerElement
               itemName=""
               {...props}
@@ -262,34 +409,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               key="Custom parameters"
               size={{ xs: 4 }}
               elementSx={{ my: 0, py: 0, minWidth: "5rem" }}
-              visibility={() => {
-                return solventMaskType === "EXPLICIT" && solventAdvanced;
-              }}
+              visibility={visibility.hasAdvancedSolvent}
             >
-              <CCP4i2TaskElement
-                {...props}
-                itemName="SOLVENT_VDW_RADIUS"
-                key="SOLVENT_VDW_RADIUS"
-                qualifiers={{
-                  guiLabel: "Increase VDW Radius of non-ion atoms by ",
-                }}
-              />
-              <CCP4i2TaskElement
-                {...props}
-                itemName="SOLVENT_IONIC_RADIUS"
-                key="SOLVENT_IONIC_RADIUS"
-                qualifiers={{
-                  guiLabel: "Increase VDW Radius of potential ion atoms by ",
-                }}
-              />
-              <CCP4i2TaskElement
-                {...props}
-                itemName="SOLVENT_SHRINK"
-                key="SOLVENT_SHRINK"
-                qualifiers={{
-                  guiLabel: "Shrink the mask area by a factor of",
-                }}
-              />
+              {renderElements(elementConfigs.customSolventParams)}
             </CCP4i2ContainerElement>
           </CCP4i2ContainerElement>
 
@@ -300,76 +422,21 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             qualifiers={{ guiLabel: "Translation libration screw (TLS)" }}
             containerHint="BlockLevel"
           >
-            <Grid2 container key="row1">
-              <Grid2 size={{ xs: 6 }} key="col1">
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName="TLSMODE"
-                  qualifiers={{
-                    guiLabel: "TLS parameters",
-                  }}
-                />
-              </Grid2>
-              <Grid2 size={{ xs: 6 }} key="col12">
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName="NTLSCYCLES"
-                  qualifiers={{
-                    guiLabel: "Number of TLS cycles",
-                  }}
-                  visibility={() => tlsMode !== "NONE"}
-                />
-              </Grid2>
-            </Grid2>
+            {renderGridElements(elementConfigs.tlsParams)}
+
             <CCP4i2ContainerElement
               itemName=""
-              key="Custom parameters"
+              key="Custom TLS parameters"
               {...props}
               qualifiers={{ guiLabel: "Custom parameters" }}
               containerHint="BlockLevel"
-              visibility={() => tlsMode !== "NONE"}
+              visibility={visibility.hasTLS}
             >
-              <CCP4i2TaskElement
-                {...props}
-                itemName="TLSIN"
-                key=""
-                qualifiers={{
-                  guiLabel: "TLS coefficients",
-                }}
-                visibility={() => tlsMode === "FILE"}
-              />
-              <Grid2 container key="row1">
-                <Grid2 size={{ xs: 6 }} key="col1">
-                  <CCP4i2TaskElement
-                    {...props}
-                    itemName="BFACSETUSE"
-                    qualifiers={{
-                      guiLabel: "Reset all B-factors at start ",
-                    }}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 6 }} key="col2">
-                  <CCP4i2TaskElement
-                    {...props}
-                    itemName="BFACSET"
-                    qualifiers={{
-                      guiLabel: "...to a value of",
-                    }}
-                    visibility={() => bfacSetUse}
-                  />
-                </Grid2>
-              </Grid2>
-              <CCP4i2TaskElement
-                {...props}
-                itemName="TLSOUT_ADDU"
-                qualifiers={{
-                  guiLabel:
-                    "Add TLS contribution to output B-factors (only for analysis and deposition)",
-                }}
-              />
+              {renderGridElements(elementConfigs.customTLSParams)}
             </CCP4i2ContainerElement>
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
+
         <CCP4i2Tab label="Output" key="Output">
           <CCP4i2ContainerElement
             key="Output options"
@@ -378,14 +445,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             qualifiers={{ guiLabel: "Output options" }}
             containerHint="BlockLevel"
           >
-            <CCP4i2TaskElement
-              {...props}
-              itemName="OUTPUT_HYDROGENS"
-              qualifiers={{
-                guiLabel: "Output calculated riding hydrogens to file",
-              }}
-            />
+            {renderElements(elementConfigs.outputOptions)}
           </CCP4i2ContainerElement>
+
           <CCP4i2ContainerElement
             itemName=""
             key="Map calculation"
@@ -393,37 +455,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             qualifiers={{ guiLabel: "Map calculation" }}
             containerHint="BlockLevel"
           >
-            <CCP4i2TaskElement
-              {...props}
-              itemName="MAP_SHARP"
-              qualifiers={{
-                guiLabel: "Perform map sharpening when calculating maps",
-              }}
-              key="MAP_SHARP"
-            />
-            <Grid2 container key="Sharpen row">
-              <Grid2 size={{ xs: 6 }} key="Col1">
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName="MAP_SHARP_CUSTOM"
-                  qualifiers={{
-                    guiLabel: "Use custom sharpening parameter (B-factor)",
-                  }}
-                  visibility={() => MAP_SHARP}
-                  key="MAP_SHARP_CUSTOM"
-                />
-              </Grid2>
-              <Grid2 size={{ xs: 6 }} key="Col2">
-                <CCP4i2TaskElement
-                  {...props}
-                  itemName="BSHARP"
-                  qualifiers={{ guiLabel: "B factor to use" }}
-                  visibility={() => MAP_SHARP && MAP_SHARP_CUSTOM}
-                  key="BSHARP"
-                />
-              </Grid2>
-            </Grid2>
+            {renderElements(elementConfigs.mapCalculation.slice(0, 1))}
+            {renderGridElements(elementConfigs.mapCalculation.slice(1))}
           </CCP4i2ContainerElement>
+
           <CCP4i2ContainerElement
             itemName=""
             {...props}
@@ -433,41 +468,18 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             elementSx={{ minWidth: "8rem" }}
             key="Validation"
           >
-            <CCP4i2TaskElement
-              key={1}
-              {...props}
-              itemName="VALIDATE_BAVERAGE"
-              qualifiers={{ guiLabel: "Analyse B-factor distributions" }}
-            />
-            <CCP4i2TaskElement
-              key={2}
-              {...props}
-              itemName="VALIDATE_RAMACHANDRAN"
-              qualifiers={{ guiLabel: "Calculate Ramachandran plots" }}
-            />
-            <CCP4i2TaskElement
-              key={3}
-              {...props}
-              itemName="VALIDATE_MOLPROBITY"
-              qualifiers={{ guiLabel: "Run MolProbity to analyse geometry" }}
-            />
+            {renderElements(elementConfigs.validation)}
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
 
         <CCP4i2Tab label="Prosmart - protein" key="Prosmart protein">
-          <CCP4i2TaskElement
-            {...props}
-            itemName="prosmartProtein.REFERENCE_MODELS"
-            qualifiers={{ guiLabel: "Protein reference models" }}
-          />
+          {renderElements(elementConfigs.prosmartProtein)}
           <CCP4i2ContainerElement
             {...props}
             itemName="prosmartProtein"
             containerHint="FolderLevel"
             excludeItems={["REFERENCE_MODELS"]}
-            qualifiers={{
-              guiLabel: "Prosmart - protein",
-            }}
+            qualifiers={{ guiLabel: "Prosmart - protein" }}
           />
         </CCP4i2Tab>
       </CCP4i2Tabs>
