@@ -28,7 +28,6 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   const { itemName, job } = props;
   const {
     getTaskItem,
-    getFileDigest,
     useFileDigest,
     getValidationColor,
     setParameterNoMutate,
@@ -50,16 +49,14 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   );
 
   const handleChange = useCallback(async () => {
-    mutateDigest();
-  }, [mutateDigest]);
-
-  useAsyncEffect(async () => {
     if (!item || !setParameterNoMutate || !fileDigest) return;
-    console.log("File digest", fileDigest);
+
     //Here if the file Digest has changed
     const newCell = fileDigest?.cell || null;
     let parametersUpdated = false;
+
     if (newCell && JSON.stringify(newCell) !== JSON.stringify(cell)) {
+      console.log("Updating cell parameter due to fileDigest change");
       await setParameterNoMutate({
         object_path: `${item._objectPath}.cell`,
         value: newCell,
