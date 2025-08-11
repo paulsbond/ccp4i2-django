@@ -45,21 +45,24 @@ def upload_file_param(job: models.Job, request: HttpRequest) -> dict:
 
     job_param_name = extract_from_first_bracketed(object_path)
 
+    existing_files = models.File.objects.filter(job=job, job_param_name=job_param_name)
     try:
-        existing_file = models.File.objects.get(job=job, job_param_name=job_param_name)
-        logger.warning("Upload will replace existing file [%s]", existing_file.path)
-        try:
+        for existing_file in existing_files:
+            logger.warning("Upload will replace existing files [%s]", existing_file)
             existing_file.path.unlink()
-        except Exception as err:
-            logger.exception("Problem replacing [%s]", existing_file.path, exc_info=err)
-        try:
-            file_import = models.FileImport.objects.get(file=existing_file)
-            file_import.delete()
-        except models.FileImport.DoesNotExist:
-            logger.debug("Existing file had no import [%s]", existing_file.path)
-        existing_file.delete()
-    except models.File.DoesNotExist:
-        logger.debug("Upload will not replace existing file")
+            try:
+                file_import = models.FileImport.objects.get(file=existing_file)
+                file_import.delete()
+            except models.FileImport.DoesNotExist:
+                logger.debug("Existing file had no import [%s]", existing_file.path)
+            existing_file.delete()
+    except Exception as err:
+        logger.exception(
+            "Error deleting existing files for job %s job_param_name %s",
+            job.uuid,
+            job_param_name,
+            exc_info=err,
+        )
 
     assert isinstance(
         param_object,
