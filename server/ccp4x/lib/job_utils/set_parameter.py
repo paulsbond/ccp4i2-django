@@ -31,6 +31,7 @@ def set_parameter(
             previous_value = value_dict_for_object(previous_object_element)
             previous_file_id = previous_value.get("dbFileId", None)
             if previous_file_id is not None:
+                logger.debug("Deleting previous file with id %s", previous_file_id)
                 try:
                     previous_file = models.File.objects.get(
                         uuid=uuid.UUID(previous_file_id)

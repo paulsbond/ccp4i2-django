@@ -1,20 +1,73 @@
+"""
+XML Processing Module for Nested File References
+
+This module provides functionality for processing XML documents that contain special
+<file> nodes with embedded XML file references. It recursively copies XML structures
+while expanding file references and merging their content into the destination document.
+
+The module is designed to handle XML templates and configurations that reference
+external XML files, commonly used in scientific workflow systems like CCP4i2.
+
+Typical Usage Example:
+    import xml.etree.ElementTree as ET
+    from load_nested_xml import load_nested_xml
+
+    # Load an XML file with embedded file references
+    tree = ET.parse("input.xml")
+    root = tree.getroot()
+
+    # Process the XML, expanding file references and removing file nodes
+    processed_root = load_nested_xml(root)
+
+Key Features:
+    - Removes <file> nodes while processing their referenced content
+    - Merges content from referenced XML files into ccp4i2_body elements
+    - Applies text overrides from simple nodes when values differ
+    - Handles CCP4I2_TOP project references with relative path resolution
+"""
+
 import xml.etree.ElementTree as ET
 import pathlib
+import logging
 from typing import Optional, Dict, List
 from ccp4i2.core import CCP4File
+
+
+logger = logging.getLogger(f"ccp4x:{__name__}")
 
 
 def load_nested_xml(src: ET.Element, dest: Optional[ET.Element] = None) -> ET.Element:
     """
     Copy an etree element to another etree element with special handling for 'file' nodes.
-    File nodes are processed for their embedded content but are not included in the final XML.
+
+    This is the main entry point for the XML processing system. It recursively copies
+    XML structures while applying special processing for <file> nodes that contain
+    references to external XML files.
+
+    File nodes are processed for their embedded content but are not included in the
+    final XML output. Instead, their referenced content is merged into appropriate
+    locations in the destination document.
 
     Args:
-        src: Source etree element to copy from
-        dest: Optional destination etree element to copy to. If None, creates a new empty element.
+        src (ET.Element): Source etree element to copy from. This can be any XML element,
+            but typically represents the root of an XML document.
+        dest (ET.Element, optional): Destination etree element to copy to. If None,
+            creates a new empty element with the same tag as src. Defaults to None.
 
     Returns:
-        The destination etree element with copied content
+        ET.Element: The destination etree element with copied content. All <file> nodes
+            will have been removed, and their referenced content will have been merged
+            into the appropriate locations.
+
+    Example:
+        >>> import xml.etree.ElementTree as ET
+        >>> root = ET.fromstring('<root><child>text</child><file>...</file></root>')
+        >>> result = load_nested_xml(root)
+        >>> # result will contain <child>text</child> but not the <file> element
+
+    Note:
+        This function modifies the destination element in-place and also returns it.
+        The source element is not modified.
     """
     if dest is None:
         dest = ET.Element(src.tag)
@@ -55,16 +108,37 @@ def load_nested_xml(src: ET.Element, dest: Optional[ET.Element] = None) -> ET.El
 def _handle_file_node(file_node: ET.Element, dest_root: ET.Element) -> None:
     """
     Handle special processing for 'file' nodes with CI2XmlDataFile children.
-    Parse referenced XML files and merge their ccp4i2_body children.
-    The file node itself is NOT added to the destination.
+
+    This function processes <file> nodes that contain CI2XmlDataFile elements, which
+    specify references to external XML files. It extracts the file path information,
+    loads the referenced XML file, and merges its content into the destination.
+
+    The file node itself is NOT added to the destination - only its referenced content
+    is processed and merged.
 
     Args:
-        file_node: The file element to process
-        dest_root: The root destination element to merge ccp4i2_body children into
+        file_node (ET.Element): The <file> element to process. Expected to contain
+            a CI2XmlDataFile child element with project, baseName, and relPath children.
+        dest_root (ET.Element): The root destination element where ccp4i2_body children
+            from the referenced file will be merged.
+
+    Expected File Node Structure:
+        <file>
+            <CI2XmlDataFile>
+                <project>CCP4I2_TOP</project>
+                <relPath>pipelines/some_pipeline/script</relPath>
+                <baseName>parameters.xml</baseName>
+            </CI2XmlDataFile>
+        </file>
+
+    Note:
+        Currently only supports project="CCP4I2_TOP". Other project values are ignored.
+        The function logs status messages for debugging purposes.
     """
     # Find the CI2XmlDataFile child node
     ci2_xml_data_file = file_node.find("CI2XmlDataFile")
     if ci2_xml_data_file is None:
+        logger.debug("File node does not contain CI2XmlDataFile child")
         return
 
     # Extract project, baseName, and relPath
@@ -73,6 +147,9 @@ def _handle_file_node(file_node: ET.Element, dest_root: ET.Element) -> None:
     rel_path_node = ci2_xml_data_file.find("relPath")
 
     if project_node is None or base_name_node is None or rel_path_node is None:
+        logger.debug(
+            "CI2XmlDataFile missing required elements (project, baseName, or relPath)"
+        )
         return
 
     # Get text values and strip whitespace
@@ -86,43 +163,67 @@ def _handle_file_node(file_node: ET.Element, dest_root: ET.Element) -> None:
         ccp4_file_parent = pathlib.Path(CCP4File.__file__).parent.parent
         file_path = ccp4_file_parent / rel_path / base_name
 
-        # Print the path
-        print(f"CCP4I2_TOP file path: {file_path} (file node will be removed)")
+        logger.debug(
+            f"Processing CCP4I2_TOP file path: {file_path} (file node will be removed)"
+        )
 
         # Parse the XML file and merge ccp4i2_body children
         _parse_and_merge_xml_file(file_path, dest_root)
+    else:
+        logger.debug(f"Skipping file node with unsupported project: {project}")
 
 
 def _parse_and_merge_xml_file(file_path: pathlib.Path, dest_root: ET.Element) -> None:
     """
     Parse an XML file and merge its ccp4i2_body children into the destination root.
 
+    This function loads an external XML file, finds all ccp4i2_body elements within it,
+    and recursively merges their children into the destination document's ccp4i2_body
+    element. If no ccp4i2_body exists in the destination, one is created.
+
     Args:
-        file_path: Path to the XML file to parse
-        dest_root: The root destination element to merge ccp4i2_body children into
+        file_path (pathlib.Path): Path to the XML file to parse and merge.
+        dest_root (ET.Element): The root destination element where ccp4i2_body
+            children will be merged.
+
+    Raises:
+        ET.ParseError: If the XML file cannot be parsed due to syntax errors.
+        FileNotFoundError: If the specified file does not exist.
+
+    Note:
+        This function logs detailed status messages for debugging.
+        If the file doesn't exist or cannot be parsed, warnings/errors are logged but
+        no exceptions are raised - the function fails gracefully.
+
+    Processing Flow:
+        1. Check if file exists
+        2. Parse the XML file
+        3. Find all ccp4i2_body elements in the parsed file
+        4. Find or create ccp4i2_body in destination
+        5. Recursively copy children using load_nested_xml (which handles nested files)
     """
     try:
-        print(f"  Attempting to parse XML file: {file_path}")
+        logger.debug(f"Attempting to parse XML file: {file_path}")
 
         # Check if file exists
         if not file_path.exists():
-            print(f"  Warning: File not found: {file_path}")
+            logger.exception(f"File not found: {file_path}")
             return
 
         # Parse the XML file
         tree = ET.parse(file_path)
         parsed_root = tree.getroot()
 
-        print(f"  Successfully parsed XML. Root element: <{parsed_root.tag}>")
+        logger.debug(f"Successfully parsed XML. Root element: <{parsed_root.tag}>")
 
         # Find all ccp4i2_body nodes in the parsed XML
         ccp4i2_body_nodes = parsed_root.findall(".//ccp4i2_body")
 
         if not ccp4i2_body_nodes:
-            print(f"  No ccp4i2_body nodes found in {file_path}")
+            logger.debug(f"No ccp4i2_body nodes found in {file_path}")
             return
 
-        print(f"  Found {len(ccp4i2_body_nodes)} ccp4i2_body node(s)")
+        logger.debug(f"Found {len(ccp4i2_body_nodes)} ccp4i2_body node(s)")
 
         # Find or create ccp4i2_body in destination
         dest_ccp4i2_body = _find_or_create_ccp4i2_body(dest_root)
@@ -131,7 +232,9 @@ def _parse_and_merge_xml_file(file_path: pathlib.Path, dest_root: ET.Element) ->
         total_merged = 0
         for i, body_node in enumerate(ccp4i2_body_nodes):
             children_count = len(list(body_node))
-            print(f"  Processing ccp4i2_body node {i+1} with {children_count} children")
+            logger.debug(
+                f"Processing ccp4i2_body node {i+1} with {children_count} children"
+            )
 
             # Copy all children of the ccp4i2_body node using our recursive function
             # This will also remove any nested file nodes while processing their content
@@ -140,24 +243,49 @@ def _parse_and_merge_xml_file(file_path: pathlib.Path, dest_root: ET.Element) ->
                 dest_ccp4i2_body.append(child_copy)
                 total_merged += 1
 
-        print(
-            f"  Successfully merged {total_merged} children into destination ccp4i2_body"
+        logger.debug(
+            f"Successfully merged {total_merged} children into destination ccp4i2_body"
         )
 
     except ET.ParseError as e:
-        print(f"  Error parsing XML file {file_path}: {e}")
+        logger.exception(f"Error parsing XML file {file_path}: {e}")
+    except FileNotFoundError as e:
+        logger.exception(f"File not found when parsing {file_path}: {e}")
     except Exception as e:
-        print(f"  Unexpected error processing {file_path}: {e}")
+        logger.error(f"Unexpected error processing {file_path}: {e}")
 
 
 def _apply_text_overrides(src: ET.Element, dest: ET.Element) -> None:
     """
-    Apply text content overrides from simple (child-free) nodes in src to matching xpath nodes in dest.
-    Only applies overrides from non-file nodes and only when text values differ.
+    Apply text content overrides from simple nodes in src to matching xpath nodes in dest.
+    Special handling for 'content' nodes: ALL content nodes from parent override embedded files.
+
+    This function identifies "simple nodes" (elements with no children but containing text)
+    in the source element and applies their text content to matching xpath locations
+    in the destination element. For 'content' nodes specifically, overrides are applied
+    regardless of whether the text values differ.
+
+    Simple nodes within <file> elements are excluded from override processing since
+    <file> nodes are removed from the final output.
 
     Args:
-        src: Source element to extract simple node text from
-        dest: Destination element to apply overrides to
+        src (ET.Element): Source element to extract simple node text from.
+        dest (ET.Element): Destination element to apply text overrides to.
+
+    Algorithm:
+        1. Find all simple nodes with text content in source (excluding file nodes)
+        2. Build xpath-to-element mapping for destination
+        3. For each simple node, find matching xpath in destination
+        4. For 'content' nodes: Always override regardless of existing value
+        5. For other nodes: Compare text values and apply override only if they differ
+
+    Example:
+        If source contains <config><content>parent_value</content></config>
+        and destination contains <config><content>embedded_value</content></config>,
+        the destination content will ALWAYS be overridden to "parent_value".
+
+    Note:
+        This function logs detailed status messages about overrides applied.
     """
     # Get all simple nodes (nodes without children) from source that have text content
     # Exclude simple nodes that are within file nodes
@@ -166,15 +294,16 @@ def _apply_text_overrides(src: ET.Element, dest: ET.Element) -> None:
     if not simple_nodes_with_text:
         return
 
-    print(
-        f"  Found {len(simple_nodes_with_text)} simple nodes with text content to check for overrides (excluding file nodes)"
+    logger.debug(
+        f"Found {len(simple_nodes_with_text)} simple nodes with text content to check for overrides (excluding file nodes)"
     )
 
     # Build xpath to element mapping for destination
     dest_xpath_map = _build_xpath_map(dest)
 
-    # Apply overrides only when text differs
+    # Apply overrides
     overrides_applied = 0
+    content_overrides_applied = 0
     matches_checked = 0
 
     for xpath, src_text_content in simple_nodes_with_text.items():
@@ -184,35 +313,66 @@ def _apply_text_overrides(src: ET.Element, dest: ET.Element) -> None:
                 matches_checked += 1
                 dest_text = dest_element.text.strip() if dest_element.text else ""
 
-                # Only apply override if text values differ
-                if dest_text != src_text_content:
+                # Check if this is a 'content' node
+                is_content_node = dest_element.tag == "content"
+
+                # For content nodes: ALWAYS override regardless of existing value
+                # For other nodes: Only apply override if text values differ
+                should_override = is_content_node or (dest_text != src_text_content)
+
+                if should_override:
                     dest_element.text = src_text_content
-                    print(
-                        f"    Override applied: {xpath} '{dest_text}' -> '{src_text_content}'"
-                    )
+
+                    if is_content_node:
+                        logger.debug(
+                            f"Content override applied: {xpath} '{dest_text}' -> '{src_text_content}' (FORCED)"
+                        )
+                        content_overrides_applied += 1
+                    else:
+                        logger.debug(
+                            f"Override applied: {xpath} '{dest_text}' -> '{src_text_content}'"
+                        )
                     overrides_applied += 1
 
     if matches_checked > 0:
-        print(
-            f"  Checked {matches_checked} matching xpath(s), applied {overrides_applied} text overrides"
+        logger.debug(
+            f"Checked {matches_checked} matching xpath(s), applied {overrides_applied} text overrides "
+            f"({content_overrides_applied} forced content overrides)"
         )
     else:
-        print(f"  No matching xpath nodes found for text overrides")
+        logger.debug("No matching xpath nodes found for text overrides")
 
 
 def _get_simple_nodes_with_text(
     element: ET.Element, current_path: str = "", exclude_file_nodes: bool = False
 ) -> Dict[str, str]:
     """
-    Get all simple nodes (nodes without children) that have text content.
+    Get all simple nodes (leaf nodes with text content) from an XML element tree.
+
+    A "simple node" is defined as an element that has no child elements but contains
+    text content. These nodes are candidates for text override operations.
 
     Args:
-        element: Element to traverse
-        current_path: Current xpath being built
-        exclude_file_nodes: If True, exclude nodes that are within file elements
+        element (ET.Element): Element to traverse for simple nodes.
+        current_path (str, optional): Current xpath being built during traversal.
+            Used internally for recursion. Defaults to "".
+        exclude_file_nodes (bool, optional): If True, exclude nodes that are within
+            <file> elements from the results. Defaults to False.
 
     Returns:
-        Dictionary mapping xpath to text content
+        Dict[str, str]: Dictionary mapping xpath strings to text content. Each xpath
+            uniquely identifies a simple node location, and the value is the stripped
+            text content of that node.
+
+    Example:
+        >>> element = ET.fromstring('<root><a>text1</a><b><c>text2</c></b></root>')
+        >>> result = _get_simple_nodes_with_text(element)
+        >>> print(result)
+        {'root/a': 'text1', 'root/b/c': 'text2'}
+
+    Note:
+        Text content is automatically stripped of leading/trailing whitespace.
+        Empty text content (after stripping) is ignored.
     """
     simple_nodes = {}
 
@@ -245,14 +405,33 @@ def _build_xpath_map(
     element: ET.Element, current_path: str = ""
 ) -> Dict[str, List[ET.Element]]:
     """
-    Build a mapping from xpath to list of elements at that path.
+    Build a mapping from xpath strings to lists of elements at those paths.
+
+    This function creates a comprehensive index of all elements in an XML tree,
+    organized by their xpath location. This enables efficient lookup of elements
+    by xpath for operations like text overrides.
 
     Args:
-        element: Element to traverse
-        current_path: Current xpath being built
+        element (ET.Element): Element to traverse and map.
+        current_path (str, optional): Current xpath being built during traversal.
+            Used internally for recursion. Defaults to "".
 
     Returns:
-        Dictionary mapping xpath to list of elements
+        Dict[str, List[ET.Element]]: Dictionary mapping xpath strings to lists of
+            elements found at those paths. Multiple elements can share the same
+            xpath if there are duplicate element names at the same level.
+
+    Example:
+        >>> element = ET.fromstring('<root><a>1</a><a>2</a><b>3</b></root>')
+        >>> xpath_map = _build_xpath_map(element)
+        >>> len(xpath_map['root/a'])  # Two elements at this path
+        2
+        >>> len(xpath_map['root/b'])  # One element at this path
+        1
+
+    Note:
+        The xpath format used is simplified and does not include array indices or
+        attribute predicates. It's a simple hierarchical path using '/' separators.
     """
     xpath_map = {}
 
@@ -283,27 +462,49 @@ def _find_or_create_ccp4i2_body(root: ET.Element) -> ET.Element:
     """
     Find an existing ccp4i2_body element in the root, or create one if it doesn't exist.
 
+    The ccp4i2_body element is a special container used in CCP4i2 XML documents to
+    hold the main content. This function ensures that such an element exists in the
+    destination document for content merging operations.
+
     Args:
-        root: The root element to search in
+        root (ET.Element): The root element to search in for ccp4i2_body.
 
     Returns:
-        The ccp4i2_body element
+        ET.Element: The ccp4i2_body element, either found or newly created.
+
+    Search Strategy:
+        Uses ".//ccp4i2_body" xpath to find ccp4i2_body elements anywhere in the
+        document tree, not just as direct children of root.
+
+    Creation Strategy:
+        If no ccp4i2_body is found, creates one as a direct child of the root element.
+
+    Note:
+        This function logs status messages indicating whether an existing element
+        was found or a new one was created.
     """
     # Try to find existing ccp4i2_body
     ccp4i2_body = root.find(".//ccp4i2_body")
 
     if ccp4i2_body is not None:
-        print(f"  Found existing ccp4i2_body in destination")
+        logger.debug("Found existing ccp4i2_body in destination")
         return ccp4i2_body
 
     # Create new ccp4i2_body if not found
-    print(f"  Creating new ccp4i2_body in destination")
+    logger.debug("Creating new ccp4i2_body in destination")
     ccp4i2_body = ET.SubElement(root, "ccp4i2_body")
     return ccp4i2_body
 
 
 # Example usage and testing
 if __name__ == "__main__":
+    """
+    Example usage demonstrating the load_nested_xml functionality.
+
+    This example loads a real CCP4i2 pipeline definition file and processes it
+    to show how file nodes are expanded and content is merged. It provides
+    detailed output for debugging and verification purposes.
+    """
     # Load XML from the prosmart_refmac.def.xml file
     xml_file_path = (
         pathlib.Path(CCP4File.__file__).parent.parent
