@@ -5,6 +5,7 @@ import { Job } from "../types/models";
 import { CircularProgress, LinearProgress, Paper, Popper } from "@mui/material";
 import AimlessPipeInterface from "../components/task/task-interfaces/aimless_pipe";
 import LidiaAcedrgNewInterface from "../components/task/task-interfaces/LidiaAcedrgNew";
+import ClustalwInterface from "../components/task/task-interfaces/clustalw";
 import Crank2Interface from "../components/task/task-interfaces/crank2";
 import GenericInterface from "../components/task/task-interfaces/generic";
 import ImportMergedInterface from "../components/task/task-interfaces/import_merged";
@@ -16,7 +17,7 @@ import SubstituteLigandInterface from "../components/task/task-interfaces/Substi
 import ProvideAsuContentsInterface from "../components/task/task-interfaces/ProvideAsuContents";
 import ProvideSequenceInterface from "../components/task/task-interfaces/ProvideSequence";
 import ParrotInterface from "../components/task/task-interfaces/parrot";
-import { useJob, usePrevious } from "../utils";
+import { useJob } from "../utils";
 import { ErrorPopper } from "../components/task/task-elements/error-info";
 import { FetchFileForParam } from "../components/task/task-elements/fetch-file-for-param";
 import { RunCheckContext } from "./run-check-provider";
@@ -69,6 +70,14 @@ export const TaskContainer = () => {
       case "prosmart_refmac":
         return (
           <ProsmartRefmacInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "clustalw":
+        return (
+          <ClustalwInterface
             {...{
               job,
             }}
