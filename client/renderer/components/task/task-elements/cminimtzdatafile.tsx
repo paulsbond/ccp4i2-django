@@ -42,7 +42,7 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
   );
 
   const infoContent = useMemo(
-    () => <BaseSpacegroupCellElement data={fileDigest?.digest} />,
+    () => <BaseSpacegroupCellElement data={fileDigest} />,
     [fileDigest]
   );
 
