@@ -129,8 +129,9 @@ export const CCP4i2ReportXMLView = () => {
             <Typography variant="h6" sx={{ fontWeight: "bold" }}>
               What next?
             </Typography>
-            {what_next.result.map((task: any) => (
+            {what_next.result.map((task: any, iTask: number) => (
               <Button
+                key={iTask}
                 variant="outlined"
                 sx={{ minWidth: "15rem" }}
                 onClick={() => {

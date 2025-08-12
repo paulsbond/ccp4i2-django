@@ -74,12 +74,21 @@ export const JobLogViewer: React.FC<JobLogViewerProps> = ({ job, project }) => {
 
     // Show common log file extensions
     const logExtensions = [".log", ".out", ".err", ".txt", ".xml", ".json"];
+
+    //Return draft parameter files
+    const excludePattern = [
+      /^input_params\.previous_\d+\.xml$/i,
+      /^params\.previous_\d+\.xml$/i,
+    ];
+    if (excludePattern.some((pattern) => pattern.test(item.name))) {
+      return false;
+    }
+
     return logExtensions.some((ext) => item.name.toLowerCase().endsWith(ext));
   };
 
   const handleFileSelect = (menuNode: any) => {
     // Handle file selection if needed, e.g., preview or download
-    console.log("Selected file:", menuNode);
     if (menuNode.type !== "directory") {
       // Set the preview node or perform any action needed
       const composite_path = `/api/proxy/projects/${

@@ -895,7 +895,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     const item = container?.lookup[paramName];
     const dbFileId = valueOfItem(item)?.dbFileId;
 
-    console.log("dbFileId", JSON.stringify(dbFileId));
+    //console.log("dbFileId", JSON.stringify(dbFileId));
     // Return null key when dbFileId is falsey - this prevents SWR from fetching
     const swrKey = dbFileId ? `files/${dbFileId}/download_by_uuid/` : null;
 
