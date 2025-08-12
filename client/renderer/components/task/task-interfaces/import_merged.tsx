@@ -166,12 +166,65 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         const columnNames = match[1].split(",").map((name) => name.trim());
         const columnTypes = columnNames.map(
           (name) =>
-            HKLINDigest?.digest?.listOfColumns.find(
+            HKLINDigest?.listOfColumns.find(
               (col: { columnLabel: string }) => col.columnLabel === name
             )?.columnType
         );
+        const datasetNames = columnNames.map(
+          (name) =>
+            HKLINDigest?.listOfColumns.find(
+              (col: { columnLabel: string }) => col.columnLabel === name
+            )?.dataset
+        );
+
         const signature = columnTypes.join("");
-        console.log({ signature, columnPath, columnNames });
+        console.log({
+          signature,
+          columnPath,
+          columnNames,
+          loc: HKLINDigest?.digest?.listOfColumns,
+        });
+
+        // Check if datasetNames conditions are met
+        if (
+          datasetNames.length === columnNames.length &&
+          datasetNames.length > 0 &&
+          datasetNames.every((name) => name === datasetNames[0])
+        ) {
+          await updateDATASETNAME(datasetNames[0]);
+
+          // Handle crystal names if available
+          if (HKLINDigest?.datasets && HKLINDigest?.crystalNames) {
+            const consensusDatasetName = datasetNames[0];
+            let selectedCrystalName = "Xtal1"; // Default fallback
+
+            // Try to find matching index in datasets array
+            const datasetIndex =
+              HKLINDigest.datasets.indexOf(consensusDatasetName);
+
+            if (
+              datasetIndex !== -1 &&
+              datasetIndex < HKLINDigest.crystalNames.length
+            ) {
+              // Option a) Use crystal name at same index as consensus dataset
+              selectedCrystalName = HKLINDigest.crystalNames[datasetIndex];
+            } else {
+              // Option b) Find last entry that is not "HKL_base"
+              const validCrystalNames = HKLINDigest.crystalNames.filter(
+                (name: string) => name !== "HKL_base"
+              );
+
+              if (validCrystalNames.length > 0) {
+                selectedCrystalName =
+                  validCrystalNames[validCrystalNames.length - 1];
+              }
+              // If no valid names found, keep default "Xtal1"
+            }
+
+            updateCRYSTALNAME(selectedCrystalName);
+          }
+        }
+
         const contentFlag = ["KMKM", "GLGL", "JQ", "FQ"].indexOf(signature);
         console.log({ signature, contentFlag, columnPath, columnNames });
         if (contentFlag > -1) {
