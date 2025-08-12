@@ -28,7 +28,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { data: HKLINDigest } = useFileDigest(
     `ProvideAsuContents.inputData.HKLIN`
   );
-  const oldHKLINDigest = usePrevious(HKLINDigest?.digest);
 
   /**
    * Fetches the molecular weight for the current job's ASU content using SWR.
@@ -77,7 +76,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
    *
    * @param job.id - The unique identifier for the current job.
    * @param molWeight?.result - The calculated molecular weight to be used in the analysis.
-   * @param HKLINDigest?.digest - The digest of the HKLIN file, used as a cache key dependency.
+   * @param HKLINDigest - The digest of the HKLIN file, used as a cache key dependency.
    *
    * @returns
    * - `data: matthewsAnalysis` - The result of the Matthews coefficient analysis, or `undefined` if not yet loaded.
@@ -92,7 +91,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     [
       `/api/proxy/jobs/${job.id}/object_method/`,
       molWeight?.result,
-      HKLINDigest?.digest,
+      HKLINDigest,
     ],
     ([url, molWeightResult, hklinDigest]) =>
       fetch(url, {

@@ -178,12 +178,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         );
 
         const signature = columnTypes.join("");
-        console.log({
-          signature,
-          columnPath,
-          columnNames,
-          loc: HKLINDigest?.digest?.listOfColumns,
-        });
+
+        let datasetIndex: number = -1;
 
         // Check if datasetNames conditions are met
         if (
@@ -192,39 +188,59 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
           datasetNames.every((name) => name === datasetNames[0])
         ) {
           await updateDATASETNAME(datasetNames[0]);
+          const consensusDatasetName = datasetNames[0];
 
-          // Handle crystal names if available
-          if (HKLINDigest?.datasets && HKLINDigest?.crystalNames) {
-            const consensusDatasetName = datasetNames[0];
-            let selectedCrystalName = "Xtal1"; // Default fallback
-
-            // Try to find matching index in datasets array
-            const datasetIndex =
-              HKLINDigest.datasets.indexOf(consensusDatasetName);
-
-            if (
-              datasetIndex !== -1 &&
-              datasetIndex < HKLINDigest.crystalNames.length
-            ) {
-              // Option a) Use crystal name at same index as consensus dataset
-              selectedCrystalName = HKLINDigest.crystalNames[datasetIndex];
-            } else {
-              // Option b) Find last entry that is not "HKL_base"
-              const validCrystalNames = HKLINDigest.crystalNames.filter(
-                (name: string) => name !== "HKL_base"
-              );
-
-              if (validCrystalNames.length > 0) {
-                selectedCrystalName =
-                  validCrystalNames[validCrystalNames.length - 1];
-              }
-              // If no valid names found, keep default "Xtal1"
-            }
-
-            updateCRYSTALNAME(selectedCrystalName);
-          }
+          // Try to find matching index in datasets array
+          datasetIndex = HKLINDigest.datasets.indexOf(consensusDatasetName);
         }
+        // Handle crystal names if available
+        let selectedCrystalName = "Xtal1"; // Default fallback
+        if (
+          datasetIndex !== -1 &&
+          Array.isArray(HKLINDigest.crystalNames) &&
+          datasetIndex < HKLINDigest.crystalNames.length
+        ) {
+          // Option a) Use crystal name at same index as consensus dataset
+          selectedCrystalName = HKLINDigest.crystalNames[datasetIndex];
+        } else {
+          // Option b) Find last entry that is not "HKL_base"
+          const validCrystalNames = HKLINDigest.crystalNames.filter(
+            (name: string) => name !== "HKL_base"
+          );
 
+          if (validCrystalNames.length > 0) {
+            selectedCrystalName =
+              validCrystalNames[validCrystalNames.length - 1];
+          }
+          // If no valid names found, keep default "Xtal1"
+        }
+        updateCRYSTALNAME(selectedCrystalName);
+
+        // Handle wavelengths if available
+        let selectedWavelength = "1.0"; // Default fallback
+        if (
+          datasetIndex !== -1 &&
+          Array.isArray(HKLINDigest.wavelengths) &&
+          datasetIndex < HKLINDigest.wavelengths.length
+        ) {
+          // Option a) Use wavelength at same index as consensus dataset
+          selectedWavelength = HKLINDigest.wavelengths[datasetIndex];
+        } else if (Array.isArray(HKLINDigest.wavelengths)) {
+          // Option b) Find last entry that is not "HKL_base"
+          const validWavelengths = HKLINDigest.wavelengths.filter(
+            (name: string) => name !== "HKL_base"
+          );
+
+          if (validWavelengths.length > 0) {
+            selectedWavelength = validWavelengths[validWavelengths.length - 1];
+          } else if (HKLINDigest.wavelengths.length > 0) {
+            selectedWavelength = HKLINDigest.wavelengths[0]; // Fallback to first wavelength
+          }
+          // If no valid wavelengths found, keep default "1.0"
+        }
+        updateWAVELENGTH(selectedWavelength);
+
+        // Determine content flag based on signature
         const contentFlag = ["KMKM", "GLGL", "JQ", "FQ"].indexOf(signature);
         console.log({ signature, contentFlag, columnPath, columnNames });
         if (contentFlag > -1) {
@@ -377,7 +393,7 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
 
   const handleSelectedBlockChange = useCallback(
     async (mmcifSelectedBlockName) => {
-      if (!digest?.digest?.rblock_infos || job?.status != 1) return;
+      if (!digest?.rblock_infos || job?.status != 1) return;
       if (
         !setMMCIF_SELECTED_COLUMNS ||
         !setMMCIF_SELECTED_ISINTENSITY ||
@@ -385,9 +401,9 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
       )
         return;
       if (mmcifSelectedBlockName === oldMMCIF_SELECTED_BLOCKValue) return;
-      if (!digest?.digest?.format || digest?.digest?.format !== "mmcif") return;
+      if (!digest?.format || digest?.format !== "mmcif") return;
       const asyncFunc = async () => {
-        if (digest?.digest?.rblock_infos) {
+        if (digest?.rblock_infos) {
           const selectedBlock = digest.rblock_infos.find(
             (info: { bname: string }) => info.bname === mmcifSelectedBlockName
           );
@@ -428,7 +444,7 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
   }, [MMCIF_SELECTED_BLOCKValue]);
 
   return (
-    digest?.digest?.rblock_infos && (
+    digest?.rblock_infos && (
       <>
         <Card>
           <CardHeader variant="primary" title="Mmcif file information" />
