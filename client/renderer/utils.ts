@@ -991,6 +991,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
       projectJobs: Job[],
       projects: Project[]
     ): SetParameterArg => {
+      // Base parameter structure
       const setParameterArg: SetParameterArg = {
         object_path: objectPath,
         value: {
@@ -1002,37 +1003,41 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         },
       };
 
-      // Handle imported files
-      if (value.directory === FILE_DIRECTORIES.IMPORTED) {
-        setParameterArg.value.relPath = FILE_PATHS.IMPORTED_FILES;
-      }
+      // Handle different file directory types
+      const handleFileDirectory = () => {
+        if (value.directory === FILE_DIRECTORIES.IMPORTED) {
+          setParameterArg.value.relPath = FILE_PATHS.IMPORTED_FILES;
+        } else if (value.directory === FILE_DIRECTORIES.JOB_OUTPUT) {
+          const jobOfFile = projectJobs?.find(
+            (theJob) => theJob.id === value.job
+          );
+          if (jobOfFile) {
+            const jobDir = jobOfFile.number
+              .split(".")
+              .map((element) => `${FILE_PATHS.JOB_PREFIX}${element}`)
+              .join("/");
 
-      // Handle job output files
-      if (
-        job &&
-        projectJobs &&
-        value.directory === FILE_DIRECTORIES.JOB_OUTPUT
-      ) {
-        const jobOfFile = projectJobs.find((theJob) => theJob.id === value.job);
-
-        if (jobOfFile) {
-          const jobDir = jobOfFile.number
-            .split(".")
-            .map((element) => `${FILE_PATHS.JOB_PREFIX}${element}`)
-            .join("/");
-
-          setParameterArg.value.relPath = `${FILE_PATHS.JOBS_DIR}/${jobDir}`;
-
-          // Add project information
-          if (projects) {
-            const project = projects.find(
-              (theProject) => theProject.id === jobOfFile.project
-            );
-            if (project) {
-              setParameterArg.value.project = project.uuid.replace(/-/g, "");
-            }
+            setParameterArg.value.relPath = `${FILE_PATHS.JOBS_DIR}/${jobDir}`;
           }
         }
+
+        // Set project for both directory types (moved outside the if/else)
+        const jobOfFile = projectJobs?.find(
+          (theJob) => theJob.id === value.job
+        );
+        if (jobOfFile) {
+          const project = projects?.find(
+            (theProject) => theProject.id === jobOfFile.project
+          );
+          if (project) {
+            setParameterArg.value.project = project.uuid.replace(/-/g, "");
+          }
+        }
+      };
+
+      // Apply directory-specific handling only if job context exists
+      if (job && projectJobs) {
+        handleFileDirectory();
       }
 
       return setParameterArg;
