@@ -869,7 +869,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     return (paramName: string): Promise<any | undefined> => {
       const dbFileId = container?.lookup?.[paramName]?.dbFileId;
       const url = dbFileId
-        ? `/api/proxy/files/${dbFileId}/download_by_uuid/`
+        ? `/api/proxy/files/${dbFileId}/digest_by_uuid/`
         : null;
       if (!url) {
         console.warn(`Parameter ${paramName} not found in container`);
