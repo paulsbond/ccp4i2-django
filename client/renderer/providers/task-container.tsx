@@ -10,6 +10,7 @@ import Crank2Interface from "../components/task/task-interfaces/crank2";
 import GenericInterface from "../components/task/task-interfaces/generic";
 import ImportMergedInterface from "../components/task/task-interfaces/import_merged";
 import ModelcraftInterface from "../components/task/task-interfaces/modelcraft";
+import MolrepSelfrot from "../components/task/task-interfaces/molrep_selfrot";
 import ProsmartRefmacInterface from "../components/task/task-interfaces/prosmart_refmac";
 import PhaserSimpleInterface from "../components/task/task-interfaces/phaser_simple";
 import ServalcatPipeInterface from "../components/task/task-interfaces/servalcat_pipe";
@@ -17,6 +18,7 @@ import SubstituteLigandInterface from "../components/task/task-interfaces/Substi
 import ProvideAsuContentsInterface from "../components/task/task-interfaces/ProvideAsuContents";
 import ProvideSequenceInterface from "../components/task/task-interfaces/ProvideSequence";
 import PhaserEPInterface from "../components/task/task-interfaces/phaser_EP";
+import PhaserEPLLGInterface from "../components/task/task-interfaces/phaser_EP_LLG";
 import ParrotInterface from "../components/task/task-interfaces/parrot";
 import { useJob } from "../utils";
 import { ErrorPopper } from "../components/task/task-elements/error-info";
@@ -68,17 +70,9 @@ export const TaskContainer = () => {
     switch (job?.task_name) {
       case null:
         return <LinearProgress />;
-      case "prosmart_refmac":
+      case "aimless_pipe":
         return (
-          <ProsmartRefmacInterface
-            {...{
-              job,
-            }}
-          />
-        );
-      case "phaser_EP":
-        return (
-          <PhaserEPInterface
+          <AimlessPipeInterface
             {...{
               job,
             }}
@@ -92,17 +86,9 @@ export const TaskContainer = () => {
             }}
           />
         );
-      case "modelcraft":
+      case "crank2":
         return (
-          <ModelcraftInterface
-            {...{
-              job,
-            }}
-          />
-        );
-      case "parrot":
-        return (
-          <ParrotInterface
+          <Crank2Interface
             {...{
               job,
             }}
@@ -116,9 +102,49 @@ export const TaskContainer = () => {
             }}
           />
         );
-      case "SubstituteLigand":
+      case "LidiaAcedrgNew":
         return (
-          <SubstituteLigandInterface
+          <LidiaAcedrgNewInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "modelcraft":
+        return (
+          <ModelcraftInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "molrep_selfrot":
+        return (
+          <MolrepSelfrot
+            {...{
+              job,
+            }}
+          />
+        );
+      case "parrot":
+        return (
+          <ParrotInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "phaser_EP":
+        return (
+          <PhaserEPInterface
+            {...{
+              job,
+            }}
+          />
+        );
+      case "phaser_EP_LLG":
+        return (
+          <PhaserEPLLGInterface
             {...{
               job,
             }}
@@ -132,17 +158,9 @@ export const TaskContainer = () => {
             }}
           />
         );
-      case "aimless_pipe":
+      case "prosmart_refmac":
         return (
-          <AimlessPipeInterface
-            {...{
-              job,
-            }}
-          />
-        );
-      case "LidiaAcedrgNew":
-        return (
-          <LidiaAcedrgNewInterface
+          <ProsmartRefmacInterface
             {...{
               job,
             }}
@@ -164,17 +182,17 @@ export const TaskContainer = () => {
             }}
           />
         );
-      case "crank2":
+      case "servalcat_pipe":
         return (
-          <Crank2Interface
+          <ServalcatPipeInterface
             {...{
               job,
             }}
           />
         );
-      case "servalcat_pipe":
+      case "SubstituteLigand":
         return (
-          <ServalcatPipeInterface
+          <SubstituteLigandInterface
             {...{
               job,
             }}
