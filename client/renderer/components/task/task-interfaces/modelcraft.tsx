@@ -4,12 +4,26 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
+import { useCallback, useEffect } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const { getTaskItem } = useJob(job.id);
   const { value: USE_MODEL_PHASES } = getTaskItem("USE_MODEL_PHASES");
+  const { value: XYZIN, update: setXYZIN } = getTaskItem("XYZIN");
+
+  const clearXYZIN = useCallback(async () => {
+    if (XYZIN?.dbFileId) {
+      setXYZIN({});
+    }
+  }, [XYZIN, setXYZIN]);
+
+  useEffect(() => {
+    if (!USE_MODEL_PHASES && XYZIN?.dbFileId) {
+      console.log(USE_MODEL_PHASES, XYZIN);
+    }
+  }, [USE_MODEL_PHASES, XYZIN]);
 
   return (
     <>
