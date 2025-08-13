@@ -4,7 +4,7 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -13,17 +13,16 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { value: USE_MODEL_PHASES } = getTaskItem("USE_MODEL_PHASES");
   const { value: XYZIN, update: setXYZIN } = getTaskItem("XYZIN");
 
-  const clearXYZIN = useCallback(async () => {
-    if (XYZIN?.dbFileId) {
-      setXYZIN({});
-    }
-  }, [XYZIN, setXYZIN]);
-
-  useEffect(() => {
-    if (!USE_MODEL_PHASES && XYZIN?.dbFileId) {
-      console.log(USE_MODEL_PHASES, XYZIN);
-    }
-  }, [USE_MODEL_PHASES, XYZIN]);
+  const handleUSE_MODEL_PHASES = useCallback(
+    async (new_USE_MODEL_PHASES: any) => {
+      //Look at the return value of the USE_MODEL_PHASES item
+      //Clear XYZIN if updated USE_MODEL_PHASES is false
+      if (!new_USE_MODEL_PHASES._value && XYZIN?.dbFileId) {
+        setXYZIN({});
+      }
+    },
+    [XYZIN, setXYZIN]
+  );
 
   return (
     <>
@@ -65,6 +64,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 key="USE_MODEL_PHASES"
                 itemName="USE_MODEL_PHASES"
                 qualifiers={{ guiLabel: "Use model phases" }}
+                onChange={handleUSE_MODEL_PHASES}
               />
               <CCP4i2TaskElement
                 {...props}
