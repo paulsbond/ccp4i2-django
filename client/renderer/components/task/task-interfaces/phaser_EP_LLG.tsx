@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useContext, useEffect, useMemo } from "react";
 import { Paper } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useJob, usePrevious } from "../../../utils";
+import { RunCheckContext } from "../../../providers/run-check-provider";
 
 /**
  * Task interface component for Phaser Experimental Phasing LLG (Log-Likelihood Gain) calculation.
@@ -18,10 +19,14 @@ import { useJob, usePrevious } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, useFileDigest, mutateContainer } = useJob(job.id);
+  const { getTaskItem, useFileDigest, mutateContainer, validation } = useJob(
+    job.id
+  );
 
   // Get task items for file handling and parameter updates
   const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
+  const { item: XYZIN_PARTIALItem, value: XYZIN_PARTIALValue } =
+    getTaskItem("XYZIN_PARTIAL");
   const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
 
   // File digest for wavelength extraction
@@ -37,6 +42,13 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     [getTaskItem]
   );
 
+  const {
+    processedErrors,
+    setProcessedErrors,
+    setExtraDialogActions,
+    extraDialogActions = [],
+  } = useContext(RunCheckContext);
+
   // Visibility conditions
   const visibility = useMemo(
     () => ({
@@ -47,6 +59,44 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }),
     [taskValues]
   );
+
+  const processErrors = useCallback(() => {
+    const newProcessedErrors = {
+      ...validation,
+    };
+    if (XYZIN_PARTIALValue?.contentFlag === 2) {
+      newProcessedErrors["phaser_EP_LLG.inputData.XYZIN_PARTIAL"] = {
+        messages: ["Phaser apps can only work with PDB format"],
+        maxSeverity: 2,
+      };
+      setProcessedErrors(newProcessedErrors);
+    } else if (
+      processedErrors &&
+      Object.keys(processedErrors).includes(
+        "phaser_EP_LLG.inputData.XYZIN_PARTIAL"
+      )
+    ) {
+      setProcessedErrors(newProcessedErrors);
+    }
+  }, [XYZIN_PARTIALValue, validation, setProcessedErrors, processedErrors]);
+
+  useEffect(() => {
+    if (!XYZIN_PARTIALValue || !processErrors) return;
+    if (
+      (XYZIN_PARTIALValue.contentFlag === 2 &&
+        (!processedErrors ||
+          !Object.keys(processedErrors).includes(
+            "phaser_EP_LLG.inputData.XYZIN_PARTIAL"
+          ))) ||
+      (XYZIN_PARTIALValue.contentFlag === 1 &&
+        processedErrors &&
+        Object.keys(processedErrors).includes(
+          "phaser_EP_LLG.inputData.XYZIN_PARTIAL"
+        ))
+    ) {
+      processErrors();
+    }
+  }, [XYZIN_PARTIALValue, processedErrors, processErrors]);
 
   // Element configurations
   const elementConfigs = useMemo(
