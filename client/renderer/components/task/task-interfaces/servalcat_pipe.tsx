@@ -269,7 +269,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               guiLabel: "Additional geometry dictionaries",
               initiallyOpen: true,
             }}
-            containerHint="FolderLevel"
+            containerHint="BlockLevel"
           >
             <CCP4i2TaskElement
               {...props}
