@@ -27,9 +27,7 @@ import ParrotInterface from "../components/task/task-interfaces/parrot";
       case "parrot":
         return (
           <ParrotInterface
-            {...{
-              job,
-            }}
+            job={job}
           />
         );
 
