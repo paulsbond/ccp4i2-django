@@ -314,8 +314,9 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
     }, [job, jobCharValues, jobFloatValues]);
 
     const handleMenuClick = useCallback(
-      (event: React.MouseEvent<HTMLButtonElement>) => {
+      (event: React.MouseEvent<HTMLElement>) => {
         event.stopPropagation();
+        event.preventDefault(); // Prevent default context menu
 
         if (job) {
           setJobMenuAnchorEl(event.currentTarget);
@@ -326,6 +327,22 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
         }
       },
       [job, file, setJobMenuAnchorEl, setJob, setFileMenuAnchorEl, setFile]
+    );
+
+    // Handle right-click context menu
+    const handleContextMenu = useCallback(
+      (event: React.MouseEvent<HTMLElement>) => {
+        handleMenuClick(event);
+      },
+      [handleMenuClick]
+    );
+
+    // Handle button click (left-click on menu button)
+    const handleButtonClick = useCallback(
+      (event: React.MouseEvent<HTMLButtonElement>) => {
+        handleMenuClick(event);
+      },
+      [handleMenuClick]
     );
 
     const renderAvatar = () => {
@@ -382,7 +399,16 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
         {...getRootProps()}
         sx={shouldShowTreeItemBorder(job) ? TREE_ITEM_BORDER_STYLE : undefined}
       >
-        <TreeItem2Content {...getContentProps()}>
+        <TreeItem2Content
+          {...getContentProps()}
+          onContextMenu={handleContextMenu}
+          sx={{
+            cursor: "context-menu",
+            "&:hover": {
+              backgroundColor: "action.hover",
+            },
+          }}
+        >
           <TreeItem2IconContainer {...getIconContainerProps()}>
             <TreeItem2Icon status={status} />
           </TreeItem2IconContainer>
@@ -405,7 +431,7 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
               minWidth: "auto",
               ml: 1,
             }}
-            onClick={handleMenuClick}
+            onClick={handleButtonClick}
             aria-label={`Open ${isJob ? "job" : "file"} menu`}
           >
             <MenuIcon fontSize="small" />

@@ -1,4 +1,4 @@
-import { useContext, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import { CCP4i2ReportElementProps } from "./CCP4i2ReportElement";
 import {
   Avatar,
@@ -33,17 +33,49 @@ export const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
       : "ccp4";
   }, [file]);
 
+  const handleMenuClick = useCallback(
+    (ev: React.MouseEvent<HTMLElement>) => {
+      ev.stopPropagation();
+      ev.preventDefault();
+      setFileMenuAnchorEl(ev.currentTarget);
+      if (file) setFile(file);
+    },
+    [file, setFileMenuAnchorEl, setFile]
+  );
+
+  // Handle right-click context menu
+  const handleContextMenu = useCallback(
+    (ev: React.MouseEvent<HTMLElement>) => {
+      handleMenuClick(ev);
+    },
+    [handleMenuClick]
+  );
+
+  // Handle button click (left-click on menu button)
+  const handleButtonClick = useCallback(
+    (ev: React.MouseEvent<HTMLButtonElement>) => {
+      handleMenuClick(ev);
+    },
+    [handleMenuClick]
+  );
+
   if (!file || isLoading) return <LinearProgress />;
+
   return (
     <>
       <Stack
         direction="row"
+        onContextMenu={handleContextMenu}
         sx={{
           border: "3px solid",
           borderRadius: "0.5rem",
           mx: 2,
           my: 1,
           p: 1,
+          cursor: "context-menu",
+          "&:hover": {
+            backgroundColor: "action.hover",
+          },
         }}
       >
         <Avatar
@@ -71,12 +103,7 @@ export const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
             size="small"
             sx={{ p: 0, m: 0 }}
             variant="outlined"
-            onClick={(ev) => {
-              ev.stopPropagation();
-              ev.preventDefault();
-              setFileMenuAnchorEl(ev.currentTarget);
-              setFile(file);
-            }}
+            onClick={handleButtonClick}
           >
             <MenuIcon fontSize="small" />
           </Button>

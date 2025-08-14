@@ -34,7 +34,12 @@ export default function JobPage({
   const { id, jobid } = use(params);
   const { project, jobs, mutateJobs } = useProject(parseInt(id));
   const { devMode } = useContext(CCP4i2Context);
-  const { setExtraDialogActions, setProcessedErrors } = useRunCheck();
+  const {
+    setExtraDialogActions,
+    setProcessedErrors,
+    extraDialogActions,
+    processedErrors,
+  } = useRunCheck();
 
   const { setJobId } = useContext(CCP4i2Context);
 
@@ -78,29 +83,29 @@ export default function JobPage({
   //Here a useEffect that will clear processedErrors and extraDialogActions when job changes
   useEffect(() => {
     if (!setExtraDialogActions || !setProcessedErrors) return;
-    if (!job || !previousJob || job.id === previousJob.id) return;
-    setExtraDialogActions(null);
-    setProcessedErrors(null);
-  }, [setExtraDialogActions, setProcessedErrors, job, previousJob]);
+    if (extraDialogActions) setExtraDialogActions(null);
+    if (processedErrors) setProcessedErrors(null);
+  }, [jobid, setExtraDialogActions, setProcessedErrors]);
 
   return !project || !jobs || !job ? (
     <LinearProgress />
   ) : (
     <>
       <ToolBar />
-
       <Container>
         <JobHeader job={job} mutateJobs={mutateJobs} />
         <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
           <Tab value={0} label="Task interface" />
           {devMode && <Tab value={1} label="Params as xml" />}
           {devMode && <Tab value={2} label="Report as xml" />}
-          <Tab value={3} label="Report" />
+          {(devMode || job?.status === 6) && <Tab value={3} label="Report" />}
           {(devMode || job?.status === 5) && (
             <Tab value={4} label="Diagnostics" />
           )}
           {devMode && <Tab value={5} label="Def xml" />}
-          {devMode && <Tab value={6} label="Validation report" />}
+          {(devMode || job?.status === 1) && (
+            <Tab value={6} label="Validation report" />
+          )}
           {devMode && <Tab value={7} label="Job container" />}
           <Tab value={8} label="Comments" />
           <Tab value={9} label="Directory" />
@@ -132,7 +137,7 @@ export default function JobPage({
         {devMode && tabValue == 5 && def_xml && (
           <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
         )}
-        {devMode && tabValue == 6 && validation && (
+        {(devMode || job?.status === 1) && tabValue == 6 && validation && (
           <ValidationViewer job={job} />
         )}
         {tabValue == 7 && container && (
