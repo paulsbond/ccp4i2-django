@@ -13,7 +13,7 @@ client/renderer/components/task/task-interfaces/
 The appropriate interface to use for a given ccp4i2 task is captured in the file
 
 ```
-client/renderer/providers/task-container.tsx
+client/renderer/task/task-interfaces/task-container.tsx
 ```
 
 Each interface is a `.tsx` file named after the task, and registered in `task-container.tsx`. To register the interface in `task-container.tsx`, simply edit `task-container.tsx` to 1) import the task interface file, and 2) add a corresponding `case` to the long switch statement :
@@ -26,9 +26,7 @@ import ParrotInterface from "../components/task/task-interfaces/parrot";
 
       case "parrot":
         return (
-          <ParrotInterface
-            job={job}
-          />
+          <ParrotInterface job={job} />
         );
 
 ```
