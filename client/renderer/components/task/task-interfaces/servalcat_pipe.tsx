@@ -1,51 +1,49 @@
-import {
-  Button,
-  Grid2,
-  LinearProgress,
-  Paper,
-  Typography,
-} from "@mui/material";
-import { CCP4i2TaskInterfaceProps } from "../../../providers/task-container";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
+import { Button, Grid2, Paper, Typography } from "@mui/material";
+import { useRouter } from "next/navigation";
+import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
-import { useApi } from "../../../api";
-import { useJob, usePrevious, useProject } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useCallback, useContext, useEffect, useMemo } from "react";
+import { useJob } from "../../../utils";
 import {
   CCP4i2ErrorReport,
-  CCP4i2RunActions,
   RunCheckContext,
 } from "../../../providers/run-check-provider";
 import { Job } from "../../../types/models";
-import { useRouter } from "next/navigation";
 
+/**
+ * Task interface component for ServalCat Pipe - Macromolecular Refinement Pipeline.
+ *
+ * ServalCat Pipe is used for:
+ * - Automated macromolecular structure refinement
+ * - Integration with geometry validation and analysis
+ * - Map calculation with optional sharpening
+ * - NCS and twinning handling
+ * - Comprehensive validation reporting (MolProbity, Ramachandran, B-factors)
+ */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
-  const api = useApi();
   const { job } = props;
+  const router = useRouter();
+  const { getTaskItem, createPeerTask, validation } = useJob(job.id);
 
-  const { getTaskItem, createPeerTask } = useJob(job.id);
+  // Use refs to track processed states and prevent cycles
+  const lastProcessedValidation = useRef<any>(null);
+  const lastProcessedFreeRFlag = useRef<any>(null);
 
+  // Get task items
   const { value: HKLINValue } = getTaskItem("servalcat_pipe.inputData.HKLIN");
   const { value: MAP_SHARP } = getTaskItem("MAP_SHARP");
   const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
-
-  const intensitiesAvailable = useMemo(() => {
-    return [1, 3].includes(HKLINValue?.contentFlag);
-  }, [HKLINValue]);
-
-  const router = useRouter();
-
-  // 1. Retrieve the jobs validation: this will be kept up to date automatically as parameters
-  //change.  Also retrieve getTaskItem function
-  const { validation } = useJob(job.id);
-
-  // 2. get the prevailing value of FREERFLAG: this will be updated on each re-render
-
   const { value: freeRFlag } = getTaskItem("FREERFLAG");
 
-  // 3. Retrieve the function for setting a processed Error Report
-
+  // Context for error handling
   const {
     processedErrors,
     setProcessedErrors,
@@ -54,59 +52,88 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     setRunTaskRequested,
   } = useContext(RunCheckContext);
 
+  // Derived state (memoized for performance)
+  const intensitiesAvailable = useMemo(() => {
+    return [1, 3].includes(HKLINValue?.contentFlag);
+  }, [HKLINValue?.contentFlag]);
+
+  // Visibility conditions (stable references)
+  const visibility = useMemo(
+    () => ({
+      showMapSharpening: () => MAP_SHARP === true,
+      showCustomBFactor: () => MAP_SHARP === true && MAP_SHARP_CUSTOM === true,
+      showAmplitudesWarning: () => !intensitiesAvailable,
+      showRefinementChoice: () => intensitiesAvailable,
+    }),
+    [MAP_SHARP, MAP_SHARP_CUSTOM, intensitiesAvailable]
+  );
+
+  // Stable task creation function
   const createFreeRTask = useCallback(async () => {
-    await createPeerTask("freerflag").then((created_job: Job) => {
-      if (created_job) {
-        // If the task was created successfully, we can navigate to it
-        router.push(`/project/${job.project}/job/${created_job.id}`);
-        //Shut down the run check dialog
+    try {
+      const createdJob: Job | undefined = await createPeerTask("freerflag");
+      if (createdJob) {
+        router.push(`/project/${job.project}/job/${createdJob.id}`);
         setRunTaskRequested(null);
       }
-    });
-  }, [job, createPeerTask]);
-
-  // Process the errors, adding a non-blocking (maxSeverity 3) error if the Free R flag is not set
-  // This is done to ensure that the user is aware of the missing Free R flag,
-  // but it does not block the execution of the task.
-  // The processedErrors state is updated only if the new errors are different from the previous ones
-  // to prevent unnecessary re-renders.
-  useEffect(() => {
-    if (validation) {
-      const newProcessedErrors = Object.fromEntries(
-        Object.entries(validation as CCP4i2ErrorReport).filter(
-          ([key, _]) =>
-            key !== "servalcat_pipe.metalCoordWrapper.inputData.XYZIN"
-        )
-      );
-      if (!(freeRFlag?.dbFileId?.length > 0)) {
-        // If the Free R flag is not set, we add an overridable serious error report.
-        newProcessedErrors.FREERFLAG = {
-          messages: [
-            "Setting the Free R flag file is strongly recommended for refinement",
-            "You are advised to select an existing set or create a new one ",
-          ],
-          maxSeverity: 3, //maxSeverity of 2 causes the confirm dialog to show, and prevents execution
-          // maxSeverity of 3 causes confirm dialog to show, but allows execution
-        };
-      }
-
-      // Only update if processedErrors have changed. This prevents unnecessary re-renders. Use JSON.stringify to compare objects
-      // Note: This is a simple way to compare objects.
-      if (
-        JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
-      ) {
-        setProcessedErrors(newProcessedErrors);
-      }
+    } catch (error) {
+      console.error("Error creating FreeR task:", error);
     }
+  }, [createPeerTask, job.project, router, setRunTaskRequested]);
+
+  // Process validation errors with cycle prevention
+  const processValidationErrors = useCallback(() => {
+    if (!validation) return;
+
+    // Prevent processing the same validation multiple times
+    const validationKey = JSON.stringify(validation);
+    const freeRFlagKey = JSON.stringify(freeRFlag);
+
+    if (
+      lastProcessedValidation.current === validationKey &&
+      lastProcessedFreeRFlag.current === freeRFlagKey
+    ) {
+      return;
+    }
+
+    // Filter out specific validation errors
+    const newProcessedErrors = Object.fromEntries(
+      Object.entries(validation as CCP4i2ErrorReport).filter(
+        ([key, _]) => key !== "servalcat_pipe.metalCoordWrapper.inputData.XYZIN"
+      )
+    );
+
+    // Add FreeR flag warning if not set
+    if (!freeRFlag?.dbFileId?.length) {
+      newProcessedErrors.FREERFLAG = {
+        messages: [
+          "Setting the Free R flag file is strongly recommended for refinement",
+          "You are advised to select an existing set or create a new one",
+        ],
+        maxSeverity: 3, // Allows execution but shows warning
+      };
+    }
+
+    // Only update if errors have actually changed
+    const newErrorsKey = JSON.stringify(newProcessedErrors);
+    const currentErrorsKey = JSON.stringify(processedErrors);
+
+    if (newErrorsKey !== currentErrorsKey) {
+      setProcessedErrors(newProcessedErrors);
+    }
+
+    // Update tracking refs
+    lastProcessedValidation.current = validationKey;
+    lastProcessedFreeRFlag.current = freeRFlagKey;
   }, [validation, freeRFlag, processedErrors, setProcessedErrors]);
 
-  useEffect(() => {
-    if (!(freeRFlag?.dbFileId?.length > 0)) {
-      // If the Free R flag is not set, we add an action to create a Free R task
-      // This will be shown in the confirm dialog.  As ever when changing state,
-      // we check if the action is already there to avoid unnecessary re-renders.
-      if (!extraDialogActions || !extraDialogActions["FREERFLAG"]) {
+  // Handle extra dialog actions for FreeR flag
+  const updateExtraDialogActions = useCallback(() => {
+    if (!freeRFlag?.dbFileId?.length) {
+      // Only add action if it doesn't already exist
+      if (!extraDialogActions?.FREERFLAG) {
         const newExtraDialogActions = {
+          ...extraDialogActions,
           FREERFLAG: (
             <Button variant="contained" onClick={createFreeRTask}>
               Create FreeR task
@@ -115,13 +142,29 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         };
         setExtraDialogActions(newExtraDialogActions);
       }
+    } else {
+      // Remove action if FreeR flag is now set
+      if (extraDialogActions?.FREERFLAG) {
+        const { FREERFLAG, ...remainingActions } = extraDialogActions;
+        setExtraDialogActions(
+          Object.keys(remainingActions).length > 0 ? remainingActions : null
+        );
+      }
     }
-  }, [freeRFlag, setExtraDialogActions, createFreeRTask, extraDialogActions]);
+  }, [freeRFlag, extraDialogActions, setExtraDialogActions, createFreeRTask]);
 
-  //This is a really important cleanup function to avoid memory leaks
-  //It ensures that processedErrors and extraDialogActions are cleared when the component unmounts
+  // Effect for processing validation errors
   useEffect(() => {
-    // Cleanup function to reset context values when the component unmounts
+    processValidationErrors();
+  }, [processValidationErrors]);
+
+  // Effect for handling extra dialog actions
+  useEffect(() => {
+    updateExtraDialogActions();
+  }, [updateExtraDialogActions]);
+
+  // Cleanup effect to prevent memory leaks
+  useEffect(() => {
     return () => {
       setExtraDialogActions(null);
       setProcessedErrors(null);
@@ -129,162 +172,257 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   }, [setExtraDialogActions, setProcessedErrors]);
 
   return (
-    <CCP4i2Tabs>
-      <CCP4i2Tab label="Input data">
-        <CCP4i2ContainerElement
-          {...props}
-          itemName=""
-          containerHint="BlockLevel"
-          qualifiers={{ guiLabel: "Main inputs" }}
-        >
-          <div
-            style={{
-              borderRadius: "0.5rem",
-              padding: "1rem",
-              border: "3px solid grey",
+    <Paper>
+      <CCP4i2Tabs>
+        <CCP4i2Tab label="Input data" key="input">
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Main inputs",
+              initiallyOpen: true,
             }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2ContainerElement
+              {...props}
+              itemName=""
+              qualifiers={{
+                guiLabel: "Structure coordinates",
+                initiallyOpen: true,
+              }}
+              containerHint="BlockLevel"
+              sx={{
+                border: "3px solid grey",
+                borderRadius: "0.5rem",
+                p: 2,
+                mb: 2,
+              }}
+            >
+              <CCP4i2TaskElement
+                {...props}
+                itemName="servalcat_pipe.inputData.XYZIN"
+                qualifiers={{
+                  guiLabel: "Input coordinates",
+                  toolTip: "Macromolecular coordinates for refinement",
+                }}
+              />
+            </CCP4i2ContainerElement>
+
+            <CCP4i2ContainerElement
+              {...props}
+              itemName=""
+              qualifiers={{
+                guiLabel: "Reflection data",
+                initiallyOpen: true,
+              }}
+              containerHint="BlockLevel"
+              sx={{
+                border: "3px solid grey",
+                borderRadius: "0.5rem",
+                p: 2,
+                mb: 2,
+              }}
+            >
+              <CCP4i2TaskElement
+                {...props}
+                itemName="HKLIN"
+                qualifiers={{
+                  guiLabel: "Reflection data",
+                  toolTip: "Observed reflection data for refinement",
+                }}
+              />
+
+              {visibility.showRefinementChoice() ? (
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="F_SIGF_OR_I_SIGI"
+                  qualifiers={{
+                    guiLabel: "Refinement against",
+                    toolTip: "Choose between structure factors or intensities",
+                  }}
+                />
+              ) : (
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: "medium", mt: 1 }}
+                >
+                  Using <strong>amplitudes</strong>
+                </Typography>
+              )}
+
+              <CCP4i2TaskElement
+                {...props}
+                itemName="FREERFLAG"
+                qualifiers={{
+                  guiLabel: "Free R flags",
+                  toolTip: "Test set flags for cross-validation",
+                }}
+              />
+            </CCP4i2ContainerElement>
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Additional geometry dictionaries",
+              initiallyOpen: true,
+            }}
+            containerHint="FolderLevel"
           >
             <CCP4i2TaskElement
               {...props}
-              itemName="servalcat_pipe.inputData.XYZIN"
+              itemName="DICT_LIST"
+              qualifiers={{
+                guiLabel: "Dictionaries",
+                toolTip:
+                  "Additional geometry dictionaries for non-standard residues",
+              }}
             />
-          </div>
-          <div
-            style={{
-              borderRadius: "0.5rem",
-              padding: "1rem",
-              border: "3px solid grey",
-            }}
-          >
-            <CCP4i2TaskElement {...props} itemName="HKLIN" />
-            {intensitiesAvailable ? (
-              <CCP4i2TaskElement
-                {...props}
-                itemName="F_SIGF_OR_I_SIGI"
-                qualifiers={{ guiLabel: "Refinement against" }}
-              />
-            ) : (
-              <Typography variant="body1">
-                Using <b>amplitudes</b>
-              </Typography>
-            )}
-            <CCP4i2TaskElement {...props} itemName="FREERFLAG" />
-          </div>
-        </CCP4i2ContainerElement>
-        <CCP4i2ContainerElement
-          {...props}
-          itemName=""
-          containerHint="BlockLevel"
-          size={{ xs: 12 }}
-          qualifiers={{ guiLabel: "Additional geomtery dictionaries" }}
-        >
-          <CCP4i2TaskElement
-            {...props}
-            itemName="DICT_LIST"
-            qualifiers={{ guiLabel: "Dictionaries" }}
-          />
-        </CCP4i2ContainerElement>
-      </CCP4i2Tab>
-      <CCP4i2Tab label="Output" key="Output">
-        <CCP4i2TaskElement
-          {...props}
-          itemName="USE_NCS"
-          qualifiers={{
-            guiLabel: "Use NCS if present",
-          }}
-          visibility={() => true}
-          key="USE_NCS"
-        />
-        <CCP4i2TaskElement
-          {...props}
-          itemName="USE_TWIN"
-          visibility={() => true}
-          key="USE_TWIN"
-        />
-        <CCP4i2ContainerElement
-          key="Output options"
-          {...props}
-          itemName=""
-          qualifiers={{ guiLabel: "Output options" }}
-          containerHint="BlockLevel"
-        >
-          <CCP4i2TaskElement
-            {...props}
-            itemName="OUTPUT_HYDROGENS"
-            qualifiers={{
-              guiLabel: "Output calculated riding hydrogens to file",
-            }}
-          />
-        </CCP4i2ContainerElement>
-        <CCP4i2ContainerElement
-          itemName=""
-          key="Map calculation"
-          {...props}
-          qualifiers={{ guiLabel: "Map calculation" }}
-          containerHint="BlockLevel"
-        >
-          <CCP4i2TaskElement
-            {...props}
-            itemName="MAP_SHARP"
-            qualifiers={{
-              guiLabel: "Perform map sharpening when calculating maps",
-            }}
-            key="MAP_SHARP"
-          />
+          </CCP4i2ContainerElement>
+        </CCP4i2Tab>
 
-          <Grid2 container key="Sharpen row">
-            <Grid2 size={{ xs: 6 }} key="Col1">
-              <CCP4i2TaskElement
-                {...props}
-                itemName="MAP_SHARP_CUSTOM"
-                qualifiers={{
-                  guiLabel: "Use custom sharpening parameter (B-factor)",
-                }}
-                visibility={() => MAP_SHARP}
-                key="MAP_SHARP_CUSTOM"
-              />
+        <CCP4i2Tab label="Output" key="output">
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Refinement options",
+              initiallyOpen: true,
+            }}
+            containerHint="FolderLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="USE_NCS"
+              qualifiers={{
+                guiLabel: "Use NCS if present",
+                toolTip: "Apply non-crystallographic symmetry restraints",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="USE_TWIN"
+              qualifiers={{
+                guiLabel: "Use twinning",
+                toolTip: "Handle crystal twinning during refinement",
+              }}
+            />
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Output options",
+              initiallyOpen: true,
+            }}
+            containerHint="FolderLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="OUTPUT_HYDROGENS"
+              qualifiers={{
+                guiLabel: "Output calculated riding hydrogens to file",
+                toolTip:
+                  "Include calculated hydrogen atoms in output coordinates",
+              }}
+            />
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Map calculation",
+              initiallyOpen: true,
+            }}
+            containerHint="FolderLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="MAP_SHARP"
+              qualifiers={{
+                guiLabel: "Perform map sharpening when calculating maps",
+                toolTip: "Apply B-factor sharpening to improve map quality",
+              }}
+            />
+
+            <Grid2 container spacing={2} sx={{ mt: 1 }}>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="MAP_SHARP_CUSTOM"
+                  qualifiers={{
+                    guiLabel: "Use custom sharpening parameter (B-factor)",
+                    toolTip: "Specify custom B-factor for map sharpening",
+                  }}
+                  visibility={visibility.showMapSharpening}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="BSHARP"
+                  qualifiers={{
+                    guiLabel: "B factor to use",
+                    toolTip: "B-factor value for custom map sharpening",
+                  }}
+                  visibility={visibility.showCustomBFactor}
+                />
+              </Grid2>
             </Grid2>
-            <Grid2 size={{ xs: 6 }} key="Col2">
-              <CCP4i2TaskElement
-                {...props}
-                itemName="BSHARP"
-                qualifiers={{ guiLabel: "B factor to use" }}
-                visibility={() => MAP_SHARP && MAP_SHARP_CUSTOM}
-                key="BSHARP"
-              />
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Validation and analysis",
+              initiallyOpen: true,
+            }}
+            containerHint="FolderLevel"
+          >
+            <Grid2 container spacing={2}>
+              <Grid2 size={{ xs: 4 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="VALIDATE_BAVERAGE"
+                  qualifiers={{
+                    guiLabel: "Analyse B-factor distributions",
+                    toolTip: "Generate B-factor distribution analysis",
+                  }}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 4 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="VALIDATE_RAMACHANDRAN"
+                  qualifiers={{
+                    guiLabel: "Calculate Ramachandran plots",
+                    toolTip: "Generate Ramachandran plot validation",
+                  }}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 4 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="VALIDATE_MOLPROBITY"
+                  qualifiers={{
+                    guiLabel: "Run MolProbity to analyse geometry",
+                    toolTip:
+                      "Perform comprehensive geometry validation with MolProbity",
+                  }}
+                />
+              </Grid2>
             </Grid2>
-          </Grid2>
-        </CCP4i2ContainerElement>
-        <CCP4i2ContainerElement
-          itemName=""
-          {...props}
-          qualifiers={{ guiLabel: "Validation and analysis" }}
-          containerHint="BlockLevel"
-          size={{ xs: 4 }}
-          elementSx={{ minWidth: "8rem" }}
-          key="Validation"
-        >
-          <CCP4i2TaskElement
-            key={1}
-            {...props}
-            itemName="VALIDATE_BAVERAGE"
-            qualifiers={{ guiLabel: "Analyse B-factor distributions" }}
-          />
-          <CCP4i2TaskElement
-            key={2}
-            {...props}
-            itemName="VALIDATE_RAMACHANDRAN"
-            qualifiers={{ guiLabel: "Calculate Ramachandran plots" }}
-          />
-          <CCP4i2TaskElement
-            key={3}
-            {...props}
-            itemName="VALIDATE_MOLPROBITY"
-            qualifiers={{ guiLabel: "Run MolProbity to analyse geometry" }}
-          />
-        </CCP4i2ContainerElement>
-      </CCP4i2Tab>
-    </CCP4i2Tabs>
+          </CCP4i2ContainerElement>
+        </CCP4i2Tab>
+      </CCP4i2Tabs>
+    </Paper>
   );
 };
+
 export default TaskInterface;

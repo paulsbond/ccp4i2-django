@@ -6,7 +6,7 @@ import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../../components/job-header";
 import { CCP4i2ReportXMLView } from "../../../../../components/report/CCP4i2ReportXMLView";
 import { CCP4i2Context } from "../../../../../app-context";
-import { TaskContainer } from "../../../../../providers/task-container";
+import { TaskContainer } from "../../../../../components/task/task-interfaces/task-container";
 import {
   prettifyXml,
   useJob,
@@ -22,6 +22,7 @@ import $ from "jquery";
 import { Calculate } from "@mui/icons-material";
 import Diagnostic from "../../../../../components/diagnostic";
 import { JobLogViewer } from "../../../../../components/job-log-viewer";
+import { TaskProvider } from "../../../../../providers/task-provider";
 
 export default function JobPage({
   params,
@@ -83,6 +84,7 @@ export default function JobPage({
   ) : (
     <>
       <ToolBar />
+
       <Container>
         <JobHeader job={job} mutateJobs={mutateJobs} />
         <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
@@ -100,7 +102,11 @@ export default function JobPage({
           <Tab value={9} label="Directory" />
           <Tab value={10} label="Logs" />
         </Tabs>
-        {tabValue == 0 && <TaskContainer />}
+        {tabValue == 0 && (
+          <TaskProvider>
+            <TaskContainer />
+          </TaskProvider>
+        )}
         {devMode && tabValue == 1 && params_xml && (
           <Editor
             height="calc(100vh - 15rem)"

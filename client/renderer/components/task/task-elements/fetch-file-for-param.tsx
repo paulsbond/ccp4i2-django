@@ -14,8 +14,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { CCP4i2Context } from "../../../app-context";
 import { useJob } from "../../../utils";
 import { usePopcorn } from "../../../providers/popcorn-provider";
-import { TaskInterfaceContext } from "../../../providers/task-container";
-
+import { TaskInterfaceContext } from "../../../providers/task-provider";
 interface FetchFileForParamProps {
   open: boolean;
   onClose: () => void;

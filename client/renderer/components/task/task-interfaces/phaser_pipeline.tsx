@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Paper, Grid2 } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
@@ -7,31 +7,29 @@ import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useJob } from "../../../utils";
 
 /**
- * Task interface component for Phaser Simple - Molecular Replacement.
+ * Task interface component for Phaser Pipeline - Automated Molecular Replacement Pipeline.
  *
- * Phaser Simple is used for:
- * - Automated molecular replacement using known search models
- * - Finding multiple copies of molecules in the asymmetric unit
- * - Integration with refinement and model building pipelines
- * - Handling both structure factors and intensities
- * - Spacegroup testing and validation
+ * Phaser Pipeline is used for:
+ * - Automated molecular replacement with ensemble search models
+ * - Multi-step phasing and model building workflow
+ * - Integration with refinement and density modification
+ * - Automated space group testing and validation
+ * - Post-MR model building with sheet bend correction
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
   const { getTaskItem } = useJob(job.id);
 
-  // Use refs to track processed values and prevent cycles
-  const lastProcessedF_SIGFValue = useRef<any>(null);
+  // Use refs to track processed states and prevent cycles
   const initializationDone = useRef(false);
   const currentJobId = useRef<number | null>(null);
+  const lastProcessedF_SIGFValue = useRef<any>(null);
 
   // Get task items
-  const { item: F_SIGFItem } = getTaskItem("F_SIGF");
+  const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
   const { update: updateF_OR_I } = getTaskItem("F_OR_I");
-  const { value: INPUT_FIXED_value } = getTaskItem("INPUT_FIXED");
   const { value: COMP_BY_value } = getTaskItem("COMP_BY");
   const { value: SGALT_SELECT_value } = getTaskItem("SGALT_SELECT");
-  const { value: ID_RMS_value } = getTaskItem("ID_RMS");
 
   // Stable initialization function (runs once per job)
   const handleInitialization = useCallback(async () => {
@@ -55,6 +53,24 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
   }, [F_SIGFItem, updateF_OR_I, job?.status]);
 
+  // Stable change handler with cycle prevention
+  const handleF_SIGFChange = useCallback(async () => {
+    if (!F_SIGFItem || !updateF_OR_I || job?.status !== 1) return;
+
+    // Prevent processing the same value multiple times
+    const currentFlag = F_SIGFItem.contentFlag;
+    if (lastProcessedF_SIGFValue.current === currentFlag) return;
+
+    if ([2, 4].includes(currentFlag)) {
+      try {
+        lastProcessedF_SIGFValue.current = currentFlag;
+        await updateF_OR_I("F");
+      } catch (error) {
+        console.error("Error updating F_OR_I:", error);
+      }
+    }
+  }, [F_SIGFItem, updateF_OR_I, job?.status]);
+
   // Reset initialization when job changes
   useEffect(() => {
     if (currentJobId.current !== job?.id) {
@@ -71,34 +87,13 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
   }, [handleInitialization, job?.id]);
 
-  // Stable change handler with cycle prevention
-  const handleF_SIGFChange = useCallback(async () => {
-    if (!F_SIGFItem || !updateF_OR_I || job?.status !== 1) return;
-
-    // Prevent processing the same value multiple times
-    const currentValue = F_SIGFItem.contentFlag;
-    if (lastProcessedF_SIGFValue.current === currentValue) return;
-
-    if ([2, 4].includes(currentValue)) {
-      try {
-        lastProcessedF_SIGFValue.current = currentValue;
-        await updateF_OR_I("F");
-      } catch (error) {
-        console.error("Error updating F_OR_I:", error);
-      }
-    }
-  }, [F_SIGFItem, updateF_OR_I, job?.status]);
-
   // Visibility conditions (stable references)
   const visibility = {
     showF_OR_I: () =>
       F_SIGFItem?.contentFlag && [1, 3].includes(F_SIGFItem.contentFlag),
-    showXYZIN_FIXED: () => INPUT_FIXED_value === true,
     showASUFile: () => COMP_BY_value === "ASU",
     showMolecularWeights: () => COMP_BY_value === "MW",
     showSpacegroupList: () => SGALT_SELECT_value === "LIST",
-    showSequenceIdentity: () => ID_RMS_value === "ID",
-    showRMSD: () => ID_RMS_value === "RMS",
   };
 
   return (
@@ -130,38 +125,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               itemName="F_SIGF"
               qualifiers={{
                 guiLabel: "Reflections",
-                toolTip: "Reflection data file",
-              }}
-              onChange={handleF_SIGFChange} // Event-driven updates
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="XYZIN"
-              qualifiers={{
-                guiLabel: "Search coordinates",
-                toolTip: "Search model coordinates for molecular replacement",
-              }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="INPUT_FIXED"
-              qualifiers={{
-                guiLabel: "Have known partial model",
                 toolTip:
-                  "Include a known partial model that will remain fixed during the search",
+                  "Reflection data file containing observed structure factors or intensities",
               }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="XYZIN_FIXED"
-              qualifiers={{
-                guiLabel: "Known partial model",
-                toolTip: "Coordinates of the fixed partial model",
-              }}
-              visibility={visibility.showXYZIN_FIXED}
+              onChange={handleF_SIGFChange}
             />
 
             <CCP4i2TaskElement
@@ -170,6 +137,15 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               qualifiers={{
                 guiLabel: "Free R flags",
                 toolTip: "Test set flags for cross-validation",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="ENSEMBLES"
+              qualifiers={{
+                guiLabel: "Ensembles",
+                toolTip: "Ensemble search models for molecular replacement",
               }}
             />
           </CCP4i2ContainerElement>
@@ -183,16 +159,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             }}
             containerHint="FolderLevel"
           >
-            <CCP4i2TaskElement
-              {...props}
-              itemName="NCOPIES"
-              qualifiers={{
-                guiLabel: "Copies to find",
-                toolTip:
-                  "Number of copies of the search model to find in the asymmetric unit",
-              }}
-            />
-
             <CCP4i2ContainerElement
               {...props}
               itemName=""
@@ -242,7 +208,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                     itemName="RUNSHEETBEND"
                     qualifiers={{
                       guiLabel: "Sheet bend",
-                      toolTip: "Run sheet bend correction",
+                      toolTip:
+                        "Run sheet bend correction for beta-strand alignment",
                     }}
                   />
                 </Grid2>
@@ -263,7 +230,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                     itemName="RUNCOOT"
                     qualifiers={{
                       guiLabel: "Coot add-waters",
-                      toolTip: "Run Coot to add water molecules",
+                      toolTip: "Run Coot to automatically add water molecules",
                     }}
                   />
                 </Grid2>
@@ -349,46 +316,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                   "Specific spacegroups to test during molecular replacement",
               }}
               visibility={visibility.showSpacegroupList}
-            />
-          </CCP4i2ContainerElement>
-
-          <CCP4i2ContainerElement
-            {...props}
-            itemName=""
-            qualifiers={{
-              guiLabel: "Similarity of search model",
-              initiallyOpen: true,
-            }}
-            containerHint="FolderLevel"
-          >
-            <CCP4i2TaskElement
-              {...props}
-              itemName="ID_RMS"
-              qualifiers={{
-                guiLabel: "How to specify similarity",
-                toolTip: "Choose between sequence identity or coordinate RMSD",
-              }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="SEARCHSEQUENCEIDENTITY"
-              qualifiers={{
-                guiLabel: "Sequence identity (0.0-1.0)",
-                toolTip: "Sequence identity between search model and target",
-              }}
-              visibility={visibility.showSequenceIdentity}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="SEARCHRMS"
-              qualifiers={{
-                guiLabel: "Expected coordinate RMSD (Angstroms)",
-                toolTip:
-                  "Expected RMSD between search model and target coordinates",
-              }}
-              visibility={visibility.showRMSD}
             />
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
