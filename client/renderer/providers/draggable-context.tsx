@@ -5,7 +5,7 @@ import { Avatar } from "@mui/material";
 import { File, Job, Project } from "../types/models";
 import { useJob } from "../utils";
 import { useApi } from "../api";
-import { TaskInterfaceContext } from "./task-container";
+import { TaskInterfaceContext } from "./task-provider";
 
 export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
   const { jobId } = useContext(CCP4i2Context);

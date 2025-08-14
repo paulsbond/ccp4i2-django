@@ -164,9 +164,16 @@ export const JobMenu: React.FC = () => {
     [job, setStatusMenuAnchorEl]
   );
 
-  const handleOpenInNewWindow = (path: string) => {
-    window.open(path, "_blank", "noopener,noreferrer");
-  };
+  const handleOpenInNewWindow = useCallback(
+    (ev: SyntheticEvent) => {
+      if (!job) return;
+      ev.stopPropagation();
+      setJobMenuAnchorEl(null);
+      const path = `/moorhen-page/job-by-id/${job.id}`;
+      window.open(path, "_blank", "noopener,noreferrer");
+    },
+    [job, setJobMenuAnchorEl]
+  );
 
   const handleDelete = useCallback(
     (ev: SyntheticEvent) => {
@@ -258,9 +265,7 @@ export const JobMenu: React.FC = () => {
           <MenuItem
             key="Moorhen"
             disabled={job.status != 6}
-            onClick={() => {
-              handleOpenInNewWindow(`/moorhen-page/job-by-id/${job.id}`);
-            }}
+            onClick={handleOpenInNewWindow}
           >
             <CCP4i2MoorhenIcon /> Moorhen
           </MenuItem>

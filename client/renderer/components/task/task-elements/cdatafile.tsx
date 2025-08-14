@@ -37,7 +37,7 @@ import {
   nullFile,
   Project,
 } from "../../../types/models";
-import { TaskInterfaceContext } from "../../../providers/task-container";
+import { TaskInterfaceContext } from "../../../providers/task-provider";
 import { FileMenuContext } from "../../../providers/file-context-menu";
 import { ErrorTrigger } from "./error-info";
 import { InputFileFetch } from "./input-file-fetch";
