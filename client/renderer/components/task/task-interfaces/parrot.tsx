@@ -5,7 +5,7 @@ import { useApi } from "../../../api";
 import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { Button, Grid2 } from "@mui/material";
-import { RunCheckContext } from "../../../providers/run-check-provider";
+import { useRunCheck } from "../../../providers/run-check-provider";
 import { useCallback, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Job } from "../../../types/models";
@@ -22,7 +22,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   // layer
 
   const { extraDialogActions, setExtraDialogActions, setRunTaskRequested } =
-    useContext(RunCheckContext);
+    useRunCheck();
 
   // 2. Define a callback to create an ASUIN task if it is not already set
 

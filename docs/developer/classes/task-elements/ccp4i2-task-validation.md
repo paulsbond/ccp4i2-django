@@ -15,11 +15,7 @@ Firstly additional imports
 
 ```tsx
 // Imports
-import { useContext } from "react";
-import {
-  RunCheckContext,
-  useRunCheck,
-} from "../../../providers/run-check-provider";
+import { useRunCheck } from "../../../providers/run-check-provider";
 ```
 
 Then code within the functional component definition:
@@ -31,7 +27,7 @@ const { validation } = useJob(job.id);
 
 // 2. Retrieve the function for setting a processed Error Report
 
-const { processedErrors, setProcessedErrors } = useContext(RunCheckContext);
+const { processedErrors, setProcessedErrors } = useRunCheck();
 
 // 3. Provide a useEffect which will filter out the errors related to the cell parameters
 // of the aimless_pipe task, and set the `processedErrors` context variable
@@ -48,10 +44,6 @@ useEffect(() => {
   if (JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)) {
     setProcessedErrors(newProcessedErrors);
   }
-  //Tidy up on unmount
-  return () => {
-    if (processedErrors) setProcessedErrors(null);
-  };
 }, [validation, processedErrors, setProcessedErrors]);
 ```
 
@@ -83,7 +75,7 @@ const { value: freeRFlag } = getTaskItem("FREERFLAG");
 
 // 3. Retrieve the function for setting a processed Error Report
 
-const { processedErrors, setProcessedErrors } = useContext(RunCheckContext);
+const { processedErrors, setProcessedErrors } = useRunCheck();
 
 // 4. Provide a useEffect which will add a new error report with maxSeverity 3 if the FREERFLAG is not set
 
@@ -108,11 +100,6 @@ useEffect(() => {
   if (JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)) {
     setProcessedErrors(newProcessedErrors);
   }
-
-  //Tidy up on unmount
-  return () => {
-    if (processedErrors) setProcessedErrors(null);
-  };
 }, [
   validation,
   freeRFlag,

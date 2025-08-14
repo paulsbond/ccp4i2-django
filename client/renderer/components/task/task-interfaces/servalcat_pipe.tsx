@@ -14,7 +14,7 @@ import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useJob } from "../../../utils";
 import {
   CCP4i2ErrorReport,
-  RunCheckContext,
+  useRunCheck,
 } from "../../../providers/run-check-provider";
 import { Job } from "../../../types/models";
 
@@ -50,7 +50,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     extraDialogActions,
     setExtraDialogActions,
     setRunTaskRequested,
-  } = useContext(RunCheckContext);
+  } = useRunCheck();
 
   // Derived state (memoized for performance)
   const intensitiesAvailable = useMemo(() => {
@@ -82,19 +82,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   }, [createPeerTask, job.project, router, setRunTaskRequested]);
 
   // Process validation errors with cycle prevention
-  const processValidationErrors = useCallback(() => {
+  const processErrors = useCallback(() => {
     if (!validation) return;
-
-    // Prevent processing the same validation multiple times
-    const validationKey = JSON.stringify(validation);
-    const freeRFlagKey = JSON.stringify(freeRFlag);
-
-    if (
-      lastProcessedValidation.current === validationKey &&
-      lastProcessedFreeRFlag.current === freeRFlagKey
-    ) {
-      return;
-    }
 
     // Filter out specific validation errors
     const newProcessedErrors = Object.fromEntries(
@@ -105,7 +94,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
     // Add FreeR flag warning if not set
     if (!freeRFlag?.dbFileId?.length) {
-      newProcessedErrors.FREERFLAG = {
+      newProcessedErrors["servalcat_pipe.inputData.FREERFLAG"] = {
         messages: [
           "Setting the Free R flag file is strongly recommended for refinement",
           "You are advised to select an existing set or create a new one",
@@ -121,10 +110,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     if (newErrorsKey !== currentErrorsKey) {
       setProcessedErrors(newProcessedErrors);
     }
-
-    // Update tracking refs
-    lastProcessedValidation.current = validationKey;
-    lastProcessedFreeRFlag.current = freeRFlagKey;
   }, [validation, freeRFlag, processedErrors, setProcessedErrors]);
 
   // Handle extra dialog actions for FreeR flag
@@ -153,23 +138,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
   }, [freeRFlag, extraDialogActions, setExtraDialogActions, createFreeRTask]);
 
-  // Effect for processing validation errors
+  // Effect for error processing with minimal dependencies
   useEffect(() => {
-    processValidationErrors();
-  }, [processValidationErrors]);
+    if (freeRFlag !== undefined) {
+      processErrors();
+    }
+  }, [freeRFlag, processErrors]);
 
   // Effect for handling extra dialog actions
   useEffect(() => {
     updateExtraDialogActions();
   }, [updateExtraDialogActions]);
-
-  // Cleanup effect to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      setExtraDialogActions(null);
-      setProcessedErrors(null);
-    };
-  }, [setExtraDialogActions, setProcessedErrors]);
 
   return (
     <Paper>
