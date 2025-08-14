@@ -19,10 +19,11 @@ import { JobMenu } from "../../../../../providers/job-context-menu";
 import { JobDirectoryView } from "../../../../../components/job-directory-view";
 import useSWR from "swr";
 import $ from "jquery";
-import { Calculate } from "@mui/icons-material";
 import Diagnostic from "../../../../../components/diagnostic";
 import { JobLogViewer } from "../../../../../components/job-log-viewer";
 import { TaskProvider } from "../../../../../providers/task-provider";
+import { ValidationViewer } from "../../../../../components/validation-viewer";
+import { useRunCheck } from "../../../../../providers/run-check-provider";
 
 export default function JobPage({
   params,
@@ -33,12 +34,7 @@ export default function JobPage({
   const { id, jobid } = use(params);
   const { project, jobs, mutateJobs } = useProject(parseInt(id));
   const { devMode } = useContext(CCP4i2Context);
-
-  const { data: validationJson } = api.get_validation({
-    type: "jobs",
-    id: parseInt(jobid),
-    endpoint: "validation",
-  });
+  const { setExtraDialogActions, setProcessedErrors } = useRunCheck();
 
   const { setJobId } = useContext(CCP4i2Context);
 
@@ -78,6 +74,14 @@ export default function JobPage({
     };
     asyncFunc();
   }, [job, setJobId]);
+
+  //Here a useEffect that will clear processedErrors and extraDialogActions when job changes
+  useEffect(() => {
+    if (!setExtraDialogActions || !setProcessedErrors) return;
+    if (!job || !previousJob || job.id === previousJob.id) return;
+    setExtraDialogActions(null);
+    setProcessedErrors(null);
+  }, [setExtraDialogActions, setProcessedErrors, job, previousJob]);
 
   return !project || !jobs || !job ? (
     <LinearProgress />
@@ -129,11 +133,7 @@ export default function JobPage({
           <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
         )}
         {devMode && tabValue == 6 && validation && (
-          <Editor
-            height="calc(100vh - 15rem)"
-            value={JSON.stringify(validation, null, 2)}
-            language="json"
-          />
+          <ValidationViewer job={job} />
         )}
         {tabValue == 7 && container && (
           <Editor

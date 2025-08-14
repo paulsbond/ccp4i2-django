@@ -11,7 +11,10 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useJob, usePrevious } from "../../../utils";
-import { RunCheckContext } from "../../../providers/run-check-provider";
+import {
+  RunCheckContext,
+  useRunCheck,
+} from "../../../providers/run-check-provider";
 
 /**
  * Task interface component for Phaser Experimental Phasing LLG (Log-Likelihood Gain) calculation.
@@ -57,7 +60,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     setProcessedErrors,
     setExtraDialogActions,
     extraDialogActions = [],
-  } = useContext(RunCheckContext);
+  } = useRunCheck();
 
   // Visibility conditions (stable references)
   const visibility = useMemo(

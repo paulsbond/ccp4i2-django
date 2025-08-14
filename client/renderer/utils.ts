@@ -1,15 +1,8 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import $ from "jquery";
 import useSWR, { KeyedMutator, mutate, SWRResponse } from "swr";
 
-import { fullUrl, useApi } from "./api";
+import { useApi } from "./api";
 import {
   Job,
   JobCharValue,
@@ -17,7 +10,7 @@ import {
   Project,
   File as DjangoFile,
 } from "./types/models";
-import { RunCheckContext } from "./providers/run-check-provider";
+import { useRunCheck } from "./providers/run-check-provider";
 
 // ============================================================================
 // Types and Interfaces
@@ -54,6 +47,7 @@ export interface TaskItem {
   item: any;
   value: any;
   update: (value: any) => Promise<boolean | Response>;
+  updateNoMutate: (value: any) => Promise<boolean | Response>;
 }
 
 export interface ProjectData {
@@ -715,7 +709,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
   });
 
   const { mutateJobs } = useProject(job?.project || 0);
-  const { processedErrors } = useContext(RunCheckContext);
+  const { processedErrors } = useRunCheck();
 
   // Memoized functions
   const setParameter = useCallback(
@@ -800,7 +794,12 @@ export const useJob = (jobId: number | null | undefined): JobData => {
   const getTaskItem = useMemo(() => {
     return (paramName: string): TaskItem => {
       if (!paramName?.length || !container?.lookup) {
-        return { item: null, value: null, update: async () => false };
+        return {
+          item: null,
+          value: null,
+          update: async () => false,
+          updateNoMutate: async () => false,
+        };
       }
 
       const item = container.lookup[paramName];
@@ -828,7 +827,31 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         }
       };
 
-      return { item, value, update };
+      const updateNoMutate = async (
+        newValue: any
+      ): Promise<boolean | Response> => {
+        if (!job || job.status !== JOB_STATUS.PENDING) return false;
+
+        // Check if value actually changed
+        if (JSON.stringify({ value }) === JSON.stringify({ value: newValue })) {
+          return false;
+        }
+
+        // Use the queued setParameter instead of direct fetch
+        try {
+          const result = await setParameterNoMutate({
+            object_path: item._objectPath,
+            value: newValue,
+          });
+
+          return result?.status === "Success" ? true : false;
+        } catch (error) {
+          console.error("Error updating task item:", error);
+          return false;
+        }
+      };
+
+      return { item, value, update, updateNoMutate };
     };
   }, [container, job, setParameter]);
 
@@ -970,19 +993,20 @@ export const useJob = (jobId: number | null | undefined): JobData => {
 
   const getValidationColor = useMemo(() => {
     return (item: any): string => {
-      const fieldErrors = extractValidationErrors(
-        item,
-        processedErrors || validation
-      );
+      const fieldErrors = extractValidationErrors(item, {
+        ...processedErrors,
+      });
       return determineValidationColor(fieldErrors);
     };
   }, [processedErrors, validation]);
 
   const getErrors = useMemo(() => {
     return (item: any): ValidationError[] => {
-      return extractValidationErrors(item, validation);
+      return extractValidationErrors(item, {
+        ...processedErrors,
+      });
     };
-  }, [validation]);
+  }, [processedErrors, validation]);
 
   const fileItemToParameterArg = useCallback(
     (

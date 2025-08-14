@@ -4,12 +4,12 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { useJob } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { RunCheckContext } from "../../../providers/run-check-provider";
+import { useRunCheck } from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
   const { getTaskItem, validation } = useJob(job.id);
-  const { processedErrors, setProcessedErrors } = useContext(RunCheckContext);
+  const { processedErrors, setProcessedErrors } = useRunCheck();
 
   // Consolidated task values
   const taskValues = useMemo(
@@ -56,9 +56,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       setProcessedErrors(processedValidationErrors);
     }
   }, [processedValidationErrors, processedErrors, setProcessedErrors]);
-
-  // Cleanup on unmount
-  useEffect(() => () => setProcessedErrors(null), [setProcessedErrors]);
 
   // Visibility helpers
   const visibility = useMemo(

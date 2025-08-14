@@ -6,10 +6,7 @@ import { useApi } from "../../../api";
 import { useJob, usePrevious, useProject } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
-import {
-  RunCheckContext,
-  useRunCheck,
-} from "../../../providers/run-check-provider";
+import { useRunCheck } from "../../../providers/run-check-provider";
 import { useRouter } from "next/navigation";
 import { Job } from "../../../types/models";
 
@@ -55,14 +52,14 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
   const router = useRouter();
-  const { setRunTaskRequested } = useRunCheck();
 
   const {
     processedErrors,
     setProcessedErrors,
     setExtraDialogActions,
+    setRunTaskRequested,
     extraDialogActions = [],
-  } = useContext(RunCheckContext);
+  } = useRunCheck();
 
   const { getTaskItem, useFileDigest, validation, createPeerTask } = useJob(
     job.id
@@ -268,12 +265,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   }, [job, createPeerTask, router, setRunTaskRequested]);
 
   // Process validation errors
-  const processedValidationErrors = useMemo(() => {
+  const processErrors = useCallback(() => {
     if (!validation) return null;
-
     const newProcessedErrors = { ...validation };
     if (!taskValues.freeRFlag?.dbFileId?.length) {
-      newProcessedErrors.FREERFLAG = {
+      newProcessedErrors["prosmart_refmac.inputData.FREERFLAG"] = {
         messages: [
           "Setting the Free R flag file is strongly recommended for refinement",
           "You are advised to select an existing set or create a new one ",
@@ -281,9 +277,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         maxSeverity: 3,
       };
     }
-
-    return newProcessedErrors;
-  }, [validation, taskValues.freeRFlag]);
+    if (
+      JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
+    ) {
+      setProcessedErrors(newProcessedErrors);
+    }
+  }, [validation, processedErrors, taskValues.freeRFlag]);
 
   // Extra dialog actions
   const freeRAction = useMemo(() => {
@@ -303,13 +302,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     handleF_SIGFDigestChanged(F_SIGFDigest);
   }, [F_SIGFDigest, handleF_SIGFDigestChanged]);
 
+  // Effect for error processing with minimal dependencies
   useEffect(() => {
-    // Use shallow comparison instead of JSON.stringify
-    if (!isEqual(processedValidationErrors, prevProcessedErrors.current)) {
-      setProcessedErrors(processedValidationErrors);
-      prevProcessedErrors.current = processedValidationErrors;
+    if (taskValues.freeRFlag !== undefined) {
+      processErrors();
     }
-  }, [processedValidationErrors, setProcessedErrors]);
+  }, [taskValues.freeRFlag, processErrors]);
 
   useEffect(() => {
     // Use shallow comparison instead of JSON.stringify
@@ -323,7 +321,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   useEffect(
     () => () => {
       setExtraDialogActions(null);
-      setProcessedErrors(null);
     },
     [setExtraDialogActions, setProcessedErrors]
   );

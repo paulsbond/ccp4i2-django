@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Paper } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
@@ -18,132 +18,174 @@ import { useJob } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, useFileDigest } = useJob(job.id);
+  const { getTaskItem, useFileDigest, mutateContainer } = useJob(job.id);
 
-  // Use refs to track processed states and prevent cycles
+  // Refs for preventing cycles
   const initializationDone = useRef(false);
-  const currentJobId = useRef<number | null>(null);
-  const lastProcessedDigest = useRef<any>(null);
-  const wavelengthUpdateInProgress = useRef(false);
 
   // Get task items for file handling and parameter updates
-  const { item: F_SIGFanomItem, value: F_SIGFanomValue } =
-    getTaskItem("F_SIGFanom");
-  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
-  const { update: updateSHELXCDE } = getTaskItem("SHELXCDE");
-  const { update: updateUSE_COMB } = getTaskItem("USE_COMB");
-  const { update: updateSHELX_SEPAR } = getTaskItem("SHELX_SEPAR");
-  const { update: updateMB_PROGRAM } = getTaskItem("MB_PROGRAM");
+  const { item: F_SIGFanomItem } = getTaskItem("F_SIGFanom");
+  const { updateNoMutate: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
+  const { updateNoMutate: updateSHELXCDE } = getTaskItem("SHELXCDE");
+  const { updateNoMutate: updateUSE_COMB } = getTaskItem("USE_COMB");
+  const { updateNoMutate: updateSHELX_SEPAR } = getTaskItem("SHELX_SEPAR");
+  const { updateNoMutate: updateMB_PROGRAM } = getTaskItem("MB_PROGRAM");
 
-  // Get current values for initial setup (only used in initialization)
-  const { value: SHELXCDE_value } = getTaskItem("SHELXCDE");
-  const { value: USE_COMB_value } = getTaskItem("USE_COMB");
-  const { value: SHELX_SEPAR_value } = getTaskItem("SHELX_SEPAR");
-  const { value: MB_PROGRAM_value } = getTaskItem("MB_PROGRAM");
+  // Get current values for initial setup
+  const taskValues = useMemo(
+    () => ({
+      SHELXCDE: getTaskItem("SHELXCDE").value,
+      USE_COMB: getTaskItem("USE_COMB").value,
+      SHELX_SEPAR: getTaskItem("SHELX_SEPAR").value,
+      MB_PROGRAM: getTaskItem("MB_PROGRAM").value,
+    }),
+    [getTaskItem]
+  );
 
   // File digest for wavelength extraction
   const { data: F_SIGFanomDigest } = useFileDigest(F_SIGFanomItem?._objectPath);
 
-  // Handle wavelength extraction with cycle prevention
-  const handleF_SIGFanomDigestChanged = useCallback(
-    async (digest: any) => {
-      // Prevent multiple simultaneous updates
-      if (wavelengthUpdateInProgress.current) return;
+  // Wavelength extraction handler for F_SIGFanom onChange
+  const handleF_SIGFanomChange = useCallback(async () => {
+    if (!updateWAVELENGTH || !F_SIGFanomDigest || !job || job.status !== 1)
+      return;
 
-      // Check if we've already processed this digest
-      if (lastProcessedDigest.current === digest) return;
+    // Extract wavelength from digest
+    if (F_SIGFanomDigest?.wavelengths?.length > 0) {
+      const newWavelength =
+        F_SIGFanomDigest.wavelengths[F_SIGFanomDigest.wavelengths.length - 1];
 
-      if (!updateWAVELENGTH || !digest || !job || job.status !== 1) return;
-
-      // Extract wavelength from digest (last wavelength in array)
-      if (digest?.wavelengths?.length > 0) {
-        const wavelength = digest.wavelengths[digest.wavelengths.length - 1];
-        if (wavelength && wavelength < 9) {
-          try {
-            wavelengthUpdateInProgress.current = true;
-            lastProcessedDigest.current = digest;
-
-            await updateWAVELENGTH(wavelength);
-          } catch (error) {
-            console.error("Error updating wavelength:", error);
-          } finally {
-            wavelengthUpdateInProgress.current = false;
-          }
+      // Only update if wavelength is valid
+      if (newWavelength && newWavelength < 9) {
+        try {
+          console.log(
+            `Extracting wavelength from F_SIGFanom: ${newWavelength}`
+          );
+          await updateWAVELENGTH(newWavelength);
+          await mutateContainer();
+        } catch (error) {
+          console.error("Error updating wavelength:", error);
         }
       }
-    },
-    [updateWAVELENGTH, job]
+    }
+  }, [updateWAVELENGTH, F_SIGFanomDigest, job?.status, mutateContainer]);
+
+  // Element configurations
+  const elementConfigs = useMemo(
+    () => ({
+      keyFiles: [
+        {
+          key: "F_SIGFanom",
+          label: "Reflections",
+          toolTip: "Anomalous reflection data for phasing",
+          onChange: handleF_SIGFanomChange,
+        },
+        {
+          key: "WAVELENGTH",
+          label: "Wavelength",
+          toolTip: "X-ray wavelength used for data collection",
+        },
+        {
+          key: "SEQIN",
+          label: "Asymmetric unit content",
+          toolTip: "Sequence file defining the protein content",
+        },
+        {
+          key: "FREERFLAG",
+          label: "Free R flags",
+          toolTip: "Test set flags for cross-validation",
+        },
+      ],
+      parameters: [
+        {
+          key: "ATOM_TYPE",
+          label: "Anomalous atom type",
+          toolTip: "Type of heavy atom providing anomalous signal",
+        },
+        {
+          key: "START_PIPELINE",
+          label: "First step for analysis",
+          toolTip: "Starting point in the SHELX pipeline",
+        },
+        {
+          key: "END_PIPELINE",
+          label: "Last step for analysis",
+          toolTip: "Ending point in the SHELX pipeline",
+        },
+      ],
+    }),
+    [handleF_SIGFanomChange]
   );
 
-  // Stable initialization function (runs once per job)
-  const initializeDefaults = useCallback(async () => {
-    if (initializationDone.current || !job || job.status !== 1) return;
-
-    const updates: Promise<any>[] = [];
-
-    // Set default values if not already set
-    if (!SHELXCDE_value) {
-      updates.push(updateSHELXCDE(true));
-    }
-    if (USE_COMB_value) {
-      updates.push(updateUSE_COMB(false));
-    }
-    if (!SHELX_SEPAR_value) {
-      updates.push(updateSHELX_SEPAR(true));
-    }
-    if (MB_PROGRAM_value !== "buccaneer") {
-      updates.push(updateMB_PROGRAM("buccaneer"));
-    }
-
-    if (updates.length > 0) {
-      try {
-        await Promise.all(updates);
-        initializationDone.current = true;
-      } catch (error) {
-        console.error("Error initializing SHELX defaults:", error);
-      }
-    } else {
-      initializationDone.current = true;
-    }
-  }, [
-    job,
-    SHELXCDE_value,
-    USE_COMB_value,
-    SHELX_SEPAR_value,
-    MB_PROGRAM_value,
-    updateSHELXCDE,
-    updateUSE_COMB,
-    updateSHELX_SEPAR,
-    updateMB_PROGRAM,
-  ]);
-
-  // Reset initialization when job changes
+  // Reset initialization flag when job changes
   useEffect(() => {
-    if (currentJobId.current !== job?.id) {
-      initializationDone.current = false;
-      lastProcessedDigest.current = null;
-      wavelengthUpdateInProgress.current = false;
-      currentJobId.current = job?.id || null;
-    }
+    initializationDone.current = false;
   }, [job?.id]);
 
-  // Run initialization once when component mounts or job changes
+  // Initialize defaults once when job becomes editable
+  // Use a direct effect with minimal dependencies to avoid cycles
   useEffect(() => {
-    if (!initializationDone.current && job?.id) {
+    const initializeDefaults = async () => {
+      if (initializationDone.current || !job || job.status !== 1) return;
+
+      const updates: Promise<any>[] = [];
+
+      // Set default values only if they're not already set
+      if (taskValues.SHELXCDE === undefined || taskValues.SHELXCDE === null) {
+        updates.push(updateSHELXCDE(true));
+      }
+      if (taskValues.USE_COMB === true) {
+        updates.push(updateUSE_COMB(false));
+      }
+      if (
+        taskValues.SHELX_SEPAR === undefined ||
+        taskValues.SHELX_SEPAR === null
+      ) {
+        updates.push(updateSHELX_SEPAR(true));
+      }
+      if (taskValues.MB_PROGRAM !== "buccaneer") {
+        updates.push(updateMB_PROGRAM("buccaneer"));
+      }
+
+      if (updates.length > 0) {
+        try {
+          await Promise.all(updates);
+          await mutateContainer();
+        } catch (error) {
+          console.error("Error initializing SHELX defaults:", error);
+        }
+      }
+
+      initializationDone.current = true;
+    };
+
+    // Only run when job status becomes editable and we haven't initialized yet
+    if (job?.status === 1 && !initializationDone.current) {
       initializeDefaults();
     }
-  }, [initializeDefaults, job?.id]);
+  }, [
+    job?.status,
+    // Only depend on the actual values, not the update functions
+    taskValues.SHELXCDE,
+    taskValues.USE_COMB,
+    taskValues.SHELX_SEPAR,
+    taskValues.MB_PROGRAM,
+  ]);
 
-  // Effect for F_SIGFanom digest changes (wavelength extraction)
-  useEffect(() => {
-    if (
-      F_SIGFanomDigest &&
-      F_SIGFanomValue &&
-      lastProcessedDigest.current !== F_SIGFanomDigest
-    ) {
-      handleF_SIGFanomDigestChanged(F_SIGFanomDigest);
-    }
-  }, [F_SIGFanomDigest, F_SIGFanomValue, handleF_SIGFanomDigestChanged]);
+  // Render helper function
+  const renderElements = useCallback(
+    (elements: any[]) =>
+      elements.map(({ key, label, onChange, ...extraProps }) => (
+        <CCP4i2TaskElement
+          {...props}
+          key={key}
+          itemName={key}
+          qualifiers={{ guiLabel: label, ...extraProps }}
+          onChange={onChange}
+        />
+      )),
+    [props]
+  );
 
   return (
     <Paper>
@@ -158,41 +200,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             }}
             containerHint="FolderLevel"
           >
-            <CCP4i2TaskElement
-              {...props}
-              itemName="F_SIGFanom"
-              qualifiers={{
-                guiLabel: "Reflections",
-                toolTip: "Anomalous reflection data for phasing",
-              }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="WAVELENGTH"
-              qualifiers={{
-                guiLabel: "Wavelength",
-                toolTip: "X-ray wavelength used for data collection",
-              }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="SEQIN"
-              qualifiers={{
-                guiLabel: "Asymmetric unit content",
-                toolTip: "Sequence file defining the protein content",
-              }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="FREERFLAG"
-              qualifiers={{
-                guiLabel: "Free R flags",
-                toolTip: "Test set flags for cross-validation",
-              }}
-            />
+            {renderElements(elementConfigs.keyFiles)}
           </CCP4i2ContainerElement>
 
           <CCP4i2ContainerElement
@@ -204,32 +212,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             }}
             containerHint="FolderLevel"
           >
-            <CCP4i2TaskElement
-              {...props}
-              itemName="ATOM_TYPE"
-              qualifiers={{
-                guiLabel: "Anomalous atom type",
-                toolTip: "Type of heavy atom providing anomalous signal",
-              }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="START_PIPELINE"
-              qualifiers={{
-                guiLabel: "First step for analysis",
-                toolTip: "Starting point in the SHELX pipeline",
-              }}
-            />
-
-            <CCP4i2TaskElement
-              {...props}
-              itemName="END_PIPELINE"
-              qualifiers={{
-                guiLabel: "Last step for analysis",
-                toolTip: "Ending point in the SHELX pipeline",
-              }}
-            />
+            {renderElements(elementConfigs.parameters)}
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>
