@@ -257,16 +257,11 @@ def _parse_and_merge_xml_file(file_path: pathlib.Path, dest_root: ET.Element) ->
 
 def _apply_text_overrides(src: ET.Element, dest: ET.Element) -> None:
     """
-    Apply text content overrides from simple nodes in src to matching xpath nodes in dest.
-    Special handling for 'content' nodes: ALL content nodes from parent override embedded files.
+    Apply text content overrides from simple nodes in src to matching nodes in dest.
 
-    This function identifies "simple nodes" (elements with no children but containing text)
-    in the source element and applies their text content to matching xpath locations
-    in the destination element. For 'content' nodes specifically, overrides are applied
-    regardless of whether the text values differ.
-
-    Simple nodes within <file> elements are excluded from override processing since
-    <file> nodes are removed from the final output.
+    Matching is based on both tag name and 'id' attribute values throughout the path.
+    This ensures that only truly equivalent elements are overridden, not just elements
+    with similar xpath locations.
 
     Args:
         src (ET.Element): Source element to extract simple node text from.
@@ -274,22 +269,22 @@ def _apply_text_overrides(src: ET.Element, dest: ET.Element) -> None:
 
     Algorithm:
         1. Find all simple nodes with text content in source (excluding file nodes)
-        2. Build xpath-to-element mapping for destination
-        3. For each simple node, find matching xpath in destination
-        4. For 'content' nodes: Always override regardless of existing value
-        5. For other nodes: Compare text values and apply override only if they differ
+        2. Build tag+id path-to-element mapping for destination
+        3. For each simple node, find matching tag+id path in destination
+        4. Compare text values and apply override only if they differ
 
     Example:
-        If source contains <config><content>parent_value</content></config>
-        and destination contains <config><content>embedded_value</content></config>,
-        the destination content will ALWAYS be overridden to "parent_value".
+        Source: <container id="input"><content id="file1">parent_value</content></container>
+        Dest:   <container id="input"><content id="file1">embedded_value</content></container>
+        Result: The content will be overridden because both tag and id match.
 
-    Note:
-        This function logs detailed status messages about overrides applied.
+        But if dest had <content id="file2">, no override would occur.
     """
     # Get all simple nodes (nodes without children) from source that have text content
     # Exclude simple nodes that are within file nodes
-    simple_nodes_with_text = _get_simple_nodes_with_text(src, exclude_file_nodes=True)
+    simple_nodes_with_text = _get_simple_nodes_with_id_path(
+        src, exclude_file_nodes=True
+    )
 
     if not simple_nodes_with_text:
         return
@@ -298,89 +293,78 @@ def _apply_text_overrides(src: ET.Element, dest: ET.Element) -> None:
         f"Found {len(simple_nodes_with_text)} simple nodes with text content to check for overrides (excluding file nodes)"
     )
 
-    # Build xpath to element mapping for destination
-    dest_xpath_map = _build_xpath_map(dest)
+    # Build tag+id path to element mapping for destination
+    dest_path_map = _build_id_path_map(dest)
 
-    # Apply overrides
+    # Apply overrides only when text differs
     overrides_applied = 0
-    content_overrides_applied = 0
     matches_checked = 0
 
-    for xpath, src_text_content in simple_nodes_with_text.items():
-        if xpath in dest_xpath_map:
-            dest_elements = dest_xpath_map[xpath]
+    for id_path, src_text_content in simple_nodes_with_text.items():
+        if id_path in dest_path_map:
+            dest_elements = dest_path_map[id_path]
             for dest_element in dest_elements:
                 matches_checked += 1
                 dest_text = dest_element.text.strip() if dest_element.text else ""
 
-                # Check if this is a 'content' node
-                is_content_node = dest_element.tag == "content"
-
-                # For content nodes: ALWAYS override regardless of existing value
-                # For other nodes: Only apply override if text values differ
-                should_override = is_content_node or (dest_text != src_text_content)
-
-                if should_override:
+                # Only apply override if text values differ
+                if dest_text != src_text_content:
                     dest_element.text = src_text_content
-
-                    if is_content_node:
-                        logger.debug(
-                            f"Content override applied: {xpath} '{dest_text}' -> '{src_text_content}' (FORCED)"
-                        )
-                        content_overrides_applied += 1
-                    else:
-                        logger.debug(
-                            f"Override applied: {xpath} '{dest_text}' -> '{src_text_content}'"
-                        )
+                    logger.debug(
+                        f"Override applied: {id_path} '{dest_text}' -> '{src_text_content}'"
+                    )
                     overrides_applied += 1
 
     if matches_checked > 0:
         logger.debug(
-            f"Checked {matches_checked} matching xpath(s), applied {overrides_applied} text overrides "
-            f"({content_overrides_applied} forced content overrides)"
+            f"Checked {matches_checked} matching path(s), applied {overrides_applied} text overrides"
         )
     else:
-        logger.debug("No matching xpath nodes found for text overrides")
+        logger.debug("No matching tag+id paths found for text overrides")
 
 
-def _get_simple_nodes_with_text(
+def _get_simple_nodes_with_id_path(
     element: ET.Element, current_path: str = "", exclude_file_nodes: bool = False
 ) -> Dict[str, str]:
     """
-    Get all simple nodes (leaf nodes with text content) from an XML element tree.
+    Get all simple nodes (leaf nodes with text content) using tag+id path identification.
 
     A "simple node" is defined as an element that has no child elements but contains
-    text content. These nodes are candidates for text override operations.
+    text content. The path is built using both tag names and id attributes.
 
     Args:
         element (ET.Element): Element to traverse for simple nodes.
-        current_path (str, optional): Current xpath being built during traversal.
+        current_path (str, optional): Current tag+id path being built during traversal.
             Used internally for recursion. Defaults to "".
         exclude_file_nodes (bool, optional): If True, exclude nodes that are within
             <file> elements from the results. Defaults to False.
 
     Returns:
-        Dict[str, str]: Dictionary mapping xpath strings to text content. Each xpath
-            uniquely identifies a simple node location, and the value is the stripped
-            text content of that node.
+        Dict[str, str]: Dictionary mapping tag+id path strings to text content.
+        Each path uniquely identifies a simple node location based on both tag names
+        and id attributes, and the value is the stripped text content.
+
+    Path Format:
+        "tag1[@id=value1]/tag2[@id=value2]/tag3[@id=value3]"
+        If an element has no id attribute, it's represented as "tag[@id=]"
 
     Example:
-        >>> element = ET.fromstring('<root><a>text1</a><b><c>text2</c></b></root>')
-        >>> result = _get_simple_nodes_with_text(element)
+        >>> xml = '<root><container id="main"><content id="file1">text1</content></container></root>'
+        >>> element = ET.fromstring(xml)
+        >>> result = _get_simple_nodes_with_id_path(element)
         >>> print(result)
-        {'root/a': 'text1', 'root/b/c': 'text2'}
-
-    Note:
-        Text content is automatically stripped of leading/trailing whitespace.
-        Empty text content (after stripping) is ignored.
+        {'root[@id=]/container[@id=main]/content[@id=file1]': 'text1'}
     """
     simple_nodes = {}
 
-    # Build current xpath
+    # Build current tag+id path
+    element_id = element.get("id", "")
+    element_path = f"{element.tag}[@id={element_id}]"
+
     if current_path:
-        xpath = f"{current_path}/{element.tag}"
+        id_path = f"{current_path}/{element_path}"
     else:
-        xpath = element.tag
+        id_path = element_path
 
     # Skip file nodes and their descendants if exclude_file_nodes is True
     if exclude_file_nodes and element.tag == "file":
@@ -389,73 +373,76 @@ def _get_simple_nodes_with_text(
     # Check if this is a simple node (no children) with text content
     children = list(element)
     if not children and element.text and element.text.strip():
-        simple_nodes[xpath] = element.text.strip()
+        simple_nodes[id_path] = element.text.strip()
 
     # Recursively process children
     for child in children:
-        child_simple_nodes = _get_simple_nodes_with_text(
-            child, xpath, exclude_file_nodes
+        child_simple_nodes = _get_simple_nodes_with_id_path(
+            child, id_path, exclude_file_nodes
         )
         simple_nodes.update(child_simple_nodes)
 
     return simple_nodes
 
 
-def _build_xpath_map(
+def _build_id_path_map(
     element: ET.Element, current_path: str = ""
 ) -> Dict[str, List[ET.Element]]:
     """
-    Build a mapping from xpath strings to lists of elements at those paths.
+    Build a mapping from tag+id path strings to lists of elements at those paths.
 
     This function creates a comprehensive index of all elements in an XML tree,
-    organized by their xpath location. This enables efficient lookup of elements
-    by xpath for operations like text overrides.
+    organized by their tag+id path location. This enables efficient lookup of elements
+    by their tag and id combination for operations like text overrides.
 
     Args:
         element (ET.Element): Element to traverse and map.
-        current_path (str, optional): Current xpath being built during traversal.
+        current_path (str, optional): Current tag+id path being built during traversal.
             Used internally for recursion. Defaults to "".
 
     Returns:
-        Dict[str, List[ET.Element]]: Dictionary mapping xpath strings to lists of
-            elements found at those paths. Multiple elements can share the same
-            xpath if there are duplicate element names at the same level.
+        Dict[str, List[ET.Element]]: Dictionary mapping tag+id path strings to lists of
+            elements found at those paths. Multiple elements can theoretically share the
+            same path if there are duplicates, though this would be unusual.
+
+    Path Format:
+        "tag1[@id=value1]/tag2[@id=value2]/tag3[@id=value3]"
+        If an element has no id attribute, it's represented as "tag[@id=]"
 
     Example:
-        >>> element = ET.fromstring('<root><a>1</a><a>2</a><b>3</b></root>')
-        >>> xpath_map = _build_xpath_map(element)
-        >>> len(xpath_map['root/a'])  # Two elements at this path
-        2
-        >>> len(xpath_map['root/b'])  # One element at this path
+        >>> xml = '<root><container id="main"><content id="file1">text</content></container></root>'
+        >>> element = ET.fromstring(xml)
+        >>> path_map = _build_id_path_map(element)
+        >>> path = 'root[@id=]/container[@id=main]/content[@id=file1]'
+        >>> len(path_map[path])
         1
-
-    Note:
-        The xpath format used is simplified and does not include array indices or
-        attribute predicates. It's a simple hierarchical path using '/' separators.
     """
-    xpath_map = {}
+    path_map = {}
 
-    # Build current xpath
+    # Build current tag+id path
+    element_id = element.get("id", "")
+    element_path = f"{element.tag}[@id={element_id}]"
+
     if current_path:
-        xpath = f"{current_path}/{element.tag}"
+        id_path = f"{current_path}/{element_path}"
     else:
-        xpath = element.tag
+        id_path = element_path
 
     # Add current element to map
-    if xpath not in xpath_map:
-        xpath_map[xpath] = []
-    xpath_map[xpath].append(element)
+    if id_path not in path_map:
+        path_map[id_path] = []
+    path_map[id_path].append(element)
 
     # Recursively process children
     for child in element:
-        child_xpath_map = _build_xpath_map(child, xpath)
+        child_path_map = _build_id_path_map(child, id_path)
         # Merge child maps
-        for child_xpath, child_elements in child_xpath_map.items():
-            if child_xpath not in xpath_map:
-                xpath_map[child_xpath] = []
-            xpath_map[child_xpath].extend(child_elements)
+        for child_id_path, child_elements in child_path_map.items():
+            if child_id_path not in path_map:
+                path_map[child_id_path] = []
+            path_map[child_id_path].extend(child_elements)
 
-    return xpath_map
+    return path_map
 
 
 def _find_or_create_ccp4i2_body(root: ET.Element) -> ET.Element:

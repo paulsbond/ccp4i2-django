@@ -381,7 +381,7 @@ export const ErrorPopper: React.FC<ErrorPopperProps> = ({ job }) => {
         <CardHeader
           avatar={qualifiersState.isOpen ? <ExpandLess /> : <ExpandMore />}
           title="Item Qualifiers"
-          titleTypographyProps={{ variant: "subtitle2" }}
+          slotProps={{ title: { typographyProps: { variant: "subtitle2" } } }}
           onClick={qualifiersState.toggle}
           sx={{
             cursor: "pointer",
@@ -430,6 +430,19 @@ export const ErrorPopper: React.FC<ErrorPopperProps> = ({ job }) => {
           name: "preventOverflow",
           options: {
             boundary: "viewport",
+            padding: 8, // Add some padding from viewport edges
+          },
+        },
+        {
+          name: "flip",
+          options: {
+            fallbackPlacements: ["auto", "auto-start", "auto-end"],
+          },
+        },
+        {
+          name: "computeStyles",
+          options: {
+            adaptive: true, // Allow the popper to adapt its position
           },
         },
       ]}

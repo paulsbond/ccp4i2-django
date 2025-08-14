@@ -4,9 +4,9 @@
 
 The development version of `ccp4i2-django` sits on top of a regular CCP4/CCP4i2 installation. It requires a number of commonly available python modules to be installed, and the versions of these modules required by ccp4i2-django _may_ be incompatible with a standard CCP4/CCP4i2 distribution, so that we recommend downloading and installing a bespoke instance of CCP4 from [here](https://www.ccp4.ac.uk/downloads) for use only by `ccp4i2-django`. This requirement will disappear as we head towards release.
 
-`ccp4i2-django` is an electron app, built using github actions. Action runs, including the most recent, are available [here](https://github.com/paulsbond/ccp4i2-django/actions). Note that a run that shows up as failed (with a red cross) may have succesfully built products for MacOS and linux. Any successfully built products are available in the "Artifacts" section at the bottom of the page reached by clicking on one of the runs.
+`ccp4i2-django` is an electron app, built using github actions. Action runs, including the most recent, are available [here](https://github.com/paulsbond/ccp4i2-django/actions). Note that a run that shows up as failed (with a red cross) may have succesfully built products for one or more of windows, mac, or linux. Any successfully built products are available in the "Artifacts" section at the bottom of the page reached by clicking on one of the runs.
 
-As of now, although `ccp4i2-django` builds and runs on windows, the corresponding github action needs further work, and the snapshots are available only for MacOS and linux. Windows users are recommended to use the developer route
+As of now `ccp4i2-django` builds and runs on linux mac and windows. For windows, you will need sufficient system privilege to install software.
 
 ## Special consideration for MacOS
 

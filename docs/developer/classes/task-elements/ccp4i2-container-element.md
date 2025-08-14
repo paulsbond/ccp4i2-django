@@ -37,10 +37,9 @@ import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 
 - **`itemName`** (`string`): Usually empty string for containers, but if present the corresponding nested elements wil be rendered with default CCP4i2TaskElements
 - **`children`** (`ReactNode`): Child components to be contained within the container
-- **`containerHint`** (`string`): Visual style hint ("FolderLevel", "BlockLevel", "GroupLevel")
+- **`containerHint`** (`string`): Visual style hint ("FolderLevel", "BlockLevel", "RowLevel")
 - **`initiallyOpen`** (`boolean`): Whether container starts expanded (default: false)
 - **`size`** (`object`): Grid sizing configuration
-- **`collapsible`** (`boolean`): Whether the container can be collapsed (default: true)
 - **`disabled`** (`boolean`): Whether the container and its children are disabled
 
 ### Container Hints
@@ -49,7 +48,7 @@ Different `containerHint` values provide different visual styles:
 
 - **`"FolderLevel"`**: Top-level folder style with prominent header
 - **`"BlockLevel"`**: Mid-level block style with card-like appearance
-- **`"GroupLevel"`**: Subtle grouping with minimal visual separation
+- **`"RowLevel"`**: Elements presented in a single row
 
 ## Examples
 

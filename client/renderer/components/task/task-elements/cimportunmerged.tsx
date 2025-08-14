@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
-import { useJob } from "../../../utils";
+import { useJob, valueOfItem } from "../../../utils";
 import { Grid2, Typography } from "@mui/material";
 import { CSimpleDataFileElement } from "./csimpledatafile";
 
@@ -19,68 +19,78 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
   } = useJob(job.id);
 
   const { item } = getTaskItem(itemName);
-  const { value: cell } = getTaskItem(`${itemName}.cell`);
-  const { value: wavelength } = getTaskItem(`${itemName}.wavelength`);
-  const { value: crystalName } = getTaskItem(`${itemName}.crystalName`);
-  const { value: dataset } = getTaskItem(`${itemName}.dataset`);
+  const { value: cell, update: updateCell } = getTaskItem(`${itemName}.cell`);
+  const { value: wavelength, update: updateWavelength } = getTaskItem(
+    `${itemName}.wavelength`
+  );
+  const { value: crystalName, update: updateCrystalName } = getTaskItem(
+    `${itemName}.crystalName`
+  );
+  const { value: dataset, update: updateDataset } = getTaskItem(
+    `${itemName}.dataset`
+  );
 
-  const fileObjectPath = item?._objectPath ? `${item._objectPath}.file` : null;
-  const { data: fileDigest } = useFileDigest(fileObjectPath || "");
+  const fileObjectPath = useMemo(
+    () => (item?._objectPath ? `${item._objectPath}.file` : null),
+    [item]
+  );
+  const { data: fileDigest, mutate: mutateFileDigest } = useFileDigest(
+    fileObjectPath || ""
+  );
 
-  // Parameter update mappings
-  const parameterMappings = [
-    { key: "cell", digestValue: fileDigest?.cell, currentValue: cell },
-    {
-      key: "wavelength",
-      digestValue: fileDigest?.wavelength,
-      currentValue: wavelength,
+  const handleChange = useCallback(
+    async (updated: any) => {
+      if (!item || !setParameterNoMutate || !updated) return;
+      const updatedValue = valueOfItem(updated);
+      const fileDigest = await fetch(
+        `/api/proxy/files/${updatedValue.dbFileId}/digest_by_uuid/`
+      ).then((result) => result.json());
+      const updates: Promise<any>[] = [];
+      if (
+        fileDigest?.cell &&
+        JSON.stringify(fileDigest?.cell) !== JSON.stringify(cell)
+      ) {
+        updates.push(updateCell(fileDigest?.cell));
+      }
+      if (
+        fileDigest?.wavelength &&
+        JSON.stringify(fileDigest?.wavelength) !== JSON.stringify(wavelength)
+      ) {
+        updates.push(updateWavelength(fileDigest?.wavelength));
+      }
+      if (
+        fileDigest?.crystalName &&
+        JSON.stringify(fileDigest?.crystalName) !== JSON.stringify(crystalName)
+      ) {
+        updates.push(updateCrystalName(fileDigest?.crystalName));
+      }
+      if (
+        fileDigest?.crystalName &&
+        JSON.stringify(fileDigest?.datasetName) !== JSON.stringify(dataset)
+      ) {
+        updates.push(updateDataset(fileDigest?.datasetName));
+      }
+
+      if (updates.length > 0) {
+        await Promise.all(updates);
+        await Promise.all([
+          mutateContainer(),
+          mutateValidation(),
+          mutateParams_xml(),
+        ]);
+      }
     },
-    {
-      key: "crystalName",
-      digestValue: fileDigest?.crystalName,
-      currentValue: crystalName,
-    },
-    {
-      key: "dataset",
-      digestValue: fileDigest?.datasetName,
-      currentValue: dataset,
-    },
-  ];
-
-  const handleChange = useCallback(async () => {
-    if (!item || !setParameterNoMutate || !fileDigest) return;
-
-    const updates = parameterMappings
-      .filter(
-        ({ digestValue, currentValue }) =>
-          digestValue &&
-          JSON.stringify(digestValue) !== JSON.stringify(currentValue)
-      )
-      .map(({ key, digestValue }) =>
-        setParameterNoMutate({
-          object_path: `${item._objectPath}.${key}`,
-          value: digestValue,
-        })
-      );
-
-    if (updates.length > 0) {
-      await Promise.all(updates);
-      await Promise.all([
-        mutateContainer(),
-        mutateValidation(),
-        mutateParams_xml(),
-      ]);
-    }
-  }, [
-    item,
-    fileDigest,
-    setParameterNoMutate,
-    cell,
-    wavelength,
-    crystalName,
-    dataset,
-    mutateContainer,
-  ]);
+    [
+      item,
+      fileDigest,
+      setParameterNoMutate,
+      cell,
+      wavelength,
+      crystalName,
+      dataset,
+      mutateContainer,
+    ]
+  );
 
   // Helper function for object paths
   const getObjectPath = (field: string) =>
