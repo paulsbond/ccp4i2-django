@@ -1,23 +1,288 @@
-import { Editor } from "@monaco-editor/react";
-import { useContext, useMemo } from "react";
-import { RunCheckContext } from "../providers/run-check-provider";
+import React, { useMemo, useCallback } from "react";
+import { Box, Typography, Chip, IconButton, Stack } from "@mui/material";
+import {
+  Error as ErrorIcon,
+  Warning as WarningIcon,
+  Info as InfoIcon,
+  ExpandLess,
+  ExpandMore,
+  CheckCircle,
+} from "@mui/icons-material";
+import { useRunCheck } from "../providers/run-check-provider";
 import { useJob } from "../utils";
+import { Job } from "../types/models";
+
 interface ValidationViewerProps {
-  jobId?: number;
+  job?: Job;
 }
-export const ValidationViewer: React.FC<ValidationViewerProps> = ({
-  jobId,
-}) => {
-  const { processedErrors } = useContext(RunCheckContext);
-  const { validation } = useJob(jobId || -1);
+
+interface ValidationError {
+  key: string;
+  messages: string[];
+  maxSeverity: number;
+  displayName: string;
+}
+
+interface SeverityGroup {
+  severity: number;
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+  errors: ValidationError[];
+}
+
+// Simplified severity configuration
+const SEVERITY_CONFIG = {
+  2: { label: "Errors", color: "#d32f2f", icon: "⚠️" },
+  3: { label: "Warnings", color: "#ed6c02", icon: "⚡" },
+  1: { label: "Info", color: "#0288d1", icon: "ℹ️" },
+  0: { label: "Debug", color: "#757575", icon: "🔍" },
+} as const;
+
+// Lightweight helper functions
+const formatFieldName = (key: string): string => {
+  const fieldName = key.split(".").pop() || key;
+  return fieldName
+    .replace(/_/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
+const cleanErrorMessage = (message: string): string => {
+  return message
+    .replace(/^[^:]+:\s*/, "")
+    .replace(/Data has undefined value/, "Required");
+};
+
+export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
+  const { processedErrors } = useRunCheck();
+  const { validation } = useJob(job?.id || -1);
+  const [expandedGroups, setExpandedGroups] = React.useState<Set<number>>(
+    new Set([2, 3]) // Expand errors and warnings by default
+  );
+
   const compiledErrors = useMemo(() => {
-    return { ...validation, ...processedErrors };
+    return { ...processedErrors };
   }, [processedErrors, validation]);
+
+  const processedData = useMemo((): SeverityGroup[] => {
+    if (!compiledErrors || Object.keys(compiledErrors).length === 0) {
+      return [];
+    }
+
+    // Quick transformation without heavy processing
+    const errorsByseverity: Record<number, ValidationError[]> = {};
+
+    Object.entries(compiledErrors).forEach(([key, errorData]) => {
+      // Type assertion to ValidationError
+      const err = errorData as ValidationError;
+      const severity = err.maxSeverity;
+      if (!errorsByseverity[severity]) {
+        errorsByseverity[severity] = [];
+      }
+
+      errorsByseverity[severity].push({
+        key,
+        messages: err.messages.map(cleanErrorMessage),
+        maxSeverity: severity,
+        displayName: formatFieldName(key),
+      });
+    });
+
+    // Build groups only for severities that have errors
+    const groups: SeverityGroup[] = [];
+    [2, 3, 1, 0].forEach((severity) => {
+      const errors = errorsByseverity[severity];
+      if (errors && errors.length > 0) {
+        const config =
+          SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG];
+        groups.push({
+          severity,
+          label: config.label,
+          color: config.color,
+          icon: config.icon,
+          errors: errors.sort((a, b) =>
+            a.displayName.localeCompare(b.displayName)
+          ),
+        });
+      }
+    });
+
+    return groups;
+  }, [compiledErrors]);
+
+  const totalErrors = processedData.reduce(
+    (total, group) => total + group.errors.length,
+    0
+  );
+
+  const toggleGroup = useCallback((severity: number) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(severity)) {
+        newSet.delete(severity);
+      } else {
+        newSet.add(severity);
+      }
+      return newSet;
+    });
+  }, []);
+
+  if (totalErrors === 0) {
+    return (
+      <Box
+        sx={{
+          p: 3,
+          border: "1px solid #e0e0e0",
+          borderRadius: 1,
+          backgroundColor: "#f5f5f5",
+          textAlign: "center",
+        }}
+      >
+        <CheckCircle sx={{ color: "#4caf50", fontSize: 40, mb: 1 }} />
+        <Typography variant="h6" sx={{ color: "#4caf50", mb: 0.5 }}>
+          No Validation Issues
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#666" }}>
+          All required fields are properly configured.
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Editor
-      height="calc(100vh - 15rem)"
-      value={JSON.stringify(compiledErrors, null, 2)}
-      language="json"
-    />
+    <Box sx={{ maxHeight: "70vh", overflow: "auto" }}>
+      {/* Lightweight Summary */}
+      <Box
+        sx={{
+          p: 2,
+          mb: 2,
+          border: "1px solid #e0e0e0",
+          borderRadius: 1,
+          backgroundColor: "#fafafa",
+        }}
+      >
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+          <Typography variant="h6">
+            📋 {totalErrors} validation issues
+          </Typography>
+          {processedData.map((group) => (
+            <Chip
+              key={group.severity}
+              size="small"
+              label={`${group.errors.length} ${group.label.toLowerCase()}`}
+              sx={{
+                backgroundColor: `${group.color}20`,
+                color: group.color,
+                border: `1px solid ${group.color}40`,
+              }}
+            />
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Lightweight Groups */}
+      {processedData.map((group) => (
+        <Box
+          key={group.severity}
+          sx={{
+            mb: 2,
+            border: "1px solid #e0e0e0",
+            borderRadius: 1,
+            overflow: "hidden",
+          }}
+        >
+          {/* Group Header */}
+          <Box
+            onClick={() => toggleGroup(group.severity)}
+            sx={{
+              p: 2,
+              backgroundColor: `${group.color}10`,
+              borderBottom: expandedGroups.has(group.severity)
+                ? "1px solid #e0e0e0"
+                : "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              "&:hover": {
+                backgroundColor: `${group.color}20`,
+              },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <span style={{ fontSize: "1.2em" }}>{group.icon}</span>
+              <Typography variant="h6" sx={{ color: group.color }}>
+                {group.label}
+              </Typography>
+              <Chip
+                size="small"
+                label={group.errors.length}
+                sx={{
+                  backgroundColor: group.color,
+                  color: "white",
+                  fontSize: "0.75rem",
+                }}
+              />
+            </Stack>
+            <IconButton size="small" sx={{ color: group.color }}>
+              {expandedGroups.has(group.severity) ? (
+                <ExpandLess />
+              ) : (
+                <ExpandMore />
+              )}
+            </IconButton>
+          </Box>
+
+          {/* Group Content */}
+          {expandedGroups.has(group.severity) && (
+            <Box sx={{ p: 0 }}>
+              {group.errors.map((error, index) => (
+                <Box
+                  key={error.key}
+                  sx={{
+                    p: 2,
+                    borderBottom:
+                      index < group.errors.length - 1
+                        ? "1px solid #f0f0f0"
+                        : "none",
+                    "&:hover": {
+                      backgroundColor: "#f9f9f9",
+                    },
+                  }}
+                >
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {error.displayName}
+                    </Typography>
+                    {error.messages.map((message, msgIndex) => (
+                      <Typography
+                        key={msgIndex}
+                        variant="body2"
+                        sx={{ color: "#666", pl: 1 }}
+                      >
+                        • {message}
+                      </Typography>
+                    ))}
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontFamily: "monospace",
+                        color: "#999",
+                        fontSize: "0.7rem",
+                        pl: 1,
+                      }}
+                    >
+                      {error.key}
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+      ))}
+    </Box>
   );
 };
