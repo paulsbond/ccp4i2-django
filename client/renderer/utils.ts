@@ -54,6 +54,7 @@ export interface TaskItem {
   item: any;
   value: any;
   update: (value: any) => Promise<boolean | Response>;
+  updateNoMutate: (value: any) => Promise<boolean | Response>;
 }
 
 export interface ProjectData {
@@ -828,7 +829,31 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         }
       };
 
-      return { item, value, update };
+      const updateNoMutate = async (
+        newValue: any
+      ): Promise<boolean | Response> => {
+        if (!job || job.status !== JOB_STATUS.PENDING) return false;
+
+        // Check if value actually changed
+        if (JSON.stringify({ value }) === JSON.stringify({ value: newValue })) {
+          return false;
+        }
+
+        // Use the queued setParameter instead of direct fetch
+        try {
+          const result = await setParameterNoMutate({
+            object_path: item._objectPath,
+            value: newValue,
+          });
+
+          return result?.status === "Success" ? true : false;
+        } catch (error) {
+          console.error("Error updating task item:", error);
+          return false;
+        }
+      };
+
+      return { item, value, update, updateNoMutate };
     };
   }, [container, job, setParameter]);
 
