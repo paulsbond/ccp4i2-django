@@ -993,18 +993,17 @@ export const useJob = (jobId: number | null | undefined): JobData => {
 
   const getValidationColor = useMemo(() => {
     return (item: any): string => {
-      const fieldErrors = extractValidationErrors(item, {
-        ...processedErrors,
-      });
+      const fieldErrors = extractValidationErrors(
+        item,
+        processedErrors || validation || {}
+      );
       return determineValidationColor(fieldErrors);
     };
   }, [processedErrors, validation]);
 
   const getErrors = useMemo(() => {
     return (item: any): ValidationError[] => {
-      return extractValidationErrors(item, {
-        ...processedErrors,
-      });
+      return extractValidationErrors(item, processedErrors || validation || {});
     };
   }, [processedErrors, validation]);
 
