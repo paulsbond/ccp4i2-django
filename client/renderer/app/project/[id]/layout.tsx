@@ -61,7 +61,7 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
                       <Paper
                         sx={{
                           overflowY: "auto",
-                          height: "calc(100vh - 8rem)",
+                          height: "calc(100vh - 10rem)",
                         }}
                       >
                         <Tabs
