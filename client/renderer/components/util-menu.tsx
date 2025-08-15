@@ -2,13 +2,12 @@
 import { useCallback, useState } from "react";
 import { Button, Menu, MenuItem } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useContext } from "react";
-import { RunningProcessesContext } from "../providers/running-processes";
+import { useRunningProcesses } from "../providers/running-processes";
 
 export default function UtilMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { jobsAndProcessesDialogOpen, setJobsAndProcessesDialogOpen } =
-    useContext(RunningProcessesContext);
+    useRunningProcesses();
   const router = useRouter();
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {

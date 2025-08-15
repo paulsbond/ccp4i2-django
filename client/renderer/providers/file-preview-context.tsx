@@ -22,7 +22,7 @@ export const FilePreviewContext = createContext<FilePreviewDialogProps>({
   setContentSpecification: () => {},
 });
 
-export const FilePreviewContextProvider: React.FC<PropsWithChildren> = ({
+export const FilePreviewProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
   const [contentSpecification, setContentSpecification] =
@@ -41,7 +41,7 @@ export const FilePreviewContextProvider: React.FC<PropsWithChildren> = ({
 
 const FilePreviewDialog: React.FC = () => {
   const { contentSpecification, setContentSpecification } =
-    useContext(FilePreviewContext);
+    useFilePreviewContext();
   const [previewContent, setPreviewContent] = useState<string | null>("");
   useEffect(() => {
     if (contentSpecification) {
@@ -115,4 +115,14 @@ const FilePreviewDialog: React.FC = () => {
       </DialogContent>
     </Dialog>
   );
+};
+
+export const useFilePreviewContext = () => {
+  const context = useContext(FilePreviewContext);
+  if (!context) {
+    throw new Error(
+      "useFilePreviewContext must be used within a FilePreviewProvider"
+    );
+  }
+  return context;
 };

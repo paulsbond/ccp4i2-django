@@ -8,18 +8,11 @@ import {
   setHeight,
 } from "moorhen";
 import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
-import {
-  RefObject,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
-import { CCP4i2Context } from "../../app-context";
+import { useCCP4i2Window } from "../../app-context";
 export interface MoorhenWrapperProps {
   fileIds?: number[];
 }
@@ -39,7 +32,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     (state: moorhen.State) => state.generalStates.cootInitialized
   );
   const store = useStore();
-  const { cootModule } = useContext(CCP4i2Context);
+  const { cootModule } = useCCP4i2Window();
 
   useEffect(() => {
     if (typeof window !== "undefined") {

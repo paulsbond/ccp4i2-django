@@ -1,7 +1,6 @@
 import React, {
   SyntheticEvent,
   useCallback,
-  useContext,
   useMemo,
   useState,
   useEffect,
@@ -19,7 +18,7 @@ import {
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob, SetParameterResponse } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
+import { useTaskInterface } from "../../../providers/task-provider";
 import { usePopcorn } from "../../../providers/popcorn-provider";
 
 // Types
@@ -150,7 +149,7 @@ export const CSimpleAutocompleteElement: React.FC<
   } = useJob(job.id);
   const { item } = getTaskItem(itemName);
   const { setMessage } = usePopcorn();
-  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
+  const { inFlight, setInFlight } = useTaskInterface();
 
   // Process item data
   const processedItem = useProcessedItem(item, qualifiers);

@@ -2,16 +2,14 @@ import { CCP4i2TaskElementProps } from "./task-element";
 import { useJob } from "../../../utils";
 import {
   Autocomplete,
-  Button,
   Card,
   CardContent,
   CardHeader,
   TextField,
 } from "@mui/material";
-import { Info } from "@mui/icons-material";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ErrorInfo } from "./error-info";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
+import { useTaskInterface } from "../../../providers/task-provider";
 import { SpaceGroup, spaceGroups } from "../../../spacegroups";
 
 export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
@@ -19,9 +17,9 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { job, itemName, qualifiers } = props;
   const { setParameter, getTaskItem, getValidationColor } = useJob(job.id);
-  const { item, value: stringValue, update } = getTaskItem(itemName);
+  const { item, value: stringValue } = getTaskItem(itemName);
   const [value, setValue] = useState<SpaceGroup | undefined>(spaceGroups[0]);
-  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
+  const { inFlight, setInFlight } = useTaskInterface();
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;

@@ -1,35 +1,11 @@
 "use client";
-import {
-  useState,
-  SyntheticEvent,
-  useContext,
-  useCallback,
-  createContext,
-  useEffect,
-} from "react";
-import {
-  Button,
-  Collapse,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-} from "@mui/material";
-import {
-  Folder,
-  InsertDriveFile,
-  ExpandLess,
-  ExpandMore,
-  Menu as MenuIcon,
-  Preview,
-  Download,
-} from "@mui/icons-material";
-import { CCP4i2Context } from "../app-context";
+import { SyntheticEvent, useCallback } from "react";
+import { Menu, MenuItem } from "@mui/material";
+import { Preview, Download } from "@mui/icons-material";
+import { useCCP4i2Window } from "../app-context";
 import { doDownload, useApi } from "../api";
 import { Project } from "../types/models";
-import { FilePreviewContext } from "../providers/file-preview-context";
+import { useFilePreviewContext } from "../providers/file-preview-context";
 import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
 
 interface FileSystemFileMenuProps {
@@ -41,7 +17,7 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
 }) => {
   const { anchorEl, menuNode, closeMenu } = useFileSystemFileBrowser();
 
-  const { projectId } = useContext(CCP4i2Context);
+  const { projectId } = useCCP4i2Window();
 
   const { get, post } = useApi();
 
@@ -49,7 +25,7 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
 
   const isOpen = Boolean(anchorEl && menuNode);
 
-  const { setContentSpecification } = useContext(FilePreviewContext);
+  const { setContentSpecification } = useFilePreviewContext();
 
   const handleClose = () => {
     closeMenu();

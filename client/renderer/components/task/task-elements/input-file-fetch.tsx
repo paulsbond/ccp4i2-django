@@ -1,6 +1,6 @@
 import { Button, SxProps } from "@mui/material";
-import { ChangeEvent, useCallback, useContext } from "react";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
+import { ChangeEvent, useCallback } from "react";
+import { useTaskInterface } from "../../../providers/task-provider";
 import { Language } from "@mui/icons-material";
 
 interface InputFileFetchProps {
@@ -18,8 +18,7 @@ export const InputFileFetch: React.FC<InputFileFetchProps> = ({
   modes,
   onChange,
 }) => {
-  const { setDownloadDialogOpen, setFetchItemParams } =
-    useContext(TaskInterfaceContext);
+  const { setDownloadDialogOpen, setFetchItemParams } = useTaskInterface();
 
   const handleFetchClick = useCallback(
     (ev: any) => {

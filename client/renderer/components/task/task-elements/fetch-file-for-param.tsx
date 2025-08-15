@@ -10,11 +10,11 @@ import {
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { Job } from "../../../types/models";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { CCP4i2Context } from "../../../app-context";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCCP4i2Window } from "../../../app-context";
 import { useJob } from "../../../utils";
 import { usePopcorn } from "../../../providers/popcorn-provider";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
+import { useTaskInterface } from "../../../providers/task-provider";
 interface FetchFileForParamProps {
   open: boolean;
   onClose: () => void;
@@ -27,7 +27,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   const api = useApi();
   const { setMessage } = usePopcorn();
   const { fetchItemParams, setFetchItemParams, setDownloadDialogOpen } =
-    useContext(TaskInterfaceContext);
+    useTaskInterface();
 
   const { item, modes, onChange } = useMemo(() => {
     //alert(JSON.stringify(itemParams));
@@ -41,7 +41,7 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
     [item, modes]
   );
 
-  const { jobId, cootModule } = useContext(CCP4i2Context);
+  const { jobId, cootModule } = useCCP4i2Window();
   const { job } = useJob(jobId);
 
   const { mutate: mutateJobs } = api.get_endpoint<Job[]>({

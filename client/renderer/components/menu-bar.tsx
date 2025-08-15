@@ -1,29 +1,18 @@
-import {
-  AppBar,
-  FormControlLabel,
-  Input,
-  Switch,
-  Toolbar,
-  Typography,
-} from "@mui/material";
+import { AppBar, FormControlLabel, Switch, Typography } from "@mui/material";
 import EditMenu from "./edit-menu";
 import FileMenu from "./file-menu";
 import HelpMenu from "./help-menu";
 import UtilMenu from "./util-menu";
 import ViewMenu from "./view-menu";
-import { useContext, useEffect } from "react";
-import { CCP4i2Context } from "../app-context";
+import { useEffect } from "react";
+import { useCCP4i2Window } from "../app-context";
 import { useApi } from "../api";
 import { Job, Project } from "../types/models";
 import EditableTypography from "./editable-typography";
-import IconButton from "@mui/material/IconButton";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import Stack from "@mui/material/Stack";
 import HistoryToolbar from "./history-toolbar";
 
 export default function MenuBar() {
-  const { projectId, jobId, devMode, setDevMode } = useContext(CCP4i2Context);
+  const { projectId, jobId, devMode, setDevMode } = useCCP4i2Window();
   const api = useApi();
   const { data: project, mutate: mutateProject } = api.get<Project>(
     `projects/${projectId}`

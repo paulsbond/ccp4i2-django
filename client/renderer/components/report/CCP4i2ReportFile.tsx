@@ -13,7 +13,9 @@ import { useApi } from "../../api";
 import { fileTypeMapping } from "../files-table";
 import EditableTypography from "../editable-typography";
 import { File as DjangoFile } from "../../types/models";
-import { FileMenuContext } from "../../providers/file-context-menu";
+import { useFileMenu } from "../../providers/file-context-menu";
+import { useCCP4i2Window } from "../../app-context";
+import { useProject } from "../../utils";
 //import { fileTypeMapping } from "../files-table";
 
 interface CCP4i2ReportFileProps extends CCP4i2ReportElementProps {
@@ -21,10 +23,13 @@ interface CCP4i2ReportFileProps extends CCP4i2ReportElementProps {
 }
 export const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
   const api = useApi();
-  const { data: file, isLoading } = api.get<DjangoFile>(
-    `files/${props.uuid}/by_uuid/`
+  const { projectId } = useCCP4i2Window();
+  const { files, mutateFiles } = useProject(projectId || 0);
+  const file = useMemo(
+    () => (files ?? []).find((f) => f.uuid === props.uuid),
+    [files, props.uuid]
   );
-  const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
+  const { setFileMenuAnchorEl, setFile } = useFileMenu();
 
   const fileTypeIcon = useMemo(() => {
     if (!file?.type) return "ccp4";
@@ -59,7 +64,7 @@ export const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
     [handleMenuClick]
   );
 
-  if (!file || isLoading) return <LinearProgress />;
+  if (!file) return <LinearProgress />;
 
   return (
     <>
@@ -91,10 +96,11 @@ export const CCP4i2ReportFile: React.FC<CCP4i2ReportFileProps> = (props) => {
               ? file.job_param_name
               : ""
           }
-          onDelay={(annotation) => {
+          onDelay={async (annotation) => {
             const formData = new FormData();
             formData.set("annotation", annotation);
-            api.patch(`files/${file?.id}`, formData);
+            await api.patch(`files/${file?.id}`, formData);
+            mutateFiles();
           }}
         />
         <Typography sx={{ flexGrow: 1 }} />

@@ -1,9 +1,11 @@
 import React, { useMemo, useCallback } from "react";
 import { Box, Typography, Chip, IconButton, Stack } from "@mui/material";
 import { ExpandLess, ExpandMore, CheckCircle } from "@mui/icons-material";
+import { Editor } from "@monaco-editor/react";
 import { useRunCheck } from "../providers/run-check-provider";
 import { useJob } from "../utils";
 import { Job } from "../types/models";
+import { useCCP4i2Window } from "../app-context";
 
 interface ValidationViewerProps {
   job?: Job;
@@ -51,6 +53,7 @@ const cleanErrorMessage = (message: string): string => {
 export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
   const { processedErrors } = useRunCheck();
   const { validation } = useJob(job?.id || -1);
+  const { devMode } = useCCP4i2Window();
   const [expandedGroups, setExpandedGroups] = React.useState<Set<number>>(
     new Set([2, 3]) // Expand errors and warnings by default
   );
@@ -122,6 +125,34 @@ export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
     });
   }, []);
 
+  // Prettified JSON for dev mode
+  const prettifiedValidation = useMemo(() => {
+    return JSON.stringify(compiledErrors, null, 2);
+  }, [compiledErrors]);
+
+  // If in dev mode, show Monaco editor
+  if (devMode) {
+    return (
+      <Box sx={{ height: "calc(100vh - 15rem)" }}>
+        <Editor
+          height="100%"
+          defaultLanguage="json"
+          value={prettifiedValidation}
+          options={{
+            readOnly: true,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            wordWrap: "on",
+            lineNumbers: "on",
+            folding: true,
+            automaticLayout: true,
+          }}
+        />
+      </Box>
+    );
+  }
+
+  // Regular beautified view for non-dev mode
   if (totalErrors === 0) {
     return (
       <Box

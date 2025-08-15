@@ -5,7 +5,7 @@ import { Box } from "@mui/material";
 import DirectoryBrowser from "./directory-browser";
 import { FileSystemFileMenu } from "./file-system-file-menu";
 import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
-import { FilePreviewContext } from "../providers/file-preview-context";
+import { useFilePreviewContext } from "../providers/file-preview-context";
 
 interface JobLogViewerProps {
   job: Job;
@@ -15,7 +15,7 @@ interface JobLogViewerProps {
 export const JobLogViewer: React.FC<JobLogViewerProps> = ({ job, project }) => {
   const { directory } = useProject(project.id);
   const { closeMenu } = useFileSystemFileBrowser();
-  const { setContentSpecification } = useContext(FilePreviewContext);
+  const { setContentSpecification } = useFilePreviewContext();
 
   const directoryData = useMemo(() => {
     if (!directory || !job || !directory.container) {

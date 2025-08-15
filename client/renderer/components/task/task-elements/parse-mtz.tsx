@@ -3,7 +3,6 @@
 import React, {
   SyntheticEvent,
   useCallback,
-  useContext,
   useEffect,
   useReducer,
   useState,
@@ -24,7 +23,7 @@ import {
 import SimpleDialog from "@mui/material/Dialog";
 import { v4 as uuid4 } from "uuid";
 
-import { CCP4i2Context } from "../../../app-context";
+import { useCCP4i2Window } from "../../../app-context";
 import { readFilePromise } from "../../../utils";
 
 // Constants
@@ -193,7 +192,7 @@ export const ParseMtz: React.FC<ParseMtzProps> = ({
   const [values, dispatch] = useReducer(valuesReducer, {});
 
   // Context
-  const { cootModule } = useContext(CCP4i2Context);
+  const { cootModule } = useCCP4i2Window();
 
   // Handlers
   const handleGroupChange = useCallback(

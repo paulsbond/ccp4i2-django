@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useState } from "react";
+import { createContext, PropsWithChildren, useContext, useState } from "react";
 import { CircularProgress, Paper, Popper } from "@mui/material";
 import { FetchFileForParam } from "../components/task/task-elements/fetch-file-for-param";
 import { ErrorPopper } from "../components/task/task-elements/error-info";
@@ -80,4 +80,12 @@ export const TaskProvider: React.FC<PropsWithChildren> = ({ children }) => {
       <ErrorPopper key="error-popper" />
     </TaskInterfaceContext.Provider>
   );
+};
+
+export const useTaskInterface = () => {
+  const context = useContext(TaskInterfaceContext);
+  if (!context) {
+    throw new Error("useTaskInterface must be used within a TaskProvider");
+  }
+  return context;
 };

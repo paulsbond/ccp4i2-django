@@ -1,9 +1,9 @@
 import Script from "next/script";
-import { PropsWithChildren, useContext, useEffect, useRef } from "react";
-import { CCP4i2Context } from "../app-context";
+import { PropsWithChildren, useEffect, useRef } from "react";
+import { useCCP4i2Window } from "../app-context";
 
 export const RdkitProvider: React.FC<PropsWithChildren> = (props) => {
-  const { setRdkitModule } = useContext(CCP4i2Context);
+  const { setRdkitModule } = useCCP4i2Window();
   const scriptElement = useRef<HTMLElement | null | undefined>(null);
 
   useEffect(() => {

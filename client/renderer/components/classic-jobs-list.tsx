@@ -31,9 +31,9 @@ import {
 } from "../types/models";
 import { CCP4i2JobAvatar } from "./job-avatar";
 import { FileAvatar } from "./file-avatar";
-import { CCP4i2Context } from "../app-context";
-import { JobMenuContext, JobWithChildren } from "../providers/job-context-menu";
-import { FileMenuContext } from "../providers/file-context-menu";
+import { useCCP4i2Window } from "../app-context";
+import { JobWithChildren, useJobMenu } from "../providers/job-context-menu";
+import { useFileMenu } from "../providers/file-context-menu";
 
 // Types
 interface ClassicJobListProps {
@@ -251,7 +251,7 @@ export const ClassicJobList: React.FC<ClassicJobListProps> = ({
 // Custom Tree Item Component
 const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
   function CustomTreeItem({ id, itemId, label, disabled, children }, ref) {
-    const projectId = useContext(CCP4i2Context).projectId;
+    const { projectId } = useCCP4i2Window();
     const { jobs, files, jobCharValues, jobFloatValues } = useProjectData(
       projectId ?? 0
     );
@@ -261,8 +261,8 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
       files
     );
 
-    const { setJobMenuAnchorEl, setJob } = useContext(JobMenuContext);
-    const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
+    const { setJobMenuAnchorEl, setJob } = useJobMenu();
+    const { setFileMenuAnchorEl, setFile } = useFileMenu();
 
     // Drag and drop setup
     const { attributes, listeners, setNodeRef } = useDraggable({

@@ -1,23 +1,23 @@
 import { DndContext, DragOverlay } from "@dnd-kit/core";
-import { PropsWithChildren, useCallback, useContext } from "react";
-import { CCP4i2Context } from "../app-context";
+import { PropsWithChildren, useCallback } from "react";
+import { useCCP4i2Window } from "../app-context";
 import { Avatar } from "@mui/material";
 import { File, Job, Project } from "../types/models";
 import { useJob } from "../utils";
 import { useApi } from "../api";
-import { TaskInterfaceContext } from "./task-provider";
+import { useTaskInterface } from "./task-provider";
 
 export const DraggableContext: React.FC<PropsWithChildren> = (props) => {
-  const { jobId } = useContext(CCP4i2Context);
+  const { jobId } = useCCP4i2Window();
 
-  const { setInFlight } = useContext(TaskInterfaceContext);
+  const { setInFlight } = useTaskInterface();
 
   const api = useApi();
 
   const { job, mutateContainer, fileItemToParameterArg, setParameter } =
     useJob(jobId);
 
-  const { activeDragItem, setActiveDragItem } = useContext(CCP4i2Context);
+  const { activeDragItem, setActiveDragItem } = useCCP4i2Window();
 
   const { data: project_jobs } = api.get_endpoint<Job[]>({
     type: "projects",

@@ -40,6 +40,7 @@ import { createContext } from "react";
 import { usePopcorn } from "./popcorn-provider";
 import { useRunCheck } from "./run-check-provider";
 import { CCP4i2MoorhenIcon } from "../components/General/CCP4i2Icons";
+import { useJob } from "../utils";
 
 interface JobMenuContextDataProps {
   jobMenuAnchorEl: HTMLElement | null;
@@ -55,9 +56,7 @@ export const JobMenuContext = createContext<JobMenuContextDataProps>({
   setJob: () => {},
 });
 
-export const JobMenuContextProvider: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const JobMenuProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [jobMenuAnchorEl, setJobMenuAnchorEl] = useState<HTMLElement | null>(
     null
   );
@@ -85,8 +84,7 @@ export interface JobWithChildren extends Job {
 }
 
 export const JobMenu: React.FC = () => {
-  const { jobMenuAnchorEl, setJobMenuAnchorEl, job, setJob } =
-    useContext(JobMenuContext);
+  const { jobMenuAnchorEl, setJobMenuAnchorEl, job, setJob } = useJobMenu();
   const api = useApi();
   const router = useRouter();
   const { setMessage } = usePopcorn();
@@ -509,4 +507,12 @@ const StatusMenu: React.FC<StatusMenuProps> = ({ job, anchorEl, onClose }) => {
       </MenuItem>
     </Menu>
   );
+};
+
+export const useJobMenu = () => {
+  const context = useContext(JobMenuContext);
+  if (!context) {
+    throw new Error("useJobMenu must be used within a JobMenuProvider");
+  }
+  return context;
 };

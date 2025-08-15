@@ -19,11 +19,11 @@ import {
   Box,
 } from "@mui/material";
 import { Download, Preview, Terminal, Edit } from "@mui/icons-material";
-import { FilePreviewContext } from "./file-preview-context";
+import { useFilePreviewContext } from "./file-preview-context";
 import { File as DjangoFile } from "../types/models";
 import { useRouter } from "next/navigation";
 import { CCP4i2MoorhenIcon } from "../components/General/CCP4i2Icons";
-import { CCP4i2Context } from "../app-context";
+import { useCCP4i2Window } from "../app-context";
 
 interface FileMenuContextProps {
   fileMenuAnchorEl: HTMLElement | null;
@@ -39,9 +39,7 @@ export const FileMenuContext = createContext<FileMenuContextProps>({
   setFile: () => {},
 });
 
-export const FileMenuContextProvider: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const FileMenuProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [fileMenuAnchorEl, setFileMenuAnchorEl] = useState<HTMLElement | null>(
     null
   );
@@ -63,11 +61,10 @@ export const FileMenuContextProvider: React.FC<PropsWithChildren> = ({
 };
 
 export const FileMenu: React.FC = () => {
-  const { fileMenuAnchorEl, setFileMenuAnchorEl, file } =
-    useContext(FileMenuContext);
-  const { projectId } = useContext(CCP4i2Context);
+  const { fileMenuAnchorEl, setFileMenuAnchorEl, file } = useFileMenu();
+  const { projectId } = useCCP4i2Window();
   const api = useApi();
-  const { setContentSpecification } = useContext(FilePreviewContext);
+  const { setContentSpecification } = useFilePreviewContext();
   const router = useRouter();
   const { mutate: mutateFiles } = api.get_endpoint<DjangoFile[]>({
     type: "projects",
@@ -403,4 +400,12 @@ export const FileMenu: React.FC = () => {
       </Popper>
     </>
   );
+};
+
+export const useFileMenu = () => {
+  const context = useContext(FileMenuContext);
+  if (!context) {
+    throw new Error("useFileMenu must be used within a FileMenuProvider");
+  }
+  return context;
 };

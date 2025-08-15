@@ -1,5 +1,5 @@
 "use client";
-import React, { PropsWithChildren, useCallback, useContext } from "react";
+import React, { useCallback } from "react";
 import {
   Button,
   Container,
@@ -9,21 +9,20 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableRow,
 } from "@mui/material";
 import { useApi } from "../api";
 import { Cancel, Check, Folder } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CCP4i2Context } from "../app-context";
+import { useCCP4i2Window } from "../app-context";
 import { usePopcorn } from "../providers/popcorn-provider";
 
 export const ConfigContent: React.FC = () => {
   const api = useApi();
   const [config, setConfig] = useState<any | null>(null);
   const router = useRouter();
-  const { devMode, setDevMode } = useContext(CCP4i2Context);
+  const { devMode, setDevMode } = useCCP4i2Window();
   const [existingFiles, setExistingFiles] = useState<any | null>(null);
   const [requirementsExist, setRequirementsExist] = useState<boolean>(false);
   const { setMessage } = usePopcorn();

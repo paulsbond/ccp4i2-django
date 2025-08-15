@@ -14,7 +14,6 @@ import { ElaborateSearch } from "../General/SearchObjects";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useApi } from "../../api";
 import { MyExpandMore } from "../expand-more";
-import { CCP4i2Context } from "../../app-context";
 
 interface TaskTree {
   lookup: any;
@@ -43,7 +42,6 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
   onTaskSelect,
 }) => {
   const api = useApi();
-  const { projectId } = useContext(CCP4i2Context);
   const [searchText, setSearchText] = useState<string | null>(null);
   const { data: taskTreeResult } = api.get<any>(`task_tree/`);
 

@@ -1,25 +1,19 @@
 import {
   Autocomplete,
-  Avatar,
   Button,
-  IconButton,
   LinearProgress,
   Stack,
   TextField,
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Job, File as DjangoFile } from "../types/models";
+import { Job } from "../types/models";
 import EditableTypography from "./editable-typography";
 import { useApi } from "../api";
 import { KeyedMutator } from "swr";
-import { useContext, useMemo, useState } from "react";
+import { useState } from "react";
 import { CCP4i2JobAvatar } from "./job-avatar";
-import {
-  JobMenu,
-  JobMenuContext,
-  JobWithChildren,
-} from "../providers/job-context-menu";
+import { JobMenu, useJobMenu } from "../providers/job-context-menu";
 import { Menu } from "@mui/icons-material";
 import { useJob } from "../utils";
 import { useDroppable } from "@dnd-kit/core";
@@ -31,7 +25,7 @@ interface JobHeaderProps {
 }
 export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
   const [contextJob, setContextJob] = useState<Job | null>(null);
-  const { setJobMenuAnchorEl, setJob } = useContext(JobMenuContext);
+  const { setJobMenuAnchorEl, setJob } = useJobMenu();
   const api = useApi();
 
   const { container, mutateContainer } = useJob(job.id);

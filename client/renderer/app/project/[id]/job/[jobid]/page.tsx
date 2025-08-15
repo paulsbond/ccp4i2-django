@@ -1,11 +1,11 @@
 "use client";
-import { use, useContext, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { Container, LinearProgress, Paper, Tab, Tabs } from "@mui/material";
 import { useApi } from "../../../../../api";
 import { Editor } from "@monaco-editor/react";
 import { JobHeader } from "../../../../../components/job-header";
 import { CCP4i2ReportXMLView } from "../../../../../components/report/CCP4i2ReportXMLView";
-import { CCP4i2Context } from "../../../../../app-context";
+import { useCCP4i2Window } from "../../../../../app-context";
 import { TaskContainer } from "../../../../../components/task/task-interfaces/task-container";
 import {
   prettifyXml,
@@ -33,15 +33,13 @@ export default function JobPage({
   const api = useApi();
   const { id, jobid } = use(params);
   const { project, jobs, mutateJobs } = useProject(parseInt(id));
-  const { devMode } = useContext(CCP4i2Context);
+  const { devMode, setJobId } = useCCP4i2Window();
   const {
     setExtraDialogActions,
     setProcessedErrors,
     extraDialogActions,
     processedErrors,
   } = useRunCheck();
-
-  const { setJobId } = useContext(CCP4i2Context);
 
   const { job } = useJob(parseInt(jobid));
 

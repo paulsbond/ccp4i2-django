@@ -1,6 +1,5 @@
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -18,7 +17,7 @@ import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useApi } from "../../../api";
 import { useJob, useProject, valueOfItem } from "../../../utils";
 import { MyExpandMore } from "../../expand-more";
-import { CCP4i2Context } from "../../../app-context";
+import { useCCP4i2Window } from "../../../app-context";
 import { Project } from "../../../types/models";
 import { ErrorTrigger } from "./error-info";
 
@@ -185,7 +184,7 @@ export const CListElement: React.FC<CListElementProps> = ({
 }) => {
   const api = useApi();
   const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
-  const { projectId } = useContext(CCP4i2Context);
+  const { projectId } = useCCP4i2Window();
   const { project } = projectId
     ? useProject(projectId)
     : { project: undefined };
