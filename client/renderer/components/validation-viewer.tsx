@@ -63,7 +63,7 @@ export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
   );
 
   const compiledErrors = useMemo(() => {
-    return { ...processedErrors };
+    return processedErrors || validation || {};
   }, [processedErrors, validation]);
 
   const processedData = useMemo((): SeverityGroup[] => {
