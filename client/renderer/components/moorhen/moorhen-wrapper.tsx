@@ -64,7 +64,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
 
   // Calculate dimensions for the split screen layout
-  const rightPanelWidth = 128 + 80 * 8; // Approximate character width in pixels (8px per character)
+  const rightPanelWidth = 60 * 8; // Approximate character width in pixels (8px per character)
   const leftPanelWidth = useMemo(() => {
     return windowWidth - rightPanelWidth;
   }, [windowWidth, rightPanelWidth]);

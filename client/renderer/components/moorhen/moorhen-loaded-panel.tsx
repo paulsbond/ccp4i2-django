@@ -1,5 +1,12 @@
 import { moorhen } from "moorhen/types/moorhen";
-import { hideMolecule, showMolecule, hideMap, showMap } from "moorhen";
+import {
+  hideMolecule,
+  showMolecule,
+  hideMap,
+  showMap,
+  removeMap,
+  removeMolecule,
+} from "moorhen";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -18,7 +25,8 @@ import {
   Toolbar,
 } from "@mui/material";
 import { MoreVert, Visibility, VisibilityOff } from "@mui/icons-material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useApi } from "../../api";
 
 type ContentType = "Molecule" | "Map";
 type ContentItem = moorhen.Molecule | moorhen.Map;
@@ -33,6 +41,38 @@ interface MoorhenLoadedContentProps {
   type: ContentType;
 }
 
+interface FileInfo {
+  id: number;
+  job: number;
+  name: string;
+  annotation?: string;
+  job_param_name?: string;
+  // Add other file properties as needed
+}
+
+interface JobInfo {
+  id: number;
+  number: string;
+  project: number;
+  title?: string;
+  // Add other job properties as needed
+}
+
+interface ProjectInfo {
+  id: number;
+  name: string;
+  // Add other project properties as needed
+}
+
+interface ItemMetadata {
+  fileId: number;
+  projectName?: string;
+  jobNumber?: string;
+  fileAnnotation?: string;
+  isLoading: boolean;
+  error?: string;
+}
+
 export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
   onFileSelect,
   type = "Molecule",
@@ -41,7 +81,13 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     anchorEl: null,
     item: null,
   });
+  const [itemMetadata, setItemMetadata] = useState<Map<number, ItemMetadata>>(
+    new Map()
+  );
+
   const dispatch = useDispatch();
+  const api = useApi();
+
   const cootInitialized = useSelector(
     (state: moorhen.State) => state.generalStates.cootInitialized
   );
@@ -64,11 +110,95 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
   const items = type === "Molecule" ? molecules : maps;
   const visibleItems = type === "Molecule" ? visibleMolecules : visibleMaps;
 
+  // Extract file ID from uniqueId
+  const extractFileId = (uniqueId: string): number | null => {
+    const match = uniqueId.match(/\/api\/proxy\/files\/(\d+)\/download\//);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  // Fetch metadata for a specific item
+  const fetchItemMetadata = async (item: ContentItem) => {
+    const fileId = extractFileId(item.uniqueId || "");
+    if (!fileId) return;
+
+    const molNo = item.molNo;
+
+    // Set loading state
+    setItemMetadata(
+      (prev) =>
+        new Map(
+          prev.set(molNo, {
+            fileId,
+            isLoading: true,
+          })
+        )
+    );
+
+    try {
+      // Step 1: Fetch file information
+      const fileResponse = await fetch(`/api/proxy/files/${fileId}/`);
+      if (!fileResponse.ok) throw new Error("Failed to fetch file info");
+      const fileInfo: FileInfo = await fileResponse.json();
+
+      // Step 2: Fetch job information
+      const jobResponse = await fetch(`/api/proxy/jobs/${fileInfo.job}/`);
+      if (!jobResponse.ok) throw new Error("Failed to fetch job info");
+      const jobInfo: JobInfo = await jobResponse.json();
+
+      // Step 3: Fetch project information
+      const projectResponse = await fetch(
+        `/api/proxy/projects/${jobInfo.project}/`
+      );
+      if (!projectResponse.ok) throw new Error("Failed to fetch project info");
+      const projectInfo: ProjectInfo = await projectResponse.json();
+
+      // Update metadata with complete information
+      setItemMetadata(
+        (prev) =>
+          new Map(
+            prev.set(molNo, {
+              fileId,
+              projectName: projectInfo.name,
+              jobNumber: jobInfo.number,
+              fileAnnotation: fileInfo.annotation || fileInfo.job_param_name,
+              isLoading: false,
+            })
+          )
+      );
+    } catch (error) {
+      console.error("Error fetching metadata for item:", item.name, error);
+      setItemMetadata(
+        (prev) =>
+          new Map(
+            prev.set(molNo, {
+              fileId,
+              isLoading: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+            })
+          )
+      );
+    }
+  };
+
+  // Fetch metadata for all items when they change
+  useEffect(() => {
+    if (!items || items.length === 0) return;
+
+    items.forEach((item) => {
+      if (item.uniqueId) {
+        const fileId = extractFileId(item.uniqueId);
+        if (fileId && !itemMetadata.has(item.molNo)) {
+          fetchItemMetadata(item);
+        }
+      }
+    });
+  }, [items]);
+
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
     item: ContentItem
   ) => {
-    event.stopPropagation(); // Prevent row click when opening menu
+    event.stopPropagation();
     setMenuState({
       anchorEl: event.currentTarget,
       item: item,
@@ -79,7 +209,7 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     event: React.MouseEvent<HTMLElement>,
     item: ContentItem
   ) => {
-    event.preventDefault(); // Prevent browser context menu
+    event.preventDefault();
     setMenuState({
       anchorEl: event.currentTarget,
       item: item,
@@ -121,8 +251,15 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
 
   const handleDeleteItem = () => {
     if (menuState.item) {
-      // Add delete logic here
-      console.log(`Delete ${type.toLowerCase()}:`, menuState.item.name);
+      if (type === "Map") {
+        dispatch(removeMap(menuState.item as moorhen.Map));
+        menuState.item.delete();
+        console.log(`Delete map:`, menuState.item.name);
+      } else {
+        dispatch(removeMolecule(menuState.item as moorhen.Molecule));
+        menuState.item.delete();
+        console.log(`Delete ${type.toLowerCase()}:`, menuState.item.name);
+      }
     }
     handleMenuClose();
   };
@@ -134,7 +271,6 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         molecule.centreOn("/*/*/*/*", false, true);
       } else {
         const map = menuState.item as moorhen.Map;
-        // Add map centering logic if available
         console.log("Center on map:", map.name);
       }
     }
@@ -175,14 +311,8 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     return item.molNo;
   };
 
-  const getItemUniqueId = (item: ContentItem) => {
-    if (type === "Molecule") {
-      const molecule = item as moorhen.Molecule;
-      return molecule.uniqueId;
-    } else {
-      const map = item as moorhen.Map;
-      return (map as any).uniqueId; // Assuming maps might have uniqueId
-    }
+  const getItemMetadata = (item: ContentItem): ItemMetadata | undefined => {
+    return itemMetadata.get(item.molNo);
   };
 
   if (!cootInitialized) {
@@ -244,103 +374,142 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
             padding: 0,
           }}
         >
-          {items.map((item, index) => (
-            <ListItem
-              key={getItemId(item)}
-              disablePadding
-              sx={{
-                borderBottom:
-                  index < items.length - 1 ? "1px solid #f0f0f0" : "none",
-              }}
-            >
-              <ListItemButton
-                onClick={() => handleItemClick(item)}
-                onContextMenu={(event) => handleContextMenu(event, item)}
+          {items.map((item, index) => {
+            const metadata = getItemMetadata(item);
+
+            return (
+              <ListItem
+                key={getItemId(item)}
+                disablePadding
                 sx={{
-                  paddingY: 1,
-                  paddingX: 2,
-                  "&:hover": {
-                    backgroundColor: "#f9f9f9",
-                  },
-                  opacity: isVisible(item) ? 1 : 0.6,
-                  textDecoration: isVisible(item) ? "none" : "line-through",
+                  borderBottom:
+                    index < items.length - 1 ? "1px solid #f0f0f0" : "none",
                 }}
               >
-                <ListItemText
-                  primary={
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Chip
-                        label={getItemId(item)}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          fontSize: "0.75rem",
-                          fontFamily: "monospace",
-                          minWidth: "40px",
-                          height: "20px",
-                        }}
-                      />
-                      {getItemUniqueId(item) && (
+                <ListItemButton
+                  onClick={() => handleItemClick(item)}
+                  onContextMenu={(event) => handleContextMenu(event, item)}
+                  sx={{
+                    paddingY: 1,
+                    paddingX: 2,
+                    "&:hover": {
+                      backgroundColor: "#f9f9f9",
+                    },
+                    opacity: isVisible(item) ? 1 : 0.6,
+                    textDecoration: isVisible(item) ? "none" : "line-through",
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" alignItems="center" spacing={1}>
                         <Chip
-                          label={getItemUniqueId(item)}
+                          label={getItemId(item)}
                           size="small"
-                          variant="filled"
-                          color={type === "Molecule" ? "secondary" : "primary"}
+                          variant="outlined"
                           sx={{
                             fontSize: "0.75rem",
                             fontFamily: "monospace",
+                            minWidth: "40px",
                             height: "20px",
                           }}
                         />
-                      )}
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: isVisible(item) ? "normal" : "lighter",
-                          flex: 1,
-                        }}
-                      >
-                        {item.name}
-                      </Typography>
-                    </Stack>
-                  }
-                  secondary={
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      spacing={1}
-                      sx={{ mt: 0.5 }}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: isVisible(item) ? "normal" : "lighter",
+                            flex: 1,
+                          }}
+                        >
+                          {item.name}
+                        </Typography>
+                      </Stack>
+                    }
+                    secondary={
+                      <Stack direction="column" spacing={0.5} sx={{ mt: 0.5 }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          {isVisible(item) ? (
+                            <Visibility fontSize="small" color="action" />
+                          ) : (
+                            <VisibilityOff fontSize="small" color="disabled" />
+                          )}
+                          <Typography variant="caption" color="text.secondary">
+                            {isVisible(item) ? "Visible" : "Hidden"} {type}
+                          </Typography>
+                        </Stack>
+
+                        {/* Project, Job and File Information */}
+                        {metadata && (
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                            sx={{ flexWrap: "wrap" }}
+                          >
+                            {metadata.isLoading ? (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                Loading project info...
+                              </Typography>
+                            ) : metadata.error ? (
+                              <Typography variant="caption" color="error">
+                                Failed to load project info
+                              </Typography>
+                            ) : metadata.projectName && metadata.jobNumber ? (
+                              <>
+                                <Typography
+                                  variant="caption"
+                                  color="primary.main"
+                                  sx={{ fontWeight: "medium" }}
+                                >
+                                  📁 {metadata.projectName}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  • Job {metadata.jobNumber}
+                                </Typography>
+                                {metadata.fileAnnotation && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                      fontStyle: "italic",
+                                      fontSize: "0.65rem",
+                                    }}
+                                  >
+                                    • {metadata.fileAnnotation}
+                                  </Typography>
+                                )}
+                              </>
+                            ) : null}
+                          </Stack>
+                        )}
+                      </Stack>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      onClick={(event) => handleMenuOpen(event, item)}
+                      sx={{
+                        marginRight: 1,
+                        opacity: 0.7,
+                        "&:hover": {
+                          opacity: 1,
+                        },
+                      }}
                     >
-                      {isVisible(item) ? (
-                        <Visibility fontSize="small" color="action" />
-                      ) : (
-                        <VisibilityOff fontSize="small" color="disabled" />
-                      )}
-                      <Typography variant="caption" color="text.secondary">
-                        {isVisible(item) ? "Visible" : "Hidden"} {type}
-                      </Typography>
-                    </Stack>
-                  }
-                />
-                <ListItemSecondaryAction>
-                  <IconButton
-                    edge="end"
-                    size="small"
-                    onClick={(event) => handleMenuOpen(event, item)}
-                    sx={{
-                      marginRight: 1,
-                      opacity: 0.7,
-                      "&:hover": {
-                        opacity: 1,
-                      },
-                    }}
-                  >
-                    <MoreVert fontSize="small" />
-                  </IconButton>
-                </ListItemSecondaryAction>
-              </ListItemButton>
-            </ListItem>
-          ))}
+                      <MoreVert fontSize="small" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
         </List>
       </Paper>
 
@@ -369,7 +538,7 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         )}
         <MenuItem onClick={handleCenterOnItem}>
           <Typography sx={{ mr: 1 }}>🎯</Typography>
-          Center on {type}
+          Centre on {type}
         </MenuItem>
         <MenuItem onClick={handleDeleteItem} sx={{ color: "error.main" }}>
           <Typography sx={{ mr: 1 }}>🗑️</Typography>
