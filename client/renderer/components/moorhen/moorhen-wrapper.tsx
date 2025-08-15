@@ -192,6 +192,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         useWeight: false,
         isDifference: isDiffMap,
       });
+      newMap.uniqueId = url; // Use URL as unique identifier
       if (newMap.molNo === -1)
         throw new Error("Cannot read the fetched map...");
       dispatch(addMap(newMap));
@@ -235,6 +236,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         store,
         monomerLibraryPath
       );
+      newMolecule.uniqueId = url; // Use URL as unique identifier
       newMolecule.molNo = result.data.result.result;
       newMolecule.name = instanceName;
       newMolecule.setBackgroundColour(backgroundColor);

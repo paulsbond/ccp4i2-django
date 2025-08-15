@@ -1,5 +1,5 @@
 import { moorhen } from "moorhen/types/moorhen";
-import { hideMolecule, showMolecule } from "moorhen";
+import { hideMolecule, showMolecule, hideMap, showMap } from "moorhen";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -15,26 +15,38 @@ import {
   Paper,
   Chip,
   Stack,
+  Toolbar,
 } from "@mui/material";
 import { MoreVert, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useState } from "react";
 
-interface MoleculeMenuState {
+type ContentType = "Molecule" | "Map";
+type ContentItem = moorhen.Molecule | moorhen.Map;
+
+interface ItemMenuState {
   anchorEl: HTMLElement | null;
-  molecule: moorhen.Molecule | null;
+  item: ContentItem | null;
 }
 
-export const MoorhenLoadedContent: React.FC<{
+interface MoorhenLoadedContentProps {
   onFileSelect: (fileId: number) => void;
-}> = ({ onFileSelect }) => {
-  const [menuState, setMenuState] = useState<MoleculeMenuState>({
+  type: ContentType;
+}
+
+export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
+  onFileSelect,
+  type = "Molecule",
+}) => {
+  const [menuState, setMenuState] = useState<ItemMenuState>({
     anchorEl: null,
-    molecule: null,
+    item: null,
   });
   const dispatch = useDispatch();
   const cootInitialized = useSelector(
     (state: moorhen.State) => state.generalStates.cootInitialized
   );
+
+  // Molecule selectors
   const molecules = useSelector(
     (state: moorhen.State) => state.molecules.moleculeList
   );
@@ -42,74 +54,135 @@ export const MoorhenLoadedContent: React.FC<{
     (state: moorhen.State) => state.molecules.visibleMolecules
   );
 
+  // Map selectors
+  const maps = useSelector((state: moorhen.State) => state.maps);
+  const visibleMaps = useSelector(
+    (state: moorhen.State) => state.mapContourSettings.visibleMaps
+  );
+
+  // Get the appropriate data based on type
+  const items = type === "Molecule" ? molecules : maps;
+  const visibleItems = type === "Molecule" ? visibleMolecules : visibleMaps;
+
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
-    molecule: moorhen.Molecule
+    item: ContentItem
   ) => {
     event.stopPropagation(); // Prevent row click when opening menu
     setMenuState({
       anchorEl: event.currentTarget,
-      molecule: molecule,
+      item: item,
     });
   };
 
   const handleContextMenu = (
     event: React.MouseEvent<HTMLElement>,
-    molecule: moorhen.Molecule
+    item: ContentItem
   ) => {
     event.preventDefault(); // Prevent browser context menu
     setMenuState({
       anchorEl: event.currentTarget,
-      molecule: molecule,
+      item: item,
     });
   };
 
   const handleMenuClose = () => {
     setMenuState({
       anchorEl: null,
-      molecule: null,
+      item: null,
     });
   };
 
-  const handleHideMolecule = () => {
-    if (menuState.molecule) {
-      dispatch(hideMolecule({ molNo: menuState.molecule.molNo }));
+  const handleHideItem = () => {
+    if (menuState.item) {
+      if (type === "Molecule") {
+        const molecule = menuState.item as moorhen.Molecule;
+        dispatch(hideMolecule({ molNo: molecule.molNo }));
+      } else {
+        const map = menuState.item as moorhen.Map;
+        dispatch(hideMap({ molNo: map.molNo }));
+      }
     }
     handleMenuClose();
   };
 
-  const handleShowMolecule = () => {
-    if (menuState.molecule) {
-      dispatch(showMolecule({ molNo: menuState.molecule.molNo, show: true }));
+  const handleShowItem = () => {
+    if (menuState.item) {
+      if (type === "Molecule") {
+        const molecule = menuState.item as moorhen.Molecule;
+        dispatch(showMolecule({ molNo: molecule.molNo, show: true }));
+      } else {
+        const map = menuState.item as moorhen.Map;
+        dispatch(showMap({ molNo: map.molNo, show: true }));
+      }
     }
     handleMenuClose();
   };
 
-  const handleDeleteMolecule = () => {
-    if (menuState.molecule) {
+  const handleDeleteItem = () => {
+    if (menuState.item) {
       // Add delete logic here
-      console.log("Delete molecule:", menuState.molecule.name);
+      console.log(`Delete ${type.toLowerCase()}:`, menuState.item.name);
     }
     handleMenuClose();
   };
 
-  const handleCenterOnMolecule = () => {
-    if (menuState.molecule) {
-      menuState.molecule.centreOn("/*/*/*/*", false, true);
+  const handleCenterOnItem = () => {
+    if (menuState.item) {
+      if (type === "Molecule") {
+        const molecule = menuState.item as moorhen.Molecule;
+        molecule.centreOn("/*/*/*/*", false, true);
+      } else {
+        const map = menuState.item as moorhen.Map;
+        // Add map centering logic if available
+        console.log("Center on map:", map.name);
+      }
     }
     handleMenuClose();
   };
 
-  const handleItemClick = (molecule: moorhen.Molecule) => {
-    if (isVisible(molecule)) {
-      dispatch(hideMolecule({ molNo: molecule.molNo }));
+  const handleItemClick = (item: ContentItem) => {
+    if (isVisible(item)) {
+      if (type === "Molecule") {
+        const molecule = item as moorhen.Molecule;
+        dispatch(hideMolecule({ molNo: molecule.molNo }));
+      } else {
+        const map = item as moorhen.Map;
+        dispatch(hideMap({ molNo: map.molNo }));
+      }
     } else {
-      dispatch(showMolecule({ molNo: molecule.molNo, show: true }));
+      if (type === "Molecule") {
+        const molecule = item as moorhen.Molecule;
+        dispatch(showMolecule({ molNo: molecule.molNo, show: true }));
+      } else {
+        const map = item as moorhen.Map;
+        dispatch(showMap({ molNo: map.molNo, show: true }));
+      }
     }
   };
 
-  const isVisible = (molecule: moorhen.Molecule) => {
-    return visibleMolecules.includes(molecule.molNo);
+  const isVisible = (item: ContentItem) => {
+    if (type === "Molecule") {
+      const molecule = item as moorhen.Molecule;
+      return visibleMolecules.includes(molecule.molNo);
+    } else {
+      const map = item as moorhen.Map;
+      return visibleMaps.includes(map.molNo);
+    }
+  };
+
+  const getItemId = (item: ContentItem) => {
+    return item.molNo;
+  };
+
+  const getItemUniqueId = (item: ContentItem) => {
+    if (type === "Molecule") {
+      const molecule = item as moorhen.Molecule;
+      return molecule.uniqueId;
+    } else {
+      const map = item as moorhen.Map;
+      return (map as any).uniqueId; // Assuming maps might have uniqueId
+    }
   };
 
   if (!cootInitialized) {
@@ -129,7 +202,7 @@ export const MoorhenLoadedContent: React.FC<{
     );
   }
 
-  if (!molecules || molecules.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <Box
         sx={{
@@ -140,7 +213,7 @@ export const MoorhenLoadedContent: React.FC<{
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          No molecules loaded.
+          No {type.toLowerCase()}s loaded.
         </Typography>
       </Box>
     );
@@ -163,6 +236,7 @@ export const MoorhenLoadedContent: React.FC<{
           border: "1px solid #e0e0e0",
         }}
       >
+        <Toolbar>Loaded {type}s</Toolbar>
         <List
           sx={{
             width: "100%",
@@ -170,33 +244,33 @@ export const MoorhenLoadedContent: React.FC<{
             padding: 0,
           }}
         >
-          {molecules.map((molecule, index) => (
+          {items.map((item, index) => (
             <ListItem
-              key={molecule.molNo}
+              key={getItemId(item)}
               disablePadding
               sx={{
                 borderBottom:
-                  index < molecules.length - 1 ? "1px solid #f0f0f0" : "none",
+                  index < items.length - 1 ? "1px solid #f0f0f0" : "none",
               }}
             >
               <ListItemButton
-                onClick={() => handleItemClick(molecule)}
-                onContextMenu={(event) => handleContextMenu(event, molecule)}
+                onClick={() => handleItemClick(item)}
+                onContextMenu={(event) => handleContextMenu(event, item)}
                 sx={{
                   paddingY: 1,
                   paddingX: 2,
                   "&:hover": {
                     backgroundColor: "#f9f9f9",
                   },
-                  opacity: isVisible(molecule) ? 1 : 0.6,
-                  textDecoration: isVisible(molecule) ? "none" : "line-through",
+                  opacity: isVisible(item) ? 1 : 0.6,
+                  textDecoration: isVisible(item) ? "none" : "line-through",
                 }}
               >
                 <ListItemText
                   primary={
                     <Stack direction="row" alignItems="center" spacing={1}>
                       <Chip
-                        label={molecule.molNo}
+                        label={getItemId(item)}
                         size="small"
                         variant="outlined"
                         sx={{
@@ -206,12 +280,12 @@ export const MoorhenLoadedContent: React.FC<{
                           height: "20px",
                         }}
                       />
-                      {molecule.uniqueId && (
+                      {getItemUniqueId(item) && (
                         <Chip
-                          label={molecule.uniqueId}
+                          label={getItemUniqueId(item)}
                           size="small"
                           variant="filled"
-                          color="secondary"
+                          color={type === "Molecule" ? "secondary" : "primary"}
                           sx={{
                             fontSize: "0.75rem",
                             fontFamily: "monospace",
@@ -222,13 +296,11 @@ export const MoorhenLoadedContent: React.FC<{
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: isVisible(molecule)
-                            ? "normal"
-                            : "lighter",
+                          fontWeight: isVisible(item) ? "normal" : "lighter",
                           flex: 1,
                         }}
                       >
-                        {molecule.name}
+                        {item.name}
                       </Typography>
                     </Stack>
                   }
@@ -239,13 +311,13 @@ export const MoorhenLoadedContent: React.FC<{
                       spacing={1}
                       sx={{ mt: 0.5 }}
                     >
-                      {isVisible(molecule) ? (
+                      {isVisible(item) ? (
                         <Visibility fontSize="small" color="action" />
                       ) : (
                         <VisibilityOff fontSize="small" color="disabled" />
                       )}
                       <Typography variant="caption" color="text.secondary">
-                        {isVisible(molecule) ? "Visible" : "Hidden"}
+                        {isVisible(item) ? "Visible" : "Hidden"} {type}
                       </Typography>
                     </Stack>
                   }
@@ -254,7 +326,7 @@ export const MoorhenLoadedContent: React.FC<{
                   <IconButton
                     edge="end"
                     size="small"
-                    onClick={(event) => handleMenuOpen(event, molecule)}
+                    onClick={(event) => handleMenuOpen(event, item)}
                     sx={{
                       marginRight: 1,
                       opacity: 0.7,
@@ -284,24 +356,24 @@ export const MoorhenLoadedContent: React.FC<{
           },
         }}
       >
-        {menuState.molecule && isVisible(menuState.molecule) ? (
-          <MenuItem onClick={handleHideMolecule}>
+        {menuState.item && isVisible(menuState.item) ? (
+          <MenuItem onClick={handleHideItem}>
             <VisibilityOff sx={{ mr: 1 }} fontSize="small" />
-            Hide Molecule
+            Hide {type}
           </MenuItem>
         ) : (
-          <MenuItem onClick={handleShowMolecule}>
+          <MenuItem onClick={handleShowItem}>
             <Visibility sx={{ mr: 1 }} fontSize="small" />
-            Show Molecule
+            Show {type}
           </MenuItem>
         )}
-        <MenuItem onClick={handleCenterOnMolecule}>
+        <MenuItem onClick={handleCenterOnItem}>
           <Typography sx={{ mr: 1 }}>🎯</Typography>
-          Center on Molecule
+          Center on {type}
         </MenuItem>
-        <MenuItem onClick={handleDeleteMolecule} sx={{ color: "error.main" }}>
+        <MenuItem onClick={handleDeleteItem} sx={{ color: "error.main" }}>
           <Typography sx={{ mr: 1 }}>🗑️</Typography>
-          Delete Molecule
+          Delete {type}
         </MenuItem>
       </Menu>
     </Box>

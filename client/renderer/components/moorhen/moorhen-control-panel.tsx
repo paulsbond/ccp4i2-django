@@ -53,7 +53,7 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
         <CCP4i2HierarchyBrowser onFileSelect={onFileSelect} />
       </Box>
 
-      {/* Lower section - Placeholder for future content */}
+      {/* Lower section - Molecules  */}
       <Box
         sx={{
           flex: 1,
@@ -68,10 +68,24 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
           padding: 2,
         }}
       >
-        <Box sx={{ textAlign: "center", color: "#666" }}>
-          {/* Placeholder for additional content */}
-          <MoorhenLoadedContent onFileSelect={onFileSelect} />
-        </Box>
+        <MoorhenLoadedContent onFileSelect={onFileSelect} type="Molecule" />
+      </Box>
+      {/* Lower section - Maps  */}
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0, // Allows flex item to shrink
+          overflow: "auto",
+          backgroundColor: "#f9f9f9",
+          border: "1px solid #e0e0e0",
+          borderTop: "2px solid #1976d2",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 2,
+        }}
+      >
+        <MoorhenLoadedContent onFileSelect={onFileSelect} type="Map" />
       </Box>
     </Stack>
   );
