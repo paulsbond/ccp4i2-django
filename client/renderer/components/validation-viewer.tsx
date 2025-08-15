@@ -45,7 +45,7 @@ const formatFieldName = (key: string): string => {
 const cleanErrorMessage = (message: string): string => {
   return message
     .replace(/^[^:]+:\s*/, "")
-    .replace(/Data has undefined value/, "Required");
+    .replace(/Data has undefined value/, "Not defined");
 };
 
 export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
