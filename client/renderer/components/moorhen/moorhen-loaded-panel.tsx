@@ -116,6 +116,11 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     return match ? parseInt(match[1], 10) : null;
   };
 
+  // Check if item was loaded from database
+  const isFromDatabase = (item: ContentItem): boolean => {
+    return !!(item.uniqueId && extractFileId(item.uniqueId));
+  };
+
   // Fetch metadata for a specific item
   const fetchItemMetadata = async (item: ContentItem) => {
     const fileId = extractFileId(item.uniqueId || "");
@@ -315,6 +320,92 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     return itemMetadata.get(item.molNo);
   };
 
+  // Get the primary display text for an item
+  const getPrimaryDisplayText = (item: ContentItem): React.ReactNode => {
+    const metadata = getItemMetadata(item);
+    const fromDatabase = isFromDatabase(item);
+
+    if (fromDatabase && metadata) {
+      if (metadata.isLoading) {
+        return (
+          <Typography variant="body2" color="text.secondary">
+            Loading...
+          </Typography>
+        );
+      }
+
+      if (metadata.error) {
+        return (
+          <Typography variant="body2" color="error">
+            Error loading metadata
+          </Typography>
+        );
+      }
+
+      if (metadata.projectName && metadata.jobNumber) {
+        return (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            sx={{ flexWrap: "wrap" }}
+          >
+            <Typography
+              variant="body2"
+              color="primary.main"
+              sx={{ fontWeight: "medium" }}
+            >
+              📁 {metadata.projectName}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              •
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Job {metadata.jobNumber}
+            </Typography>
+            {metadata.fileAnnotation && (
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  •
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ fontStyle: "italic" }}
+                >
+                  {metadata.fileAnnotation}
+                </Typography>
+              </>
+            )}
+          </Stack>
+        );
+      }
+    }
+
+    // Fallback to molecule/map name for non-database items or when metadata is unavailable
+    return (
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: isVisible(item) ? "normal" : "lighter",
+          fontStyle: fromDatabase ? "normal" : "italic",
+          color: fromDatabase ? "text.primary" : "text.secondary",
+        }}
+      >
+        {item.name}
+        {!fromDatabase && (
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ ml: 1, color: "text.disabled" }}
+          >
+            (external file)
+          </Typography>
+        )}
+      </Typography>
+    );
+  };
+
   if (!cootInitialized) {
     return (
       <Box
@@ -375,8 +466,6 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
           }}
         >
           {items.map((item, index) => {
-            const metadata = getItemMetadata(item);
-
             return (
               <ListItem
                 key={getItemId(item)}
@@ -411,82 +500,29 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
                             fontFamily: "monospace",
                             minWidth: "40px",
                             height: "20px",
+                            flexShrink: 0,
                           }}
                         />
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: isVisible(item) ? "normal" : "lighter",
-                            flex: 1,
-                          }}
-                        >
-                          {item.name}
-                        </Typography>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          {getPrimaryDisplayText(item)}
+                        </Box>
                       </Stack>
                     }
                     secondary={
-                      <Stack direction="column" spacing={0.5} sx={{ mt: 0.5 }}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          {isVisible(item) ? (
-                            <Visibility fontSize="small" color="action" />
-                          ) : (
-                            <VisibilityOff fontSize="small" color="disabled" />
-                          )}
-                          <Typography variant="caption" color="text.secondary">
-                            {isVisible(item) ? "Visible" : "Hidden"} {type}
-                          </Typography>
-                        </Stack>
-
-                        {/* Project, Job and File Information */}
-                        {metadata && (
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={1}
-                            sx={{ flexWrap: "wrap" }}
-                          >
-                            {metadata.isLoading ? (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                Loading project info...
-                              </Typography>
-                            ) : metadata.error ? (
-                              <Typography variant="caption" color="error">
-                                Failed to load project info
-                              </Typography>
-                            ) : metadata.projectName && metadata.jobNumber ? (
-                              <>
-                                <Typography
-                                  variant="caption"
-                                  color="primary.main"
-                                  sx={{ fontWeight: "medium" }}
-                                >
-                                  📁 {metadata.projectName}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  • Job {metadata.jobNumber}
-                                </Typography>
-                                {metadata.fileAnnotation && (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{
-                                      fontStyle: "italic",
-                                      fontSize: "0.65rem",
-                                    }}
-                                  >
-                                    • {metadata.fileAnnotation}
-                                  </Typography>
-                                )}
-                              </>
-                            ) : null}
-                          </Stack>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ mt: 0.5 }}
+                      >
+                        {isVisible(item) ? (
+                          <Visibility fontSize="small" color="action" />
+                        ) : (
+                          <VisibilityOff fontSize="small" color="disabled" />
                         )}
+                        <Typography variant="caption" color="text.secondary">
+                          {isVisible(item) ? "Visible" : "Hidden"} {type}
+                        </Typography>
                       </Stack>
                     }
                   />
