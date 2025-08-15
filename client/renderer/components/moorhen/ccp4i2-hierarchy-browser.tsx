@@ -545,7 +545,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
   };
 
   return (
-    <Box sx={{ height: "100%", minHeight: "400px" }}>
+    <Box sx={{ height: "100%" }}>
       {/* Show Files Panel if job is selected */}
       {selectedJob && (
         <HierarchyPanel

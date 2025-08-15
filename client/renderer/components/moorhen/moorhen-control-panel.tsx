@@ -1,6 +1,6 @@
 import { moorhen } from "moorhen/types/moorhen";
 import { useSelector } from "react-redux";
-import { Box, Stack } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { CCP4i2HierarchyBrowser } from "./ccp4i2-hierarchy-browser";
 import { MoorhenLoadedContent } from "./moorhen-loaded-panel";
 
@@ -36,7 +36,7 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
     <Stack
       direction="column"
       sx={{
-        height: "calc(100vh - 75px)",
+        height: "calc(100vh - 100px)",
         width: "100%",
       }}
     >
@@ -58,34 +58,93 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
         sx={{
           flex: 1,
           minHeight: 0, // Allows flex item to shrink
-          overflow: "auto",
+          overflow: "hidden",
           backgroundColor: "#f9f9f9",
           border: "1px solid #e0e0e0",
           borderTop: "2px solid #1976d2",
+          position: "relative",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 2,
+          flexDirection: "column",
         }}
       >
-        <MoorhenLoadedContent onFileSelect={onFileSelect} type="Molecule" />
+        <Typography
+          variant="caption"
+          sx={{
+            position: "absolute",
+            top: 2,
+            left: 6,
+            fontSize: "0.7rem",
+            fontWeight: 500,
+            color: "#1976d2",
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            px: 0.5,
+            py: 0.25,
+            borderRadius: "2px",
+            zIndex: 1,
+          }}
+        >
+          Molecules
+        </Typography>
+        <Box
+          sx={{
+            flex: 1,
+            overflow: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 2,
+            pt: 3, // Extra top padding to account for label
+          }}
+        >
+          <MoorhenLoadedContent onFileSelect={onFileSelect} type="Molecule" />
+        </Box>
       </Box>
+
       {/* Lower section - Maps  */}
       <Box
         sx={{
           flex: 1,
           minHeight: 0, // Allows flex item to shrink
-          overflow: "auto",
+          overflow: "hidden",
           backgroundColor: "#f9f9f9",
           border: "1px solid #e0e0e0",
           borderTop: "2px solid #1976d2",
+          position: "relative",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 2,
+          flexDirection: "column",
         }}
       >
-        <MoorhenLoadedContent onFileSelect={onFileSelect} type="Map" />
+        <Typography
+          variant="caption"
+          sx={{
+            position: "absolute",
+            top: 2,
+            left: 6,
+            fontSize: "0.7rem",
+            fontWeight: 500,
+            color: "#1976d2",
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            px: 0.5,
+            py: 0.25,
+            borderRadius: "2px",
+            zIndex: 1,
+          }}
+        >
+          Maps
+        </Typography>
+        <Box
+          sx={{
+            flex: 1,
+            overflow: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 2,
+            pt: 3, // Extra top padding to account for label
+          }}
+        >
+          <MoorhenLoadedContent onFileSelect={onFileSelect} type="Map" />
+        </Box>
       </Box>
     </Stack>
   );

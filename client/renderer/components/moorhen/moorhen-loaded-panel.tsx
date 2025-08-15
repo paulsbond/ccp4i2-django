@@ -465,7 +465,6 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
           border: "1px solid #e0e0e0",
         }}
       >
-        <Toolbar>Loaded {type}s</Toolbar>
         <List
           sx={{
             width: "100%",
@@ -514,23 +513,6 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           {getPrimaryDisplayText(item)}
                         </Box>
-                      </Stack>
-                    }
-                    secondary={
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={1}
-                        sx={{ mt: 0.5 }}
-                      >
-                        {isVisible(item) ? (
-                          <Visibility fontSize="small" color="action" />
-                        ) : (
-                          <VisibilityOff fontSize="small" color="disabled" />
-                        )}
-                        <Typography variant="caption" color="text.secondary">
-                          {isVisible(item) ? "Visible" : "Hidden"} {type}
-                        </Typography>
                       </Stack>
                     }
                   />
