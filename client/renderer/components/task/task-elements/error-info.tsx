@@ -257,6 +257,7 @@ const ValidationMessages = memo<{
           ...ERROR_CONTAINER_STYLES,
           bgcolor: processedErrorInfo.backgroundColor,
         }}
+        title={objectPath}
       >
         <Stack direction="row" alignItems="center" spacing={1}>
           {processedErrorInfo.icon}
@@ -274,6 +275,7 @@ const ValidationMessages = memo<{
         ...ERROR_CONTAINER_STYLES,
         bgcolor: processedErrorInfo.backgroundColor,
       }}
+      title={objectPath}
     >
       <Stack spacing={1}>
         <Stack direction="row" alignItems="center" spacing={1}>
