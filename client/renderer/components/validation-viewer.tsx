@@ -1,13 +1,6 @@
 import React, { useMemo, useCallback } from "react";
 import { Box, Typography, Chip, IconButton, Stack } from "@mui/material";
-import {
-  Error as ErrorIcon,
-  Warning as WarningIcon,
-  Info as InfoIcon,
-  ExpandLess,
-  ExpandMore,
-  CheckCircle,
-} from "@mui/icons-material";
+import { ExpandLess, ExpandMore, CheckCircle } from "@mui/icons-material";
 import { useRunCheck } from "../providers/run-check-provider";
 import { useJob } from "../utils";
 import { Job } from "../types/models";
