@@ -5,6 +5,10 @@ import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useJob } from "../../../utils";
+import {
+  CCP4i2ErrorReport,
+  useRunCheck,
+} from "../../../providers/run-check-provider";
 
 /**
  * Task interface component for SHELX - Experimental Phasing Pipeline.
@@ -18,12 +22,16 @@ import { useJob } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, useFileDigest, mutateContainer } = useJob(job.id);
+  const { getTaskItem, useFileDigest, mutateContainer, validation } = useJob(
+    job.id
+  );
+  const { setProcessedErrors } = useRunCheck();
 
   // Refs for preventing cycles
   const initializationDone = useRef(false);
 
   // Get task items for file handling and parameter updates
+  const { value: ATOM_TYPEValue } = getTaskItem("ATOM_TYPE");
   const { item: F_SIGFanomItem } = getTaskItem("F_SIGFanom");
   const { updateNoMutate: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
   const { updateNoMutate: updateSHELXCDE } = getTaskItem("SHELXCDE");
@@ -121,6 +129,21 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   useEffect(() => {
     initializationDone.current = false;
   }, [job?.id]);
+
+  //Here to process errors
+  useEffect(() => {
+    if (!validation || !setProcessedErrors) return;
+    if (!ATOM_TYPEValue || ATOM_TYPEValue.trim() === "") {
+      const processedErrors = {
+        ...validation,
+        "crank2.inputData.ATOM_TYPE": {
+          maxSeverity: 2,
+          messages: ["ATOM_TYPE is required"],
+        },
+      };
+      setProcessedErrors(processedErrors);
+    }
+  }, [job, validation, setProcessedErrors, ATOM_TYPEValue]);
 
   // Initialize defaults once when job becomes editable
   // Use a direct effect with minimal dependencies to avoid cycles
