@@ -100,6 +100,9 @@ export const JobMenu: React.FC = () => {
     useState<HTMLElement | null>(null);
   const [annotationValue, setAnnotationValue] = useState<string>("");
 
+  // Store the original title value when popper opens
+  const originalAnnotationValue = useRef<string>("");
+
   // Ref to store the current timeout ID for cleanup
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -156,7 +159,7 @@ export const JobMenu: React.FC = () => {
     [job, api, mutateJobs]
   );
 
-  // Handle Enter key press in the text field
+  // Handle Enter and Escape key presses in the text field
   const handleKeyDown = useCallback(
     async (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === "Enter" && !event.shiftKey) {
@@ -170,6 +173,18 @@ export const JobMenu: React.FC = () => {
 
         // Save immediately and close popper
         await saveAnnotation(annotationValue);
+        setAnnotationPopperAnchorEl(null);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+
+        // Clear any pending timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
+        // Restore original value and close popper without saving
+        await saveAnnotation(originalAnnotationValue.current);
         setAnnotationPopperAnchorEl(null);
       }
     },
@@ -227,15 +242,19 @@ export const JobMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (job) {
+        // Store the original title value for potential restoration
+        const currentTitle = job.title || "";
+        originalAnnotationValue.current = currentTitle;
+
         // Set current title/annotation value
-        setAnnotationValue(job.title || "");
+        setAnnotationValue(currentTitle);
         // Use the menu anchor element as the popper anchor
         setAnnotationPopperAnchorEl(jobMenuAnchorEl);
         // Close the menu
         setJobMenuAnchorEl(null);
       }
     },
-    [job, jobMenuAnchorEl]
+    [job, jobMenuAnchorEl, setJobMenuAnchorEl]
   );
 
   const handleClone = useCallback(
@@ -444,7 +463,7 @@ export const JobMenu: React.FC = () => {
                   variant="outlined"
                   size="small"
                   autoFocus
-                  helperText="Press Enter to save and close, or wait 500ms for auto-save"
+                  helperText="Press Enter to save and close, Escape to cancel, or wait 500ms for auto-save"
                 />
               </Box>
             </Paper>

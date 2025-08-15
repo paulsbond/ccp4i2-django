@@ -77,6 +77,9 @@ export const FileMenu: React.FC = () => {
     useState<HTMLElement | null>(null);
   const [annotationValue, setAnnotationValue] = useState<string>("");
 
+  // Store the original annotation value when popper opens
+  const originalAnnotationValue = useRef<string>("");
+
   // Ref to store the current timeout ID for cleanup
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -100,10 +103,10 @@ export const FileMenu: React.FC = () => {
         console.error("Failed to update annotation:", error);
       }
     },
-    [file, api]
+    [file, api, mutateFiles]
   );
 
-  // Handle Enter key press in the text field
+  // Handle Enter and Escape key presses in the text field
   const handleKeyDown = useCallback(
     async (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === "Enter" && !event.shiftKey) {
@@ -117,6 +120,18 @@ export const FileMenu: React.FC = () => {
 
         // Save immediately and close popper
         await saveAnnotation(annotationValue);
+        setAnnotationPopperAnchorEl(null);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+
+        // Clear any pending timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
+        // Restore original value and close popper without saving
+        await saveAnnotation(originalAnnotationValue.current);
         setAnnotationPopperAnchorEl(null);
       }
     },
@@ -178,7 +193,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handlePreviewFile = useCallback(
@@ -193,7 +208,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setContentSpecification, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileDigest = useCallback(
@@ -208,7 +223,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setContentSpecification, setFileMenuAnchorEl]
   );
 
   const handlePreviewDbInfo = useCallback(
@@ -223,7 +238,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setContentSpecification, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInCoot = useCallback(
@@ -234,7 +249,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInViewHKL = useCallback(
@@ -245,7 +260,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInCCP4MG = useCallback(
@@ -256,7 +271,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handleOpenInNewWindow = (path: string) => {
@@ -271,7 +286,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInTerminal = useCallback(
@@ -282,7 +297,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   // Handle edit annotation menu item click
@@ -290,15 +305,19 @@ export const FileMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       ev.stopPropagation();
       if (file) {
+        // Store the original annotation value for potential restoration
+        const currentAnnotation = file.annotation || "";
+        originalAnnotationValue.current = currentAnnotation;
+
         // Set current annotation value
-        setAnnotationValue(file.annotation || "");
+        setAnnotationValue(currentAnnotation);
         // Use the menu anchor element as the popper anchor
         setAnnotationPopperAnchorEl(fileMenuAnchorEl);
         // Close the menu
         setFileMenuAnchorEl(null);
       }
     },
-    [file, fileMenuAnchorEl]
+    [file, fileMenuAnchorEl, setFileMenuAnchorEl]
   );
 
   return (
@@ -392,7 +411,7 @@ export const FileMenu: React.FC = () => {
                 variant="outlined"
                 size="small"
                 autoFocus
-                helperText="Press Enter to save and close, or wait 500ms for auto-save"
+                helperText="Press Enter to save and close, Escape to cancel, or wait 500ms for auto-save"
               />
             </Box>
           </Paper>
