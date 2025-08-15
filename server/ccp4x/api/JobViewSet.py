@@ -622,3 +622,30 @@ class JobViewSet(ModelViewSet):
         except models.File.DoesNotExist as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def files(self, request, pk=None):
+        """
+        Retrieve a list of files associated with a specific job.
+
+        Parameters:
+
+            request (Request): The HTTP request object.
+            pk (int, optional): The primary key of the job.
+
+        Returns:
+            Response: A Response object containing serialized file data.
+        """
+
+        job = models.Job.objects.get(pk=pk)
+        serializer = serializers.FileSerializer(
+            models.File.objects.filter(job=job), many=True
+        )
+        job.project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+        job.project.save()
+        return Response(serializer.data)
