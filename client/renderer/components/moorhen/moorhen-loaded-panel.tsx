@@ -6,6 +6,7 @@ import {
   showMap,
   removeMap,
   removeMolecule,
+  setRequestDrawScene,
 } from "moorhen";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -233,9 +234,12 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
       if (type === "Molecule") {
         const molecule = menuState.item as moorhen.Molecule;
         dispatch(hideMolecule({ molNo: molecule.molNo }));
+        dispatch(setRequestDrawScene(true));
       } else {
         const map = menuState.item as moorhen.Map;
+        map.hideMapContour();
         dispatch(hideMap({ molNo: map.molNo }));
+        dispatch(setRequestDrawScene(true));
       }
     }
     handleMenuClose();
@@ -246,9 +250,11 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
       if (type === "Molecule") {
         const molecule = menuState.item as moorhen.Molecule;
         dispatch(showMolecule({ molNo: molecule.molNo, show: true }));
+        dispatch(setRequestDrawScene(true));
       } else {
         const map = menuState.item as moorhen.Map;
         dispatch(showMap({ molNo: map.molNo, show: true }));
+        dispatch(setRequestDrawScene(true));
       }
     }
     handleMenuClose();
@@ -259,10 +265,12 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
       if (type === "Map") {
         dispatch(removeMap(menuState.item as moorhen.Map));
         menuState.item.delete();
+        dispatch(setRequestDrawScene(true));
         console.log(`Delete map:`, menuState.item.name);
       } else {
         dispatch(removeMolecule(menuState.item as moorhen.Molecule));
         menuState.item.delete();
+        dispatch(setRequestDrawScene(true));
         console.log(`Delete ${type.toLowerCase()}:`, menuState.item.name);
       }
     }
