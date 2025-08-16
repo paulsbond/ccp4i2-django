@@ -18,7 +18,7 @@ import { useJob } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { useTaskItem } = useJob(job.id);
 
   // Use refs to track processed values and prevent cycles
   const lastProcessedF_SIGFValue = useRef<any>(null);
@@ -26,12 +26,12 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const currentJobId = useRef<number | null>(null);
 
   // Get task items
-  const { item: F_SIGFItem } = getTaskItem("F_SIGF");
-  const { update: updateF_OR_I } = getTaskItem("F_OR_I");
-  const { value: INPUT_FIXED_value } = getTaskItem("INPUT_FIXED");
-  const { value: COMP_BY_value } = getTaskItem("COMP_BY");
-  const { value: SGALT_SELECT_value } = getTaskItem("SGALT_SELECT");
-  const { value: ID_RMS_value } = getTaskItem("ID_RMS");
+  const { item: F_SIGFItem } = useTaskItem("F_SIGF");
+  const { update: updateF_OR_I } = useTaskItem("F_OR_I");
+  const { value: INPUT_FIXED_value } = useTaskItem("INPUT_FIXED");
+  const { value: COMP_BY_value } = useTaskItem("COMP_BY");
+  const { value: SGALT_SELECT_value } = useTaskItem("SGALT_SELECT");
+  const { value: ID_RMS_value } = useTaskItem("ID_RMS");
 
   // Stable initialization function (runs once per job)
   const handleInitialization = useCallback(async () => {

@@ -13,9 +13,9 @@ import { Job } from "../../../types/models";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskItem, createPeerTask } = useJob(job.id);
-  const { value: XYZIN_MODE } = getTaskItem("XYZIN_MODE");
-  const { value: ASUIN } = getTaskItem("ASUIN");
+  const { useTaskItem, createPeerTask } = useJob(job.id);
+  const { value: XYZIN_MODE } = useTaskItem("XYZIN_MODE");
+  const { value: ASUIN } = useTaskItem("ASUIN");
   const router = useRouter();
 
   // 1. Retrieve the function for installing extraDialogActions from the relevant context

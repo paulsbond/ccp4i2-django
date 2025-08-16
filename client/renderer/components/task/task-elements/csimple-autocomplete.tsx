@@ -41,12 +41,12 @@ export const CSimpleAutocompleteElement: React.FC<
   suppressMutations = false,
 }) => {
   const {
-    getTaskItem,
+    useTaskItem,
     getValidationColor,
     setParameter,
     setParameterNoMutate,
   } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
+  const { item } = useTaskItem(itemName);
   const { setMessage } = usePopcorn();
   const { inFlight, setInFlight } = useTaskInterface();
 

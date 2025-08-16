@@ -8,8 +8,8 @@ import { useMemo } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
-  const { getTaskItem, container } = useJob(props.job.id);
-  const { value: SEQUENCELISTORALIGNMENT } = getTaskItem(
+  const { useTaskItem, container } = useJob(props.job.id);
+  const { value: SEQUENCELISTORALIGNMENT } = useTaskItem(
     "SEQUENCELISTORALIGNMENT"
   );
 

@@ -17,11 +17,11 @@ import { useJob, usePrevious } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, useFileDigest, mutateContainer } = useJob(job.id);
+  const { useTaskItem, useFileDigest, mutateContainer } = useJob(job.id);
 
   // Get task items for file handling and parameter updates
-  const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
-  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
+  const { item: F_SIGFItem, value: F_SIGFValue } = useTaskItem("F_SIGF");
+  const { update: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
 
   // File digest for wavelength extraction
   const { data: F_SIGFDigest } = useFileDigest(F_SIGFItem?._objectPath);
@@ -30,10 +30,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   // Task values for visibility conditions
   const taskValues = useMemo(
     () => ({
-      sculptorMode: getTaskItem("SEQ").value,
-      useAdvanced: getTaskItem("USE_ADVANCED").value,
+      sculptorMode: useTaskItem("SEQ").value,
+      useAdvanced: useTaskItem("USE_ADVANCED").value,
     }),
-    [getTaskItem]
+    [useTaskItem]
   );
 
   // Visibility conditions

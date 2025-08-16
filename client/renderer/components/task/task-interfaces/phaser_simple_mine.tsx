@@ -10,13 +10,13 @@ import { useCallback, useEffect, useMemo } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskItem } = useJob(job.id);
-  const { value: F_SIGFValue } = getTaskItem("F_SIGF");
-  const { value: F_OR_IValue, update: updateF_or_I } = getTaskItem("F_OR_I");
-  const { value: INPUT_FIXedValue } = getTaskItem("INPUT_FIXED");
-  const { value: COMP_BYValue } = getTaskItem("COMP_BY");
-  const { value: ID_RMSValue } = getTaskItem("ID_RMS");
-  const { value: SGALT_SELECTValue } = getTaskItem("SGALT_SELECT");
+  const { useTaskItem } = useJob(job.id);
+  const { value: F_SIGFValue } = useTaskItem("F_SIGF");
+  const { value: F_OR_IValue, update: updateF_or_I } = useTaskItem("F_OR_I");
+  const { value: INPUT_FIXedValue } = useTaskItem("INPUT_FIXED");
+  const { value: COMP_BYValue } = useTaskItem("COMP_BY");
+  const { value: ID_RMSValue } = useTaskItem("ID_RMS");
+  const { value: SGALT_SELECTValue } = useTaskItem("SGALT_SELECT");
 
   return (
     <CCP4i2Tabs {...props}>

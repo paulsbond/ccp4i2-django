@@ -4,7 +4,7 @@ import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useJob } from "../../../utils";
+import { useJob, usePrevious } from "../../../utils";
 
 /**
  * Task interface component for Prosmart-Refmac - Prosmart-guided Refinement.
@@ -18,73 +18,86 @@ import { useJob } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { useTaskItem, useFileDigest } = useJob(job.id);
 
   // Use refs to track processed states and prevent cycles
   const initializationDone = useRef(false);
   const currentJobId = useRef<number | null>(null);
   const lastProcessedF_SIGFDigest = useRef<any>(null);
 
-  // Get task items
-  const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
-  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
-  const { update: updateUSEANOMALOUS } = getTaskItem("USEANOMALOUS");
-  const { update: updateUSE_TWIN } = getTaskItem("USE_TWIN");
-  const { update: updateVALIDATE_BAVERAGE } = getTaskItem("VALIDATE_BAVERAGE");
-  const { update: updateVALIDATE_RAMACHANDRAN } = getTaskItem(
+  // Get task items with update functions and/or values
+  const { item: F_SIGFItem, value: F_SIGFValue } = useTaskItem("F_SIGF");
+  const { update: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
+  const { update: updateUSEANOMALOUS } = useTaskItem("USEANOMALOUS");
+  const { update: updateUSE_TWIN } = useTaskItem("USE_TWIN");
+  const { update: updateVALIDATE_BAVERAGE } = useTaskItem("VALIDATE_BAVERAGE");
+  const { update: updateVALIDATE_RAMACHANDRAN } = useTaskItem(
     "VALIDATE_RAMACHANDRAN"
   );
-  const { update: updateVALIDATE_MOLPROBITY } = getTaskItem(
+  const { update: updateVALIDATE_MOLPROBITY } = useTaskItem(
     "VALIDATE_MOLPROBITY"
   );
 
-  // Get current values for visibility and initialization
-  const { value: HYDR_USE_value } = getTaskItem("HYDR_USE");
-  const { value: SOLVENT_MASK_TYPE_value } = getTaskItem("SOLVENT_MASK_TYPE");
-  const { value: SOLVENT_ADVANCED_value } = getTaskItem("SOLVENT_ADVANCED");
-  const { value: TLSMODE_value } = getTaskItem("TLSMODE");
-  const { value: BFACSETUSE_value } = getTaskItem("BFACSETUSE");
-  const { value: WEIGHT_OPT_value } = getTaskItem("WEIGHT_OPT");
-  const { value: USE_NCS_value } = getTaskItem("USE_NCS");
-  const { value: USE_JELLY_value } = getTaskItem("USE_JELLY");
-  const { value: MAP_SHARP_value } = getTaskItem("MAP_SHARP");
-  const { value: MAP_SHARP_CUSTOM_value } = getTaskItem("MAP_SHARP_CUSTOM");
-  const { value: SCATTERING_FACTORS_value } = getTaskItem("SCATTERING_FACTORS");
-  const { value: RES_CUSTOM_value } = getTaskItem("RES_CUSTOM");
-  const { value: USEANOMALOUS_value } = getTaskItem("USEANOMALOUS");
+  // File digest for wavelength extraction
+  const { data: F_SIGFDigest } = useFileDigest(F_SIGFItem?._objectPath);
+  const oldF_SIGFValue = usePrevious(F_SIGFValue);
+
+  // Get current values for visibility conditions
+  const { value: HYDR_USEValue } = useTaskItem("HYDR_USE");
+  const { value: SOLVENT_MASK_TYPEValue } = useTaskItem("SOLVENT_MASK_TYPE");
+  const { value: SOLVENT_ADVANCEDValue } = useTaskItem("SOLVENT_ADVANCED");
+  const { value: TLSMODE_value } = useTaskItem("TLSMODE");
+  const { value: BFACSETUSE_value } = useTaskItem("BFACSETUSE");
+  const { value: WEIGHT_OPT_value } = useTaskItem("WEIGHT_OPT");
+  const { value: USE_NCS_value } = useTaskItem("USE_NCS");
+  const { value: USE_JELLY_value } = useTaskItem("USE_JELLY");
+  const { value: MAP_SHARP_value } = useTaskItem("MAP_SHARP");
+  const { value: MAP_SHARP_CUSTOM_value } = useTaskItem("MAP_SHARP_CUSTOM");
+  const { value: SCATTERING_FACTORS_value } = useTaskItem("SCATTERING_FACTORS");
+  const { value: RES_CUSTOM_value } = useTaskItem("RES_CUSTOM");
+  const { value: USEANOMALOUS_value } = useTaskItem("USEANOMALOUS");
+
+  // Handle wavelength extraction from F_SIGF file
+  const handleF_SIGFDigestChanged = useCallback(
+    async (digest: any) => {
+      if (!updateWAVELENGTH || !digest || !job || job.status !== 1) return;
+
+      // Check if F_SIGF value actually changed
+      if (F_SIGFValue === oldF_SIGFValue) return;
+
+      // Extract wavelength from digest
+      if (digest?.wavelengths?.length > 0) {
+        const wavelength = digest.wavelengths[digest.wavelengths.length - 1];
+        if (wavelength && wavelength < 9) {
+          // Sanity check for wavelength
+          await updateWAVELENGTH(wavelength);
+          //await mutateContainer();
+        }
+      }
+    },
+    [updateWAVELENGTH, job, F_SIGFValue, oldF_SIGFValue]
+  );
+
+  // Effect to handle F_SIGF digest changes
+  useEffect(() => {
+    if (F_SIGFDigest) {
+      handleF_SIGFDigestChanged(F_SIGFDigest);
+    }
+  }, [F_SIGFDigest, handleF_SIGFDigestChanged]);
 
   // Handle F_SIGF file changes with cycle prevention
   const handleF_SIGFChange = useCallback(async () => {
     if (!F_SIGFItem || !job || job.status !== 1) return;
-
     try {
-      // Digest the file to extract metadata
-      const digest = await F_SIGFItem.digestFile();
+      // Handle anomalous signal based on content flag
+      const contentFlag = F_SIGFValue.contentFlag;
+      if (![1, 2].includes(contentFlag) && updateUSEANOMALOUS) {
+        await updateUSEANOMALOUS(false);
+      }
 
-      // Prevent processing the same digest multiple times
-      if (lastProcessedF_SIGFDigest.current === digest) return;
-      lastProcessedF_SIGFDigest.current = digest;
-
-      if (digest?.contentsDict?.wavelengths?.length > 0) {
-        const wavelength =
-          digest.contentsDict.wavelengths[
-            digest.contentsDict.wavelengths.length - 1
-          ];
-
-        if (updateWAVELENGTH) {
-          await updateWAVELENGTH(wavelength);
-        }
-
-        // Handle anomalous signal based on content flag
-        const contentFlag = F_SIGFItem.contentFlag;
-        if (![1, 2].includes(contentFlag) && updateUSEANOMALOUS) {
-          await updateUSEANOMALOUS(false);
-        }
-
-        // Handle twinning based on content flag
-        if (![3].includes(contentFlag) && updateUSE_TWIN) {
-          await updateUSE_TWIN(false);
-        }
+      // Handle twinning based on content flag
+      if (![3].includes(contentFlag) && updateUSE_TWIN) {
+        await updateUSE_TWIN(false);
       }
     } catch (error) {
       console.error("Error processing F_SIGF change:", error);
@@ -151,10 +164,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       USEANOMALOUS_value,
     showTwinRefinement: () =>
       F_SIGFItem?.contentFlag && [3].includes(F_SIGFItem.contentFlag),
-    showHydrogenOptions: () => HYDR_USE_value,
-    showSolventAdvanced: () => SOLVENT_MASK_TYPE_value === "EXPLICIT",
+    showHydrogenOptions: () => HYDR_USEValue,
+    showSolventAdvanced: () => SOLVENT_MASK_TYPEValue === "EXPLICIT",
     showCustomSolventParams: () =>
-      SOLVENT_MASK_TYPE_value === "EXPLICIT" && SOLVENT_ADVANCED_value,
+      SOLVENT_MASK_TYPEValue === "EXPLICIT" && SOLVENT_ADVANCEDValue,
     showTLSOptions: () => TLSMODE_value !== "NONE",
     showTLSFile: () => TLSMODE_value === "FILE",
     showBFactorReset: () => BFACSETUSE_value,

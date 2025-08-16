@@ -48,8 +48,8 @@ export const CCP4i2ContainerElement: React.FC<
     elementSx,
   } = props;
 
-  const { getTaskItem, getValidationColor } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
+  const { useTaskItem, getValidationColor } = useJob(job.id);
+  const { item } = useTaskItem(itemName);
   const [visibilityPrompt, setVisibilityPrompt] = useState<number>(0);
   const visibilityPromptRef = useRef<number>(0);
   const [open, setOpen] = useState(initiallyOpen);
@@ -112,7 +112,7 @@ export const CCP4i2ContainerElement: React.FC<
       <Grid2 container spacing={0} key={item._objectPath}>
         {childNames.map((childName: string) => {
           const childObjectPath = `${item._objectPath}.${childName}`;
-          const { item: childItem } = getTaskItem(childObjectPath);
+          const { item: childItem } = useTaskItem(childObjectPath);
 
           // Determine grid size based on item class/baseClass
           const gridSize = shouldBeFullWidth(childItem)
@@ -145,7 +145,7 @@ export const CCP4i2ContainerElement: React.FC<
     item,
     elementSx,
     childNames,
-    getTaskItem,
+    useTaskItem,
     props,
     size,
     shouldBeFullWidth,

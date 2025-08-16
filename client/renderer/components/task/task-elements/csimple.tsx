@@ -123,8 +123,8 @@ export const CSimpleElement: React.FC<CCP4i2CSimpleElementProps> = (props) => {
   }
 
   // Get task item
-  const { getTaskItem } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
+  const { useTaskItem } = useJob(job.id);
+  const { item } = useTaskItem(itemName);
 
   // Process qualifiers
   const processedQualifiers = useProcessedQualifiers(

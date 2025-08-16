@@ -70,7 +70,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
 }) => {
   const api = useApi();
   const {
-    getTaskItem,
+    useTaskItem,
     setParameter,
     getValidationColor,
     fileItemToParameterArg,
@@ -79,7 +79,7 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
     useFileContent,
   } = useJob(job.id);
 
-  const { item } = getTaskItem(itemName);
+  const { item } = useTaskItem(itemName);
   const { inFlight, setInFlight } = useTaskInterface();
   const { setFileMenuAnchorEl, setFile } = useFileMenu();
 

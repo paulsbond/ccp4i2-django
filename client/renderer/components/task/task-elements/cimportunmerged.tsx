@@ -9,7 +9,7 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { itemName, job } = props;
   const {
-    getTaskItem,
+    useTaskItem,
     useFileDigest,
     getValidationColor,
     setParameterNoMutate,
@@ -18,15 +18,15 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     mutateParams_xml,
   } = useJob(job.id);
 
-  const { item } = getTaskItem(itemName);
-  const { value: cell, update: updateCell } = getTaskItem(`${itemName}.cell`);
-  const { value: wavelength, update: updateWavelength } = getTaskItem(
+  const { item } = useTaskItem(itemName);
+  const { value: cell, update: updateCell } = useTaskItem(`${itemName}.cell`);
+  const { value: wavelength, update: updateWavelength } = useTaskItem(
     `${itemName}.wavelength`
   );
-  const { value: crystalName, update: updateCrystalName } = getTaskItem(
+  const { value: crystalName, update: updateCrystalName } = useTaskItem(
     `${itemName}.crystalName`
   );
-  const { value: dataset, update: updateDataset } = getTaskItem(
+  const { value: dataset, update: updateDataset } = useTaskItem(
     `${itemName}.dataset`
   );
 

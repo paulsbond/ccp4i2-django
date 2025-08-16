@@ -11,16 +11,16 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const api = useApi();
   const { itemName, job } = props;
-  const { getTaskItem, getValidationColor, mutateContainer, mutateValidation } =
+  const { useTaskItem, getValidationColor, mutateContainer, mutateValidation } =
     useJob(job.id);
 
-  const { item } = getTaskItem(itemName);
-  const { update: setPolymerType } = getTaskItem(
+  const { item } = useTaskItem(itemName);
+  const { update: setPolymerType } = useTaskItem(
     `${item._objectPath}.polymerType`
   );
-  const { update: setName } = getTaskItem(`${item._objectPath}.name`);
-  const { update: setSequence } = getTaskItem(`${item._objectPath}.sequence`);
-  const { update: setDescription } = getTaskItem(
+  const { update: setName } = useTaskItem(`${item._objectPath}.name`);
+  const { update: setSequence } = useTaskItem(`${item._objectPath}.sequence`);
+  const { update: setDescription } = useTaskItem(
     `${item._objectPath}.description`
   );
   const setSEQUENCEFromSEQIN = useCallback(

@@ -22,11 +22,11 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
   const api = useApi();
   const { itemName, job } = props;
   const [detailItem, setDetailItem] = useState<any | null>(null);
-  const { getTaskItem, setParameter, container, mutateContainer } = useJob(
+  const { useTaskItem, setParameter, container, mutateContainer } = useJob(
     job.id
   );
 
-  const { item, update: updateList, value: itemValue } = getTaskItem(itemName);
+  const { item, update: updateList, value: itemValue } = useTaskItem(itemName);
   const previousItemValue = usePrevious(itemValue);
 
   const extendListItem = useCallback(async () => {

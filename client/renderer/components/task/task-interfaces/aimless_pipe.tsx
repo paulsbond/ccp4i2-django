@@ -8,19 +8,19 @@ import { useRunCheck } from "../../../providers/run-check-provider";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, validation } = useJob(job.id);
+  const { useTaskItem, validation } = useJob(job.id);
   const { processedErrors, setProcessedErrors } = useRunCheck();
 
   // Consolidated task values
   const taskValues = useMemo(
     () => ({
-      chooseMode: getTaskItem("CHOOSE_MODE").value,
-      mode: getTaskItem("MODE").value,
-      hklinRef: getTaskItem("HKLIN_REF").value,
-      aimlessRef: getTaskItem("REFERENCE_FOR_AIMLESS").value,
-      referenceDataset: getTaskItem("REFERENCE_DATASET").value,
+      chooseMode: useTaskItem("CHOOSE_MODE").value,
+      mode: useTaskItem("MODE").value,
+      hklinRef: useTaskItem("HKLIN_REF").value,
+      aimlessRef: useTaskItem("REFERENCE_FOR_AIMLESS").value,
+      referenceDataset: useTaskItem("REFERENCE_DATASET").value,
     }),
-    [getTaskItem]
+    [useTaskItem]
   );
 
   // Process validation errors

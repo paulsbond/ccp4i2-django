@@ -56,7 +56,7 @@ export interface CCP4i2TaskElementProps extends PropsWithChildren {
  */
 export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { useTaskItem } = useJob(job.id);
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
@@ -66,7 +66,7 @@ export const CCP4i2TaskElement: React.FC<CCP4i2TaskElementProps> = (props) => {
     return props.visibility;
   }, [props.visibility]);
 
-  const { item } = getTaskItem(props.itemName);
+  const { item } = useTaskItem(props.itemName);
   const the_uuid = uuid4();
 
   const qualifiers = useMemo<any>(() => {
