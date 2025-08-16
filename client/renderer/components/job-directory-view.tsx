@@ -1,8 +1,6 @@
-import { useContext, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Job, Project } from "../types/models";
 import { useProject } from "../utils";
-import { useApi } from "../api";
-import { FilePreviewContext } from "../providers/file-preview-context";
 import { useFileSystemFileBrowser } from "../providers/file-system-file-browser-context";
 import DirectoryBrowser, { FileSystemItem } from "./directory-browser";
 import { FileSystemFileMenu } from "./file-system-file-menu";
@@ -12,21 +10,13 @@ interface JobDirectoryViewProps {
   job: Job;
   project: Project;
 }
-export const JobDirectoryView = ({ job, project }) => {
+export const JobDirectoryView: React.FC<JobDirectoryViewProps> = ({
+  job,
+  project,
+}) => {
   const { directory } = useProject(project.id);
 
-  const api = useApi();
-  const { contentSpecification, setContentSpecification } =
-    useContext(FilePreviewContext);
-
-  const {
-    anchorEl,
-    menuNode,
-    previewNode,
-    openMenu,
-    closeMenu,
-    setPreviewNode,
-  } = useFileSystemFileBrowser();
+  const { closeMenu } = useFileSystemFileBrowser();
 
   // Clean up virtual anchor when component unmounts or menu closes
   const handleMenuClose = () => {

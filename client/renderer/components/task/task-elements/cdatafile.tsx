@@ -4,7 +4,6 @@ import React, {
   ReactNode,
   SyntheticEvent,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -31,14 +30,9 @@ import { useDndContext, useDroppable } from "@dnd-kit/core";
 import { useApi } from "../../../api";
 import { useJob, useProject } from "../../../utils";
 import { CCP4i2TaskElementProps } from "./task-element";
-import {
-  File as CCP4i2File,
-  Job,
-  nullFile,
-  Project,
-} from "../../../types/models";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
-import { FileMenuContext } from "../../../providers/file-context-menu";
+import { File as CCP4i2File, nullFile, Project } from "../../../types/models";
+import { useTaskInterface } from "../../../providers/task-provider";
+import { useFileMenu } from "../../../providers/file-context-menu";
 import { ErrorTrigger } from "./error-info";
 import { InputFileFetch } from "./input-file-fetch";
 import { InputFileUpload } from "./input-file-upload";
@@ -86,8 +80,8 @@ export const CDataFileElement: React.FC<CCP4i2DataFileElementProps> = ({
   } = useJob(job.id);
 
   const { item } = getTaskItem(itemName);
-  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
-  const { setFileMenuAnchorEl, setFile } = useContext(FileMenuContext);
+  const { inFlight, setInFlight } = useTaskInterface();
+  const { setFileMenuAnchorEl, setFile } = useFileMenu();
 
   // Data and state
   const { files: projectFiles, jobs: projectJobs } = useProject(job.project);

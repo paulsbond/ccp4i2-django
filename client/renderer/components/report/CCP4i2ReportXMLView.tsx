@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useContext, useEffect, useMemo } from "react";
+import { ReactNode, useCallback, useEffect, useMemo } from "react";
 import $ from "jquery";
 import {
   Avatar,
@@ -11,7 +11,7 @@ import {
 import { Job } from "../../types/models";
 import { CCP4i2ReportElement } from "./CCP4i2ReportElement";
 import { useApi } from "../../api";
-import { CCP4i2Context } from "../../app-context";
+import { useCCP4i2Window } from "../../app-context";
 import { useJob, usePrevious } from "../../utils";
 import { useRouter } from "next/navigation";
 import { usePopcorn } from "../../providers/popcorn-provider";
@@ -19,7 +19,7 @@ import useSWR from "swr";
 
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
-  const { jobId } = useContext(CCP4i2Context);
+  const { jobId } = useCCP4i2Window();
   const { job } = useJob(jobId);
   const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",

@@ -1,12 +1,12 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { CCP4i2Context } from "../app-context";
+import { useEffect, useRef, useState } from "react";
+import { useCCP4i2Window } from "../app-context";
 import { Typography } from "@mui/material";
 
 interface RDKitViewProps {
   smiles: string;
 }
 export const RDKitView: React.FC<RDKitViewProps> = ({ smiles }) => {
-  const { rdkitModule } = useContext(CCP4i2Context);
+  const { rdkitModule } = useCCP4i2Window();
   const [dataURI, setDataURI] = useState<string | null>(null);
   const lineSkipper: RegExp = /\>([\s\S]*)$/;
   const theBlob = useRef<Blob | undefined>(undefined);

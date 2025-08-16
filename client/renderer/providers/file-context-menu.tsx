@@ -5,14 +5,25 @@ import {
   createContext,
   useState,
   PropsWithChildren,
+  useRef,
+  useEffect,
 } from "react";
 import { doDownload, useApi } from "../api";
-import { Menu, MenuItem } from "@mui/material";
-import { Download, Preview, Terminal } from "@mui/icons-material";
-import { FilePreviewContext } from "./file-preview-context";
+import {
+  Menu,
+  MenuItem,
+  Popper,
+  Paper,
+  TextField,
+  ClickAwayListener,
+  Box,
+} from "@mui/material";
+import { Download, Preview, Terminal, Edit } from "@mui/icons-material";
+import { useFilePreviewContext } from "./file-preview-context";
 import { File as DjangoFile } from "../types/models";
 import { useRouter } from "next/navigation";
 import { CCP4i2MoorhenIcon } from "../components/General/CCP4i2Icons";
+import { useCCP4i2Window } from "../app-context";
 
 interface FileMenuContextProps {
   fileMenuAnchorEl: HTMLElement | null;
@@ -28,9 +39,7 @@ export const FileMenuContext = createContext<FileMenuContextProps>({
   setFile: () => {},
 });
 
-export const FileMenuContextProvider: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const FileMenuProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [fileMenuAnchorEl, setFileMenuAnchorEl] = useState<HTMLElement | null>(
     null
   );
@@ -52,11 +61,128 @@ export const FileMenuContextProvider: React.FC<PropsWithChildren> = ({
 };
 
 export const FileMenu: React.FC = () => {
-  const { fileMenuAnchorEl, setFileMenuAnchorEl, file } =
-    useContext(FileMenuContext);
+  const { fileMenuAnchorEl, setFileMenuAnchorEl, file } = useFileMenu();
+  const { projectId } = useCCP4i2Window();
   const api = useApi();
-  const { setContentSpecification } = useContext(FilePreviewContext);
+  const { setContentSpecification } = useFilePreviewContext();
   const router = useRouter();
+  const { mutate: mutateFiles } = api.get_endpoint<DjangoFile[]>({
+    type: "projects",
+    id: projectId || 0,
+    endpoint: "files",
+  });
+
+  // State for annotation editor popper
+  const [annotationPopperAnchorEl, setAnnotationPopperAnchorEl] =
+    useState<HTMLElement | null>(null);
+  const [annotationValue, setAnnotationValue] = useState<string>("");
+
+  // Store the original annotation value when popper opens
+  const originalAnnotationValue = useRef<string>("");
+
+  // Ref to store the current timeout ID for cleanup
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to save annotation immediately
+  const saveAnnotation = useCallback(
+    async (value: string) => {
+      if (!file) return;
+
+      try {
+        console.log("Annotation updated:", {
+          fileId: file.id,
+          fileName: file.name,
+          newAnnotation: value,
+        });
+
+        await api.patch(`files/${file.id}`, {
+          annotation: value,
+        });
+        mutateFiles(); // Refresh file list after saving annotation
+      } catch (error) {
+        console.error("Failed to update annotation:", error);
+      }
+    },
+    [file, api, mutateFiles]
+  );
+
+  // Handle Enter and Escape key presses in the text field
+  const handleKeyDown = useCallback(
+    async (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+
+        // Clear any pending timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
+        // Save immediately and close popper
+        await saveAnnotation(annotationValue);
+        setAnnotationPopperAnchorEl(null);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+
+        // Clear any pending timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
+        // Restore original value and close popper without saving
+        await saveAnnotation(originalAnnotationValue.current);
+        setAnnotationPopperAnchorEl(null);
+      }
+    },
+    [annotationValue, saveAnnotation]
+  );
+
+  // Handle annotation text change with delay
+  const handleAnnotationChange = useCallback(
+    (newValue: string) => {
+      setAnnotationValue(newValue);
+
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Create a delayed function to save annotation
+      timeoutRef.current = setTimeout(() => {
+        saveAnnotation(newValue);
+        timeoutRef.current = null;
+      }, 500); // 500ms delay
+    },
+    [saveAnnotation]
+  );
+
+  // Handle popper close
+  const handleAnnotationPopperClose = useCallback(() => {
+    // Clear any pending timeout when closing
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setAnnotationPopperAnchorEl(null);
+  }, []);
+
+  // Handle click away from popper
+  const handleClickAway = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      handleAnnotationPopperClose();
+    },
+    [handleAnnotationPopperClose]
+  );
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleDownloadFile = useCallback(
     async (ev: SyntheticEvent) => {
@@ -67,7 +193,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handlePreviewFile = useCallback(
@@ -82,7 +208,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setContentSpecification, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileDigest = useCallback(
@@ -97,7 +223,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setContentSpecification, setFileMenuAnchorEl]
   );
 
   const handlePreviewDbInfo = useCallback(
@@ -112,7 +238,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setContentSpecification, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInCoot = useCallback(
@@ -123,7 +249,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInViewHKL = useCallback(
@@ -134,7 +260,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInCCP4MG = useCallback(
@@ -145,7 +271,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
   );
 
   const handleOpenInNewWindow = (path: string) => {
@@ -160,7 +286,7 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, setFileMenuAnchorEl]
   );
 
   const handlePreviewFileInTerminal = useCallback(
@@ -171,61 +297,134 @@ export const FileMenu: React.FC = () => {
         setFileMenuAnchorEl(null);
       }
     },
-    [file]
+    [file, api, setFileMenuAnchorEl]
+  );
+
+  // Handle edit annotation menu item click
+  const handleEditAnnotation = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (file) {
+        // Store the original annotation value for potential restoration
+        const currentAnnotation = file.annotation || "";
+        originalAnnotationValue.current = currentAnnotation;
+
+        // Set current annotation value
+        setAnnotationValue(currentAnnotation);
+        // Use the menu anchor element as the popper anchor
+        setAnnotationPopperAnchorEl(fileMenuAnchorEl);
+        // Close the menu
+        setFileMenuAnchorEl(null);
+      }
+    },
+    [file, fileMenuAnchorEl, setFileMenuAnchorEl]
   );
 
   return (
-    <Menu
-      open={Boolean(fileMenuAnchorEl)}
-      anchorEl={fileMenuAnchorEl}
-      onClose={() => setFileMenuAnchorEl(null)}
-    >
-      <MenuItem key="Download" onClick={handleDownloadFile}>
-        <Download /> Download
-      </MenuItem>
-      <MenuItem key="Preview" onClick={handlePreviewFile}>
-        <Preview /> Preview
-      </MenuItem>
-      <MenuItem key="Terminal" onClick={handlePreviewFileInTerminal}>
-        <Terminal /> Terminal
-      </MenuItem>
-      {file && (
-        <MenuItem key="DbInfo" onClick={handlePreviewDbInfo}>
-          <Preview /> DbInfo
+    <>
+      <Menu
+        open={Boolean(fileMenuAnchorEl)}
+        anchorEl={fileMenuAnchorEl}
+        onClose={() => setFileMenuAnchorEl(null)}
+      >
+        <MenuItem key="Download" onClick={handleDownloadFile}>
+          <Download sx={{ mr: 1 }} /> Download
         </MenuItem>
-      )}
-      {file &&
-        ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(file.type) && (
-          <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>
-            <Preview /> Coot
+        <MenuItem key="Preview" onClick={handlePreviewFile}>
+          <Preview sx={{ mr: 1 }} /> Preview
+        </MenuItem>
+        <MenuItem key="Terminal" onClick={handlePreviewFileInTerminal}>
+          <Terminal sx={{ mr: 1 }} /> Terminal
+        </MenuItem>
+        <MenuItem key="EditAnnotation" onClick={handleEditAnnotation}>
+          <Edit sx={{ mr: 1 }} /> Edit annotation
+        </MenuItem>
+        {file && (
+          <MenuItem key="DbInfo" onClick={handlePreviewDbInfo}>
+            <Preview sx={{ mr: 1 }} /> DbInfo
           </MenuItem>
         )}
-      {file &&
-        ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(file.type) && (
-          <MenuItem key="CCP4MG" onClick={handlePreviewFileInCCP4MG}>
-            <Preview /> CCP4MG
+        {file &&
+          ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(
+            file.type
+          ) && (
+            <MenuItem key="Coot" onClick={handlePreviewFileInCoot}>
+              <Preview sx={{ mr: 1 }} /> Coot
+            </MenuItem>
+          )}
+        {file &&
+          ["chemical/x-pdb", "application/CCP4-mtz-map"].includes(
+            file.type
+          ) && (
+            <MenuItem key="CCP4MG" onClick={handlePreviewFileInCCP4MG}>
+              <Preview sx={{ mr: 1 }} /> CCP4MG
+            </MenuItem>
+          )}
+        {file &&
+          [
+            "chemical/x-pdb",
+            "application/CCP4-mtz-map",
+            "application/refmac-dictionary",
+          ].includes(file.type) && (
+            <MenuItem key="Moorhen" onClick={handlePreviewFileInMoorhen}>
+              <CCP4i2MoorhenIcon sx={{ mr: 1 }} /> Moorhen
+            </MenuItem>
+          )}
+        {file && file.type.startsWith("application/CCP4-mtz") && (
+          <MenuItem key="ViewHKL" onClick={handlePreviewFileInViewHKL}>
+            <Preview sx={{ mr: 1 }} /> ViewHKL
           </MenuItem>
         )}
-      {file &&
-        [
-          "chemical/x-pdb",
-          "application/CCP4-mtz-map",
-          "application/refmac-dictionary",
-        ].includes(file.type) && (
-          <MenuItem key="Moorhen" onClick={handlePreviewFileInMoorhen}>
-            <CCP4i2MoorhenIcon /> Moorhen
+        {file && (
+          <MenuItem key="DIGEST" onClick={handlePreviewFileDigest}>
+            <Preview sx={{ mr: 1 }} /> DIGEST
           </MenuItem>
         )}
-      {file && file.type.startsWith("application/CCP4-mtz") && (
-        <MenuItem key="ViewHKL" onClick={handlePreviewFileInViewHKL}>
-          <Preview /> ViewHKL
-        </MenuItem>
-      )}
-      {file && (
-        <MenuItem key="DIGEST" onClick={handlePreviewFileDigest}>
-          <Preview /> DIGEST
-        </MenuItem>
-      )}
-    </Menu>
+      </Menu>
+
+      {/* Annotation Editor Popper */}
+      <Popper
+        open={Boolean(annotationPopperAnchorEl)}
+        anchorEl={annotationPopperAnchorEl}
+        placement="bottom-start"
+        sx={{ zIndex: 1300 }}
+      >
+        <ClickAwayListener onClickAway={handleClickAway}>
+          <Paper
+            elevation={8}
+            sx={{
+              p: 2,
+              minWidth: 300,
+              maxWidth: 500,
+            }}
+          >
+            <Box>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="File Annotation"
+                value={annotationValue}
+                onChange={(e) => handleAnnotationChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter annotation for this file..."
+                variant="outlined"
+                size="small"
+                autoFocus
+                helperText="Press Enter to save and close, Escape to cancel, or wait 500ms for auto-save"
+              />
+            </Box>
+          </Paper>
+        </ClickAwayListener>
+      </Popper>
+    </>
   );
+};
+
+export const useFileMenu = () => {
+  const context = useContext(FileMenuContext);
+  if (!context) {
+    throw new Error("useFileMenu must be used within a FileMenuProvider");
+  }
+  return context;
 };

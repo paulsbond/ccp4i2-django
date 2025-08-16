@@ -2,7 +2,6 @@ import React, {
   memo,
   SyntheticEvent,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -31,10 +30,10 @@ import {
 
 import { CCP4i2TaskElementProps } from "./task-element";
 import { useJob, ValidationError, valueOfItem } from "../../../utils";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
+import { useTaskInterface } from "../../../providers/task-provider";
 import { Job } from "../../../types/models";
 import { SimpleObjectTable } from "../../simple-object-table";
-import { CCP4i2Context } from "../../../app-context";
+import { useCCP4i2Window } from "../../../app-context";
 
 // ===== TYPES =====
 interface ErrorTriggerProps {
@@ -257,6 +256,7 @@ const ValidationMessages = memo<{
           ...ERROR_CONTAINER_STYLES,
           bgcolor: processedErrorInfo.backgroundColor,
         }}
+        title={objectPath}
       >
         <Stack direction="row" alignItems="center" spacing={1}>
           {processedErrorInfo.icon}
@@ -274,6 +274,7 @@ const ValidationMessages = memo<{
         ...ERROR_CONTAINER_STYLES,
         bgcolor: processedErrorInfo.backgroundColor,
       }}
+      title={objectPath}
     >
       <Stack spacing={1}>
         <Stack direction="row" alignItems="center" spacing={1}>
@@ -351,8 +352,7 @@ SimpleCard.displayName = "SimpleCard";
 // Main error trigger component
 export const ErrorTrigger: React.FC<ErrorTriggerProps> = memo(
   ({ item, job }) => {
-    const { setErrorInfoAnchor, setErrorInfoItem } =
-      useContext(TaskInterfaceContext);
+    const { setErrorInfoAnchor, setErrorInfoItem } = useTaskInterface();
     const { getValidationColor } = useJob(job.id);
 
     const validationColor = useMemo(
@@ -399,14 +399,14 @@ ErrorTrigger.displayName = "ErrorTrigger";
 
 // Main error popper component
 export const ErrorPopper: React.FC<ErrorPopperProps> = memo(() => {
-  const { jobId } = useContext(CCP4i2Context);
+  const { jobId } = useCCP4i2Window();
   const { job } = useJob(jobId);
   const {
     setErrorInfoAnchor,
     errorInfoAnchor,
     setErrorInfoItem,
     errorInfoItem,
-  } = useContext(TaskInterfaceContext);
+  } = useTaskInterface();
 
   const { getValidationColor, getErrors } = useJob(job?.id || 0);
 

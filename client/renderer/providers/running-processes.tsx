@@ -1,4 +1,10 @@
-import { createContext, PropsWithChildren, useCallback, useState } from "react";
+import {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 import {
   Dialog,
   DialogTitle,
@@ -124,4 +130,14 @@ export const RunningProcessesProvider: React.FC<PropsWithChildren> = (
       </Dialog>
     </RunningProcessesContext.Provider>
   );
+};
+
+export const useRunningProcesses = () => {
+  const context = useContext(RunningProcessesContext);
+  if (!context) {
+    throw new Error(
+      "useRunningProcesses must be used within a RunningProcessesProvider"
+    );
+  }
+  return context;
 };

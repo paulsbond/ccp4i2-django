@@ -1,5 +1,5 @@
-import { useContext, useMemo } from "react";
-import { CCP4i2Context } from "../../../app-context";
+import { useMemo } from "react";
+import { useCCP4i2Window } from "../../../app-context";
 import { Job } from "../../../types/models";
 import { LinearProgress } from "@mui/material";
 import AimlessPipeInterface from "./aimless_pipe";
@@ -29,7 +29,7 @@ export interface CCP4i2TaskInterfaceProps {
 }
 
 export const TaskContainer = () => {
-  const { jobId } = useContext(CCP4i2Context);
+  const { jobId } = useCCP4i2Window();
   const { job, container } = useJob(jobId);
 
   const taskInterface = useMemo(() => {

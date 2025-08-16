@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@mui/material";
 import { Button } from "@mui/material";
-import { CCP4i2Context } from "../app-context";
+import { useCCP4i2Window } from "../app-context";
 import { useJob } from "../utils";
 
 /**
@@ -130,7 +130,7 @@ const ErrorAwareRunDialog: React.FC<ErrorAwareRunDialogProps> = ({
 }) => {
   const { extraDialogActions, processedErrors } = useRunCheck();
   const autoSubmitTimer = useRef<NodeJS.Timeout | null>(null);
-  const { jobId } = useContext(CCP4i2Context);
+  const { jobId } = useCCP4i2Window();
   const { validation } = useJob(jobId);
 
   // ...inside ErrorAwareRunDialog...

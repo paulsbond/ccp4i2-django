@@ -11,15 +11,17 @@ import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
 import {
   RefObject,
   useCallback,
-  useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { moorhen } from "moorhen/types/moorhen";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
-import { CCP4i2Context } from "../../app-context";
+import { useCCP4i2Window } from "../../app-context";
+import { MoorhenControlPanel } from "./moorhen-control-panel";
+
 export interface MoorhenWrapperProps {
   fileIds?: number[];
 }
@@ -39,7 +41,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     (state: moorhen.State) => state.generalStates.cootInitialized
   );
   const store = useStore();
-  const { cootModule } = useContext(CCP4i2Context);
+  const { cootModule } = useCCP4i2Window();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -60,10 +62,17 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
 
   const [windowWidth, setWindowWidth] = useState<number>(window.innerWidth);
   const [windowHeight, setWindowHeight] = useState<number>(window.innerHeight);
+
+  // Calculate dimensions for the split screen layout
+  const rightPanelWidth = 60 * 8; // Approximate character width in pixels (8px per character)
+  const leftPanelWidth = useMemo(() => {
+    return windowWidth - rightPanelWidth;
+  }, [windowWidth, rightPanelWidth]);
+
   const setMoorhenDimensions = useCallback(() => {
-    const result = [windowWidth, windowHeight - 75];
+    const result = [leftPanelWidth, windowHeight];
     return result;
-  }, [windowWidth, windowHeight]);
+  }, [leftPanelWidth, windowHeight]);
 
   const collectedProps = {
     glRef,
@@ -79,28 +88,22 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   };
 
   const { origin } = useSelector((state: moorhen.State) => state.glRef);
-  //const { setRequestDrawScene } = useSelector((state: moorhen.State) => state.glRef);
 
   useEffect(() => {
     //What to do when the component mounts
     console.log("MoorhenWrapper mounted");
-    window.addEventListener("resize", () => {
+
+    const handleResize = () => {
       setWindowWidth(window.innerWidth);
-      setWindowHeight(window.innerHeight - 75);
-      //if (setRequestDrawScene) {
-      //  dispatch(setRequestDrawScene());
-      //}
+      setWindowHeight(window.innerHeight - 150);
       console.log("Window resized");
-    });
+    };
+
+    window.addEventListener("resize", handleResize);
+
     return () => {
       console.log("MoorhenWrapper unmounted");
-      window.removeEventListener("resize", () => {
-        setWindowWidth(window.innerWidth);
-        setWindowHeight(window.innerHeight - 75);
-        //if (setRequestDrawScene) {
-        //  dispatch(setRequestDrawScene());
-        //}
-      });
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -115,12 +118,12 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   useEffect(() => {
     if (cootInitialized) {
       console.log("Coot is initialized, you can now load molecules and maps.");
-      dispatch(setWidth(window.innerWidth));
-      dispatch(setHeight(window.innerHeight - 75));
+      dispatch(setWidth(leftPanelWidth));
+      dispatch(setHeight(windowHeight - 75));
     }
-  }, [cootInitialized]);
+  }, [cootInitialized, leftPanelWidth, windowHeight]);
 
-  const fetchFile = async (fileId) => {
+  const fetchFile = async (fileId: number) => {
     const fileInfo = await fetch(`/api/proxy/files/${fileId}/`).then((res) =>
       res.json()
     );
@@ -145,7 +148,6 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   };
 
   const fetchMolecule = async (url: string, molName: string) => {
-    //if (!glRef.current) return;
     if (!commandCentre.current) return;
     const newMolecule = new MoorhenMolecule(
       commandCentre as RefObject<moorhen.CommandCentre>,
@@ -160,14 +162,12 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       if (newMolecule.molNo === -1) {
         throw new Error("Cannot read the fetched molecule...");
       }
+      newMolecule.uniqueId = url; // Use URL as unique identifier
       await newMolecule.addRepresentation("CBs", "/*/*/*/*");
       await newMolecule.addRepresentation("ligands", "/*/*/*/*");
       await newMolecule.centreOn("/*/*/*/*", false, true);
 
       dispatch(addMolecule(newMolecule));
-      //if (setRequestDrawScene) {
-      //  dispatch(setRequestDrawScene);
-      //}
     } catch (err) {
       console.warn(err);
       console.warn(`Cannot fetch PDB entry from ${url}, doing nothing...`);
@@ -179,7 +179,6 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     mapName: string,
     isDiffMap: boolean = false
   ) => {
-    //if (!glRef.current) return;
     if (!commandCentre.current) return;
     const newMap = new MoorhenMap(
       commandCentre as RefObject<moorhen.CommandCentre>,
@@ -193,6 +192,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         useWeight: false,
         isDifference: isDiffMap,
       });
+      newMap.uniqueId = url; // Use URL as unique identifier
       if (newMap.molNo === -1)
         throw new Error("Cannot read the fetched map...");
       dispatch(addMap(newMap));
@@ -208,7 +208,6 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     url: string,
     newMolecules: moorhen.Molecule[] = []
   ) => {
-    //if (!glRef.current) return;
     if (!commandCentre.current) return;
     const fileResponse = await fetch(url);
     const fileContent = await fileResponse.text();
@@ -226,11 +225,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       {
         returnType: "status",
         command: "get_monomer_and_position_at",
-        commandArgs: [
-          instanceName,
-          -999999, // This is a placeholder for the monomer ID
-          ...origin.map((coord) => -coord),
-        ],
+        commandArgs: [instanceName, -999999, ...origin.map((coord) => -coord)],
       },
       true
     )) as moorhen.WorkerResponse<number>;
@@ -241,6 +236,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         store,
         monomerLibraryPath
       );
+      newMolecule.uniqueId = url; // Use URL as unique identifier
       newMolecule.molNo = result.data.result.result;
       newMolecule.name = instanceName;
       newMolecule.setBackgroundColour(backgroundColor);
@@ -251,9 +247,6 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
         newMolecule.addDict(fileContent),
       ]);
       newMolecule.centreAndAlignViewOn("/*/*/*/*", false, 100);
-      //if (setRequestDrawScene) {
-      //  dispatch(setRequestDrawScene());
-      //}
       await newMolecule.fetchIfDirtyAndDraw("ligands");
       dispatch(addMolecule(newMolecule));
     }
@@ -262,8 +255,43 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   return (
     store &&
     cootModule && (
-      <div style={{ width: "100%", height: "100%" }}>
-        <MoorhenContainer {...collectedProps} />
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          height: "100%",
+          flexDirection: "row",
+        }}
+      >
+        {/* Left panel - MoorhenContainer taking remaining space */}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0, // Allows flex item to shrink below content size
+            height: "calc(100% - 120px)",
+          }}
+        >
+          <MoorhenContainer {...collectedProps} />
+        </div>
+
+        {/* Right panel - Fixed width 80 characters */}
+        <div
+          style={{
+            width: `${rightPanelWidth}px`,
+            minWidth: `${rightPanelWidth}px`,
+            maxWidth: `${rightPanelWidth}px`,
+            minHeight: "calc(100% - 150px)",
+            borderLeft: "1px solid #ddd",
+            padding: "0px",
+            fontSize: "14px",
+            fontFamily: "monospace",
+            overflowY: "auto",
+            overflowX: "hidden",
+            boxSizing: "border-box",
+          }}
+        >
+          <MoorhenControlPanel onFileSelect={fetchFile} />
+        </div>
       </div>
     )
   );

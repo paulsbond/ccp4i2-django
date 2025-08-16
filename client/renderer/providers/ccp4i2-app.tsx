@@ -4,7 +4,6 @@ import { CCP4i2Context } from "../app-context";
 import { CssBaseline } from "@mui/material";
 import { File, Job } from "../types/models";
 import { PopcornProvider } from "./popcorn-provider";
-import { RunningProcessesProvider } from "./running-processes";
 import { RunCheckProvider } from "./run-check-provider";
 
 export const CCP4i2App = (props: PropsWithChildren) => {

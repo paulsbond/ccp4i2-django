@@ -1,3 +1,4 @@
+// filepath: /Users/nmemn/Developer/ccp4i2-django/client/renderer/components/task/task-chooser.tsx
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   Avatar,
@@ -9,12 +10,12 @@ import {
   Paper,
   Skeleton,
   Toolbar,
+  Box,
 } from "@mui/material";
 import { ElaborateSearch } from "../General/SearchObjects";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useApi } from "../../api";
 import { MyExpandMore } from "../expand-more";
-import { CCP4i2Context } from "../../app-context";
 
 interface TaskTree {
   lookup: any;
@@ -43,7 +44,6 @@ export const CCP4i2TaskTree: React.FC<CCP4i2TaskTreeProps> = ({
   onTaskSelect,
 }) => {
   const api = useApi();
-  const { projectId } = useContext(CCP4i2Context);
   const [searchText, setSearchText] = useState<string | null>(null);
   const { data: taskTreeResult } = api.get<any>(`task_tree/`);
 
@@ -183,29 +183,26 @@ const CCP4i2TaskTreeFolder: React.FC<CCP4i2TaskTreeFolderProps> = ({
             timeout="auto"
             unmountOnExit
           >
-            <Grid2
-              container
-              columnGap={0}
-              rowGap={0}
-              columnSpacing={0}
-              rowSpacing={0}
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(24ch, 100%), 1fr))",
+                gap: 2,
+                p: 1,
+              }}
             >
               {filteredTasks.map(
                 (taskName: string) =>
                   Object.keys(taskTree.lookup).includes(taskName) && (
-                    <Grid2
+                    <CCP4i2TaskCard
                       key={JSON.stringify(taskTree.lookup[taskName])}
-                      size={{ xs: 12, sm: 6, md: 4, lg: 3, xl: 2 }}
-                      sx={{ m: 1 }}
-                    >
-                      <CCP4i2TaskCard
-                        task={taskTree.lookup[taskName]}
-                        onTaskSelect={onTaskSelect}
-                      />
-                    </Grid2>
+                      task={taskTree.lookup[taskName]}
+                      onTaskSelect={onTaskSelect}
+                    />
                   )
               )}
-            </Grid2>
+            </Box>
           </Collapse>
         </CardContent>
       )}
@@ -236,6 +233,7 @@ const CCP4i2TaskCard: React.FC<CCP4i2TaskCardProps> = ({
         maxHeight: "18rem",
         overflowY: "auto",
         ":hover": { boxShadow: 24 },
+        minWidth: "24ch",
       }}
       onClick={handleTaskSelect}
     >

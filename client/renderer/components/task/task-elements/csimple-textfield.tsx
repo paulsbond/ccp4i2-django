@@ -2,7 +2,6 @@ import React, {
   ChangeEvent,
   KeyboardEvent,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -13,7 +12,7 @@ import { Stack, TextField } from "@mui/material";
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob, SetParameterResponse } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
+import { useTaskInterface } from "../../../providers/task-provider";
 import { usePopcorn } from "../../../providers/popcorn-provider";
 
 // Types
@@ -143,7 +142,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
     setParameterNoMutate,
   } = useJob(job.id);
   const { item } = getTaskItem(itemName);
-  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
+  const { inFlight, setInFlight } = useTaskInterface();
   const { setMessage } = usePopcorn();
 
   // Process item data
@@ -311,7 +310,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
   return (
     <Stack
       direction="row"
-      sx={{ mt: 1 }}
+      sx={{ mt: 2 }}
       role="group"
       aria-label={`${processedItem.guiLabel} input`}
     >

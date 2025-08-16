@@ -1,16 +1,29 @@
-import {
+import React, {
   PropsWithChildren,
   SyntheticEvent,
   useCallback,
   useContext,
   useMemo,
   useState,
+  useRef,
+  useEffect,
 } from "react";
 import { Job, File as DjangoFile } from "../types/models";
 import { doDownload, useApi } from "../api";
 import { useRouter } from "next/navigation";
 import { useDeleteDialog } from "./delete-dialog";
-import { List, ListItem, Menu, MenuItem, Paper, Toolbar } from "@mui/material";
+import {
+  List,
+  ListItem,
+  Menu,
+  MenuItem,
+  Paper,
+  Toolbar,
+  Popper,
+  TextField,
+  ClickAwayListener,
+  Box,
+} from "@mui/material";
 import { CCP4i2JobAvatar } from "../components/job-avatar";
 import {
   CopyAll,
@@ -21,11 +34,13 @@ import {
   RunCircle,
   SmsFailed,
   TerminalOutlined,
+  Edit,
 } from "@mui/icons-material";
 import { createContext } from "react";
 import { usePopcorn } from "./popcorn-provider";
 import { useRunCheck } from "./run-check-provider";
 import { CCP4i2MoorhenIcon } from "../components/General/CCP4i2Icons";
+import { useJob } from "../utils";
 
 interface JobMenuContextDataProps {
   jobMenuAnchorEl: HTMLElement | null;
@@ -41,9 +56,7 @@ export const JobMenuContext = createContext<JobMenuContextDataProps>({
   setJob: () => {},
 });
 
-export const JobMenuContextProvider: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const JobMenuProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [jobMenuAnchorEl, setJobMenuAnchorEl] = useState<HTMLElement | null>(
     null
   );
@@ -71,17 +84,27 @@ export interface JobWithChildren extends Job {
 }
 
 export const JobMenu: React.FC = () => {
-  const { jobMenuAnchorEl, setJobMenuAnchorEl, job, setJob } =
-    useContext(JobMenuContext);
+  const { jobMenuAnchorEl, setJobMenuAnchorEl, job, setJob } = useJobMenu();
   const api = useApi();
   const router = useRouter();
   const { setMessage } = usePopcorn();
   const { confirmTaskRun } = useRunCheck();
 
   const deleteDialog = useDeleteDialog();
-  const [statusMenuAnchorEl, setStatusMenuAnchorEl] = useState<Element | null>(
-    null
-  );
+  const [statusMenuAnchorEl, setStatusMenuAnchorEl] = useState<
+    null | (EventTarget & Element)
+  >(null);
+
+  // State for annotation editor popper
+  const [annotationPopperAnchorEl, setAnnotationPopperAnchorEl] =
+    useState<HTMLElement | null>(null);
+  const [annotationValue, setAnnotationValue] = useState<string>("");
+
+  // Store the original title value when popper opens
+  const originalAnnotationValue = useRef<string>("");
+
+  // Ref to store the current timeout ID for cleanup
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: jobs, mutate: mutateJobs } = api.get_endpoint<Job[]>({
     type: "projects",
@@ -110,6 +133,129 @@ export const JobMenu: React.FC = () => {
     }
     return [];
   }, [dependentJobs]);
+
+  // Function to save annotation immediately
+  const saveAnnotation = useCallback(
+    async (value: string) => {
+      if (!job) return;
+
+      try {
+        console.log("Job annotation updated:", {
+          jobId: job.id,
+          jobNumber: job.number,
+          jobTitle: job.title,
+          newAnnotation: value,
+        });
+
+        const formData = new FormData();
+        formData.append("title", value);
+
+        await api.patch(`jobs/${job.id}/`, formData);
+        mutateJobs(); // Refresh the jobs list
+      } catch (error) {
+        console.error("Failed to update job annotation:", error);
+      }
+    },
+    [job, api, mutateJobs]
+  );
+
+  // Handle Enter and Escape key presses in the text field
+  const handleKeyDown = useCallback(
+    async (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+
+        // Clear any pending timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
+        // Save immediately and close popper
+        await saveAnnotation(annotationValue);
+        setAnnotationPopperAnchorEl(null);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+
+        // Clear any pending timeout
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
+
+        // Restore original value and close popper without saving
+        await saveAnnotation(originalAnnotationValue.current);
+        setAnnotationPopperAnchorEl(null);
+      }
+    },
+    [annotationValue, saveAnnotation]
+  );
+
+  // Handle annotation text change with delay
+  const handleAnnotationChange = useCallback(
+    (newValue: string) => {
+      setAnnotationValue(newValue);
+
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Create a delayed function to save annotation
+      timeoutRef.current = setTimeout(() => {
+        saveAnnotation(newValue);
+        timeoutRef.current = null;
+      }, 500); // 500ms delay
+    },
+    [saveAnnotation]
+  );
+
+  // Handle popper close
+  const handleAnnotationPopperClose = useCallback(() => {
+    // Clear any pending timeout when closing
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setAnnotationPopperAnchorEl(null);
+  }, []);
+
+  // Handle click away from popper
+  const handleClickAway = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      handleAnnotationPopperClose();
+    },
+    [handleAnnotationPopperClose]
+  );
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Handle edit annotation menu item click
+  const handleEditAnnotation = useCallback(
+    async (ev: SyntheticEvent) => {
+      ev.stopPropagation();
+      if (job) {
+        // Store the original title value for potential restoration
+        const currentTitle = job.title || "";
+        originalAnnotationValue.current = currentTitle;
+
+        // Set current title/annotation value
+        setAnnotationValue(currentTitle);
+        // Use the menu anchor element as the popper anchor
+        setAnnotationPopperAnchorEl(jobMenuAnchorEl);
+        // Close the menu
+        setJobMenuAnchorEl(null);
+      }
+    },
+    [job, jobMenuAnchorEl, setJobMenuAnchorEl]
+  );
 
   const handleClone = useCallback(
     async (ev: SyntheticEvent) => {
@@ -246,44 +392,84 @@ export const JobMenu: React.FC = () => {
             disabled={job.number.includes(".")}
             onClick={handleClone}
           >
-            <CopyAll /> Clone
+            <CopyAll sx={{ mr: 1 }} /> Clone
           </MenuItem>
           <MenuItem
             key="Run"
             disabled={job.number.includes(".") || job.status !== 1}
             onClick={handleRun}
           >
-            <RunCircle /> Run
+            <RunCircle sx={{ mr: 1 }} /> Run
+          </MenuItem>
+          <MenuItem key="EditAnnotation" onClick={handleEditAnnotation}>
+            <Edit sx={{ mr: 1 }} /> Edit title
           </MenuItem>
           <MenuItem
             key="Delete"
             disabled={job.number.includes(".")}
             onClick={handleDelete}
           >
-            <Delete /> Delete
+            <Delete sx={{ mr: 1 }} /> Delete
           </MenuItem>
           <MenuItem
             key="Moorhen"
             disabled={job.status != 6}
             onClick={handleOpenInNewWindow}
           >
-            <CCP4i2MoorhenIcon /> Moorhen
+            <CCP4i2MoorhenIcon sx={{ mr: 1 }} /> Moorhen
           </MenuItem>
           <MenuItem
             key="Status"
             //disabled={job.number.includes(".")} // There are cases where we want to set the status of a job that is not top level
             onClick={handleStatusClicked}
           >
-            <Delete /> Set status
+            <Delete sx={{ mr: 1 }} /> Set status
           </MenuItem>
           <MenuItem
             key="Terminal"
             disabled={false}
             onClick={handleTerminalInJobDirectory}
           >
-            <TerminalOutlined /> Terminal in job directory
+            <TerminalOutlined sx={{ mr: 1 }} /> Terminal in job directory
           </MenuItem>
         </Menu>
+
+        {/* Annotation Editor Popper */}
+        <Popper
+          open={Boolean(annotationPopperAnchorEl)}
+          anchorEl={annotationPopperAnchorEl}
+          placement="bottom-start"
+          sx={{ zIndex: 1300 }}
+        >
+          <ClickAwayListener onClickAway={handleClickAway}>
+            <Paper
+              elevation={8}
+              sx={{
+                p: 2,
+                minWidth: 300,
+                maxWidth: 500,
+              }}
+            >
+              <Box>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Job Title"
+                  value={annotationValue}
+                  onChange={(e) => handleAnnotationChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Enter title for this job..."
+                  variant="outlined"
+                  size="small"
+                  autoFocus
+                  helperText="Press Enter to save and close, Escape to cancel, or wait 500ms for auto-save"
+                />
+              </Box>
+            </Paper>
+          </ClickAwayListener>
+        </Popper>
+
         <StatusMenu
           job={job}
           anchorEl={statusMenuAnchorEl}
@@ -299,10 +485,11 @@ export const JobMenu: React.FC = () => {
 
 interface StatusMenuProps {
   job: Job;
-  anchorEL: HTMLElement;
+  anchorEl: null | (EventTarget & Element);
   onClose: () => void;
 }
-const StatusMenu = ({ job, anchorEl, onClose }) => {
+
+const StatusMenu: React.FC<StatusMenuProps> = ({ job, anchorEl, onClose }) => {
   const api = useApi();
 
   const { mutate: mutateJobs } = api.get_endpoint<Job[]>({
@@ -329,14 +516,22 @@ const StatusMenu = ({ job, anchorEl, onClose }) => {
   return (
     <Menu open={Boolean(anchorEl)} anchorEl={anchorEl} onClose={onClose}>
       <MenuItem onClick={() => setStatus(5)}>
-        <SmsFailed /> Failed
+        <SmsFailed sx={{ mr: 1 }} /> Failed
       </MenuItem>
       <MenuItem onClick={() => setStatus(6)}>
-        <FireExtinguisherRounded /> Finished
+        <FireExtinguisherRounded sx={{ mr: 1 }} /> Finished
       </MenuItem>
       <MenuItem onClick={() => setStatus(1)}>
-        <Pending /> Pending
+        <Pending sx={{ mr: 1 }} /> Pending
       </MenuItem>
     </Menu>
   );
+};
+
+export const useJobMenu = () => {
+  const context = useContext(JobMenuContext);
+  if (!context) {
+    throw new Error("useJobMenu must be used within a JobMenuProvider");
+  }
+  return context;
 };

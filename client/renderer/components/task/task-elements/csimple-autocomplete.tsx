@@ -1,7 +1,6 @@
 import React, {
   SyntheticEvent,
   useCallback,
-  useContext,
   useMemo,
   useState,
   useEffect,
@@ -19,116 +18,15 @@ import {
 import { CCP4i2CSimpleElementProps } from "./csimple";
 import { useJob, SetParameterResponse } from "../../../utils";
 import { ErrorTrigger } from "./error-info";
-import { TaskInterfaceContext } from "../../../providers/task-provider";
+import { useTaskInterface } from "../../../providers/task-provider";
 import { usePopcorn } from "../../../providers/popcorn-provider";
 
-// Types
 type OptionValue = string | number;
 type GuiMode = "multiLineRadio" | "radio" | "autocomplete";
 
-interface ProcessedItem {
-  objectPath: string | null;
-  value: OptionValue;
-  validationColor: string;
-}
+// Default minimum width for the component
+const DEFAULT_MIN_WIDTH = "15rem";
 
-interface EnumeratorConfig {
-  enumerators: OptionValue[];
-  labels: string[];
-  guiLabel: string;
-  guiMode: GuiMode;
-}
-
-// Constants
-const DEFAULT_MIN_WIDTH = "20rem";
-const GUI_MODES = {
-  MULTI_LINE_RADIO: "multiLineRadio",
-  RADIO: "radio",
-  AUTOCOMPLETE: "autocomplete",
-} as const;
-
-// Custom hooks
-const useProcessedItem = (item: any, qualifiers: any) => {
-  return useMemo<ProcessedItem>(() => {
-    const objectPath = item?._objectPath || null;
-    const value = item?._value || "";
-
-    return {
-      objectPath,
-      value,
-      validationColor: "", // Will be set by validation hook
-    };
-  }, [item]);
-};
-
-const useEnumeratorConfig = (
-  item: any,
-  qualifiers: any,
-  objectPath: string | null
-): EnumeratorConfig & { onlyEnumerators: boolean } => {
-  return useMemo(() => {
-    // Process enumerators
-    const rawEnumerators =
-      qualifiers?.enumerators?.map((element: any) => {
-        if (typeof element === "string" || element instanceof String) {
-          return element.trim();
-        }
-        return element;
-      }) || [];
-
-    // Include current value if not in enumerators
-    const enumerators = [...rawEnumerators];
-    if (item?.value && !enumerators.includes(item._value)) {
-      enumerators.push(item._value);
-    }
-
-    // Process labels
-    let labels = enumerators.map((item) => `${item}`);
-    if (
-      qualifiers?.menuText &&
-      qualifiers.menuText.length === enumerators.length
-    ) {
-      labels = qualifiers.menuText.map((text: string) => text.trim());
-    }
-
-    // Process GUI label
-    const guiLabel =
-      qualifiers?.guiLabel || objectPath?.split(".").at(-1) || "Select option";
-
-    // Determine GUI mode
-    const guiMode = qualifiers?.guiMode || GUI_MODES.AUTOCOMPLETE;
-
-    // Check onlyEnumerators setting
-    const onlyEnumerators = qualifiers?.onlyEnumerators === true;
-
-    return {
-      enumerators,
-      labels,
-      guiLabel,
-      guiMode,
-      onlyEnumerators,
-    };
-  }, [item, qualifiers, objectPath]);
-};
-
-const useFormState = (initialValue: OptionValue) => {
-  const [value, setValue] = useState<OptionValue>(initialValue);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Sync with prop changes
-  useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
-  return {
-    value,
-    setValue,
-    isSubmitting,
-    setIsSubmitting,
-  };
-};
-
-// Main component
 export const CSimpleAutocompleteElement: React.FC<
   CCP4i2CSimpleElementProps
 > = ({
@@ -150,18 +48,67 @@ export const CSimpleAutocompleteElement: React.FC<
   } = useJob(job.id);
   const { item } = getTaskItem(itemName);
   const { setMessage } = usePopcorn();
-  const { inFlight, setInFlight } = useContext(TaskInterfaceContext);
+  const { inFlight, setInFlight } = useTaskInterface();
 
-  // Process item data
-  const processedItem = useProcessedItem(item, qualifiers);
-  const config = useEnumeratorConfig(
-    item,
-    qualifiers,
-    processedItem.objectPath
-  );
-  const { value, setValue, isSubmitting, setIsSubmitting } = useFormState(
-    processedItem.value
-  );
+  // Local state
+  const [localValue, setLocalValue] = useState<OptionValue>(item?._value || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sync local state with item value changes
+  useEffect(() => {
+    if (item?._value !== undefined) {
+      setLocalValue(item._value);
+    }
+  }, [item?._value]);
+
+  // Process enumerators and labels
+  const { enumerators, labels, guiLabel, guiMode, onlyEnumerators } =
+    useMemo(() => {
+      const rawEnumerators =
+        qualifiers?.enumerators?.map((element: any) => {
+          if (typeof element === "string" || element instanceof String) {
+            return element.trim();
+          }
+          return element;
+        }) || [];
+
+      // Include current value if not in enumerators
+      const processedEnumerators = [...rawEnumerators];
+      if (item?._value && !processedEnumerators.includes(item._value)) {
+        processedEnumerators.push(item._value);
+      }
+
+      // Process labels
+      let processedLabels = processedEnumerators.map((item) => `${item}`);
+      if (
+        qualifiers?.menuText &&
+        qualifiers.menuText.length === processedEnumerators.length
+      ) {
+        processedLabels = qualifiers.menuText.map((text: string) =>
+          text.trim()
+        );
+      }
+
+      // Process GUI label
+      const processedGuiLabel =
+        qualifiers?.guiLabel ||
+        item?._objectPath?.split(".").at(-1) ||
+        "Select option";
+
+      // Determine GUI mode
+      const processedGuiMode = qualifiers?.guiMode || "autocomplete";
+
+      // Check onlyEnumerators setting
+      const processedOnlyEnumerators = qualifiers?.onlyEnumerators === true;
+
+      return {
+        enumerators: processedEnumerators,
+        labels: processedLabels,
+        guiLabel: processedGuiLabel,
+        guiMode: processedGuiMode,
+        onlyEnumerators: processedOnlyEnumerators,
+      };
+    }, [item, qualifiers]);
 
   // Computed properties
   const isVisible = useMemo(() => {
@@ -176,28 +123,17 @@ export const CSimpleAutocompleteElement: React.FC<
     return disabledProp || inFlight || isSubmitting || job.status !== 1;
   }, [disabledProp, inFlight, isSubmitting, job.status]);
 
-  const calculatedSx = useMemo(
-    () => ({
-      minWidth: DEFAULT_MIN_WIDTH,
-      ml: 2,
-      ...sx,
-    }),
-    [sx]
-  );
-
   const validationColor = useMemo(
     () => getValidationColor(item),
     [getValidationColor, item]
   );
 
   const isRadioMode = useMemo(
-    () =>
-      config.guiMode === GUI_MODES.MULTI_LINE_RADIO ||
-      config.guiMode === GUI_MODES.RADIO,
-    [config.guiMode]
+    () => guiMode === "multiLineRadio" || guiMode === "radio",
+    [guiMode]
   );
 
-  // Event handlers
+  // Parameter update handler
   const handleParameterUpdate = useCallback(
     async (newValue: OptionValue) => {
       if (!item?._objectPath) {
@@ -223,7 +159,7 @@ export const CSimpleAutocompleteElement: React.FC<
 
         if (result?.status === "Failed") {
           setMessage(`Unacceptable value provided: "${newValue}"`);
-          setValue(item._value); // Revert to original value
+          setLocalValue(item._value); // Revert to original value
         } else if (result?.status === "Success" && onChange) {
           await onChange(result.updated_item);
         }
@@ -232,7 +168,7 @@ export const CSimpleAutocompleteElement: React.FC<
           error instanceof Error ? error.message : String(error);
         setMessage(`Error updating parameter: ${errorMessage}`);
         console.error("Parameter update failed:", error);
-        setValue(item._value); // Revert to original value
+        setLocalValue(item._value); // Revert to original value
       } finally {
         setInFlight(false);
         setIsSubmitting(false);
@@ -250,139 +186,151 @@ export const CSimpleAutocompleteElement: React.FC<
     ]
   );
 
+  // Event handlers
   const handleAutocompleteChange = useCallback(
     async (
       event: SyntheticEvent<Element, Event>,
       newValue: OptionValue | null,
       reason: AutocompleteChangeReason
     ) => {
-      if (newValue !== null && newValue !== value) {
-        setValue(newValue);
+      if (newValue !== null && newValue !== localValue) {
+        setLocalValue(newValue);
         await handleParameterUpdate(newValue);
       }
     },
-    [value, handleParameterUpdate]
+    [localValue, handleParameterUpdate]
   );
 
   const handleRadioChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = event.currentTarget.value;
-      if (newValue && newValue !== value) {
-        setValue(newValue);
+      if (newValue && newValue !== localValue) {
+        setLocalValue(newValue);
         await handleParameterUpdate(newValue);
       }
     },
-    [value, handleParameterUpdate]
+    [localValue, handleParameterUpdate]
   );
 
   const getOptionLabel = useCallback(
     (option: OptionValue): string => {
-      const index = config.enumerators.indexOf(option);
-      const label = config.labels[index];
+      const index = enumerators.indexOf(option);
+      const label = labels[index];
 
       if (!label) {
-        console.warn(`No label found for option: ${option}`, { item, config });
+        console.warn(`No label found for option: ${option}`);
         return String(option);
       }
 
       return label;
     },
-    [config.enumerators, config.labels, item]
+    [enumerators, labels]
   );
 
-  // Early returns
-  if (!isVisible || !config.enumerators.length || !config.labels.length) {
+  // Early return if not visible or no options
+  if (!isVisible || !enumerators.length || !labels.length) {
     return null;
   }
 
-  // Render helpers
-  const renderRadioGroup = () => (
-    <RadioGroup
-      row={config.guiMode === GUI_MODES.RADIO}
-      value={value}
-      onChange={handleRadioChange}
-      sx={calculatedSx}
-      name={`radio-group-${itemName}`}
-    >
-      <FormControlLabel
-        control={<></>}
-        label={config.guiLabel}
-        sx={{ mr: 2 }}
-      />
-      {config.enumerators.map((enumerator, index) => (
-        <FormControlLabel
-          key={`${enumerator}-${index}`}
-          value={enumerator}
-          control={
-            <Radio
-              size="small"
-              disabled={isDisabled}
-              inputProps={{ "aria-label": getOptionLabel(enumerator) }}
+  // Render radio group
+  if (isRadioMode) {
+    return (
+      <Stack
+        direction="row"
+        sx={{ mt: 1 }}
+        role="group"
+        aria-label={`${guiLabel} selection`}
+      >
+        <RadioGroup
+          row={guiMode === "radio"}
+          value={localValue}
+          onChange={handleRadioChange}
+          sx={{
+            minWidth: DEFAULT_MIN_WIDTH,
+            ml: 2,
+            ...sx,
+          }}
+          name={`radio-group-${itemName}`}
+        >
+          <FormControlLabel control={<></>} label={guiLabel} sx={{ mr: 2 }} />
+          {enumerators.map((enumerator, index) => (
+            <FormControlLabel
+              key={`${enumerator}-${index}`}
+              value={enumerator}
+              control={
+                <Radio
+                  size="small"
+                  disabled={isDisabled}
+                  inputProps={{ "aria-label": getOptionLabel(enumerator) }}
+                />
+              }
+              label={getOptionLabel(enumerator)}
             />
-          }
-          label={getOptionLabel(enumerator)}
-        />
-      ))}
-    </RadioGroup>
-  );
+          ))}
+        </RadioGroup>
+        <ErrorTrigger item={item} job={job} />
+      </Stack>
+    );
+  }
 
-  const renderAutocomplete = () => (
-    <Autocomplete
-      disabled={isDisabled}
-      sx={calculatedSx}
-      value={value}
-      onChange={handleAutocompleteChange}
-      onInputChange={(event, newInputValue, reason) => {
-        // Handle free text input only if not restricted to enumerators
-        if (
-          reason === "input" &&
-          newInputValue !== value &&
-          !config.onlyEnumerators
-        ) {
-          setValue(newInputValue);
-        }
-      }}
-      onBlur={async () => {
-        // Update parameter when user finishes typing (only for freeSolo mode)
-        if (!config.onlyEnumerators && value !== processedItem.value) {
-          await handleParameterUpdate(value);
-        }
-      }}
-      getOptionLabel={getOptionLabel}
-      options={config.enumerators}
-      size="small"
-      freeSolo={!config.onlyEnumerators} // Enable free text input only when onlyEnumerators is false
-      disableClearable={config.onlyEnumerators} // Remove clear button when onlyEnumerators is true
-      isOptionEqualToValue={(option, value) => option === value}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          error={validationColor === "error.light"}
-          label={config.guiLabel}
-          size="small"
-          slotProps={{
-            inputLabel: {
-              shrink: true,
-              disableAnimation: true,
-            },
-          }}
-          inputProps={{
-            ...params.inputProps,
-            "aria-label": config.guiLabel,
-          }}
-        />
-      )}
-    />
-  );
-
+  // Render autocomplete
   return (
     <Stack
       direction="row"
       sx={{ mt: 1 }}
       role="group"
-      aria-label={`${config.guiLabel} selection`}
+      aria-label={`${guiLabel} selection`}
     >
-      {isRadioMode ? renderRadioGroup() : renderAutocomplete()}
+      <Autocomplete
+        disabled={isDisabled}
+        sx={{
+          minWidth: DEFAULT_MIN_WIDTH,
+          ml: 2,
+          ...sx,
+        }}
+        value={localValue}
+        onChange={handleAutocompleteChange}
+        onInputChange={(event, newInputValue, reason) => {
+          // Handle free text input only if not restricted to enumerators
+          if (
+            reason === "input" &&
+            newInputValue !== localValue &&
+            !onlyEnumerators
+          ) {
+            setLocalValue(newInputValue);
+          }
+        }}
+        onBlur={async () => {
+          // Update parameter when user finishes typing (only for freeSolo mode)
+          if (!onlyEnumerators && localValue !== item?._value) {
+            await handleParameterUpdate(localValue);
+          }
+        }}
+        getOptionLabel={getOptionLabel}
+        options={enumerators}
+        size="small"
+        freeSolo={!onlyEnumerators}
+        disableClearable={onlyEnumerators}
+        isOptionEqualToValue={(option, value) => option === value}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            error={validationColor === "error.light"}
+            label={guiLabel}
+            size="small"
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+                disableAnimation: true,
+              },
+            }}
+            inputProps={{
+              ...params.inputProps,
+              "aria-label": guiLabel,
+            }}
+          />
+        )}
+      />
       <ErrorTrigger item={item} job={job} />
     </Stack>
   );

@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import React, { createContext, useContext } from "react";
 import { File, Job } from "./types/models";
 
 interface CCP4i2Context {
@@ -26,8 +26,18 @@ export const CCP4i2Context = createContext<CCP4i2Context>({
   setJobPanelSize: () => {},
   cootModule: null,
   setCootModule: () => {},
+  rdkitModule: null,
+  setRdkitModule: () => {},
   devMode: true,
   setDevMode: () => {},
   activeDragItem: null,
   setActiveDragItem: () => {},
 });
+
+export const useCCP4i2Window = () => {
+  const context = useContext(CCP4i2Context);
+  if (!context) {
+    throw new Error("useCCP4i2Window must be used within a CCP4i2Provider");
+  }
+  return context;
+};

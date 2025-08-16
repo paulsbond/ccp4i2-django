@@ -9,10 +9,10 @@ import {
   MenuBook,
   SystemUpdateAlt,
 } from "@mui/icons-material";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { useApi } from "../api";
-import { Job, Project } from "../types/models";
-import { CCP4i2Context } from "../app-context";
+import { Job } from "../types/models";
+import { useCCP4i2Window } from "../app-context";
 import { useRouter } from "next/navigation";
 import { HelpIframe } from "./help_iframe";
 import { usePopcorn } from "../providers/popcorn-provider";
@@ -23,7 +23,7 @@ export default function ToolBar() {
   const sizeMinus2 = useMediaQuery("(max-width:95rem)");
   const sizeMinus3 = useMediaQuery("(max-width:80rem)");
   const sizeMinus4 = useMediaQuery("(max-width:70rem)");
-  const { projectId, jobId } = useContext(CCP4i2Context);
+  const { projectId, jobId } = useCCP4i2Window();
   const api = useApi();
   const { data: job, mutate: mutateJob } = api.get_endpoint<Job>({
     type: "jobs",

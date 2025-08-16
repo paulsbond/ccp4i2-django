@@ -1,35 +1,5 @@
 "use client";
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  SyntheticEvent,
-  ReactNode,
-} from "react";
-import {
-  Button,
-  Collapse,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-} from "@mui/material";
-import {
-  Folder,
-  InsertDriveFile,
-  ExpandLess,
-  ExpandMore,
-  Menu as MenuIcon,
-  Preview,
-  Download,
-} from "@mui/icons-material";
-import { CCP4i2Context } from "../app-context";
-import { doDownload, useApi } from "../api";
-import { Project } from "../types/models";
-import { FilePreviewContext } from "./file-preview-context";
-import { FileSystemFileMenu } from "../components/file-system-file-menu";
+import React, { createContext, useContext, useReducer, ReactNode } from "react";
 import { FileSystemItem } from "../components/directory-browser";
 
 interface FileSystemFileBrowserState {
