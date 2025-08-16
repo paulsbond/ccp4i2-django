@@ -395,7 +395,6 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
       <Typography
         variant="body2"
         sx={{
-          fontWeight: isVisible(item) ? "normal" : "lighter",
           fontStyle: fromDatabase ? "normal" : "italic",
           color: fromDatabase ? "text.primary" : "text.secondary",
         }}
@@ -473,6 +472,7 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
           }}
         >
           {items.map((item, index) => {
+            const itemIsVisible = isVisible(item);
             return (
               <ListItem
                 key={getItemId(item)}
@@ -491,13 +491,43 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
                     "&:hover": {
                       backgroundColor: "#f9f9f9",
                     },
-                    opacity: isVisible(item) ? 1 : 0.6,
-                    textDecoration: isVisible(item) ? "none" : "line-through",
+                    opacity: itemIsVisible ? 1 : 0.7,
                   }}
                 >
                   <ListItemText
                     primary={
                       <Stack direction="row" alignItems="center" spacing={1}>
+                        {/* Visibility Eye Icon */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: "24px",
+                            height: "24px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {itemIsVisible ? (
+                            <Visibility
+                              fontSize="small"
+                              sx={{
+                                color: "primary.main",
+                                opacity: 0.8,
+                              }}
+                            />
+                          ) : (
+                            <VisibilityOff
+                              fontSize="small"
+                              sx={{
+                                color: "text.disabled",
+                                opacity: 0.6,
+                              }}
+                            />
+                          )}
+                        </Box>
+
+                        {/* Molecule/Map ID Chip */}
                         <Chip
                           label={getItemId(item)}
                           size="small"
@@ -508,8 +538,11 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
                             minWidth: "40px",
                             height: "20px",
                             flexShrink: 0,
+                            opacity: itemIsVisible ? 1 : 0.6,
                           }}
                         />
+
+                        {/* Content Text */}
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           {getPrimaryDisplayText(item)}
                         </Box>
