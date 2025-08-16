@@ -56,7 +56,7 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
   searchPlaceholder = "Search...",
 }) => (
   <Paper
-    elevation={2}
+    elevation={1}
     sx={{
       height: "100%",
       display: "flex",
@@ -64,37 +64,43 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
       border: "1px solid #e0e0e0",
     }}
   >
-    {/* Header */}
+    {/* Compact Header */}
     <Box
       sx={{
-        p: 2,
+        px: 1.5,
+        py: 0.75,
         backgroundColor: "#1976d2",
         color: "white",
         borderBottom: "1px solid #e0e0e0",
         display: "flex",
         alignItems: "center",
-        gap: 1,
+        gap: 0.5,
+        minHeight: "36px",
       }}
     >
       {onBack && (
         <IconButton
           onClick={onBack}
-          sx={{ color: "white", mr: 1 }}
+          sx={{ color: "white", p: 0.25 }}
           size="small"
         >
-          <ArrowBack />
+          <ArrowBack fontSize="small" />
         </IconButton>
       )}
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="h6" component="h2">
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          variant="body2"
+          component="h2"
+          sx={{ fontWeight: 600, lineHeight: 1.2 }}
+        >
           {title}
         </Typography>
-        {breadcrumbs && <Box sx={{ mt: 0.5 }}>{breadcrumbs}</Box>}
+        {breadcrumbs && <Box sx={{ mt: 0.25 }}>{breadcrumbs}</Box>}
       </Box>
     </Box>
 
-    {/* Search Box */}
-    <Box sx={{ p: 2, borderBottom: "1px solid #e0e0e0" }}>
+    {/* Compact Search Box */}
+    <Box sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
       <TextField
         fullWidth
         size="small"
@@ -104,7 +110,7 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <Search color="action" />
+              <Search sx={{ fontSize: "1rem" }} color="action" />
             </InputAdornment>
           ),
           endAdornment: searchValue && (
@@ -113,11 +119,18 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
                 size="small"
                 onClick={() => onSearchChange("")}
                 edge="end"
+                sx={{ p: 0.25 }}
               >
-                <Clear />
+                <Clear fontSize="small" />
               </IconButton>
             </InputAdornment>
           ),
+          sx: {
+            fontSize: "0.875rem",
+            "& .MuiInputBase-input": {
+              py: 0.5,
+            },
+          },
         }}
         sx={{
           "& .MuiOutlinedInput-root": {
@@ -138,25 +151,39 @@ interface ProjectItemProps {
 }
 
 const ProjectItem: React.FC<ProjectItemProps> = ({ project, onSelect }) => (
-  <ListItem disablePadding>
+  <ListItem disablePadding sx={{ py: 0 }}>
     <ListItemButton
       onClick={() => onSelect(project)}
       sx={{
+        py: 0.5,
+        px: 1,
         "&:hover": {
           backgroundColor: "#f5f5f5",
         },
       }}
     >
-      <ListItemIcon>
-        <FolderOutlined color="primary" />
+      <ListItemIcon sx={{ minWidth: 28 }}>
+        <FolderOutlined color="primary" fontSize="small" />
       </ListItemIcon>
       <ListItemText
-        primary={project.name || `Project ${project.id}`}
-        secondary={`ID: ${project.id} • Created: ${new Date(
-          project.creation_time
-        ).toLocaleDateString()}`}
+        primary={
+          <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+            {project.name || `Project ${project.id}`}
+          </Typography>
+        }
+        secondary={
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ lineHeight: 1.2 }}
+          >
+            ID: {project.id} •{" "}
+            {new Date(project.creation_time).toLocaleDateString()}
+          </Typography>
+        }
+        sx={{ my: 0 }}
       />
-      <ChevronRight color="action" />
+      <ChevronRight color="action" fontSize="small" />
     </ListItemButton>
   </ListItem>
 );
@@ -170,13 +197,13 @@ const JobItem: React.FC<JobItemProps> = ({ job, onSelect }) => {
   const getStatusColor = (status: number) => {
     switch (status) {
       case 1:
-        return "warning"; // Pending
+        return "warning";
       case 2:
-        return "info"; // Running
+        return "info";
       case 6:
-        return "success"; // Finished
+        return "success";
       case 5:
-        return "error"; // Failed
+        return "error";
       default:
         return "default";
     }
@@ -198,22 +225,27 @@ const JobItem: React.FC<JobItemProps> = ({ job, onSelect }) => {
   };
 
   return (
-    <ListItem disablePadding>
+    <ListItem disablePadding sx={{ py: 0 }}>
       <ListItemButton
         onClick={() => onSelect(job)}
         sx={{
+          py: 0.5,
+          px: 1,
           "&:hover": {
             backgroundColor: "#f5f5f5",
           },
         }}
       >
-        <ListItemIcon>
-          <WorkOutline color="primary" />
+        <ListItemIcon sx={{ minWidth: 28 }}>
+          <WorkOutline color="primary" fontSize="small" />
         </ListItemIcon>
         <ListItemText
           primary={
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body1">
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, lineHeight: 1.2 }}
+              >
                 {job.title || `Job ${job.number}`}
               </Typography>
               <Chip
@@ -221,12 +253,26 @@ const JobItem: React.FC<JobItemProps> = ({ job, onSelect }) => {
                 label={getStatusText(job.status)}
                 color={getStatusColor(job.status)}
                 variant="outlined"
+                sx={{
+                  height: 16,
+                  fontSize: "0.625rem",
+                  "& .MuiChip-label": { px: 0.5 },
+                }}
               />
             </Stack>
           }
-          secondary={`#${job.number} • ${job.task_name || "Unknown task"}`}
+          secondary={
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ lineHeight: 1.2 }}
+            >
+              #{job.number} • {job.task_name || "Unknown task"}
+            </Typography>
+          }
+          sx={{ my: 0 }}
         />
-        <ChevronRight color="action" />
+        <ChevronRight color="action" fontSize="small" />
       </ListItemButton>
     </ListItem>
   );
@@ -245,31 +291,28 @@ const FileItem: React.FC<FileItemProps> = ({ file, onSelect }) => {
     return "default";
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-
   return (
-    <ListItem disablePadding>
+    <ListItem disablePadding sx={{ py: 0 }}>
       <ListItemButton
         onClick={() => onSelect?.(file)}
         sx={{
+          py: 0.5,
+          px: 1,
           "&:hover": {
             backgroundColor: "#f5f5f5",
           },
         }}
       >
-        <ListItemIcon>
-          <InsertDriveFileOutlined color="primary" />
+        <ListItemIcon sx={{ minWidth: 28 }}>
+          <InsertDriveFileOutlined color="primary" fontSize="small" />
         </ListItemIcon>
         <ListItemText
           primary={
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, lineHeight: 1.2 }}
+              >
                 {file.name}
               </Typography>
               <Chip
@@ -277,17 +320,24 @@ const FileItem: React.FC<FileItemProps> = ({ file, onSelect }) => {
                 label={file.type.split("/").pop() || "unknown"}
                 color={getFileTypeColor(file.type)}
                 variant="outlined"
+                sx={{
+                  height: 16,
+                  fontSize: "0.625rem",
+                  "& .MuiChip-label": { px: 0.5 },
+                }}
               />
             </Stack>
           }
           secondary={
-            <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
-              <Typography variant="caption">Type: {file.type}</Typography>
-              <Typography variant="caption">
-                Job param name: {file.job_param_name || "N/A"}
-              </Typography>
-            </Stack>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ lineHeight: 1.2 }}
+            >
+              {file.job_param_name || "N/A"}
+            </Typography>
           }
+          sx={{ my: 0 }}
         />
       </ListItemButton>
     </ListItem>
@@ -297,7 +347,6 @@ const FileItem: React.FC<FileItemProps> = ({ file, onSelect }) => {
 // Helper function to sort jobs by hierarchical number
 const sortJobsByNumber = (jobs: Job[]): Job[] => {
   return [...jobs].sort((a, b) => {
-    // Extract the first number from the job number (e.g., "1.1.3" -> 1)
     const getFirstIndex = (jobNumber: string): number => {
       const parts = jobNumber.split(".");
       return parseInt(parts[0], 10) || 0;
@@ -306,12 +355,10 @@ const sortJobsByNumber = (jobs: Job[]): Job[] => {
     const aFirstIndex = getFirstIndex(a.number);
     const bFirstIndex = getFirstIndex(b.number);
 
-    // Sort in decreasing order (highest first)
     return bFirstIndex - aFirstIndex;
   });
 };
 
-// Add constants for allowed file types
 const ALLOWED_FILE_TYPES = [
   "chemical/x-pdb",
   "application/CCP4-map",
@@ -319,10 +366,17 @@ const ALLOWED_FILE_TYPES = [
   "application/refmac-dictionary",
 ] as const;
 
-// Helper function to check if file type is allowed
 const isAllowedFileType = (fileType: string): boolean => {
   return ALLOWED_FILE_TYPES.includes(fileType as any);
 };
+
+// Constants for refresh intervals
+const REFRESH_INTERVALS = {
+  PROJECTS: 10000, // 10 seconds - projects may be created by other processes
+  JOBS: 10000, // 10 seconds - jobs may be created/updated by other processes
+  FILES_STATIC: 0, // No refresh for static files (finished jobs)
+  FILES_DYNAMIC: 5000, // 5 seconds for running jobs or when job status might change
+} as const;
 
 export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
   onFileSelect,
@@ -338,32 +392,51 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
   const [jobSearchTerm, setJobSearchTerm] = useState<string>("");
   const [fileSearchTerm, setFileSearchTerm] = useState<string>("");
 
-  // API calls
+  // Calculate refresh interval for files based on job status
+  const getFilesRefreshInterval = useCallback((job: Job | null): number => {
+    if (!job) return REFRESH_INTERVALS.FILES_STATIC;
+
+    // Refresh files if job is running (status 2) or pending (status 1)
+    // Also refresh if job just finished to catch final files
+    const isJobActive = job.status === 1 || job.status === 2;
+
+    return isJobActive
+      ? REFRESH_INTERVALS.FILES_DYNAMIC
+      : REFRESH_INTERVALS.FILES_STATIC;
+  }, []);
+
+  // API calls with appropriate refresh intervals
   const {
     data: projects,
     isLoading: projectsLoading,
     error: projectsError,
-  } = api.get<Project[]>("/projects");
+  } = api.get<Project[]>("/projects", REFRESH_INTERVALS.PROJECTS);
 
   const {
     data: jobs,
     isLoading: jobsLoading,
     error: jobsError,
-  } = api.get_endpoint<Job[]>({
-    type: "projects",
-    id: selectedProject?.id,
-    endpoint: "jobs",
-  });
+  } = api.get_endpoint<Job[]>(
+    {
+      type: "projects",
+      id: selectedProject?.id,
+      endpoint: "jobs",
+    },
+    REFRESH_INTERVALS.JOBS
+  );
 
   const {
     data: files,
     isLoading: filesLoading,
     error: filesError,
-  } = api.get_endpoint<DjangoFile[]>({
-    type: "jobs",
-    id: selectedJob?.id,
-    endpoint: "files",
-  });
+  } = api.get_endpoint<DjangoFile[]>(
+    {
+      type: "jobs",
+      id: selectedJob?.id,
+      endpoint: "files",
+    },
+    getFilesRefreshInterval(selectedJob)
+  );
 
   // Filtered and sorted data based on search terms
   const filteredProjects = useMemo(() => {
@@ -384,13 +457,9 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
   const filteredJobs = useMemo(() => {
     if (!jobs) return jobs;
 
-    // First filter to parent jobs only
     const parentJobs = jobs.filter((job) => job.parent === null);
-
-    // Sort by hierarchical job number (decreasing order by first index)
     const sortedJobs = sortJobsByNumber(parentJobs);
 
-    // Apply search filter if there's a search term
     if (!jobSearchTerm.trim()) return sortedJobs;
 
     const searchLower = jobSearchTerm.toLowerCase();
@@ -409,10 +478,8 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
   const filteredFiles = useMemo(() => {
     if (!files) return files;
 
-    // First filter by allowed file types
     const allowedFiles = files.filter((file) => isAllowedFileType(file.type));
 
-    // Then apply search filter if there's a search term
     if (!fileSearchTerm.trim()) return allowedFiles;
 
     const searchLower = fileSearchTerm.toLowerCase();
@@ -426,14 +493,14 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
   // Event handlers
   const handleProjectSelect = useCallback((project: Project) => {
     setSelectedProject(project);
-    setSelectedJob(null); // Reset job selection when project changes
-    setJobSearchTerm(""); // Clear job search when project changes
-    setFileSearchTerm(""); // Clear file search when project changes
+    setSelectedJob(null);
+    setJobSearchTerm("");
+    setFileSearchTerm("");
   }, []);
 
   const handleJobSelect = useCallback((job: Job) => {
     setSelectedJob(job);
-    setFileSearchTerm(""); // Clear file search when job changes
+    setFileSearchTerm("");
   }, []);
 
   const handleFileSelect = useCallback(
@@ -458,15 +525,15 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
 
   // Render loading state
   const renderLoading = () => (
-    <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-      <CircularProgress />
+    <Box sx={{ display: "flex", justifyContent: "center", p: 1.5 }}>
+      <CircularProgress size={24} />
     </Box>
   );
 
   // Render error state
   const renderError = (error: any) => (
-    <Box sx={{ p: 2 }}>
-      <Alert severity="error">
+    <Box sx={{ p: 1 }}>
+      <Alert severity="error" sx={{ fontSize: "0.875rem", py: 0.5 }}>
         Failed to load data: {error?.message || "Unknown error"}
       </Alert>
     </Box>
@@ -474,8 +541,8 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
 
   // Render empty state
   const renderEmpty = (message: string) => (
-    <Box sx={{ p: 3, textAlign: "center" }}>
-      <Typography variant="body2" color="text.secondary">
+    <Box sx={{ p: 1.5, textAlign: "center" }}>
+      <Typography variant="caption" color="text.secondary">
         {message}
       </Typography>
     </Box>
@@ -487,23 +554,25 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
       return (
         <Breadcrumbs
           separator="›"
-          sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.875rem" }}
+          sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.75rem" }}
         >
           <Link
             component="button"
-            variant="body2"
+            variant="caption"
             onClick={handleBackToProjects}
             sx={{
               color: "rgba(255,255,255,0.8)",
               textDecoration: "underline",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            <Home sx={{ mr: 0.5, fontSize: "1rem" }} />
+            <Home sx={{ mr: 0.25, fontSize: "0.875rem" }} />
             Projects
           </Link>
           <Link
             component="button"
-            variant="body2"
+            variant="caption"
             onClick={handleBackToJobs}
             sx={{
               color: "rgba(255,255,255,0.8)",
@@ -512,7 +581,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
           >
             {selectedProject?.name || `Project ${selectedProject?.id}`}
           </Link>
-          <Typography variant="body2" sx={{ color: "white" }}>
+          <Typography variant="caption" sx={{ color: "white" }}>
             Job {selectedJob.number}
           </Typography>
         </Breadcrumbs>
@@ -521,21 +590,23 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
       return (
         <Breadcrumbs
           separator="›"
-          sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.875rem" }}
+          sx={{ color: "rgba(255,255,255,0.8)", fontSize: "0.75rem" }}
         >
           <Link
             component="button"
-            variant="body2"
+            variant="caption"
             onClick={handleBackToProjects}
             sx={{
               color: "rgba(255,255,255,0.8)",
               textDecoration: "underline",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            <Home sx={{ mr: 0.5, fontSize: "1rem" }} />
+            <Home sx={{ mr: 0.25, fontSize: "0.875rem" }} />
             Projects
           </Link>
-          <Typography variant="body2" sx={{ color: "white" }}>
+          <Typography variant="caption" sx={{ color: "white" }}>
             {selectedProject.name || `Project ${selectedProject.id}`}
           </Typography>
         </Breadcrumbs>
@@ -554,7 +625,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
           breadcrumbs={createBreadcrumbs()}
           searchValue={fileSearchTerm}
           onSearchChange={setFileSearchTerm}
-          searchPlaceholder="Search PDB, map, and dictionary files..."
+          searchPlaceholder="Search files..."
         >
           {filesLoading && renderLoading()}
           {filesError && renderError(filesError)}
@@ -568,15 +639,15 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
             (!files ||
               files.filter((file) => isAllowedFileType(file.type)).length ===
                 0) &&
-            renderEmpty(
-              "No supported files found in this job (PDB, map, or dictionary files only)"
-            )}
+            renderEmpty("No supported files found")}
           {filteredFiles && filteredFiles.length > 0 && (
-            <List>
+            <List sx={{ py: 0 }}>
               {filteredFiles.map((file, index) => (
                 <React.Fragment key={file.id}>
                   <FileItem file={file} onSelect={handleFileSelect} />
-                  {index < filteredFiles.length - 1 && <Divider />}
+                  {index < filteredFiles.length - 1 && (
+                    <Divider sx={{ my: 0 }} />
+                  )}
                 </React.Fragment>
               ))}
             </List>
@@ -594,7 +665,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
           breadcrumbs={createBreadcrumbs()}
           searchValue={jobSearchTerm}
           onSearchChange={setJobSearchTerm}
-          searchPlaceholder="Search jobs by title, number, or task..."
+          searchPlaceholder="Search jobs..."
         >
           {jobsLoading && renderLoading()}
           {jobsError && renderError(jobsError)}
@@ -608,11 +679,13 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
             (!jobs || jobs.length === 0) &&
             renderEmpty("No jobs found in this project")}
           {filteredJobs && filteredJobs.length > 0 && (
-            <List>
+            <List sx={{ py: 0 }}>
               {filteredJobs.map((job, index) => (
                 <React.Fragment key={job.id}>
                   <JobItem job={job} onSelect={handleJobSelect} />
-                  {index < filteredJobs.length - 1 && <Divider />}
+                  {index < filteredJobs.length - 1 && (
+                    <Divider sx={{ my: 0 }} />
+                  )}
                 </React.Fragment>
               ))}
             </List>
@@ -626,7 +699,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
           title="Projects"
           searchValue={projectSearchTerm}
           onSearchChange={setProjectSearchTerm}
-          searchPlaceholder="Search projects by name or ID..."
+          searchPlaceholder="Search projects..."
         >
           {projectsLoading && renderLoading()}
           {projectsError && renderError(projectsError)}
@@ -640,14 +713,16 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
             (!projects || projects.length === 0) &&
             renderEmpty("No projects found")}
           {filteredProjects && filteredProjects.length > 0 && (
-            <List>
+            <List sx={{ py: 0 }}>
               {filteredProjects.map((project, index) => (
                 <React.Fragment key={project.id}>
                   <ProjectItem
                     project={project}
                     onSelect={handleProjectSelect}
                   />
-                  {index < filteredProjects.length - 1 && <Divider />}
+                  {index < filteredProjects.length - 1 && (
+                    <Divider sx={{ my: 0 }} />
+                  )}
                 </React.Fragment>
               ))}
             </List>
