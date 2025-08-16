@@ -1,483 +1,912 @@
-import { Button, Grid2, Paper } from "@mui/material";
+import React, { useCallback, useEffect, useRef } from "react";
+import { Paper, Grid2 } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
-import { useApi } from "../../../api";
-import { useJob, usePrevious, useProject } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
-import { useRunCheck } from "../../../providers/run-check-provider";
-import { useRouter } from "next/navigation";
-import { Job } from "../../../types/models";
+import { useJob } from "../../../utils";
 
-// Helper function for safe object comparison
-const isEqual = (a: any, b: any): boolean => {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  if (typeof a !== typeof b) return false;
-
-  // Handle React elements and functions
-  if (typeof a === "function" || typeof a === "object") {
-    // For React elements, compare their key properties
-    if (a.$$typeof && b.$$typeof) {
-      return a.type === b.type && a.key === b.key;
-    }
-
-    // For objects, do a shallow comparison of serializable properties
-    try {
-      const aKeys = Object.keys(a).filter(
-        (key) => typeof a[key] !== "function" && !key.startsWith("_")
-      );
-      const bKeys = Object.keys(b).filter(
-        (key) => typeof b[key] !== "function" && !key.startsWith("_")
-      );
-
-      if (aKeys.length !== bKeys.length) return false;
-
-      return aKeys.every((key) => {
-        if (typeof a[key] === "object") {
-          return isEqual(a[key], b[key]);
-        }
-        return a[key] === b[key];
-      });
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-};
-
+/**
+ * Task interface component for Prosmart-Refmac - Prosmart-guided Refinement.
+ *
+ * Prosmart-Refmac is used for:
+ * - Macromolecular structure refinement with external restraints
+ * - Integration with Prosmart for protein restraint generation
+ * - Advanced B-factor and TLS parameter refinement
+ * - Comprehensive validation and geometry analysis
+ * - Anomalous signal and twinning handling
+ */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
-  const api = useApi();
   const { job } = props;
-  const router = useRouter();
+  const { getTaskItem } = useJob(job.id);
 
-  const {
-    processedErrors,
-    setProcessedErrors,
-    setExtraDialogActions,
-    setRunTaskRequested,
-    extraDialogActions = [],
-  } = useRunCheck();
+  // Use refs to track processed states and prevent cycles
+  const initializationDone = useRef(false);
+  const currentJobId = useRef<number | null>(null);
+  const lastProcessedF_SIGFDigest = useRef<any>(null);
 
-  const { getTaskItem, useFileDigest, validation, createPeerTask } = useJob(
-    job.id
-  );
-  const { mutateJobs } = useProject(job.project);
-
-  // Use refs to track previous values without causing circular references
-  const prevProcessedErrors = useRef(processedErrors);
-  const prevExtraDialogActions = useRef(extraDialogActions);
-
-  // Consolidated task values
-  const taskValues = useMemo(
-    () => ({
-      refinementMode: getTaskItem("REFINEMENT_MODE").value,
-      freeRFlag: getTaskItem("FREERFLAG").value,
-      solventAdvanced: getTaskItem("SOLVENT_ADVANCED").value,
-      solventMaskType: getTaskItem("SOLVENT_MASK_TYPE").value,
-      tlsMode: getTaskItem("TLSMODE").value,
-      bfacSetUse: getTaskItem("BFACSETUSE").value,
-      wavelength: getTaskItem("WAVELENGTH").value,
-      mapSharp: getTaskItem("MAP_SHARP").value,
-      mapSharpCustom: getTaskItem("MAP_SHARP_CUSTOM").value,
-    }),
-    [getTaskItem]
-  );
-
-  // File digest handling
-  const { data: F_SIGFDigest } = useFileDigest(
-    "prosmart_refmac.inputData.F_SIGF"
-  );
+  // Get task items
+  const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
   const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
-  const oldFileDigest = usePrevious<any>(F_SIGFDigest);
-
-  // Visibility conditions
-  const visibility = useMemo(
-    () => ({
-      isRigidMode: () => taskValues.refinementMode === "RIGID",
-      isRestrMode: () => taskValues.refinementMode === "RESTR",
-      isExplicitSolvent: () => taskValues.solventMaskType === "EXPLICIT",
-      hasAdvancedSolvent: () =>
-        taskValues.solventMaskType === "EXPLICIT" && taskValues.solventAdvanced,
-      hasTLS: () => taskValues.tlsMode !== "NONE",
-      isTLSFromFile: () => taskValues.tlsMode === "FILE",
-      hasBfacSet: () => taskValues.bfacSetUse,
-      hasMapSharp: () => taskValues.mapSharp,
-      hasCustomSharp: () => taskValues.mapSharp && taskValues.mapSharpCustom,
-    }),
-    [taskValues]
+  const { update: updateUSEANOMALOUS } = getTaskItem("USEANOMALOUS");
+  const { update: updateUSE_TWIN } = getTaskItem("USE_TWIN");
+  const { update: updateVALIDATE_BAVERAGE } = getTaskItem("VALIDATE_BAVERAGE");
+  const { update: updateVALIDATE_RAMACHANDRAN } = getTaskItem(
+    "VALIDATE_RAMACHANDRAN"
+  );
+  const { update: updateVALIDATE_MOLPROBITY } = getTaskItem(
+    "VALIDATE_MOLPROBITY"
   );
 
-  // Element configurations
-  const elementConfigs = useMemo(
-    () => ({
-      inputData: [
-        { key: "F_SIGF", label: "Reflection" },
-        { key: "WAVELENGTH", label: "Wavelength" },
-        { key: "FREERFLAG" },
-        { key: "XYZIN", label: "Coordinates" },
-        { key: "DICT_LIST", label: "Dictionaries" },
-        {
-          key: "NCYCRIGID",
-          label: "Number of rigid body cycles",
-          visible: visibility.isRigidMode,
-        },
-        {
-          key: "NCYCLES",
-          label: "Number of cycles",
-          visible: visibility.isRestrMode,
-        },
-        { key: "REFINEMENT_MODE", label: "Refinement mode" },
-      ],
-      bFactors: [{ key: "B_REFINEMENT_MODE", label: "B-factors" }],
-      scaling: [
-        { key: "SCALE_TYPE", label: "Use", gridSize: { xs: 6 } },
-        {
-          key: "SOLVENT_MASK_TYPE",
-          label: (
-            <span style={{ marginLeft: "1rem", marginRight: "1rem" }}>
-              solvent scaling, with mask type
-            </span>
-          ),
-          gridSize: { xs: 6 },
-        },
-        {
-          key: "SOLVENT_ADVANCED",
-          label: "Use custom solvent mask parameters",
-          visible: visibility.isExplicitSolvent,
-        },
-      ],
-      customSolventParams: [
-        {
-          key: "SOLVENT_VDW_RADIUS",
-          label: "Increase VDW Radius of non-ion atoms by ",
-        },
-        {
-          key: "SOLVENT_IONIC_RADIUS",
-          label: "Increase VDW Radius of potential ion atoms by ",
-        },
-        { key: "SOLVENT_SHRINK", label: "Shrink the mask area by a factor of" },
-      ],
-      tlsParams: [
-        { key: "TLSMODE", label: "TLS parameters", gridSize: { xs: 6 } },
-        {
-          key: "NTLSCYCLES",
-          label: "Number of TLS cycles",
-          gridSize: { xs: 6 },
-          visible: visibility.hasTLS,
-        },
-      ],
-      customTLSParams: [
-        {
-          key: "TLSIN",
-          label: "TLS coefficients",
-          visible: visibility.isTLSFromFile,
-        },
-        {
-          key: "BFACSETUSE",
-          label: "Reset all B-factors at start ",
-          gridSize: { xs: 6 },
-        },
-        {
-          key: "BFACSET",
-          label: "...to a value of",
-          gridSize: { xs: 6 },
-          visible: visibility.hasBfacSet,
-        },
-        {
-          key: "TLSOUT_ADDU",
-          label:
-            "Add TLS contribution to output B-factors (only for analysis and deposition)",
-        },
-      ],
-      outputOptions: [
-        {
-          key: "OUTPUT_HYDROGENS",
-          label: "Output calculated riding hydrogens to file",
-        },
-      ],
-      mapCalculation: [
-        {
-          key: "MAP_SHARP",
-          label: "Perform map sharpening when calculating maps",
-        },
-        {
-          key: "MAP_SHARP_CUSTOM",
-          label: "Use custom sharpening parameter (B-factor)",
-          gridSize: { xs: 6 },
-          visible: visibility.hasMapSharp,
-        },
-        {
-          key: "BSHARP",
-          label: "B factor to use",
-          gridSize: { xs: 6 },
-          visible: visibility.hasCustomSharp,
-        },
-      ],
-      validation: [
-        { key: "VALIDATE_BAVERAGE", label: "Analyse B-factor distributions" },
-        { key: "VALIDATE_RAMACHANDRAN", label: "Calculate Ramachandran plots" },
-        {
-          key: "VALIDATE_MOLPROBITY",
-          label: "Run MolProbity to analyse geometry",
-        },
-      ],
-      prosmartProtein: [
-        {
-          key: "prosmartProtein.REFERENCE_MODELS",
-          label: "Protein reference models",
-        },
-      ],
-    }),
-    [visibility]
-  );
+  // Get current values for visibility and initialization
+  const { value: HYDR_USE_value } = getTaskItem("HYDR_USE");
+  const { value: SOLVENT_MASK_TYPE_value } = getTaskItem("SOLVENT_MASK_TYPE");
+  const { value: SOLVENT_ADVANCED_value } = getTaskItem("SOLVENT_ADVANCED");
+  const { value: TLSMODE_value } = getTaskItem("TLSMODE");
+  const { value: BFACSETUSE_value } = getTaskItem("BFACSETUSE");
+  const { value: WEIGHT_OPT_value } = getTaskItem("WEIGHT_OPT");
+  const { value: USE_NCS_value } = getTaskItem("USE_NCS");
+  const { value: USE_JELLY_value } = getTaskItem("USE_JELLY");
+  const { value: MAP_SHARP_value } = getTaskItem("MAP_SHARP");
+  const { value: MAP_SHARP_CUSTOM_value } = getTaskItem("MAP_SHARP_CUSTOM");
+  const { value: SCATTERING_FACTORS_value } = getTaskItem("SCATTERING_FACTORS");
+  const { value: RES_CUSTOM_value } = getTaskItem("RES_CUSTOM");
+  const { value: USEANOMALOUS_value } = getTaskItem("USEANOMALOUS");
 
-  // Handle file digest changes
-  const handleF_SIGFDigestChanged = useCallback(
-    async (digest: any) => {
-      if (!updateWAVELENGTH || !digest || !job || job.status !== 1) return;
+  // Handle F_SIGF file changes with cycle prevention
+  const handleF_SIGFChange = useCallback(async () => {
+    if (!F_SIGFItem || !job || job.status !== 1) return;
 
-      // Use a safer comparison that avoids circular references
-      const digestString = digest ? String(digest.wavelengths?.at(-1)) : "";
-      const oldDigestString = oldFileDigest
-        ? String(oldFileDigest.wavelengths?.at(-1))
-        : "";
+    try {
+      // Digest the file to extract metadata
+      const digest = await F_SIGFItem.digestFile();
 
-      if (digestString === oldDigestString) return;
+      // Prevent processing the same digest multiple times
+      if (lastProcessedF_SIGFDigest.current === digest) return;
+      lastProcessedF_SIGFDigest.current = digest;
 
-      console.log(digest);
-      if (digest?.wavelengths?.at(-1) < 9) {
-        await updateWAVELENGTH(digest.wavelengths.at(-1));
-      }
-    },
-    [updateWAVELENGTH, job, oldFileDigest]
-  );
+      if (digest?.contentsDict?.wavelengths?.length > 0) {
+        const wavelength =
+          digest.contentsDict.wavelengths[
+            digest.contentsDict.wavelengths.length - 1
+          ];
 
-  // Create FreeR task
-  const createFreeRTask = useCallback(async () => {
-    const created_job: Job | undefined = await createPeerTask("freerflag");
-    if (created_job) {
-      router.push(`/project/${job.project}/job/${created_job.id}`);
-      setRunTaskRequested(null);
-    }
-  }, [job, createPeerTask, router, setRunTaskRequested]);
-
-  // Process validation errors
-  const processErrors = useCallback(() => {
-    if (!validation) return null;
-    const newProcessedErrors = { ...validation };
-    if (!taskValues.freeRFlag?.dbFileId?.length) {
-      newProcessedErrors["prosmart_refmac.inputData.FREERFLAG"] = {
-        messages: [
-          "Setting the Free R flag file is strongly recommended for refinement",
-          "You are advised to select an existing set or create a new one ",
-        ],
-        maxSeverity: 3,
-      };
-    }
-    if (
-      JSON.stringify(newProcessedErrors) !== JSON.stringify(processedErrors)
-    ) {
-      setProcessedErrors(newProcessedErrors);
-    }
-  }, [validation, processedErrors, taskValues.freeRFlag]);
-
-  // Extra dialog actions
-  const freeRAction = useMemo(() => {
-    if (taskValues.freeRFlag?.dbFileId?.length > 0) return null;
-
-    return {
-      FREERFLAG: (
-        <Button variant="contained" onClick={createFreeRTask}>
-          Create FreeR task
-        </Button>
-      ),
-    };
-  }, [taskValues.freeRFlag, createFreeRTask]);
-
-  // Effects with safe comparisons
-  useEffect(() => {
-    handleF_SIGFDigestChanged(F_SIGFDigest);
-  }, [F_SIGFDigest, handleF_SIGFDigestChanged]);
-
-  // Effect for error processing with minimal dependencies
-  useEffect(() => {
-    if (taskValues.freeRFlag !== undefined) {
-      processErrors();
-    }
-  }, [taskValues.freeRFlag, processErrors]);
-
-  useEffect(() => {
-    // Use shallow comparison instead of JSON.stringify
-    if (!isEqual(freeRAction, prevExtraDialogActions.current)) {
-      setExtraDialogActions(freeRAction);
-      prevExtraDialogActions.current = freeRAction;
-    }
-  }, [freeRAction, setExtraDialogActions]);
-
-  // Cleanup on unmount
-  useEffect(
-    () => () => {
-      setExtraDialogActions(null);
-    },
-    [setExtraDialogActions, setProcessedErrors]
-  );
-
-  // Render helpers
-  const renderElements = useCallback(
-    (elements: any[]) =>
-      elements.map(
-        ({ key, label, visible = () => true, gridSize, ...extraProps }) => {
-          const element = (
-            <CCP4i2TaskElement
-              {...props}
-              key={key}
-              itemName={key}
-              qualifiers={{ guiLabel: label, ...extraProps }}
-              visibility={visible}
-            />
-          );
-
-          return gridSize ? (
-            <Grid2 key={key} size={gridSize}>
-              {element}
-            </Grid2>
-          ) : (
-            element
-          );
+        if (updateWAVELENGTH) {
+          await updateWAVELENGTH(wavelength);
         }
-      ),
-    [props]
-  );
 
-  const renderGridElements = useCallback(
-    (elements: any[]) => {
-      const gridElements = elements.filter((el) => el.gridSize);
-      const regularElements = elements.filter((el) => !el.gridSize);
+        // Handle anomalous signal based on content flag
+        const contentFlag = F_SIGFItem.contentFlag;
+        if (![1, 2].includes(contentFlag) && updateUSEANOMALOUS) {
+          await updateUSEANOMALOUS(false);
+        }
 
-      return (
-        <>
-          {regularElements.length > 0 && renderElements(regularElements)}
-          {gridElements.length > 0 && (
-            <Grid2 container spacing={2}>
-              {renderElements(gridElements)}
-            </Grid2>
-          )}
-        </>
-      );
-    },
-    [renderElements]
-  );
+        // Handle twinning based on content flag
+        if (![3].includes(contentFlag) && updateUSE_TWIN) {
+          await updateUSE_TWIN(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error processing F_SIGF change:", error);
+    }
+  }, [F_SIGFItem, job, updateWAVELENGTH, updateUSEANOMALOUS, updateUSE_TWIN]);
+
+  // Stable initialization function (runs once per job)
+  const handleInitialization = useCallback(async () => {
+    if (initializationDone.current || !job || job.status !== 1) return;
+
+    const updates: Promise<any>[] = [];
+
+    // Set validation defaults to false
+    if (updateVALIDATE_BAVERAGE) {
+      updates.push(updateVALIDATE_BAVERAGE(false));
+    }
+    if (updateVALIDATE_RAMACHANDRAN) {
+      updates.push(updateVALIDATE_RAMACHANDRAN(false));
+    }
+    if (updateVALIDATE_MOLPROBITY) {
+      updates.push(updateVALIDATE_MOLPROBITY(false));
+    }
+
+    if (updates.length > 0) {
+      try {
+        await Promise.all(updates);
+        initializationDone.current = true;
+      } catch (error) {
+        console.error("Error during initialization:", error);
+      }
+    } else {
+      initializationDone.current = true;
+    }
+  }, [
+    job,
+    updateVALIDATE_BAVERAGE,
+    updateVALIDATE_RAMACHANDRAN,
+    updateVALIDATE_MOLPROBITY,
+  ]);
+
+  // Reset initialization when job changes
+  useEffect(() => {
+    if (currentJobId.current !== job?.id) {
+      initializationDone.current = false;
+      lastProcessedF_SIGFDigest.current = null;
+      currentJobId.current = job?.id || null;
+    }
+  }, [job?.id]);
+
+  // Run initialization once when component mounts or job changes
+  useEffect(() => {
+    if (!initializationDone.current && job?.id) {
+      handleInitialization();
+    }
+  }, [handleInitialization, job?.id]);
+
+  // Visibility conditions (stable references)
+  const visibility = {
+    showAnomalousSignal: () =>
+      F_SIGFItem?.contentFlag && [1, 2].includes(F_SIGFItem.contentFlag),
+    showUseAnomalousFor: () =>
+      F_SIGFItem?.contentFlag &&
+      [1, 2].includes(F_SIGFItem.contentFlag) &&
+      USEANOMALOUS_value,
+    showTwinRefinement: () =>
+      F_SIGFItem?.contentFlag && [3].includes(F_SIGFItem.contentFlag),
+    showHydrogenOptions: () => HYDR_USE_value,
+    showSolventAdvanced: () => SOLVENT_MASK_TYPE_value === "EXPLICIT",
+    showCustomSolventParams: () =>
+      SOLVENT_MASK_TYPE_value === "EXPLICIT" && SOLVENT_ADVANCED_value,
+    showTLSOptions: () => TLSMODE_value !== "NONE",
+    showTLSFile: () => TLSMODE_value === "FILE",
+    showBFactorReset: () => BFACSETUSE_value,
+    showManualWeight: () => WEIGHT_OPT_value === "MANUAL",
+    showNCSOptions: () => USE_NCS_value,
+    showJellyOptions: () => USE_JELLY_value,
+    showMapSharpening: () => MAP_SHARP_value,
+    showCustomBFactor: () => MAP_SHARP_value && MAP_SHARP_CUSTOM_value,
+    showElectronFormFactor: () => SCATTERING_FACTORS_value === "ELECTRON",
+    showCustomResolution: () => RES_CUSTOM_value,
+  };
 
   return (
     <Paper>
       <CCP4i2Tabs>
-        <CCP4i2Tab label="Input data">
-          {renderElements(elementConfigs.inputData)}
-        </CCP4i2Tab>
-
-        <CCP4i2Tab label="Parameterisation" key="Parameterisation">
+        <CCP4i2Tab label="Input data" key="input">
           <CCP4i2ContainerElement
-            itemName=""
-            key="B-factors"
             {...props}
-            qualifiers={{ guiLabel: "B-factors" }}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Main inputs",
+              initiallyOpen: true,
+            }}
             containerHint="BlockLevel"
           >
-            {renderElements(elementConfigs.bFactors)}
+            <CCP4i2TaskElement
+              {...props}
+              itemName="XYZIN"
+              qualifiers={{
+                guiLabel: "Coordinates",
+                toolTip: "Input macromolecular coordinates for refinement",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="F_SIGF"
+              qualifiers={{
+                guiLabel: "Reflections",
+                toolTip: "Observed reflection data for refinement",
+              }}
+              onChange={handleF_SIGFChange}
+            />
+
+            <CCP4i2ContainerElement
+              {...props}
+              itemName=""
+              qualifiers={{
+                guiLabel: "Anomalous signal",
+                initiallyOpen: true,
+              }}
+              containerHint="BlockLevel"
+              visibility={visibility.showAnomalousSignal}
+            >
+              <Grid2 container spacing={2}>
+                <Grid2 size={{ xs: 6 }}>
+                  <CCP4i2TaskElement
+                    {...props}
+                    itemName="USEANOMALOUS"
+                    qualifiers={{
+                      guiLabel: "Use anomalous",
+                      toolTip: "Use anomalous differences in refinement",
+                    }}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 6 }}>
+                  <CCP4i2TaskElement
+                    {...props}
+                    itemName="USEANOMALOUSFOR"
+                    qualifiers={{
+                      guiLabel: "Use for",
+                      toolTip: "How to use anomalous differences",
+                    }}
+                    visibility={visibility.showUseAnomalousFor}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 6 }}>
+                  <CCP4i2TaskElement
+                    {...props}
+                    itemName="WAVELENGTH"
+                    qualifiers={{
+                      guiLabel: "Wavelength",
+                      toolTip:
+                        "X-ray wavelength for anomalous scattering calculations",
+                    }}
+                  />
+                </Grid2>
+              </Grid2>
+            </CCP4i2ContainerElement>
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="USE_TWIN"
+              qualifiers={{
+                guiLabel: "Twin refinement",
+                toolTip: "Handle crystal twinning during refinement",
+              }}
+              visibility={visibility.showTwinRefinement}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="FREERFLAG"
+              qualifiers={{
+                guiLabel: "Free R flags",
+                toolTip: "Test set flags for cross-validation",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="DICT_LIST"
+              qualifiers={{
+                guiLabel: "Additional dictionaries",
+                toolTip:
+                  "Additional geometry dictionaries for non-standard residues",
+              }}
+            />
           </CCP4i2ContainerElement>
 
           <CCP4i2ContainerElement
-            itemName=""
-            key="Scaling"
             {...props}
-            qualifiers={{ guiLabel: "Scaling" }}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Options",
+              initiallyOpen: true,
+            }}
             containerHint="BlockLevel"
           >
-            {renderGridElements(elementConfigs.scaling)}
+            <CCP4i2TaskElement
+              {...props}
+              itemName="NCYCLES"
+              qualifiers={{
+                guiLabel: "Cycles",
+                toolTip: "Number of refinement cycles",
+              }}
+            />
+
+            <Grid2 container spacing={2}>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="HYDR_USE"
+                  qualifiers={{
+                    guiLabel: "Use hydrogens during refinement",
+                    toolTip:
+                      "Include hydrogen atoms in refinement calculations",
+                  }}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="HYDR_ALL"
+                  qualifiers={{
+                    guiLabel: " ",
+                    toolTip: "Use all hydrogen atoms",
+                  }}
+                  visibility={visibility.showHydrogenOptions}
+                />
+              </Grid2>
+            </Grid2>
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="ADD_WATERS"
+              qualifiers={{
+                guiLabel: "Add waters",
+                toolTip: "Automatically add water molecules during refinement",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="USE_TWIN"
+              qualifiers={{
+                guiLabel: "Crystal is twinned",
+                toolTip: "Handle crystal twinning",
+              }}
+            />
+          </CCP4i2ContainerElement>
+        </CCP4i2Tab>
+
+        <CCP4i2Tab label="Parameterisation" key="parameterisation">
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "B-factors",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="B_REFINEMENT_MODE"
+              qualifiers={{
+                guiLabel: "B-factors",
+                toolTip: "B-factor refinement mode",
+              }}
+            />
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Scaling",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <Grid2 container spacing={2}>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="SCALE_TYPE"
+                  qualifiers={{
+                    guiLabel: "Use ",
+                    toolTip: "Scaling type for structure factors",
+                  }}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="SOLVENT_MASK_TYPE"
+                  qualifiers={{
+                    guiLabel: "solvent scaling, with mask type",
+                    toolTip: "Type of solvent mask for bulk solvent correction",
+                  }}
+                />
+              </Grid2>
+            </Grid2>
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="SOLVENT_ADVANCED"
+              qualifiers={{
+                guiLabel: "Use custom solvent mask parameters",
+                toolTip: "Enable custom parameters for solvent masking",
+              }}
+              visibility={visibility.showSolventAdvanced}
+            />
 
             <CCP4i2ContainerElement
-              itemName=""
               {...props}
-              qualifiers={{ guiLabel: "Custom parameters" }}
+              itemName=""
+              qualifiers={{
+                guiLabel: "Custom parameters",
+                initiallyOpen: true,
+              }}
               containerHint="BlockLevel"
-              key="Custom parameters"
-              size={{ xs: 4 }}
-              elementSx={{ my: 0, py: 0, minWidth: "5rem" }}
-              visibility={visibility.hasAdvancedSolvent}
+              visibility={visibility.showCustomSolventParams}
             >
-              {renderElements(elementConfigs.customSolventParams)}
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SOLVENT_VDW_RADIUS"
+                qualifiers={{
+                  guiLabel: "Increase VDW Radius of non-ion atoms by ",
+                  toolTip:
+                    "Additional radius for non-ionic atoms in solvent mask",
+                }}
+              />
+
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SOLVENT_IONIC_RADIUS"
+                qualifiers={{
+                  guiLabel: "Increase VDW Radius of potential ion atoms by ",
+                  toolTip: "Additional radius for ionic atoms in solvent mask",
+                }}
+              />
+
+              <CCP4i2TaskElement
+                {...props}
+                itemName="SOLVENT_SHRINK"
+                qualifiers={{
+                  guiLabel: "Shrink the mask area by a factor of",
+                  toolTip: "Shrinkage factor for solvent mask",
+                }}
+              />
             </CCP4i2ContainerElement>
           </CCP4i2ContainerElement>
 
           <CCP4i2ContainerElement
-            itemName=""
-            key="Translation libration screw (TLS)"
             {...props}
-            qualifiers={{ guiLabel: "Translation libration screw (TLS)" }}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Translation libration screw (TLS)",
+              initiallyOpen: true,
+            }}
             containerHint="BlockLevel"
           >
-            {renderGridElements(elementConfigs.tlsParams)}
+            <CCP4i2TaskElement
+              {...props}
+              itemName="TLSMODE"
+              qualifiers={{
+                guiLabel: "TLS parameters",
+                toolTip: "TLS parameter refinement mode",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="NTLSCYCLES"
+              qualifiers={{
+                guiLabel: "Number of TLS cycles",
+                toolTip: "Number of TLS refinement cycles",
+              }}
+              visibility={visibility.showTLSOptions}
+            />
 
             <CCP4i2ContainerElement
-              itemName=""
-              key="Custom TLS parameters"
               {...props}
-              qualifiers={{ guiLabel: "Custom parameters" }}
+              itemName=""
+              qualifiers={{
+                guiLabel: "Custom parameters",
+                initiallyOpen: true,
+              }}
               containerHint="BlockLevel"
-              visibility={visibility.hasTLS}
+              visibility={visibility.showTLSOptions}
             >
-              {renderGridElements(elementConfigs.customTLSParams)}
+              <CCP4i2TaskElement
+                {...props}
+                itemName="TLSIN"
+                qualifiers={{
+                  guiLabel: "TLS coefficients",
+                  toolTip: "Input file containing TLS parameters",
+                }}
+                visibility={visibility.showTLSFile}
+              />
+
+              <Grid2 container spacing={2}>
+                <Grid2 size={{ xs: 8 }}>
+                  <CCP4i2TaskElement
+                    {...props}
+                    itemName="BFACSETUSE"
+                    qualifiers={{
+                      guiLabel: "Reset all B-factors at start ",
+                      toolTip:
+                        "Reset all B-factors to a fixed value before TLS refinement",
+                    }}
+                  />
+                </Grid2>
+                <Grid2 size={{ xs: 4 }}>
+                  <CCP4i2TaskElement
+                    {...props}
+                    itemName="BFACSET"
+                    qualifiers={{
+                      guiLabel: "...to a value of",
+                      toolTip: "B-factor value for reset",
+                    }}
+                    visibility={visibility.showBFactorReset}
+                  />
+                </Grid2>
+              </Grid2>
+
+              <CCP4i2TaskElement
+                {...props}
+                itemName="TLSOUT_ADDU"
+                qualifiers={{
+                  guiLabel:
+                    "Add TLS contribution to output B-factors (only for analysis and deposition)",
+                  toolTip: "Include TLS contribution in final B-factors",
+                }}
+              />
             </CCP4i2ContainerElement>
           </CCP4i2ContainerElement>
         </CCP4i2Tab>
 
-        <CCP4i2Tab label="Output" key="Output">
+        <CCP4i2Tab label="Restraints" key="restraints">
           <CCP4i2ContainerElement
-            key="Output options"
             {...props}
             itemName=""
-            qualifiers={{ guiLabel: "Output options" }}
+            qualifiers={{
+              guiLabel: "Weights",
+              initiallyOpen: true,
+            }}
             containerHint="BlockLevel"
           >
-            {renderElements(elementConfigs.outputOptions)}
+            <Grid2 container spacing={2}>
+              <Grid2 size={{ xs: 8 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="WEIGHT_OPT"
+                  qualifiers={{
+                    guiLabel:
+                      "Weight restraints versus experimental data using",
+                    toolTip:
+                      "Method for weighting geometric restraints against experimental data",
+                  }}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 4 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="controlParameters.WEIGHT"
+                  qualifiers={{
+                    guiLabel: "Weight",
+                    toolTip: "Manual weight value",
+                  }}
+                  visibility={visibility.showManualWeight}
+                />
+              </Grid2>
+            </Grid2>
           </CCP4i2ContainerElement>
 
           <CCP4i2ContainerElement
-            itemName=""
-            key="Map calculation"
             {...props}
-            qualifiers={{ guiLabel: "Map calculation" }}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Non-crystallographic symmetry (NCS)",
+              initiallyOpen: true,
+            }}
             containerHint="BlockLevel"
           >
-            {renderElements(elementConfigs.mapCalculation.slice(0, 1))}
-            {renderGridElements(elementConfigs.mapCalculation.slice(1))}
+            <CCP4i2TaskElement
+              {...props}
+              itemName="USE_NCS"
+              qualifiers={{
+                guiLabel: "Use NCS",
+                toolTip: "Apply non-crystallographic symmetry restraints",
+              }}
+            />
+
+            <CCP4i2ContainerElement
+              {...props}
+              itemName=""
+              qualifiers={{
+                guiLabel: "NCS",
+                initiallyOpen: true,
+              }}
+              containerHint="BlockLevel"
+              visibility={visibility.showNCSOptions}
+            >
+              <CCP4i2TaskElement
+                {...props}
+                itemName="NCS_TYPE"
+                qualifiers={{
+                  guiLabel: "Type",
+                  toolTip: "Type of NCS restraints",
+                }}
+              />
+
+              <CCP4i2TaskElement
+                {...props}
+                itemName="NCS_AUTO"
+                qualifiers={{
+                  guiLabel: "Auto",
+                  toolTip: "Automatically detect NCS relationships",
+                }}
+              />
+            </CCP4i2ContainerElement>
           </CCP4i2ContainerElement>
 
           <CCP4i2ContainerElement
-            itemName=""
             {...props}
-            qualifiers={{ guiLabel: "Validation and analysis" }}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Jelly-body",
+              initiallyOpen: true,
+            }}
             containerHint="BlockLevel"
-            size={{ xs: 4 }}
-            elementSx={{ minWidth: "8rem" }}
-            key="Validation"
           >
-            {renderElements(elementConfigs.validation)}
-          </CCP4i2ContainerElement>
-        </CCP4i2Tab>
+            <CCP4i2TaskElement
+              {...props}
+              itemName="USE_JELLY"
+              qualifiers={{
+                guiLabel: "Use jelly body",
+                toolTip: "Apply jelly-body restraints for flexible refinement",
+              }}
+            />
 
-        <CCP4i2Tab label="Prosmart - protein" key="Prosmart protein">
-          {renderElements(elementConfigs.prosmartProtein)}
+            <CCP4i2ContainerElement
+              {...props}
+              itemName=""
+              qualifiers={{
+                guiLabel: "Jelly body",
+                initiallyOpen: true,
+              }}
+              containerHint="BlockLevel"
+              visibility={visibility.showJellyOptions}
+            >
+              <CCP4i2TaskElement
+                {...props}
+                itemName="JELLY_SIGMA"
+                qualifiers={{
+                  guiLabel: "Sigma",
+                  toolTip: "Sigma value for jelly-body restraints",
+                }}
+              />
+
+              <CCP4i2TaskElement
+                {...props}
+                itemName="JELLY_DIST"
+                qualifiers={{
+                  guiLabel: "Dist",
+                  toolTip: "Distance cutoff for jelly-body restraints",
+                }}
+              />
+            </CCP4i2ContainerElement>
+          </CCP4i2ContainerElement>
+
           <CCP4i2ContainerElement
             {...props}
             itemName="prosmartProtein"
+            qualifiers={{
+              guiLabel: "Prosmart - protein",
+              toolTip: "Prosmart restraints for protein chains",
+            }}
             containerHint="FolderLevel"
-            excludeItems={["REFERENCE_MODELS"]}
-            qualifiers={{ guiLabel: "Prosmart - protein" }}
           />
+        </CCP4i2Tab>
+
+        <CCP4i2Tab label="Output" key="output">
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Output options",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="OUTPUT_HYDROGENS"
+              qualifiers={{
+                guiLabel: "Output calculated riding hydrogens to file",
+                toolTip:
+                  "Include calculated hydrogen atoms in output coordinates",
+              }}
+            />
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Map calculation",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="MAP_SHARP"
+              qualifiers={{
+                guiLabel: "Perform map sharpening when calculating maps",
+                toolTip: "Apply B-factor sharpening to improve map quality",
+              }}
+            />
+
+            <Grid2 container spacing={2}>
+              <Grid2 size={{ xs: 8 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="MAP_SHARP_CUSTOM"
+                  qualifiers={{
+                    guiLabel: "Use custom sharpening parameter (B-factor)",
+                    toolTip: "Specify custom B-factor for map sharpening",
+                  }}
+                  visibility={visibility.showMapSharpening}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 4 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="BSHARP"
+                  qualifiers={{
+                    guiLabel: " ",
+                    toolTip: "B-factor value for custom map sharpening",
+                  }}
+                  visibility={visibility.showCustomBFactor}
+                />
+              </Grid2>
+            </Grid2>
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Validation and analysis",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="VALIDATE_BAVERAGE"
+              qualifiers={{
+                guiLabel: "Analyse B-factor distributions",
+                toolTip: "Generate B-factor distribution analysis",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="VALIDATE_RAMACHANDRAN"
+              qualifiers={{
+                guiLabel: "Calculate Ramachandran plots",
+                toolTip: "Generate Ramachandran plot validation",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="VALIDATE_MOLPROBITY"
+              qualifiers={{
+                guiLabel: "Run MolProbity to analyse geometry",
+                toolTip:
+                  "Perform comprehensive geometry validation with MolProbity",
+              }}
+            />
+          </CCP4i2ContainerElement>
+        </CCP4i2Tab>
+
+        <CCP4i2Tab label="Advanced" key="advanced">
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Experiment",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="SCATTERING_FACTORS"
+              qualifiers={{
+                guiLabel: "Diffraction experiment type",
+                toolTip: "Type of diffraction experiment (X-ray or electron)",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="SCATTERING_ELECTRON"
+              qualifiers={{
+                guiLabel: "Form factor calculation",
+                toolTip:
+                  "Method for electron scattering form factor calculation",
+              }}
+              visibility={visibility.showElectronFormFactor}
+            />
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Resolution",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="RES_CUSTOM"
+              qualifiers={{
+                guiLabel: "Use custom resolution",
+                toolTip: "Override automatic resolution limits",
+              }}
+            />
+
+            <Grid2 container spacing={2}>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="RES_MIN"
+                  qualifiers={{
+                    guiLabel: "min",
+                    toolTip: "Minimum resolution limit",
+                  }}
+                  visibility={visibility.showCustomResolution}
+                />
+              </Grid2>
+              <Grid2 size={{ xs: 6 }}>
+                <CCP4i2TaskElement
+                  {...props}
+                  itemName="RES_MAX"
+                  qualifiers={{
+                    guiLabel: "max",
+                    toolTip: "Maximum resolution limit",
+                  }}
+                  visibility={visibility.showCustomResolution}
+                />
+              </Grid2>
+            </Grid2>
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Reset B-factors",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="BFACSETUSE"
+              qualifiers={{
+                guiLabel: "Reset all B-factors at start ",
+                toolTip:
+                  "Reset all B-factors to a fixed value before refinement",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="BFACSET"
+              qualifiers={{
+                guiLabel: "...to a value of",
+                toolTip: "B-factor value for reset",
+              }}
+              visibility={visibility.showBFactorReset}
+            />
+          </CCP4i2ContainerElement>
+
+          <CCP4i2ContainerElement
+            {...props}
+            itemName=""
+            qualifiers={{
+              guiLabel: "Extra keywords",
+              initiallyOpen: true,
+            }}
+            containerHint="BlockLevel"
+          >
+            <CCP4i2TaskElement
+              {...props}
+              itemName="EXTRAREFMACKEYWORDS"
+              qualifiers={{
+                guiLabel: " ",
+                guiMode: "multiLine",
+                toolTip: "Additional Refmac keywords for advanced control",
+              }}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="REFMAC_KEYWORD_FILE"
+              qualifiers={{
+                guiLabel: "",
+                toolTip: "File containing additional Refmac keywords",
+              }}
+            />
+          </CCP4i2ContainerElement>
         </CCP4i2Tab>
       </CCP4i2Tabs>
     </Paper>
