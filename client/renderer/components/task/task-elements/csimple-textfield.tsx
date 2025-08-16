@@ -310,7 +310,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
   return (
     <Stack
       direction="row"
-      sx={{ mt: 1 }}
+      sx={{ mt: 2 }}
       role="group"
       aria-label={`${processedItem.guiLabel} input`}
     >

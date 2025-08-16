@@ -93,14 +93,42 @@ export const CCP4i2ContainerElement: React.FC<
     return [];
   }, [item, props.excludeItems]);
 
+  // Helper function to determine if an item should be full width
+  const shouldBeFullWidth = useMemo(() => {
+    return (childItem: any): boolean => {
+      const itemClass = childItem?._class;
+      const baseClass = childItem?._baseClass;
+
+      return (
+        itemClass === "CList" ||
+        itemClass === "CUnmergedDataFileList" ||
+        baseClass === "CDataFile"
+      );
+    };
+  }, []);
+
   const calculatedContent = useMemo(() => {
     return item ? (
       <Grid2 container spacing={0} key={item._objectPath}>
         {childNames.map((childName: string) => {
           const childObjectPath = `${item._objectPath}.${childName}`;
           const { item: childItem } = getTaskItem(childObjectPath);
+
+          // Determine grid size based on item class/baseClass
+          const gridSize = shouldBeFullWidth(childItem)
+            ? { xs: 12, sm: 12, md: 12, lg: 12, xl: 12 } // Full width for all breakpoints
+            : size;
+
+          console.log(
+            childItem._objectPath,
+            childItem._baseClass,
+            gridSize,
+            size,
+            elementSx
+          );
+
           return (
-            <Grid2 key={childObjectPath} size={size}>
+            <Grid2 key={childObjectPath} size={gridSize}>
               <CCP4i2TaskElement
                 key={childObjectPath}
                 {...props}
@@ -113,7 +141,15 @@ export const CCP4i2ContainerElement: React.FC<
         })}
       </Grid2>
     ) : null;
-  }, [item, elementSx, childNames, getTaskItem, props, size]);
+  }, [
+    item,
+    elementSx,
+    childNames,
+    getTaskItem,
+    props,
+    size,
+    shouldBeFullWidth,
+  ]);
 
   const griddedChildren = useMemo(() => {
     if (children) {
