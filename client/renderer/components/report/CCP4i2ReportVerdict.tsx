@@ -1,4 +1,4 @@
-import React, { JSX, use, useCallback, useEffect, useState } from "react";
+import React, { JSX, useCallback, useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -222,7 +222,8 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
         setCreatingTask(true);
         const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
         if (!cloneResult?.id) {
-          throw new Error("Failed to clone job");
+          console.log("Failed to clone job");
+          return;
         }
         await mutateJobs();
 
@@ -295,7 +296,8 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch program.xml: ${response.status}`);
+          console.log(`Failed to fetch program.xml: ${response.status}`);
+          return;
         }
 
         const xmlText = await response.text();
@@ -307,13 +309,15 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
         // Check for parsing errors
         const parserError = xmlDoc.querySelector("parsererror");
         if (parserError) {
-          throw new Error("Failed to parse program.xml");
+          console.log("Failed to parse program.xml");
+          return;
         }
 
         // Find the Verdict node
         const verdictNode = xmlDoc.querySelector("Verdict");
         if (!verdictNode) {
-          throw new Error("No Verdict node found in program.xml");
+          console.log("No Verdict node found in program.xml");
+          return;
         }
 
         // Extract verdict data
@@ -368,9 +372,18 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
         };
 
         setVerdictData(data);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Error fetching verdict data:", err);
-        setError(err instanceof Error ? err.message : "Unknown error occurred");
+        if (
+          err &&
+          typeof err === "object" &&
+          "message" in err &&
+          typeof (err as any).message === "string"
+        ) {
+          setError((err as any).message);
+        } else {
+          setError("Unknown error occurred");
+        }
       } finally {
         setLoading(false);
       }
