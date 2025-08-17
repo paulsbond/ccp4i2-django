@@ -4,7 +4,8 @@ import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useJob, usePrevious } from "../../../utils";
+import { useAsyncEffect, useJob, usePrevious } from "../../../utils";
+import { CDataFileElement } from "../task-elements/cdatafile";
 
 /**
  * Task interface component for Prosmart-Refmac - Prosmart-guided Refinement.
@@ -20,9 +21,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
   const { useTaskItem, useFileDigest } = useJob(job.id);
 
-  // Use refs to track processed states and prevent cycles
-  const initializationDone = useRef(false);
+  // Track initialization state per job ID
   const currentJobId = useRef<number | null>(null);
+  const initializationDone = useRef<Set<number>>(new Set());
   const lastProcessedF_SIGFDigest = useRef<any>(null);
 
   // Get task items with update functions and/or values
@@ -40,6 +41,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   // File digest for wavelength extraction
   const { data: F_SIGFDigest } = useFileDigest(F_SIGFItem?._objectPath);
+  const oldDigest = usePrevious(F_SIGFDigest);
   const oldF_SIGFValue = usePrevious(F_SIGFValue);
 
   // Get current values for visibility conditions
@@ -57,14 +59,80 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { value: RES_CUSTOM_value } = useTaskItem("RES_CUSTOM");
   const { value: USEANOMALOUS_value } = useTaskItem("USEANOMALOUS");
 
+  // Initialization function that runs once per job
+  const runInitialization = useCallback(async () => {
+    if (!job?.id || job.status !== 1) return;
+
+    // Check if we've already initialized this job
+    if (initializationDone.current.has(job.id)) {
+      return;
+    }
+
+    console.log(`Running initialization for job ${job.id}`);
+
+    try {
+      // Set validation defaults to false
+      const initPromises: Promise<boolean | Response>[] = [];
+
+      if (updateVALIDATE_BAVERAGE) {
+        initPromises.push(updateVALIDATE_BAVERAGE(false));
+      }
+      if (updateVALIDATE_RAMACHANDRAN) {
+        initPromises.push(updateVALIDATE_RAMACHANDRAN(false));
+      }
+      if (updateVALIDATE_MOLPROBITY) {
+        initPromises.push(updateVALIDATE_MOLPROBITY(false));
+      }
+
+      if (initPromises.length > 0) {
+        await Promise.all(initPromises);
+      }
+
+      // Mark this job as initialized
+      initializationDone.current.add(job.id);
+      console.log(`Initialization completed for job ${job.id}`);
+    } catch (error) {
+      console.error(`Error during initialization for job ${job.id}:`, error);
+    }
+  }, [
+    job?.id,
+    job?.status,
+    updateVALIDATE_BAVERAGE,
+    updateVALIDATE_RAMACHANDRAN,
+    updateVALIDATE_MOLPROBITY,
+  ]);
+
+  // Effect to handle job ID changes and trigger initialization
+  useEffect(() => {
+    const jobId = job?.id;
+
+    // Check if job ID has changed
+    if (jobId !== currentJobId.current) {
+      console.log(`Job ID changed from ${currentJobId.current} to ${jobId}`);
+
+      // Update current job ID reference
+      currentJobId.current = jobId;
+
+      // Reset F_SIGF digest tracking for new job
+      lastProcessedF_SIGFDigest.current = null;
+
+      // Run initialization for the new job
+      if (jobId) {
+        runInitialization();
+      }
+    }
+  }, [job?.id, runInitialization]);
+
   // Handle wavelength extraction from F_SIGF file
   const handleF_SIGFDigestChanged = useCallback(
     async (digest: any) => {
       if (!updateWAVELENGTH || !digest || !job || job.status !== 1) return;
-
-      // Check if F_SIGF value actually changed
-      if (F_SIGFValue === oldF_SIGFValue) return;
-
+      if (JSON.stringify(digest) === JSON.stringify(oldDigest)) return;
+      console.log("In handleF_SIGFDigestChanged");
+      if (lastProcessedF_SIGFDigest.current === digest) {
+        console.log("Skipping duplicate F_SIGF digest processing");
+        return;
+      }
       // Extract wavelength from digest
       if (digest?.wavelengths?.length > 0) {
         const wavelength = digest.wavelengths[digest.wavelengths.length - 1];
@@ -87,7 +155,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
 
   // Handle F_SIGF file changes with cycle prevention
   const handleF_SIGFChange = useCallback(async () => {
-    if (!F_SIGFItem || !job || job.status !== 1) return;
+    if (!F_SIGFValue || !job || job.status !== 1) return;
     try {
       // Handle anomalous signal based on content flag
       const contentFlag = F_SIGFValue.contentFlag;
@@ -102,57 +170,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     } catch (error) {
       console.error("Error processing F_SIGF change:", error);
     }
-  }, [F_SIGFItem, job, updateWAVELENGTH, updateUSEANOMALOUS, updateUSE_TWIN]);
-
-  // Stable initialization function (runs once per job)
-  const handleInitialization = useCallback(async () => {
-    if (initializationDone.current || !job || job.status !== 1) return;
-
-    const updates: Promise<any>[] = [];
-
-    // Set validation defaults to false
-    if (updateVALIDATE_BAVERAGE) {
-      updates.push(updateVALIDATE_BAVERAGE(false));
-    }
-    if (updateVALIDATE_RAMACHANDRAN) {
-      updates.push(updateVALIDATE_RAMACHANDRAN(false));
-    }
-    if (updateVALIDATE_MOLPROBITY) {
-      updates.push(updateVALIDATE_MOLPROBITY(false));
-    }
-
-    if (updates.length > 0) {
-      try {
-        await Promise.all(updates);
-        initializationDone.current = true;
-      } catch (error) {
-        console.error("Error during initialization:", error);
-      }
-    } else {
-      initializationDone.current = true;
-    }
-  }, [
-    job,
-    updateVALIDATE_BAVERAGE,
-    updateVALIDATE_RAMACHANDRAN,
-    updateVALIDATE_MOLPROBITY,
-  ]);
-
-  // Reset initialization when job changes
-  useEffect(() => {
-    if (currentJobId.current !== job?.id) {
-      initializationDone.current = false;
-      lastProcessedF_SIGFDigest.current = null;
-      currentJobId.current = job?.id || null;
-    }
-  }, [job?.id]);
-
-  // Run initialization once when component mounts or job changes
-  useEffect(() => {
-    if (!initializationDone.current && job?.id) {
-      handleInitialization();
-    }
-  }, [handleInitialization, job?.id]);
+  }, [F_SIGFValue, job, updateWAVELENGTH, updateUSEANOMALOUS, updateUSE_TWIN]);
 
   // Visibility conditions (stable references)
   const visibility = {
@@ -202,7 +220,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               }}
             />
 
-            <CCP4i2TaskElement
+            <CDataFileElement
               {...props}
               itemName="F_SIGF"
               qualifiers={{
@@ -210,6 +228,14 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 toolTip: "Observed reflection data for refinement",
               }}
               onChange={handleF_SIGFChange}
+            ></CDataFileElement>
+            <CCP4i2TaskElement
+              {...props}
+              itemName="WAVELENGTH"
+              qualifiers={{
+                guiLabel: "Wavelength",
+                toolTip: "Wavelength",
+              }}
             />
 
             <CCP4i2ContainerElement
