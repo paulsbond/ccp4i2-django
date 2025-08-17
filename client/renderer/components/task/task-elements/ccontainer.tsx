@@ -44,7 +44,7 @@ export const CCP4i2ContainerElement: React.FC<
     initiallyOpen = true,
     visibility,
     qualifiers,
-    size = { xl: 12 },
+    size = { xs: 12, sm: 12, md: 12, lg: 12, xl: 12 },
     elementSx,
   } = props;
 
