@@ -22,7 +22,7 @@ import {
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, useFileDigest, mutateContainer, validation } = useJob(
+  const { useTaskItem, useFileDigest, mutateContainer, validation } = useJob(
     job.id
   );
   const { setProcessedErrors } = useRunCheck();
@@ -31,23 +31,23 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const initializationDone = useRef(false);
 
   // Get task items for file handling and parameter updates
-  const { value: ATOM_TYPEValue } = getTaskItem("ATOM_TYPE");
-  const { item: F_SIGFanomItem } = getTaskItem("F_SIGFanom");
-  const { updateNoMutate: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
-  const { updateNoMutate: updateSHELXCDE } = getTaskItem("SHELXCDE");
-  const { updateNoMutate: updateUSE_COMB } = getTaskItem("USE_COMB");
-  const { updateNoMutate: updateSHELX_SEPAR } = getTaskItem("SHELX_SEPAR");
-  const { updateNoMutate: updateMB_PROGRAM } = getTaskItem("MB_PROGRAM");
+  const { value: ATOM_TYPEValue } = useTaskItem("ATOM_TYPE");
+  const { item: F_SIGFanomItem } = useTaskItem("F_SIGFanom");
+  const { updateNoMutate: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
+  const { updateNoMutate: updateSHELXCDE } = useTaskItem("SHELXCDE");
+  const { updateNoMutate: updateUSE_COMB } = useTaskItem("USE_COMB");
+  const { updateNoMutate: updateSHELX_SEPAR } = useTaskItem("SHELX_SEPAR");
+  const { updateNoMutate: updateMB_PROGRAM } = useTaskItem("MB_PROGRAM");
 
   // Get current values for initial setup
   const taskValues = useMemo(
     () => ({
-      SHELXCDE: getTaskItem("SHELXCDE").value,
-      USE_COMB: getTaskItem("USE_COMB").value,
-      SHELX_SEPAR: getTaskItem("SHELX_SEPAR").value,
-      MB_PROGRAM: getTaskItem("MB_PROGRAM").value,
+      SHELXCDE: useTaskItem("SHELXCDE").value,
+      USE_COMB: useTaskItem("USE_COMB").value,
+      SHELX_SEPAR: useTaskItem("SHELX_SEPAR").value,
+      MB_PROGRAM: useTaskItem("MB_PROGRAM").value,
     }),
-    [getTaskItem]
+    [useTaskItem]
   );
 
   // File digest for wavelength extraction

@@ -136,12 +136,12 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const {
-    getTaskItem,
+    useTaskItem,
     getValidationColor,
     setParameter,
     setParameterNoMutate,
   } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
+  const { item } = useTaskItem(itemName);
   const { inFlight, setInFlight } = useTaskInterface();
   const { setMessage } = usePopcorn();
 

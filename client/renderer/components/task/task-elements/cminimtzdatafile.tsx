@@ -13,8 +13,8 @@ export const CMiniMtzDataFileElement: React.FC<CCP4i2TaskElementProps> = (
 ) => {
   const { job, itemName, onChange, visibility } = props;
   const api = useApi();
-  const { getTaskItem, useFileDigest } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
+  const { useTaskItem, useFileDigest } = useJob(job.id);
+  const { item } = useTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   // Mutation hooks

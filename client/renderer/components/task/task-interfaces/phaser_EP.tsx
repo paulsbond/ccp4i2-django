@@ -17,13 +17,13 @@ import { useJob, usePrevious } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, useFileDigest, setParameter, mutateContainer } = useJob(
+  const { useTaskItem, useFileDigest, setParameter, mutateContainer } = useJob(
     job.id
   );
 
   // Get task items for file handling and parameter updates
-  const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
-  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
+  const { item: F_SIGFItem, value: F_SIGFValue } = useTaskItem("F_SIGF");
+  const { update: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
 
   // File digest for wavelength extraction
   const { data: F_SIGFDigest } = useFileDigest(F_SIGFItem?._objectPath);
@@ -32,11 +32,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   // Task values for visibility conditions
   const taskValues = useMemo(
     () => ({
-      partialModeOrMap: getTaskItem("PARTIALMODELORMAP").value,
-      compBy: getTaskItem("COMP_BY").value,
-      runBuccaneer: getTaskItem("RUNBUCCANEER").value,
+      partialModeOrMap: useTaskItem("PARTIALMODELORMAP").value,
+      compBy: useTaskItem("COMP_BY").value,
+      runBuccaneer: useTaskItem("RUNBUCCANEER").value,
     }),
-    [getTaskItem]
+    [useTaskItem]
   );
 
   // Visibility conditions

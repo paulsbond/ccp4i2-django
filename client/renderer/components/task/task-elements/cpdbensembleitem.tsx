@@ -16,8 +16,8 @@ export const CPdbEnsembleItemElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
   const { job, itemName } = props;
-  const { getTaskItem, getValidationColor } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
+  const { useTaskItem, getValidationColor } = useJob(job.id);
+  const { item } = useTaskItem(itemName);
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;

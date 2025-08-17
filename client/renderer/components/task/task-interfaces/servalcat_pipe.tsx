@@ -31,17 +31,17 @@ import { Job } from "../../../types/models";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
   const router = useRouter();
-  const { getTaskItem, createPeerTask, validation } = useJob(job.id);
+  const { useTaskItem, createPeerTask, validation } = useJob(job.id);
 
   // Use refs to track processed states and prevent cycles
   const lastProcessedValidation = useRef<any>(null);
   const lastProcessedFreeRFlag = useRef<any>(null);
 
   // Get task items
-  const { value: HKLINValue } = getTaskItem("servalcat_pipe.inputData.HKLIN");
-  const { value: MAP_SHARP } = getTaskItem("MAP_SHARP");
-  const { value: MAP_SHARP_CUSTOM } = getTaskItem("MAP_SHARP_CUSTOM");
-  const { value: freeRFlag } = getTaskItem("FREERFLAG");
+  const { value: HKLINValue } = useTaskItem("servalcat_pipe.inputData.HKLIN");
+  const { value: MAP_SHARP } = useTaskItem("MAP_SHARP");
+  const { value: MAP_SHARP_CUSTOM } = useTaskItem("MAP_SHARP_CUSTOM");
+  const { value: freeRFlag } = useTaskItem("FREERFLAG");
 
   // Context for error handling
   const {

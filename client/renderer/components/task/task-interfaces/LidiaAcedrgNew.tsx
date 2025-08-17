@@ -10,9 +10,9 @@ import { RDKitView } from "../../rdkit-view";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskItem, useFileContent } = useJob(job.id);
-  const { value: MOLSMILESORSKETCH } = getTaskItem("MOLSMILESORSKETCH");
-  const { value: ATOMMATCHOPTION } = getTaskItem("ATOMMATCHOPTION");
+  const { useTaskItem, useFileContent } = useJob(job.id);
+  const { value: MOLSMILESORSKETCH } = useTaskItem("MOLSMILESORSKETCH");
+  const { value: ATOMMATCHOPTION } = useTaskItem("ATOMMATCHOPTION");
   const { data: MOLINContent, mutate: mutateMOLINContent } =
     useFileContent("MOLIN");
   const { data: SMILESFILEContent } = useFileContent("SMILESFILE");
@@ -42,7 +42,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
             </Grid2>
             <Grid2 size={{ xs: 12, sm: 6 }}>
               {MOLSMILESORSKETCH === "SMILES" && (
-                <RDKitView smiles={getTaskItem("SMILESIN").value || ""} />
+                <RDKitView smiles={useTaskItem("SMILESIN").value || ""} />
               )}
             </Grid2>
           </Grid2>

@@ -28,7 +28,7 @@ import {
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem, useFileDigest, mutateContainer, validation } = useJob(
+  const { useTaskItem, useFileDigest, mutateContainer, validation } = useJob(
     job.id
   );
 
@@ -38,10 +38,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const wavelengthUpdateInProgress = useRef(false);
 
   // Get task items for file handling and parameter updates
-  const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
+  const { item: F_SIGFItem, value: F_SIGFValue } = useTaskItem("F_SIGF");
   const { item: XYZIN_PARTIALItem, value: XYZIN_PARTIALValue } =
-    getTaskItem("XYZIN_PARTIAL");
-  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
+    useTaskItem("XYZIN_PARTIAL");
+  const { update: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
 
   // File digest for wavelength extraction
   const { data: F_SIGFDigest } = useFileDigest(F_SIGFItem?._objectPath);
@@ -49,10 +49,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   // Task values for visibility conditions (memoized to prevent re-creation)
   const taskValues = useMemo(
     () => ({
-      partialModelOrMap: getTaskItem("PARTIALMODELORMAP").value,
-      compBy: getTaskItem("COMP_BY").value,
+      partialModelOrMap: useTaskItem("PARTIALMODELORMAP").value,
+      compBy: useTaskItem("COMP_BY").value,
     }),
-    [getTaskItem]
+    [useTaskItem]
   );
 
   const {

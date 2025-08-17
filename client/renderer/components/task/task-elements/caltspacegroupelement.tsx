@@ -16,8 +16,8 @@ export const CAltSpaceGroupElement: React.FC<CCP4i2TaskElementProps> = (
   props
 ) => {
   const { job, itemName, qualifiers } = props;
-  const { setParameter, getTaskItem, getValidationColor } = useJob(job.id);
-  const { item, value: stringValue } = getTaskItem(itemName);
+  const { setParameter, useTaskItem, getValidationColor } = useJob(job.id);
+  const { item, value: stringValue } = useTaskItem(itemName);
   const [value, setValue] = useState<SpaceGroup | undefined>(spaceGroups[0]);
   const { inFlight, setInFlight } = useTaskInterface();
 

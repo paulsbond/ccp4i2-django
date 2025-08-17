@@ -15,6 +15,7 @@ import { CCP4i2ReportReference } from "./CCP4i2ReportReference";
 import { CCP4i2ReportObjectGallery } from "./CCP4i2ReportObjectGallery";
 import { CCP4i2ApplicationOutputView } from "./CCP4i2ApplicationOutputView";
 import { CCP4i2ReportJobDetails } from "./CCP4i2ReportJobDetails";
+import { CCP4i2ReportVerdict } from "./CCP4i2ReportVerdict";
 
 export interface CCP4i2ReportElementProps {
   iItem: number;
@@ -32,7 +33,16 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
     const tagName = htmlElement?.tagName;
     if (tagName) {
       if (["CCP4i2ReportFold"].includes(tagName)) {
-        return (
+        // Check for label attribute with value "Verdict"
+        const labelAttribute = $(item).attr("label");
+        return labelAttribute === "Verdict" ? (
+          <CCP4i2ReportVerdict
+            key={`${iItem}`}
+            iItem={iItem}
+            item={item}
+            job={job}
+          />
+        ) : (
           <CCP4i2ReportFold
             key={`${iItem}`}
             iItem={iItem}

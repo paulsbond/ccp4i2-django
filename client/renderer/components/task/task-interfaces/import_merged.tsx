@@ -24,36 +24,36 @@ import { useState } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { useFileDigest, getTaskItem, mutateContainer, mutateValidation } =
+  const { useFileDigest, useTaskItem, mutateContainer, mutateValidation } =
     useJob(job.id);
   const [HKLINFile, setHKLINFile] = useState<File | null>(null);
 
-  const { item: HKLINItem, value: HKLINValue } = getTaskItem("HKLIN");
+  const { item: HKLINItem, value: HKLINValue } = useTaskItem("HKLIN");
 
   const oldHKLINValue = usePrevious(HKLINValue);
 
   const { data: HKLINDigest } = useFileDigest(HKLINItem?._objectPath);
 
-  const { item: HKLIN_OBSItem } = getTaskItem("HKLIN_OBS");
+  const { item: HKLIN_OBSItem } = useTaskItem("HKLIN_OBS");
 
-  const { update: updateSPACEGROUP } = getTaskItem("SPACEGROUP");
+  const { update: updateSPACEGROUP } = useTaskItem("SPACEGROUP");
 
-  const { update: updateUNITCELL } = getTaskItem("UNITCELL");
+  const { update: updateUNITCELL } = useTaskItem("UNITCELL");
 
-  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
+  const { update: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
 
-  const { update: updateCRYSTALNAME } = getTaskItem("CRYSTALNAME");
+  const { update: updateCRYSTALNAME } = useTaskItem("CRYSTALNAME");
 
-  const { update: updateDATASETNAME } = getTaskItem("DATASETNAME");
+  const { update: updateDATASETNAME } = useTaskItem("DATASETNAME");
 
-  const { update: setHKLIN_OBS_COLUMNS } = getTaskItem("HKLIN_OBS_COLUMNS");
+  const { update: setHKLIN_OBS_COLUMNS } = useTaskItem("HKLIN_OBS_COLUMNS");
 
-  const { update: setHKLIN_OBS_CONTENT_FLAG } = getTaskItem(
+  const { update: setHKLIN_OBS_CONTENT_FLAG } = useTaskItem(
     "HKLIN_OBS_CONTENT_FLAG"
   );
 
   const { value: HKLIN_FORMATValue, update: updateHKLIN_FORMAT } =
-    getTaskItem("HKLIN_FORMAT");
+    useTaskItem("HKLIN_FORMAT");
 
   // Define a useCallback which is what will be called when the file digest changes.
   //This is wrapped in a useCallback, since it will include calls to methods that will be defined dynamically
@@ -374,22 +374,22 @@ interface MmcifPanelProps extends CCP4i2TaskElementProps {
 const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
   const api = useApi();
   const { digest, job } = props;
-  const { getTaskItem, mutateContainer, mutateValidation } = useJob(job.id);
-  const { value: MMCIF_SELECTED_BLOCKValue } = getTaskItem(
+  const { useTaskItem, mutateContainer, mutateValidation } = useJob(job.id);
+  const { value: MMCIF_SELECTED_BLOCKValue } = useTaskItem(
     "MMCIF_SELECTED_BLOCK"
   );
   const oldMMCIF_SELECTED_BLOCKValue = usePrevious(MMCIF_SELECTED_BLOCKValue);
 
-  const { update: setMMCIF_SELECTED_ISINTENSITY } = getTaskItem(
+  const { update: setMMCIF_SELECTED_ISINTENSITY } = useTaskItem(
     "MMCIF_SELECTED_ISINTENSITY"
   );
 
-  const { update: setMMCIF_SELECTED_COLUMNS } = getTaskItem(
+  const { update: setMMCIF_SELECTED_COLUMNS } = useTaskItem(
     "MMCIF_SELECTED_COLUMNS"
   );
 
   const { value: MMCIF_SELECTED_INFOValue, update: setMMCIF_SELECTED_INFO } =
-    getTaskItem("MMCIF_SELECTED_INFO");
+    useTaskItem("MMCIF_SELECTED_INFO");
 
   const handleSelectedBlockChange = useCallback(
     async (mmcifSelectedBlockName) => {
@@ -494,7 +494,7 @@ const MmcifPanel: React.FC<MmcifPanelProps> = (props) => {
 
 const MtzPanel: React.FC<MmcifPanelProps> = (props) => {
   const { digest, job } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { useTaskItem } = useJob(job.id);
   return (
     <Paper sx={{ border: "1px solid black", px: 2, py: 1, mb: 2 }}>
       <Typography variant="h6" gutterBottom>

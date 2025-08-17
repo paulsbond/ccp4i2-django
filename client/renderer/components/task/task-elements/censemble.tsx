@@ -6,8 +6,8 @@ import { useMemo } from "react";
 
 export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
   const { job, itemName } = props;
-  const { getTaskItem, getValidationColor } = useJob(job.id);
-  const { item } = getTaskItem(itemName);
+  const { useTaskItem, getValidationColor } = useJob(job.id);
+  const { item } = useTaskItem(itemName);
 
   const inferredVisibility = useMemo(() => {
     if (!props.visibility) return true;
@@ -33,7 +33,7 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
               sx={{ my: 0, py: 0, minWidth: "10rem" }}
               itemName={`${item._objectPath}.number`}
               qualifiers={{
-                ...getTaskItem(`${item._objectPath}.number`).item._qualifiers,
+                ...useTaskItem(`${item._objectPath}.number`).item._qualifiers,
                 guiLabel: "copies",
               }}
             />
@@ -52,7 +52,7 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
               sx={{ my: 0, py: 0, minWidth: "10rem" }}
               itemName={`${item._objectPath}.use`}
               qualifiers={{
-                ...getTaskItem(`${item._objectPath}.use`).item._qualifiers,
+                ...useTaskItem(`${item._objectPath}.use`).item._qualifiers,
                 guiLabel: "use",
               }}
             />
@@ -64,7 +64,7 @@ export const CEnsembleElement: React.FC<CCP4i2TaskElementProps> = (props) => {
         sx={{ my: 0, py: 0, minWidth: "10rem" }}
         itemName={`${item._objectPath}.pdbItemList`}
         qualifiers={{
-          ...getTaskItem(`${item._objectPath}.pdbItemList`).item._qualifiers,
+          ...useTaskItem(`${item._objectPath}.pdbItemList`).item._qualifiers,
           guiLabel: "PDBs",
         }}
       />

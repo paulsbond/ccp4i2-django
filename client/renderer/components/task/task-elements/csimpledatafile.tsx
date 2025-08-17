@@ -14,10 +14,10 @@ export const CSimpleDataFileElement: React.FC<CSimpleDataFileElementProps> = (
 ) => {
   const { job, itemName, onChange, visibility } = props;
   const api = useApi();
-  const { getTaskItem, useFileDigest, mutateContainer, mutateValidation } =
+  const { useTaskItem, useFileDigest, mutateContainer, mutateValidation } =
     useJob(job.id);
   const { mutateFiles, mutateJobs } = useProject(job.project);
-  const { item } = getTaskItem(itemName);
+  const { item } = useTaskItem(itemName);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const { data: fileDigest, mutate: mutateDigest } = useFileDigest(
     item?._objectPath

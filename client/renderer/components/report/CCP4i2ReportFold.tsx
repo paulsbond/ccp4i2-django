@@ -1,107 +1,109 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { PropsWithChildren } from "react";
 import $ from "jquery";
-import { Collapse, Grid2, Toolbar, Typography } from "@mui/material";
-import { MyExpandMore } from "../expand-more";
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Grid2,
+  Typography,
+} from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   CCP4i2ReportElement,
   CCP4i2ReportElementProps,
-  cssToDict,
 } from "./CCP4i2ReportElement";
 
-export const CCP4i2ReportFold: React.FC<CCP4i2ReportElementProps> = (props) => {
-  const [foldContent, setFoldContent] = useState<React.ReactNode[]>([]);
-  const [nFloatingChildren, setNFloatingChildren] = useState(1);
+// Extended interface that includes PropsWithChildren
+interface CCP4i2ReportFoldProps
+  extends PropsWithChildren<CCP4i2ReportElementProps> {}
+
+export const CCP4i2ReportFold: React.FC<CCP4i2ReportFoldProps> = (props) => {
   const [expanded, setExpanded] = useState(
     $(props.item).attr("initiallyOpen") === "True"
   );
 
-  useEffect(() => {
-    if (props.item) {
-      let nFloatingChildren = 0;
-      for (var child of $(props.item).children()) {
-        try {
-          if ($(child).attr("style") === undefined) {
-            continue;
-          }
-          const styleString: string = $(child).attr("style") as string;
-          var childCssDict = {}; //cssToDict(styleString);
-          if (Object.keys(childCssDict).includes("float")) {
-            const oldStyle = styleString;
-            const fixedStyle = oldStyle
-              .replace("float:left;", "")
-              .replace("float:right;", "");
-            //console.log({ oldStyle, fixedStyle });
-            $(child).attr("style", fixedStyle);
-            nFloatingChildren += 1;
-          }
-        } catch (err) {}
-      }
-      setNFloatingChildren(nFloatingChildren);
-    }
-  }, [props.item]);
+  // Memoize the content processing to avoid recalculation
+  const { foldContent, nFloatingChildren } = useMemo(() => {
+    if (!props.item) return { foldContent: [], nFloatingChildren: 0 };
 
-  useEffect(() => {
-    try {
-      let newContent: React.ReactNode[] = $(props.item)
-        .children()
-        .toArray()
-        .map((child, iChild) => (
-          <CCP4i2ReportElement
-            key={`${iChild}`}
-            iItem={iChild}
-            item={child}
-            job={props.job}
-          />
-        ));
-      setFoldContent(newContent);
-    } catch (err) {
-      console.log(err);
+    let floatingCount = 0;
+    const children = $(props.item).children().toArray();
+
+    // Process floating elements
+    children.forEach((child) => {
+      const styleString = $(child).attr("style");
+      if (styleString && styleString.includes("float:")) {
+        const fixedStyle = styleString
+          .replace(/float:\s*left;?/g, "")
+          .replace(/float:\s*right;?/g, "");
+        $(child).attr("style", fixedStyle);
+        floatingCount++;
+      }
+    });
+
+    // Generate content
+    const content = children.map((child, iChild) => (
+      <CCP4i2ReportElement
+        key={iChild}
+        iItem={iChild}
+        item={child}
+        job={props.job}
+      />
+    ));
+
+    return { foldContent: content, nFloatingChildren: floatingCount };
+  }, [props.item, props.job]);
+
+  const handleAccordionChange = (
+    _event: React.SyntheticEvent,
+    isExpanded: boolean
+  ) => {
+    setExpanded(isExpanded);
+  };
+
+  const renderContent = () => {
+    if (nFloatingChildren > 0) {
+      return (
+        <Grid2 container spacing={1}>
+          {foldContent.map((content, index) => (
+            <Grid2 key={index} size={{ xs: 12 / nFloatingChildren }}>
+              {content}
+            </Grid2>
+          ))}
+        </Grid2>
+      );
     }
-  }, [props.item]);
+    return foldContent;
+  };
 
   return (
-    <>
-      <Toolbar
-        variant="lightGrey"
-        key={$(props.item).attr("key")}
-        onClick={(ev) => {
-          ev.stopPropagation();
-          setExpanded(!expanded);
+    <Accordion
+      expanded={expanded}
+      onChange={handleAccordionChange}
+      disableGutters
+      elevation={1}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        aria-controls="panel-content"
+        id="panel-header"
+        sx={{
+          backgroundColor: "grey.100",
+          "&:hover": {
+            backgroundColor: "grey.200",
+          },
         }}
       >
-        <MyExpandMore
-          sx={{ color: "primary.contrastText" }}
-          expand={expanded}
-          onClick={(ev) => {
-            ev.stopPropagation();
-            setExpanded(!expanded);
-          }}
-          aria-expanded={expanded}
-          aria-label="show more"
-        >
-          <ExpandMoreIcon />
-        </MyExpandMore>
-        {$(props.item).attr("label")}
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ flexGrow: 1 }}
-        ></Typography>
-      </Toolbar>
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
-        {nFloatingChildren > 0 ? (
-          <Grid2 container>
-            {foldContent.map((iItem, item) => (
-              <Grid2 key={`iItem`} size={{ xs: 12 / nFloatingChildren }}>
-                {item}
-              </Grid2>
-            ))}
-          </Grid2>
-        ) : (
-          foldContent
-        )}
-      </Collapse>
-    </>
+        <Typography variant="h6">
+          {$(props.item).attr("label") || "Untitled Section"}
+        </Typography>
+      </AccordionSummary>
+
+      <AccordionDetails sx={{ p: 2 }}>
+        {renderContent()}
+        {props.children}
+      </AccordionDetails>
+    </Accordion>
   );
 };

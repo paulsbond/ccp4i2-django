@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Paper, Grid2 } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useJob } from "../../../utils";
+import { useJob, usePrevious } from "../../../utils";
+import { CDataFileElement } from "../task-elements/cdatafile";
 
 /**
  * Task interface component for Prosmart-Refmac - Prosmart-guided Refinement.
@@ -18,153 +19,103 @@ import { useJob } from "../../../utils";
  */
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
-  const { getTaskItem } = useJob(job.id);
+  const { useTaskItem, useFileDigest } = useJob(job.id);
 
-  // Use refs to track processed states and prevent cycles
-  const initializationDone = useRef(false);
-  const currentJobId = useRef<number | null>(null);
-  const lastProcessedF_SIGFDigest = useRef<any>(null);
+  // Get task items with update functions and/or values
+  const { item: F_SIGFItem, value: F_SIGFValue } = useTaskItem("F_SIGF");
+  const { update: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
+  const { update: updateUSEANOMALOUS } = useTaskItem("USEANOMALOUS");
+  const { update: updateUSE_TWIN } = useTaskItem("USE_TWIN");
 
-  // Get task items
-  const { item: F_SIGFItem, value: F_SIGFValue } = getTaskItem("F_SIGF");
-  const { update: updateWAVELENGTH } = getTaskItem("WAVELENGTH");
-  const { update: updateUSEANOMALOUS } = getTaskItem("USEANOMALOUS");
-  const { update: updateUSE_TWIN } = getTaskItem("USE_TWIN");
-  const { update: updateVALIDATE_BAVERAGE } = getTaskItem("VALIDATE_BAVERAGE");
-  const { update: updateVALIDATE_RAMACHANDRAN } = getTaskItem(
-    "VALIDATE_RAMACHANDRAN"
-  );
-  const { update: updateVALIDATE_MOLPROBITY } = getTaskItem(
-    "VALIDATE_MOLPROBITY"
-  );
+  // File digest for wavelength extraction
+  const { data: F_SIGFDigest } = useFileDigest(F_SIGFItem?._objectPath);
+  const oldDigest = usePrevious(F_SIGFDigest);
+  const oldF_SIGFValue = usePrevious(F_SIGFValue);
 
-  // Get current values for visibility and initialization
-  const { value: HYDR_USE_value } = getTaskItem("HYDR_USE");
-  const { value: SOLVENT_MASK_TYPE_value } = getTaskItem("SOLVENT_MASK_TYPE");
-  const { value: SOLVENT_ADVANCED_value } = getTaskItem("SOLVENT_ADVANCED");
-  const { value: TLSMODE_value } = getTaskItem("TLSMODE");
-  const { value: BFACSETUSE_value } = getTaskItem("BFACSETUSE");
-  const { value: WEIGHT_OPT_value } = getTaskItem("WEIGHT_OPT");
-  const { value: USE_NCS_value } = getTaskItem("USE_NCS");
-  const { value: USE_JELLY_value } = getTaskItem("USE_JELLY");
-  const { value: MAP_SHARP_value } = getTaskItem("MAP_SHARP");
-  const { value: MAP_SHARP_CUSTOM_value } = getTaskItem("MAP_SHARP_CUSTOM");
-  const { value: SCATTERING_FACTORS_value } = getTaskItem("SCATTERING_FACTORS");
-  const { value: RES_CUSTOM_value } = getTaskItem("RES_CUSTOM");
-  const { value: USEANOMALOUS_value } = getTaskItem("USEANOMALOUS");
+  // Get current values for visibility conditions
+  const { value: hydrUseValue } = useTaskItem("HYDR_USE");
+  const { value: solventMaskTypeValue } = useTaskItem("SOLVENT_MASK_TYPE");
+  const { value: solventAdvancedValue } = useTaskItem("SOLVENT_ADVANCED");
+  const { value: tlsModeValue } = useTaskItem("TLSMODE");
+  const { value: bfacSetUseValue } = useTaskItem("BFACSETUSE");
+  const { value: weightOptValue } = useTaskItem("WEIGHT_OPT");
+  const { value: useNcsValue } = useTaskItem("USE_NCS");
+  const { value: useJellyValue } = useTaskItem("USE_JELLY");
+  const { value: mapSharpValue } = useTaskItem("MAP_SHARP");
+  const { value: mapSharpCustomValue } = useTaskItem("MAP_SHARP_CUSTOM");
+  const { value: scatteringFactorsValue } = useTaskItem("SCATTERING_FACTORS");
+  const { value: resCustomValue } = useTaskItem("RES_CUSTOM");
+  const { value: useAnomalousValue } = useTaskItem("USEANOMALOUS");
 
-  // Handle F_SIGF file changes with cycle prevention
-  const handleF_SIGFChange = useCallback(async () => {
-    if (!F_SIGFItem || !job || job.status !== 1) return;
+  // Handle wavelength extraction from F_SIGF file
+  const handleF_SIGFDigestChanged = useCallback(
+    async (digest: any) => {
+      if (!updateWAVELENGTH || !digest || !job || job.status !== 1) return;
+      if (JSON.stringify(digest) === JSON.stringify(oldDigest)) return;
+      console.log("In handleF_SIGFDigestChanged");
 
-    try {
-      // Digest the file to extract metadata
-      const digest = await F_SIGFItem.digestFile();
-
-      // Prevent processing the same digest multiple times
-      if (lastProcessedF_SIGFDigest.current === digest) return;
-      lastProcessedF_SIGFDigest.current = digest;
-
-      if (digest?.contentsDict?.wavelengths?.length > 0) {
-        const wavelength =
-          digest.contentsDict.wavelengths[
-            digest.contentsDict.wavelengths.length - 1
-          ];
-
-        if (updateWAVELENGTH) {
+      // Extract wavelength from digest
+      if (digest?.wavelengths?.length > 0) {
+        const wavelength = digest.wavelengths[digest.wavelengths.length - 1];
+        if (wavelength && wavelength < 9) {
+          // Sanity check for wavelength
           await updateWAVELENGTH(wavelength);
         }
+      }
+    },
+    [updateWAVELENGTH, job, oldDigest]
+  );
 
-        // Handle anomalous signal based on content flag
-        const contentFlag = F_SIGFItem.contentFlag;
-        if (![1, 2].includes(contentFlag) && updateUSEANOMALOUS) {
-          await updateUSEANOMALOUS(false);
-        }
+  // Effect to handle F_SIGF digest changes
+  useEffect(() => {
+    if (F_SIGFDigest) {
+      handleF_SIGFDigestChanged(F_SIGFDigest);
+    }
+  }, [F_SIGFDigest, handleF_SIGFDigestChanged]);
 
-        // Handle twinning based on content flag
-        if (![3].includes(contentFlag) && updateUSE_TWIN) {
-          await updateUSE_TWIN(false);
-        }
+  // Handle F_SIGF file changes
+  const handleF_SIGFChange = useCallback(async () => {
+    if (!F_SIGFValue || !job || job.status !== 1) return;
+    try {
+      // Handle anomalous signal based on content flag
+      const contentFlag = F_SIGFValue.contentFlag;
+      if (![1, 2].includes(contentFlag) && updateUSEANOMALOUS) {
+        await updateUSEANOMALOUS(false);
+      }
+
+      // Handle twinning based on content flag
+      if (![3].includes(contentFlag) && updateUSE_TWIN) {
+        await updateUSE_TWIN(false);
       }
     } catch (error) {
       console.error("Error processing F_SIGF change:", error);
     }
-  }, [F_SIGFItem, job, updateWAVELENGTH, updateUSEANOMALOUS, updateUSE_TWIN]);
+  }, [F_SIGFValue, job, updateUSEANOMALOUS, updateUSE_TWIN]);
 
-  // Stable initialization function (runs once per job)
-  const handleInitialization = useCallback(async () => {
-    if (initializationDone.current || !job || job.status !== 1) return;
-
-    const updates: Promise<any>[] = [];
-
-    // Set validation defaults to false
-    if (updateVALIDATE_BAVERAGE) {
-      updates.push(updateVALIDATE_BAVERAGE(false));
-    }
-    if (updateVALIDATE_RAMACHANDRAN) {
-      updates.push(updateVALIDATE_RAMACHANDRAN(false));
-    }
-    if (updateVALIDATE_MOLPROBITY) {
-      updates.push(updateVALIDATE_MOLPROBITY(false));
-    }
-
-    if (updates.length > 0) {
-      try {
-        await Promise.all(updates);
-        initializationDone.current = true;
-      } catch (error) {
-        console.error("Error during initialization:", error);
-      }
-    } else {
-      initializationDone.current = true;
-    }
-  }, [
-    job,
-    updateVALIDATE_BAVERAGE,
-    updateVALIDATE_RAMACHANDRAN,
-    updateVALIDATE_MOLPROBITY,
-  ]);
-
-  // Reset initialization when job changes
-  useEffect(() => {
-    if (currentJobId.current !== job?.id) {
-      initializationDone.current = false;
-      lastProcessedF_SIGFDigest.current = null;
-      currentJobId.current = job?.id || null;
-    }
-  }, [job?.id]);
-
-  // Run initialization once when component mounts or job changes
-  useEffect(() => {
-    if (!initializationDone.current && job?.id) {
-      handleInitialization();
-    }
-  }, [handleInitialization, job?.id]);
-
-  // Visibility conditions (stable references)
+  // Visibility conditions
   const visibility = {
     showAnomalousSignal: () =>
       F_SIGFItem?.contentFlag && [1, 2].includes(F_SIGFItem.contentFlag),
     showUseAnomalousFor: () =>
       F_SIGFItem?.contentFlag &&
       [1, 2].includes(F_SIGFItem.contentFlag) &&
-      USEANOMALOUS_value,
+      useAnomalousValue,
     showTwinRefinement: () =>
       F_SIGFItem?.contentFlag && [3].includes(F_SIGFItem.contentFlag),
-    showHydrogenOptions: () => HYDR_USE_value,
-    showSolventAdvanced: () => SOLVENT_MASK_TYPE_value === "EXPLICIT",
+    showHydrogenOptions: () => hydrUseValue,
+    showSolventAdvanced: () => solventMaskTypeValue === "EXPLICIT",
     showCustomSolventParams: () =>
-      SOLVENT_MASK_TYPE_value === "EXPLICIT" && SOLVENT_ADVANCED_value,
-    showTLSOptions: () => TLSMODE_value !== "NONE",
-    showTLSFile: () => TLSMODE_value === "FILE",
-    showBFactorReset: () => BFACSETUSE_value,
-    showManualWeight: () => WEIGHT_OPT_value === "MANUAL",
-    showNCSOptions: () => USE_NCS_value,
-    showJellyOptions: () => USE_JELLY_value,
-    showMapSharpening: () => MAP_SHARP_value,
-    showCustomBFactor: () => MAP_SHARP_value && MAP_SHARP_CUSTOM_value,
-    showElectronFormFactor: () => SCATTERING_FACTORS_value === "ELECTRON",
-    showCustomResolution: () => RES_CUSTOM_value,
+      solventMaskTypeValue === "EXPLICIT" && solventAdvancedValue,
+    showTLSOptions: () => tlsModeValue !== "NONE",
+    showTLSFile: () => tlsModeValue === "FILE",
+    showBFactorReset: () => bfacSetUseValue,
+    showManualWeight: () => weightOptValue === "MANUAL",
+    showNCSOptions: () => useNcsValue,
+    showJellyOptions: () => useJellyValue,
+    showMapSharpening: () => mapSharpValue,
+    showCustomBFactor: () => mapSharpValue && mapSharpCustomValue,
+    showElectronFormFactor: () => scatteringFactorsValue === "ELECTRON",
+    showCustomResolution: () => resCustomValue,
   };
 
   return (
@@ -189,7 +140,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
               }}
             />
 
-            <CCP4i2TaskElement
+            <CDataFileElement
               {...props}
               itemName="F_SIGF"
               qualifiers={{
@@ -197,6 +148,15 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 toolTip: "Observed reflection data for refinement",
               }}
               onChange={handleF_SIGFChange}
+            />
+
+            <CCP4i2TaskElement
+              {...props}
+              itemName="WAVELENGTH"
+              qualifiers={{
+                guiLabel: "Wavelength",
+                toolTip: "Wavelength",
+              }}
             />
 
             <CCP4i2ContainerElement
@@ -229,17 +189,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                       toolTip: "How to use anomalous differences",
                     }}
                     visibility={visibility.showUseAnomalousFor}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 6 }}>
-                  <CCP4i2TaskElement
-                    {...props}
-                    itemName="WAVELENGTH"
-                    qualifiers={{
-                      guiLabel: "Wavelength",
-                      toolTip:
-                        "X-ray wavelength for anomalous scattering calculations",
-                    }}
                   />
                 </Grid2>
               </Grid2>

@@ -10,13 +10,13 @@ import { useCallback, useEffect, useMemo } from "react";
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
   const { job } = props;
-  const { getTaskItem, mutateContainer } = useJob(job.id);
-  //const { value: ID_RMSValue } = getTaskItem("ID_RMS");
+  const { useTaskItem, mutateContainer } = useJob(job.id);
+  //const { value: ID_RMSValue } = useTaskItem("ID_RMS");
 
   const { value: SEQUENCETEXT, update: setSEQUENCETEXT } =
-    getTaskItem("SEQUENCETEXT");
+    useTaskItem("SEQUENCETEXT");
 
-  const { value: SEQIN } = getTaskItem("SEQIN");
+  const { value: SEQIN } = useTaskItem("SEQIN");
   const oldSEQIN = usePrevious(SEQIN);
 
   //First we define the callback function that will be used to update the SEQUENCETEXT parameter

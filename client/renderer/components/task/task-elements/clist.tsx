@@ -183,12 +183,12 @@ export const CListElement: React.FC<CListElementProps> = ({
   ...restProps
 }) => {
   const api = useApi();
-  const { getTaskItem, setParameter, getValidationColor } = useJob(job.id);
+  const { useTaskItem, setParameter, getValidationColor } = useJob(job.id);
   const { projectId } = useCCP4i2Window();
   const { project } = projectId
     ? useProject(projectId)
     : { project: undefined };
-  const { item } = getTaskItem(itemName);
+  const { item } = useTaskItem(itemName);
 
   // Custom hooks
   const { expanded, toggleExpanded } = useListState(initiallyOpen);

@@ -84,7 +84,7 @@ export interface JobData {
   setParameterNoMutate: (
     arg: SetParameterArg
   ) => Promise<SetParameterResponse | undefined>;
-  getTaskItem: (paramName: string) => TaskItem;
+  useTaskItem: (paramName: string) => TaskItem;
   createPeerTask: (taskName: string) => Promise<Job | undefined>;
   useFileContent: (paramName: string) => SWRResponse<string, Error>;
   getValidationColor: (item: any) => string;
@@ -791,7 +791,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     [job, mutateParams_xml, mutateValidation, api]
   );
 
-  const getTaskItem = useMemo(() => {
+  const useTaskItem = useMemo(() => {
     return (paramName: string): TaskItem => {
       if (!paramName?.length || !container?.lookup) {
         return {
@@ -1083,7 +1083,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     mutateDef_xml,
     setParameter,
     setParameterNoMutate,
-    getTaskItem,
+    useTaskItem,
     createPeerTask,
     useFileContent,
     getValidationColor,
