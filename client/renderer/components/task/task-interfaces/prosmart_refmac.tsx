@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Paper, Grid2 } from "@mui/material";
 import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
-import { useAsyncEffect, useJob, usePrevious } from "../../../utils";
+import { useJob, usePrevious } from "../../../utils";
 import { CDataFileElement } from "../task-elements/cdatafile";
 
 /**
@@ -21,23 +21,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { job } = props;
   const { useTaskItem, useFileDigest } = useJob(job.id);
 
-  // Track initialization state per job ID
-  const currentJobId = useRef<number | null>(null);
-  const initializationDone = useRef<Set<number>>(new Set());
-  const lastProcessedF_SIGFDigest = useRef<any>(null);
-
   // Get task items with update functions and/or values
   const { item: F_SIGFItem, value: F_SIGFValue } = useTaskItem("F_SIGF");
   const { update: updateWAVELENGTH } = useTaskItem("WAVELENGTH");
   const { update: updateUSEANOMALOUS } = useTaskItem("USEANOMALOUS");
   const { update: updateUSE_TWIN } = useTaskItem("USE_TWIN");
-  const { update: updateVALIDATE_BAVERAGE } = useTaskItem("VALIDATE_BAVERAGE");
-  const { update: updateVALIDATE_RAMACHANDRAN } = useTaskItem(
-    "VALIDATE_RAMACHANDRAN"
-  );
-  const { update: updateVALIDATE_MOLPROBITY } = useTaskItem(
-    "VALIDATE_MOLPROBITY"
-  );
 
   // File digest for wavelength extraction
   const { data: F_SIGFDigest } = useFileDigest(F_SIGFItem?._objectPath);
@@ -45,83 +33,19 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const oldF_SIGFValue = usePrevious(F_SIGFValue);
 
   // Get current values for visibility conditions
-  const { value: HYDR_USEValue } = useTaskItem("HYDR_USE");
-  const { value: SOLVENT_MASK_TYPEValue } = useTaskItem("SOLVENT_MASK_TYPE");
-  const { value: SOLVENT_ADVANCEDValue } = useTaskItem("SOLVENT_ADVANCED");
-  const { value: TLSMODE_value } = useTaskItem("TLSMODE");
-  const { value: BFACSETUSE_value } = useTaskItem("BFACSETUSE");
-  const { value: WEIGHT_OPT_value } = useTaskItem("WEIGHT_OPT");
-  const { value: USE_NCS_value } = useTaskItem("USE_NCS");
-  const { value: USE_JELLY_value } = useTaskItem("USE_JELLY");
-  const { value: MAP_SHARP_value } = useTaskItem("MAP_SHARP");
-  const { value: MAP_SHARP_CUSTOM_value } = useTaskItem("MAP_SHARP_CUSTOM");
-  const { value: SCATTERING_FACTORS_value } = useTaskItem("SCATTERING_FACTORS");
-  const { value: RES_CUSTOM_value } = useTaskItem("RES_CUSTOM");
-  const { value: USEANOMALOUS_value } = useTaskItem("USEANOMALOUS");
-
-  // Initialization function that runs once per job
-  const runInitialization = useCallback(async () => {
-    if (!job?.id || job.status !== 1) return;
-
-    // Check if we've already initialized this job
-    if (initializationDone.current.has(job.id)) {
-      return;
-    }
-
-    console.log(`Running initialization for job ${job.id}`);
-
-    try {
-      // Set validation defaults to false
-      const initPromises: Promise<boolean | Response>[] = [];
-
-      if (updateVALIDATE_BAVERAGE) {
-        initPromises.push(updateVALIDATE_BAVERAGE(false));
-      }
-      if (updateVALIDATE_RAMACHANDRAN) {
-        initPromises.push(updateVALIDATE_RAMACHANDRAN(false));
-      }
-      if (updateVALIDATE_MOLPROBITY) {
-        initPromises.push(updateVALIDATE_MOLPROBITY(false));
-      }
-
-      if (initPromises.length > 0) {
-        await Promise.all(initPromises);
-      }
-
-      // Mark this job as initialized
-      initializationDone.current.add(job.id);
-      console.log(`Initialization completed for job ${job.id}`);
-    } catch (error) {
-      console.error(`Error during initialization for job ${job.id}:`, error);
-    }
-  }, [
-    job?.id,
-    job?.status,
-    updateVALIDATE_BAVERAGE,
-    updateVALIDATE_RAMACHANDRAN,
-    updateVALIDATE_MOLPROBITY,
-  ]);
-
-  // Effect to handle job ID changes and trigger initialization
-  useEffect(() => {
-    const jobId = job?.id;
-
-    // Check if job ID has changed
-    if (jobId !== currentJobId.current) {
-      console.log(`Job ID changed from ${currentJobId.current} to ${jobId}`);
-
-      // Update current job ID reference
-      currentJobId.current = jobId;
-
-      // Reset F_SIGF digest tracking for new job
-      lastProcessedF_SIGFDigest.current = null;
-
-      // Run initialization for the new job
-      if (jobId) {
-        runInitialization();
-      }
-    }
-  }, [job?.id, runInitialization]);
+  const { value: hydrUseValue } = useTaskItem("HYDR_USE");
+  const { value: solventMaskTypeValue } = useTaskItem("SOLVENT_MASK_TYPE");
+  const { value: solventAdvancedValue } = useTaskItem("SOLVENT_ADVANCED");
+  const { value: tlsModeValue } = useTaskItem("TLSMODE");
+  const { value: bfacSetUseValue } = useTaskItem("BFACSETUSE");
+  const { value: weightOptValue } = useTaskItem("WEIGHT_OPT");
+  const { value: useNcsValue } = useTaskItem("USE_NCS");
+  const { value: useJellyValue } = useTaskItem("USE_JELLY");
+  const { value: mapSharpValue } = useTaskItem("MAP_SHARP");
+  const { value: mapSharpCustomValue } = useTaskItem("MAP_SHARP_CUSTOM");
+  const { value: scatteringFactorsValue } = useTaskItem("SCATTERING_FACTORS");
+  const { value: resCustomValue } = useTaskItem("RES_CUSTOM");
+  const { value: useAnomalousValue } = useTaskItem("USEANOMALOUS");
 
   // Handle wavelength extraction from F_SIGF file
   const handleF_SIGFDigestChanged = useCallback(
@@ -129,21 +53,17 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       if (!updateWAVELENGTH || !digest || !job || job.status !== 1) return;
       if (JSON.stringify(digest) === JSON.stringify(oldDigest)) return;
       console.log("In handleF_SIGFDigestChanged");
-      if (lastProcessedF_SIGFDigest.current === digest) {
-        console.log("Skipping duplicate F_SIGF digest processing");
-        return;
-      }
+
       // Extract wavelength from digest
       if (digest?.wavelengths?.length > 0) {
         const wavelength = digest.wavelengths[digest.wavelengths.length - 1];
         if (wavelength && wavelength < 9) {
           // Sanity check for wavelength
           await updateWAVELENGTH(wavelength);
-          //await mutateContainer();
         }
       }
     },
-    [updateWAVELENGTH, job, F_SIGFValue, oldF_SIGFValue]
+    [updateWAVELENGTH, job, oldDigest]
   );
 
   // Effect to handle F_SIGF digest changes
@@ -153,7 +73,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     }
   }, [F_SIGFDigest, handleF_SIGFDigestChanged]);
 
-  // Handle F_SIGF file changes with cycle prevention
+  // Handle F_SIGF file changes
   const handleF_SIGFChange = useCallback(async () => {
     if (!F_SIGFValue || !job || job.status !== 1) return;
     try {
@@ -170,32 +90,32 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
     } catch (error) {
       console.error("Error processing F_SIGF change:", error);
     }
-  }, [F_SIGFValue, job, updateWAVELENGTH, updateUSEANOMALOUS, updateUSE_TWIN]);
+  }, [F_SIGFValue, job, updateUSEANOMALOUS, updateUSE_TWIN]);
 
-  // Visibility conditions (stable references)
+  // Visibility conditions
   const visibility = {
     showAnomalousSignal: () =>
       F_SIGFItem?.contentFlag && [1, 2].includes(F_SIGFItem.contentFlag),
     showUseAnomalousFor: () =>
       F_SIGFItem?.contentFlag &&
       [1, 2].includes(F_SIGFItem.contentFlag) &&
-      USEANOMALOUS_value,
+      useAnomalousValue,
     showTwinRefinement: () =>
       F_SIGFItem?.contentFlag && [3].includes(F_SIGFItem.contentFlag),
-    showHydrogenOptions: () => HYDR_USEValue,
-    showSolventAdvanced: () => SOLVENT_MASK_TYPEValue === "EXPLICIT",
+    showHydrogenOptions: () => hydrUseValue,
+    showSolventAdvanced: () => solventMaskTypeValue === "EXPLICIT",
     showCustomSolventParams: () =>
-      SOLVENT_MASK_TYPEValue === "EXPLICIT" && SOLVENT_ADVANCEDValue,
-    showTLSOptions: () => TLSMODE_value !== "NONE",
-    showTLSFile: () => TLSMODE_value === "FILE",
-    showBFactorReset: () => BFACSETUSE_value,
-    showManualWeight: () => WEIGHT_OPT_value === "MANUAL",
-    showNCSOptions: () => USE_NCS_value,
-    showJellyOptions: () => USE_JELLY_value,
-    showMapSharpening: () => MAP_SHARP_value,
-    showCustomBFactor: () => MAP_SHARP_value && MAP_SHARP_CUSTOM_value,
-    showElectronFormFactor: () => SCATTERING_FACTORS_value === "ELECTRON",
-    showCustomResolution: () => RES_CUSTOM_value,
+      solventMaskTypeValue === "EXPLICIT" && solventAdvancedValue,
+    showTLSOptions: () => tlsModeValue !== "NONE",
+    showTLSFile: () => tlsModeValue === "FILE",
+    showBFactorReset: () => bfacSetUseValue,
+    showManualWeight: () => weightOptValue === "MANUAL",
+    showNCSOptions: () => useNcsValue,
+    showJellyOptions: () => useJellyValue,
+    showMapSharpening: () => mapSharpValue,
+    showCustomBFactor: () => mapSharpValue && mapSharpCustomValue,
+    showElectronFormFactor: () => scatteringFactorsValue === "ELECTRON",
+    showCustomResolution: () => resCustomValue,
   };
 
   return (
@@ -228,7 +148,8 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                 toolTip: "Observed reflection data for refinement",
               }}
               onChange={handleF_SIGFChange}
-            ></CDataFileElement>
+            />
+
             <CCP4i2TaskElement
               {...props}
               itemName="WAVELENGTH"
@@ -268,17 +189,6 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
                       toolTip: "How to use anomalous differences",
                     }}
                     visibility={visibility.showUseAnomalousFor}
-                  />
-                </Grid2>
-                <Grid2 size={{ xs: 6 }}>
-                  <CCP4i2TaskElement
-                    {...props}
-                    itemName="WAVELENGTH"
-                    qualifiers={{
-                      guiLabel: "Wavelength",
-                      toolTip:
-                        "X-ray wavelength for anomalous scattering calculations",
-                    }}
                   />
                 </Grid2>
               </Grid2>
