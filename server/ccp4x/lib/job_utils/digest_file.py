@@ -7,7 +7,7 @@ from core import CCP4ModelData
 from ccp4i2.core.CCP4Container import CContainer
 from ccp4i2.core.CCP4XtalData import CGenericReflDataFile
 from ccp4i2.core.CCP4XtalData import CMapDataFile
-from ccp4i2.core.CCP4ModelData import CPdbDataFile
+from ccp4i2.core.CCP4ModelData import CPdbDataFile, CDictDataFile
 from ccp4i2.core import CCP4DataManager
 from ccp4i2.core.CCP4File import CDataFile
 from ccp4i2.core.CCP4File import CDataFile
@@ -15,6 +15,7 @@ from ccp4i2.pipelines.import_merged.script import mmcifutils
 from .find_objects import find_objects, find_object_by_path
 from .get_job_container import get_job_container
 from .json_encoder import CCP4i2JsonEncoder
+from .parse_cif_ligand_summary import parse_cif_ligand_summary
 from .value_dict_for_object import value_dict_for_object
 from ...db import models
 from ..parse import identify_data_type
@@ -180,15 +181,17 @@ def digest_file_object(file_object: CDataFile):
         return {"status": "Failed", "reason": "Not a valid file object", "digest": {}}
     if not file_object.isSet():
         return {"status": "Failed", "reason": "File object is not set", "digest": {}}
-
+    print("oops")
     if isinstance(file_object, CCP4ModelData.CPdbDataFile):
         return digest_cpdbdata_file_object(file_object)
     if isinstance(file_object, CCP4XtalData.CGenericReflDataFile):
         return digest_cgenericrefldatafile_file_object(file_object)
-    if type(file_object) is CCP4File.CDataFile:
-        return digest_cdatafile_file_object(file_object)
     if isinstance(file_object, CCP4ModelData.CSeqDataFile):
         return digest_cseqdata_file_object(file_object)
+    if isinstance(file_object, (CCP4ModelData.CDictDataFile, CDictDataFile)):
+        return digest_cdictdata_file_object(file_object)
+    if type(file_object) is CCP4File.CDataFile:
+        return digest_cdatafile_file_object(file_object)
     return digest_other_file_object(file_object)
 
 
@@ -265,6 +268,17 @@ def digest_cseqdata_file_object(file_object: CPdbDataFile):
             "reason": f"Failed digesting CSeqDataFile {err}",
             "digest": {},
         }
+
+
+def digest_cdictdata_file_object(file_object: CPdbDataFile):
+    if not isinstance(file_object, (CCP4ModelData.CDictDataFile, CDictDataFile)):
+        return {
+            "status": "Failed",
+            "reason": "Not a CDictDataFile object",
+            "digest": {},
+        }
+    content_dict = parse_cif_ligand_summary(file_object.fullPath.__str__())
+    return content_dict
 
 
 def digest_cgenericrefldatafile_file_object(file_object: CGenericReflDataFile):
