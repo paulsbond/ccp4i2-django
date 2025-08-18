@@ -93,9 +93,16 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportFoldProps> = (props) => {
           "&:hover": {
             backgroundColor: "grey.200",
           },
+          minHeight: 48,
+          "& .MuiAccordionSummary-content": {
+            margin: "8px 0",
+          },
+          "& .MuiAccordionSummary-content.Mui-expanded": {
+            margin: "8px 0",
+          },
         }}
       >
-        <Typography variant="h6">
+        <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
           {$(props.item).attr("label") || "Untitled Section"}
         </Typography>
       </AccordionSummary>

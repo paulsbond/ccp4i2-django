@@ -510,7 +510,7 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
       return (
         <Box display="flex" alignItems="center">
           <Error sx={{ mr: 1, color: "error.main" }} />
-          <Typography variant="h6">
+          <Typography variant="subtitle1">
             Structure Quality Verdict - Error
           </Typography>
         </Box>
@@ -523,7 +523,7 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
       <Box display="flex" alignItems="center" width="100%">
         {quality.icon}
         <Box ml={1} flexGrow={1}>
-          <Typography variant="h6">Structure Quality Verdict</Typography>
+          <Typography variant="subtitle1">Structure Quality Verdict</Typography>
         </Box>
         <Chip
           label={`${quality.label} (${verdictData.verdictScore.toFixed(1)}%)`}
@@ -737,6 +737,13 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
           backgroundColor: "grey.100",
           "&:hover": {
             backgroundColor: "grey.200",
+          },
+          minHeight: 48,
+          "& .MuiAccordionSummary-content": {
+            margin: "8px 0",
+          },
+          "& .MuiAccordionSummary-content.Mui-expanded": {
+            margin: "8px 0",
           },
         }}
       >
