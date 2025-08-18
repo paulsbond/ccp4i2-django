@@ -5,6 +5,7 @@ from django.test import Client
 from django.conf import settings
 from django.test import TestCase, override_settings
 from ccp4i2.core import CCP4Container
+from ccp4i2.core.CCP4ModelData import CDictDataFile
 from core.CCP4File import CDataFile
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
@@ -18,7 +19,7 @@ from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ...lib.job_utils.get_what_next import get_what_next
 from ...lib.job_utils.object_method import object_method
 from ...db.project_json import project_json
-from ...lib.job_utils.digest_file import digest_cdatafile_file_object
+from ...lib.job_utils.digest_file import digest_file_object
 
 
 @override_settings(
@@ -240,3 +241,15 @@ class CCP4i2TestCase(TestCase):
             a["sequences"]["A"],
             "QIPASEQETLVRPKPLLLKLLKSVGAQKDTYTMKEVLFYLGQYIMTKRLYDAAQQHIVYCSNDLLGDLFGVPSFSVKEHRKIYTMIYRNLV",
         )
+
+    def test_digest_cdictdatafile(self):
+        mmcif_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "baz2b"
+            / "BAZ2BA-x839-LIG.cif"
+        )
+        aFile = CDictDataFile(str(mmcif_path))
+        print(aFile.fullPath)
+        a = digest_file_object(aFile)
+        print("a", a)
