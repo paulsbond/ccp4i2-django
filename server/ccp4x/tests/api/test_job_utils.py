@@ -18,6 +18,7 @@ from ...lib.job_utils.get_file_by_job_context import get_file_by_job_context
 from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ...lib.job_utils.get_what_next import get_what_next
 from ...lib.job_utils.object_method import object_method
+from ...lib.job_utils.detect_file_type import detect_file_type
 from ...db.project_json import project_json
 from ...lib.job_utils.digest_file import digest_file_object
 
@@ -253,3 +254,46 @@ class CCP4i2TestCase(TestCase):
         print(aFile.fullPath)
         a = digest_file_object(aFile)
         print("a", a)
+
+    def test_detect_mtz_file(self):
+        mtz_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "mdm2"
+            / "mdm2_unmerged.mtz"
+        )
+        print(mtz_path)
+        a = detect_file_type(mtz_path)
+        self.assertEqual(a, "MTZ file")
+
+    def test_detect_reflection_cif(self):
+        file_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "mdm2"
+            / "4hg7-sf.cif"
+        )
+        print(file_path)
+        a = detect_file_type(file_path)
+        self.assertEqual(a, "mmCIF reflection file")
+
+    def test_detect_coordinate_cif(self):
+        file_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "mdm2"
+            / "4hg7.cif"
+        )
+        print(file_path)
+        a = detect_file_type(file_path)
+        self.assertEqual(a, "mmCIF coordinate file")
+
+    def test_detect_ligand_cif(self):
+        file_path = (
+            Path(CCP4Container.__file__).parent.parent
+            / "demo_data"
+            / "baz2b"
+            / "BAZ2BA-x839-LIG.cif"
+        )
+        a = detect_file_type(file_path)
+        self.assertEqual(a, "mmCIF ligand/geometry file")
