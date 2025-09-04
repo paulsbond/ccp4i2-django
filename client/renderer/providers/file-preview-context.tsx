@@ -1,10 +1,18 @@
-import { PropsWithChildren, useContext, useEffect, useState } from "react";
+import {
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { doRetrieve, fullUrl } from "../api";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { Editor } from "@monaco-editor/react";
 import { prettifyXml } from "../utils";
 import { createContext } from "react";
 import $ from "jquery";
+import { parseMTZ } from "../mtzparser";
+import { useCCP4i2Window } from "../app-context";
 
 export interface EditorContentSpecification {
   url: string;
@@ -43,6 +51,30 @@ const FilePreviewDialog: React.FC = () => {
   const { contentSpecification, setContentSpecification } =
     useFilePreviewContext();
   const [previewContent, setPreviewContent] = useState<string | null>("");
+  const { cootModule } = useCCP4i2Window();
+
+  const handleMtzPreview = useCallback(
+    async (fileContent: ArrayBuffer) => {
+      if (cootModule) {
+        const byteArray = new Uint8Array(fileContent);
+        try {
+          cootModule.FS_unlink("/tmp/fileName");
+        } catch (e) {}
+        cootModule.FS_createDataFile("/tmp", "fileName", byteArray, true, true);
+        const header_info_em: any = cootModule.get_mtz_columns("/tmp/fileName");
+        cootModule.FS_unlink("/tmp/fileName");
+        // Convert emscripten array to regular array for easier handling
+        const header_info: string[] = [];
+        for (let key = 0; key < header_info_em.size(); key++) {
+          header_info.push(header_info_em.get(key));
+        }
+        console.log(header_info);
+        setPreviewContent(JSON.stringify(header_info, null, 2));
+      }
+    },
+    [cootModule]
+  );
+
   useEffect(() => {
     if (contentSpecification) {
       const asyncFunc = async () => {
@@ -56,44 +88,28 @@ const FilePreviewDialog: React.FC = () => {
           );
           var enc = new TextDecoder("utf-8");
           setPreviewContent(enc.decode(fileContent));
-        } else if (contentSpecification.url.includes("/digest_param_file/")) {
-          const fileContent = await fetch(
-            fullUrl(contentSpecification.url)
-          ).then((response) => response.arrayBuffer());
-          var enc = new TextDecoder("utf-8");
-          const fileText = enc.decode(fileContent);
-          if (contentSpecification.language === "json")
-            setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
-          else if (contentSpecification.language === "xml")
-            setPreviewContent(prettifyXml($.parseXML(fileText)));
-          else setPreviewContent(fileText);
-        } else if (contentSpecification.url.includes("/project_file")) {
+        } else {
           const fileContent = await fetch(contentSpecification.url).then(
             (response) => response.arrayBuffer()
           );
           var enc = new TextDecoder("utf-8");
-          const fileText = enc.decode(fileContent);
-          if (contentSpecification.language === "json")
+          if (contentSpecification.language === "json") {
+            const fileText = enc.decode(fileContent);
             setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
-          else if (contentSpecification.language === "xml")
+          } else if (contentSpecification.language === "mtz") {
+            handleMtzPreview(fileContent);
+          } else if (contentSpecification.language === "xml") {
+            const fileText = enc.decode(fileContent);
             setPreviewContent(prettifyXml($.parseXML(fileText)));
-          else setPreviewContent(fileText);
-        } else {
-          const fileContent = await fetch(
-            fullUrl(contentSpecification.url)
-          ).then((response) => response.arrayBuffer());
-          var enc = new TextDecoder("utf-8");
-          const fileText = enc.decode(fileContent);
-          if (contentSpecification.language === "json")
-            setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
-          else if (contentSpecification.language === "xml")
-            setPreviewContent(prettifyXml($.parseXML(fileText)));
-          else setPreviewContent(fileText);
+          } else {
+            const fileText = enc.decode(fileContent);
+            setPreviewContent(fileText);
+          }
         }
       };
       asyncFunc();
     }
-  }, [contentSpecification]);
+  }, [contentSpecification, cootModule]);
 
   return (
     <Dialog
