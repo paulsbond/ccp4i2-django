@@ -216,7 +216,7 @@ export const FileMenu: React.FC = () => {
       ev.stopPropagation();
       if (file) {
         setContentSpecification({
-          url: `files/${file.id}/digest/`,
+          url: `/api/proxy/files/${file.id}/digest/`,
           title: file.name,
           language: "json",
         });
