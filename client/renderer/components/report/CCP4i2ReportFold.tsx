@@ -63,7 +63,7 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportFoldProps> = (props) => {
   };
 
   const renderContent = () => {
-    if (nFloatingChildren > 0) {
+    if (false && nFloatingChildren > 0) {
       return (
         <Grid2 container spacing={1}>
           {foldContent.map((content, index) => (

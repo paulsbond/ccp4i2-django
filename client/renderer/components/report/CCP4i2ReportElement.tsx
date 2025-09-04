@@ -31,7 +31,7 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
   const returnElement = useMemo<React.ReactNode>(() => {
     const htmlElement = $(item).get(0);
     const tagName = htmlElement?.tagName;
-    if (tagName) {
+    if (tagName && item && job) {
       if (["CCP4i2ReportFold"].includes(tagName)) {
         // Check for label attribute with value "Verdict"
         const labelAttribute = $(item).attr("label");
@@ -169,9 +169,12 @@ export const CCP4i2ReportElement: React.FC<CCP4i2ReportElementProps> = ({
             job={job}
           />
         );
-      }
+      } else if (["CCP4i2ReportJobLogFiles"].includes(tagName)) {
+        //Skip this one, since handled by new log tab
+        return null;
+      } else return <div>{tagName}</div>;
     }
-    return <div>{tagName}</div>;
+    return null;
   }, [item, iItem, job]);
   return <>{returnElement}</>;
 };

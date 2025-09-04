@@ -16,11 +16,19 @@ def detect_file_type(file_path):
     except Exception:
         pass
 
-    # Try detecting an mmCIF file
+    # Try detecting an mmCIF file and its subtype
     try:
-        cif_block = gemmi.cif.read(str(path))
-        if cif_block:  # If it successfully reads, it's an mmCIF file
-            return "mmCIF file"
+        cif_doc = gemmi.cif.read(str(path))
+        if cif_doc:  # If it successfully reads, it's an mmCIF file
+            # Check for coordinate CIF (structure)
+            for block in cif_doc:
+                if block.find_mmcif_category("_atom_site"):
+                    return "mmCIF coordinate file"
+                if block.find_mmcif_category("_refln"):
+                    return "mmCIF reflection file"
+                if block.find_mmcif_category("_chem_comp"):
+                    return "mmCIF ligand/geometry file"
+            return "mmCIF file (unknown subtype)"
     except Exception:
         pass
 
@@ -35,23 +43,15 @@ def detect_file_type(file_path):
     # Try detecting a sequence file (FASTA, PIR, etc.) using BioPython
     try:
         with path.open("r") as handle:
-            format_detected = None
             for record in SeqIO.parse(handle, "fasta"):
-                format_detected = "FASTA file"
-                break
-            if format_detected:
-                return format_detected
+                return "FASTA file"
     except Exception:
         pass
 
     try:
         with path.open("r") as handle:
-            format_detected = None
             for record in SeqIO.parse(handle, "pir"):
-                format_detected = "PIR file"
-                break
-            if format_detected:
-                return format_detected
+                return "PIR file"
     except Exception:
         pass
 
