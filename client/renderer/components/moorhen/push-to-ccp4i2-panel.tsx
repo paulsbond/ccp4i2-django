@@ -14,13 +14,14 @@ import { CreateTaskResponse } from "../../utils";
 interface PushToCCP4i2Props {
   project?: ProjectInfo;
   molNo?: number;
-  //item?: moorhen.Molecule | moorhen.Map | null;
+  item?: moorhen.Molecule | moorhen.Map | null;
   onClose: () => void;
 }
 
 export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
   project,
   molNo,
+  item,
   onClose,
 }) => {
   const api = useApi();
@@ -34,9 +35,9 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
   );
 
   const handlePushToCCP4i2 = useCallback(async () => {
-    console.log({ molNo });
+    console.log({ molNo, item });
     // Implement your push logic here
-    if (selectedProject) {
+    if (selectedProject && item) {
       // e.g. api.pushToCCP4i2(selectedProject)
       console.log("Pushing to CCP4i2:", selectedProject);
       const result = await api.post<CreateTaskResponse>(
@@ -47,30 +48,37 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
       );
       console.log({ result });
       mutateJobs();
-      /*
       const modelCoords =
         item.type === "molecule"
           ? await (item as moorhen.Molecule).getAtoms()
           : null;
       console.log(modelCoords);
+      if (!modelCoords) return;
       const formData = new FormData();
 
-      formData.append("objectPath", item._objectPath);
+      formData.append("objectPath", "coordinate_selector.inputData.XYZIN");
       formData.append(
         "file",
-        new Blob([fileBuffer as string], {
-          type: item._qualifiers.mimeTypeName,
+        new Blob([modelCoords], {
+          type: "chemical/x-pdb",
         }),
-        selectedFiles[0].name
+        (item as moorhen.Molecule).name
       );
-
       const uploadResult = await api.post<any>(
-        `jobs/${job.id}/upload_file_param`,
+        `jobs/${result.new_job?.id}/upload_file_param`,
         formData
       );
-      */
+      console.log({ uploadResult });
+      const run_result = await api.post<CreateTaskResponse>(
+        `jobs/${result.new_job?.id}/run/`,
+        {
+          task_name: "coordinate_selector",
+        }
+      );
+      console.log({ run_result });
+      onClose();
     }
-  }, [selectedProject, molNo]);
+  }, [selectedProject, molNo, item]);
 
   return (
     <Box sx={{ p: 2 }}>

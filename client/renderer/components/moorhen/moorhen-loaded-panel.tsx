@@ -27,7 +27,7 @@ import {
   Dialog,
 } from "@mui/material";
 import { MoreVert, Visibility, VisibilityOff } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApi } from "../../api";
 import {
   File as FileInfo,
@@ -281,7 +281,8 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         molecule.centreOn("/*/*/*/*", false, true);
       } else {
         const map = menuState.item as moorhen.Map;
-        console.log("Center on map:", map.name);
+        map.centreOnMap();
+        //console.log("Center on map:", map.name);
       }
     }
     handleMenuClose();
@@ -410,9 +411,13 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     );
   };
 
+  const itemToPush = useMemo(() => {
+    return menuState.item;
+  }, [menuState]);
+  const molNo = itemToPush?.molNo;
   const handlePushToCCP4i2 = () => {
     setPushDialogOpen(true);
-    handleMenuClose();
+    //handleMenuClose();
   };
 
   const handlePushDialogClose = () => {
@@ -638,7 +643,8 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         fullWidth
       >
         <PushToCCP4i2Panel
-          molNo={menuState.item?.molNo}
+          molNo={molNo}
+          item={itemToPush}
           onClose={handlePushDialogClose}
         />
       </Dialog>
