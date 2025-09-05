@@ -63,6 +63,12 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
         title: menuNode.name || "Preview",
         language: menuNode.name.endsWith(".json")
           ? "json"
+          : menuNode.name.endsWith(".mtz")
+          ? "mtz"
+          : menuNode.name.endsWith(".cif")
+          ? "cif"
+          : menuNode.name.endsWith(".csv")
+          ? "csv"
           : menuNode.name.endsWith(".xml")
           ? "xml"
           : "text",
@@ -172,9 +178,11 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
             "txt",
             "mmcif",
             "cif",
+            "csv",
             "pdb",
             "dict",
             "mol",
+            "mtz",
           ].includes(menuNode?.name?.split(".").at(-1) || "") && (
             <MenuItem onClick={handlePreview}>
               <Preview />

@@ -201,9 +201,11 @@ export const FileMenu: React.FC = () => {
       ev.stopPropagation();
       if (file) {
         setContentSpecification({
-          url: `files/${file.id}/download/`,
+          url: `/api/proxy/files/${file.id}/download/`,
           title: file.name,
-          language: "text",
+          language: file.type.startsWith("application/CCP4-mtz")
+            ? "mtz"
+            : "text",
         });
         setFileMenuAnchorEl(null);
       }
@@ -216,7 +218,7 @@ export const FileMenu: React.FC = () => {
       ev.stopPropagation();
       if (file) {
         setContentSpecification({
-          url: `files/${file.id}/digest/`,
+          url: `/api/proxy/files/${file.id}/digest/`,
           title: file.name,
           language: "json",
         });
@@ -231,7 +233,7 @@ export const FileMenu: React.FC = () => {
       ev.stopPropagation();
       if (file) {
         setContentSpecification({
-          url: `files/${file.id}/`,
+          url: `/api/proxy/files/${file.id}/`,
           title: file.name,
           language: "json",
         });
