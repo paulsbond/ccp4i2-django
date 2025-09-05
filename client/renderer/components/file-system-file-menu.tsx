@@ -65,6 +65,10 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
           ? "json"
           : menuNode.name.endsWith(".mtz")
           ? "mtz"
+          : menuNode.name.endsWith(".cif")
+          ? "cif"
+          : menuNode.name.endsWith(".csv")
+          ? "csv"
           : menuNode.name.endsWith(".xml")
           ? "xml"
           : "text",
@@ -174,6 +178,7 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
             "txt",
             "mmcif",
             "cif",
+            "csv",
             "pdb",
             "dict",
             "mol",

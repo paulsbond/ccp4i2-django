@@ -3,16 +3,24 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { doRetrieve, fullUrl } from "../api";
-import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogActions,
+  Button,
+} from "@mui/material";
 import { Editor } from "@monaco-editor/react";
 import { prettifyXml } from "../utils";
 import { createContext } from "react";
 import $ from "jquery";
-import { parseMTZ } from "../mtzparser";
 import { useCCP4i2Window } from "../app-context";
+import { CifTableStack } from "../components/cif-table-stack";
+import { CsvTable } from "../components/csv-table";
 
 export interface EditorContentSpecification {
   url: string;
@@ -75,20 +83,47 @@ const FilePreviewDialog: React.FC = () => {
     [cootModule]
   );
 
+  const compactCifPreview = (parsed: Record<string, any>): string => {
+    const compact: Record<string, any> = {};
+    Object.entries(parsed).forEach(([key, value]) => {
+      if (
+        key.startsWith("loop_") &&
+        value.values &&
+        Array.isArray(value.values)
+      ) {
+        compact[key] = {
+          keys: value.keys,
+          values: value.values.slice(0, 5), // Show only first 5 rows
+          ...(value.values.length > 5 && {
+            more: `${value.values.length - 5} more...`,
+          }),
+        };
+      } else {
+        compact[key] = value;
+      }
+    });
+    return JSON.stringify(compact, null, 2);
+  };
+
+  const handleCifPreview = async (fileContent: ArrayBuffer) => {
+    const enc = new TextDecoder("utf-8");
+    const textContent = enc.decode(fileContent);
+    setPreviewContent(textContent);
+  };
+
+  const handleCsvPreview = async (fileContent: ArrayBuffer) => {
+    const enc = new TextDecoder("utf-8");
+    const textContent = enc.decode(fileContent);
+    setPreviewContent(textContent);
+  };
+
   useEffect(() => {
     if (contentSpecification) {
       const asyncFunc = async () => {
         if (!contentSpecification.url) {
           return;
         }
-        if (contentSpecification.url.endsWith("/download/")) {
-          const fileContent = await doRetrieve(
-            fullUrl(contentSpecification.url),
-            contentSpecification.title
-          );
-          var enc = new TextDecoder("utf-8");
-          setPreviewContent(enc.decode(fileContent));
-        } else {
+        {
           const fileContent = await fetch(contentSpecification.url).then(
             (response) => response.arrayBuffer()
           );
@@ -98,6 +133,10 @@ const FilePreviewDialog: React.FC = () => {
             setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
           } else if (contentSpecification.language === "mtz") {
             handleMtzPreview(fileContent);
+          } else if (contentSpecification.language === "cif") {
+            handleCifPreview(fileContent);
+          } else if (contentSpecification.language === "csv") {
+            handleCsvPreview(fileContent);
           } else if (contentSpecification.language === "xml") {
             const fileText = enc.decode(fileContent);
             setPreviewContent(prettifyXml($.parseXML(fileText)));
@@ -111,6 +150,33 @@ const FilePreviewDialog: React.FC = () => {
     }
   }, [contentSpecification, cootModule]);
 
+  const handleDownload = () => {
+    if (!contentSpecification?.url) return;
+    const link = document.createElement("a");
+    link.href = contentSpecification.url;
+    link.download = contentSpecification.title || "download";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const monacoLanguage = useMemo(() => {
+    switch (contentSpecification?.language) {
+      case "json":
+        return "json";
+      case "xml":
+        return "xml";
+      case "cif":
+        return "cif";
+      case "csv":
+        return "csv";
+      case "mtz":
+        return "json";
+      default:
+        return "text";
+    }
+  }, [contentSpecification]);
+
   return (
     <Dialog
       fullWidth
@@ -122,13 +188,29 @@ const FilePreviewDialog: React.FC = () => {
     >
       <DialogTitle>{contentSpecification?.title}</DialogTitle>
       <DialogContent>
-        <Editor
-          width="100%"
-          height="calc(100vh - 20rem)"
-          value={previewContent || ""}
-          language={contentSpecification?.language || "text"}
-        />
+        {contentSpecification?.language === "cif" ? (
+          <CifTableStack cifText={previewContent || ""} />
+        ) : contentSpecification?.language === "csv" ? (
+          <CsvTable csvText={previewContent || ""} />
+        ) : (
+          <Editor
+            width="100%"
+            height="calc(100vh - 20rem)"
+            value={previewContent || ""}
+            language={monacoLanguage}
+          />
+        )}
       </DialogContent>
+      <DialogActions>
+        <Button
+          onClick={handleDownload}
+          disabled={!contentSpecification?.url}
+          variant="contained"
+          color="primary"
+        >
+          Download File
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

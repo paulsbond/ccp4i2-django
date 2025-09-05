@@ -310,7 +310,7 @@ const DirectoryBrowser: React.FC<DirectoryBrowserProps> = ({
             alignItems: "center",
             paddingLeft: `${level * 16}px`,
             paddingY: 0.5,
-            cursor: "pointer",
+            cursor: "context-menu", // <-- Change cursor to indicate contextual menu
             backgroundColor: isSelected ? "action.selected" : "transparent",
             "&:hover": {
               backgroundColor: isSelected ? "action.selected" : "action.hover",
