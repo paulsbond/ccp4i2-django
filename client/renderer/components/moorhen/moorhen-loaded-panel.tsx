@@ -24,10 +24,17 @@ import {
   Chip,
   Stack,
   Toolbar,
+  Dialog,
 } from "@mui/material";
 import { MoreVert, Visibility, VisibilityOff } from "@mui/icons-material";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useApi } from "../../api";
+import {
+  File as FileInfo,
+  Job as JobInfo,
+  Project as ProjectInfo,
+} from "../../types/models";
+import { PushToCCP4i2Panel } from "./push-to-ccp4i2-panel";
 
 type ContentType = "Molecule" | "Map";
 type ContentItem = moorhen.Molecule | moorhen.Map;
@@ -42,29 +49,6 @@ interface MoorhenLoadedContentProps {
   type: ContentType;
 }
 
-interface FileInfo {
-  id: number;
-  job: number;
-  name: string;
-  annotation?: string;
-  job_param_name?: string;
-  // Add other file properties as needed
-}
-
-interface JobInfo {
-  id: number;
-  number: string;
-  project: number;
-  title?: string;
-  // Add other job properties as needed
-}
-
-interface ProjectInfo {
-  id: number;
-  name: string;
-  // Add other project properties as needed
-}
-
 interface ItemMetadata {
   fileId: number;
   projectName?: string;
@@ -72,6 +56,13 @@ interface ItemMetadata {
   fileAnnotation?: string;
   isLoading: boolean;
   error?: string;
+}
+
+// Utility to get favicon URL
+function getFaviconUrl(): string | undefined {
+  const link = document.querySelector("link[rel~='icon']");
+  const href = link ? link.getAttribute("href") : undefined;
+  return href === null ? undefined : href;
 }
 
 export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
@@ -85,6 +76,8 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
   const [itemMetadata, setItemMetadata] = useState<Map<number, ItemMetadata>>(
     new Map()
   );
+  const [pushDialogOpen, setPushDialogOpen] = useState(false);
+  const [faviconUrl, setFaviconUrl] = useState<string | undefined>(undefined);
 
   const dispatch = useDispatch();
   const api = useApi();
@@ -199,6 +192,10 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
       }
     });
   }, [items]);
+
+  useEffect(() => {
+    setFaviconUrl(getFaviconUrl());
+  }, []);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -413,6 +410,15 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     );
   };
 
+  const handlePushToCCP4i2 = () => {
+    setPushDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handlePushDialogClose = () => {
+    setPushDialogOpen(false);
+  };
+
   if (!cootInitialized) {
     return (
       <Box
@@ -577,10 +583,12 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         anchorEl={menuState.anchorEl}
         open={Boolean(menuState.anchorEl)}
         onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            minWidth: "180px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: "180px",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            },
           },
         }}
       >
@@ -603,7 +611,37 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
           <Typography sx={{ mr: 1 }}>🗑️</Typography>
           Delete {type}
         </MenuItem>
+        <MenuItem onClick={handlePushToCCP4i2}>
+          {faviconUrl ? (
+            <img
+              src={faviconUrl}
+              alt="CCP4i2"
+              style={{
+                width: 20,
+                height: 20,
+                marginRight: 8,
+                verticalAlign: "middle",
+              }}
+            />
+          ) : (
+            <Typography sx={{ mr: 1 }}>🚀</Typography>
+          )}
+          Push to CCP4i2
+        </MenuItem>
       </Menu>
+
+      {/* Push to CCP4i2 Dialog */}
+      <Dialog
+        open={pushDialogOpen}
+        onClose={handlePushDialogClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <PushToCCP4i2Panel
+          molNo={menuState.item?.molNo}
+          onClose={handlePushDialogClose}
+        />
+      </Dialog>
     </Box>
   );
 };
