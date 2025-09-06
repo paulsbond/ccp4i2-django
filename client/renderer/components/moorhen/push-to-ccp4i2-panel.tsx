@@ -8,14 +8,16 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { CreateTaskResponse } from "../../utils";
 import { usePopcorn } from "../../providers/popcorn-provider";
+import { ItemMetadata } from "./item-metadata-utils";
 
 interface PushToCCP4i2Props {
   project?: ProjectInfo;
   molNo?: number;
   item?: moorhen.Molecule | moorhen.Map | null;
+  itemMetadata?: ItemMetadata;
   onClose: () => void;
 }
 
@@ -34,6 +36,7 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
   project,
   molNo,
   item,
+  itemMetadata,
   onClose,
 }) => {
   const api = useApi();
@@ -42,6 +45,23 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
     ProjectInfo | undefined
   >(project);
   const { setMessage } = usePopcorn();
+
+  // Set initial project based on itemMetadata.projectName if available
+  useEffect(() => {
+    if (
+      itemMetadata &&
+      itemMetadata.projectName &&
+      Array.isArray(projects) &&
+      projects.length > 0
+    ) {
+      const matchedProject = projects.find(
+        (proj) => proj.name === itemMetadata.projectName
+      );
+      if (matchedProject && selectedProject?.id !== matchedProject.id) {
+        setSelectedProject(matchedProject);
+      }
+    }
+  }, [itemMetadata, projects]);
 
   const { data: jobs, mutate: mutateJobs } = api.get<JobInfo[]>(
     `projects/${selectedProject?.id}/jobs/`
@@ -70,8 +90,15 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
       const format = detectCoordinateFormat(modelCoords);
       setMessage(`Detected coordinate format: ${format}`);
 
+      const slugify = (name: string) =>
+        name
+          .replace(/[/\\?%*:|"<>]/g, "") // Remove illegal filename chars
+          .replace(/\s+/g, "_") // Replace whitespace with underscores
+          .replace(/[^a-zA-Z0-9._-]/g, "") // Remove other non-safe chars
+          .replace(/^_+|_+$/g, ""); // Trim leading/trailing underscores
+
       const moleculeName =
-        (item as moorhen.Molecule).name +
+        slugify((item as moorhen.Molecule).name) +
         (format === "mmcif" ? ".cif" : ".pdb");
 
       const formData = new FormData();
@@ -102,8 +129,54 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Push to CCP4i2 Panel
+        Push to CCP4i2
       </Typography>
+
+      {/* Show nicely formatted metadata if provided */}
+      {itemMetadata && (
+        <Box
+          sx={{
+            mb: 2,
+            p: 2,
+            border: "1px solid #eee",
+            borderRadius: 2,
+            background: "#fafafa",
+          }}
+        >
+          <Typography variant="subtitle1" gutterBottom>
+            File to push was fetched from CCP4i2 with the following metadata:
+          </Typography>
+          <Typography variant="body2">
+            <strong>File ID:</strong> {itemMetadata.fileId}
+          </Typography>
+          {itemMetadata.projectName && (
+            <Typography variant="body2">
+              <strong>Project:</strong> {itemMetadata.projectName}
+            </Typography>
+          )}
+          {itemMetadata.jobNumber && (
+            <Typography variant="body2">
+              <strong>Job Number:</strong> {itemMetadata.jobNumber}
+            </Typography>
+          )}
+          {itemMetadata.fileAnnotation && (
+            <Typography variant="body2">
+              <strong>Annotation:</strong> {itemMetadata.fileAnnotation}
+            </Typography>
+          )}
+          {itemMetadata.isLoading && (
+            <Typography variant="body2" color="text.secondary">
+              Loading metadata...
+            </Typography>
+          )}
+          {itemMetadata.error && (
+            <Typography variant="body2" color="error">
+              Error: {itemMetadata.error}
+            </Typography>
+          )}
+        </Box>
+      )}
+
       <Autocomplete
         options={projects || []}
         getOptionLabel={(option) => option.name}
