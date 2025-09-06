@@ -10,12 +10,24 @@ import {
 } from "@mui/material";
 import React, { useCallback, useState } from "react";
 import { CreateTaskResponse } from "../../utils";
+import { usePopcorn } from "../../providers/popcorn-provider";
 
 interface PushToCCP4i2Props {
   project?: ProjectInfo;
   molNo?: number;
   item?: moorhen.Molecule | moorhen.Map | null;
   onClose: () => void;
+}
+
+function detectCoordinateFormat(text: string): "pdb" | "mmcif" | "unknown" {
+  const trimmedText = text.replace(/^\s+/, ""); // Remove leading whitespace and blank lines
+  if (/^(HEADER|TITLE|ATOM  |HETATM)/m.test(trimmedText)) {
+    return "pdb";
+  }
+  if (/^data_/m.test(trimmedText) && /_atom_site\./.test(trimmedText)) {
+    return "mmcif";
+  }
+  return "unknown";
 }
 
 export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
@@ -29,6 +41,7 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
   const [selectedProject, setSelectedProject] = useState<
     ProjectInfo | undefined
   >(project);
+  const { setMessage } = usePopcorn();
 
   const { data: jobs, mutate: mutateJobs } = api.get<JobInfo[]>(
     `projects/${selectedProject?.id}/jobs/`
@@ -38,7 +51,7 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
     console.log({ molNo, item });
     // Implement your push logic here
     if (selectedProject && item) {
-      // e.g. api.pushToCCP4i2(selectedProject)
+      setMessage("Pushing model coordinates to CCP4i2...");
       console.log("Pushing to CCP4i2:", selectedProject);
       const result = await api.post<CreateTaskResponse>(
         `projects/${selectedProject.id}/create_task/`,
@@ -46,36 +59,42 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
           task_name: "coordinate_selector",
         }
       );
-      console.log({ result });
+      //console.log({ result });
       mutateJobs();
       const modelCoords =
         item.type === "molecule"
           ? await (item as moorhen.Molecule).getAtoms()
           : null;
-      console.log(modelCoords);
       if (!modelCoords) return;
-      const formData = new FormData();
 
+      const format = detectCoordinateFormat(modelCoords);
+      setMessage(`Detected coordinate format: ${format}`);
+
+      const moleculeName =
+        (item as moorhen.Molecule).name +
+        (format === "mmcif" ? ".cif" : ".pdb");
+
+      const formData = new FormData();
       formData.append("objectPath", "coordinate_selector.inputData.XYZIN");
       formData.append(
         "file",
         new Blob([modelCoords], {
-          type: "chemical/x-pdb",
+          type: format === "mmcif" ? "chemical/x-cif" : "chemical/x-pdb",
         }),
-        (item as moorhen.Molecule).name
+        moleculeName
       );
       const uploadResult = await api.post<any>(
         `jobs/${result.new_job?.id}/upload_file_param`,
         formData
       );
-      console.log({ uploadResult });
+      setMessage(`Upload result status: ${uploadResult.status}`);
       const run_result = await api.post<CreateTaskResponse>(
         `jobs/${result.new_job?.id}/run/`,
         {
           task_name: "coordinate_selector",
         }
       );
-      console.log({ run_result });
+      setMessage(`Run result status: ${run_result.status}`);
       onClose();
     }
   }, [selectedProject, molNo, item]);
