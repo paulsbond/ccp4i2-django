@@ -23,11 +23,17 @@ import {
   Paper,
   Chip,
   Stack,
-  Toolbar,
+  Dialog,
 } from "@mui/material";
 import { MoreVert, Visibility, VisibilityOff } from "@mui/icons-material";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApi } from "../../api";
+import { PushToCCP4i2Panel } from "./push-to-ccp4i2-panel";
+import {
+  extractFileId,
+  fetchItemMetadata,
+  ItemMetadata,
+} from "./item-metadata-utils"; // <-- Import utilities
 
 type ContentType = "Molecule" | "Map";
 type ContentItem = moorhen.Molecule | moorhen.Map;
@@ -42,36 +48,11 @@ interface MoorhenLoadedContentProps {
   type: ContentType;
 }
 
-interface FileInfo {
-  id: number;
-  job: number;
-  name: string;
-  annotation?: string;
-  job_param_name?: string;
-  // Add other file properties as needed
-}
-
-interface JobInfo {
-  id: number;
-  number: string;
-  project: number;
-  title?: string;
-  // Add other job properties as needed
-}
-
-interface ProjectInfo {
-  id: number;
-  name: string;
-  // Add other project properties as needed
-}
-
-interface ItemMetadata {
-  fileId: number;
-  projectName?: string;
-  jobNumber?: string;
-  fileAnnotation?: string;
-  isLoading: boolean;
-  error?: string;
+// Utility to get favicon URL
+function getFaviconUrl(): string | undefined {
+  const link = document.querySelector("link[rel~='icon']");
+  const href = link ? link.getAttribute("href") : undefined;
+  return href === null ? undefined : href;
 }
 
 export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
@@ -85,6 +66,8 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
   const [itemMetadata, setItemMetadata] = useState<Map<number, ItemMetadata>>(
     new Map()
   );
+  const [pushDialogOpen, setPushDialogOpen] = useState(false);
+  const [faviconUrl, setFaviconUrl] = useState<string | undefined>(undefined);
 
   const dispatch = useDispatch();
   const api = useApi();
@@ -111,19 +94,13 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
   const items = type === "Molecule" ? molecules : maps;
   const visibleItems = type === "Molecule" ? visibleMolecules : visibleMaps;
 
-  // Extract file ID from uniqueId
-  const extractFileId = (uniqueId: string): number | null => {
-    const match = uniqueId.match(/\/api\/proxy\/files\/(\d+)\/download\//);
-    return match ? parseInt(match[1], 10) : null;
-  };
-
   // Check if item was loaded from database
   const isFromDatabase = (item: ContentItem): boolean => {
     return !!(item.uniqueId && extractFileId(item.uniqueId));
   };
 
-  // Fetch metadata for a specific item
-  const fetchItemMetadata = async (item: ContentItem) => {
+  // Fetch metadata for a specific item using the utility
+  const fetchAndStoreItemMetadata = async (item: ContentItem) => {
     const fileId = extractFileId(item.uniqueId || "");
     if (!fileId) return;
 
@@ -141,38 +118,13 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
     );
 
     try {
-      // Step 1: Fetch file information
-      const fileResponse = await fetch(`/api/proxy/files/${fileId}/`);
-      if (!fileResponse.ok) throw new Error("Failed to fetch file info");
-      const fileInfo: FileInfo = await fileResponse.json();
-
-      // Step 2: Fetch job information
-      const jobResponse = await fetch(`/api/proxy/jobs/${fileInfo.job}/`);
-      if (!jobResponse.ok) throw new Error("Failed to fetch job info");
-      const jobInfo: JobInfo = await jobResponse.json();
-
-      // Step 3: Fetch project information
-      const projectResponse = await fetch(
-        `/api/proxy/projects/${jobInfo.project}/`
-      );
-      if (!projectResponse.ok) throw new Error("Failed to fetch project info");
-      const projectInfo: ProjectInfo = await projectResponse.json();
-
-      // Update metadata with complete information
-      setItemMetadata(
-        (prev) =>
-          new Map(
-            prev.set(molNo, {
-              fileId,
-              projectName: projectInfo.name,
-              jobNumber: jobInfo.number,
-              fileAnnotation: fileInfo.annotation || fileInfo.job_param_name,
-              isLoading: false,
-            })
-          )
-      );
+      const metadata = await fetchItemMetadata(item);
+      if (metadata) {
+        setItemMetadata(
+          (prev) => new Map(prev.set(molNo, { ...metadata, isLoading: false }))
+        );
+      }
     } catch (error) {
-      console.error("Error fetching metadata for item:", item.name, error);
       setItemMetadata(
         (prev) =>
           new Map(
@@ -194,11 +146,16 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
       if (item.uniqueId) {
         const fileId = extractFileId(item.uniqueId);
         if (fileId && !itemMetadata.has(item.molNo)) {
-          fetchItemMetadata(item);
+          fetchAndStoreItemMetadata(item);
         }
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
+
+  useEffect(() => {
+    setFaviconUrl(getFaviconUrl());
+  }, []);
 
   const handleMenuOpen = (
     event: React.MouseEvent<HTMLElement>,
@@ -284,7 +241,8 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         molecule.centreOn("/*/*/*/*", false, true);
       } else {
         const map = menuState.item as moorhen.Map;
-        console.log("Center on map:", map.name);
+        map.centreOnMap();
+        //console.log("Center on map:", map.name);
       }
     }
     handleMenuClose();
@@ -411,6 +369,19 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         )}
       </Typography>
     );
+  };
+
+  const itemToPush = useMemo(() => {
+    return menuState.item;
+  }, [menuState]);
+  const molNo = itemToPush?.molNo;
+  const handlePushToCCP4i2 = () => {
+    setPushDialogOpen(true);
+    //handleMenuClose();
+  };
+
+  const handlePushDialogClose = () => {
+    setPushDialogOpen(false);
   };
 
   if (!cootInitialized) {
@@ -577,10 +548,12 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
         anchorEl={menuState.anchorEl}
         open={Boolean(menuState.anchorEl)}
         onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            minWidth: "180px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        slotProps={{
+          paper: {
+            sx: {
+              minWidth: "180px",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            },
           },
         }}
       >
@@ -603,7 +576,39 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
           <Typography sx={{ mr: 1 }}>🗑️</Typography>
           Delete {type}
         </MenuItem>
+        <MenuItem onClick={handlePushToCCP4i2}>
+          {faviconUrl ? (
+            <img
+              src={faviconUrl}
+              alt="CCP4i2"
+              style={{
+                width: 20,
+                height: 20,
+                marginRight: 8,
+                verticalAlign: "middle",
+              }}
+            />
+          ) : (
+            <Typography sx={{ mr: 1 }}>🚀</Typography>
+          )}
+          Push to CCP4i2
+        </MenuItem>
       </Menu>
+
+      {/* Push to CCP4i2 Dialog */}
+      <Dialog
+        open={pushDialogOpen}
+        onClose={handlePushDialogClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <PushToCCP4i2Panel
+          molNo={molNo}
+          item={itemToPush}
+          itemMetadata={itemMetadata.get(itemToPush?.molNo || 0)}
+          onClose={handlePushDialogClose}
+        />
+      </Dialog>
     </Box>
   );
 };

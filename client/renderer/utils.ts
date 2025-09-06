@@ -31,7 +31,7 @@ export type SetParameterResponse =
       updated_item?: never;
     };
 
-interface CreateTaskResponse {
+export interface CreateTaskResponse {
   status: "Success" | "Failed";
   new_job: Job;
 }
