@@ -122,7 +122,7 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
         }
       );
       setMessage(`Run result status: ${run_result.status}`);
-      onClose();
+      if (onClose) onClose();
     }
   }, [selectedProject, molNo, item]);
 
@@ -180,7 +180,7 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
       <Autocomplete
         options={projects || []}
         getOptionLabel={(option) => option.name}
-        value={selectedProject}
+        value={selectedProject || null}
         onChange={(_, value) => setSelectedProject(value)}
         renderInput={(params) => (
           <TextField
