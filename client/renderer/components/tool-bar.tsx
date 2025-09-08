@@ -66,6 +66,19 @@ export default function ToolBar() {
     }
   };
 
+  const handleI2Run = async () => {
+    if (job) {
+      const result: { status: string; command: string } = await fetch(
+        `/api/proxy/jobs/${job.id}/i2run_command/`
+      ).then((res) => res.json());
+      console.log(result);
+      if (result?.command) {
+        navigator.clipboard.writeText(result.command);
+        setMessage("i2run command copied to clipboard");
+      }
+    }
+  };
+
   return (
     <Stack
       direction="row"
@@ -131,7 +144,7 @@ export default function ToolBar() {
         </Button>
       )}
       {!sizeMinus1 && (
-        <Button variant="outlined" startIcon={<Code />}>
+        <Button variant="outlined" startIcon={<Code />} onClick={handleI2Run}>
           i2run command
         </Button>
       )}

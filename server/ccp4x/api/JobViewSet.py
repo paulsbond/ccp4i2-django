@@ -12,6 +12,7 @@ from rest_framework.parsers import MultiPartParser, JSONParser
 from ccp4i2.core import CCP4TaskManager
 from ccp4i2.core.CCP4Container import CContainer
 from core import CCP4ErrorHandling
+from ..lib.job_utils.i2run_for_job import i2run_for_job
 from ..lib.job_utils.load_nested_xml import load_nested_xml
 from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_param_file
@@ -439,6 +440,21 @@ class JobViewSet(ModelViewSet):
                 the_job, request.GET.get("object_path")[:-1]
             )
             return Response(response_dict)
+        except (ValueError, models.Job.DoesNotExist) as err:
+            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def i2run_command(self, request, pk=None):
+        try:
+            the_job = models.Job.objects.get(id=pk)
+            response_string = i2run_for_job(the_job)
+            return Response({"status": "Success", "command": response_string})
         except (ValueError, models.Job.DoesNotExist) as err:
             logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)})

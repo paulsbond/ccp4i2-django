@@ -15,7 +15,7 @@ def i2run_for_job(job: models.Job):
     container = get_job_container(job)
     if not container:
         return None
-    command: str = f"i2run {job.task_name} --projectName {job.project.name}"
+    command: str = f"i2run {job.task_name} --project_name {job.project.name}"
     for child in container.children():
         if isinstance(child, (CCP4Container.CContainer, CContainer)):
             if child.objectName() not in [
@@ -113,7 +113,7 @@ def _handle_file(element: CData, command: str, container: CCP4Container) -> str:
     filteredChildren = [
         child
         for child in element.children()
-        if child.objectName() not in ["annotation"]
+        if child.objectName() not in ["annotation", "contentFlag", "subType"]
     ]
     for child in filteredChildren:
         if hasattr(child, "isSet") and not child.isSet(allowDefault=False):
