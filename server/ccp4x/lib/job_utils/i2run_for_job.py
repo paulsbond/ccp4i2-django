@@ -156,7 +156,7 @@ def extend_i2run(command: str, element: CData, container: CCP4Container) -> str:
                 command += extend_i2run(command, grandchild, container)
 
         else:
-            command += f" --{minimal_path(child.objectPath(), container)} {str(child)} {len(child.children())}"
+            command += f" --{minimal_path(child.objectPath(), container)} {str(child)} "
 
     return command
 
