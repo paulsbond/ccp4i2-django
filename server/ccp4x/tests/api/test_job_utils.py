@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings
 from ccp4i2.core import CCP4Container
 from ccp4i2.core.CCP4ModelData import CDictDataFile
 from core.CCP4File import CDataFile
+from ...lib.job_utils.i2run_for_job import i2run_for_job
 from ...db.import_i2xml import import_ccp4_project_zip
 from ...db.ccp4i2_django_projects_manager import CCP4i2DjangoProjectsManager
 from ...db import models
@@ -297,3 +298,11 @@ class CCP4i2TestCase(TestCase):
         )
         a = detect_file_type(file_path)
         self.assertEqual(a, "mmCIF ligand/geometry file")
+
+    def test_i2run_for_job(self):
+        old_job = models.Job.objects.get(
+            project__name="refmac_gamma_test_0", number="1"
+        )
+        i2run_command = i2run_for_job(old_job)
+        print(i2run_command)
+        self.assertIsNotNone(i2run_command)

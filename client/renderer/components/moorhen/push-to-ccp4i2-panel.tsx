@@ -21,6 +21,7 @@ interface PushToCCP4i2Props {
   onClose: () => void;
 }
 
+type ProjectInfoOrNull = ProjectInfo | null;
 function detectCoordinateFormat(text: string): "pdb" | "mmcif" | "unknown" {
   const trimmedText = text.replace(/^\s+/, ""); // Remove leading whitespace and blank lines
   if (/^(HEADER|TITLE|ATOM  |HETATM)/m.test(trimmedText)) {
@@ -122,7 +123,7 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
         }
       );
       setMessage(`Run result status: ${run_result.status}`);
-      onClose();
+      if (onClose) onClose();
     }
   }, [selectedProject, molNo, item]);
 
@@ -180,7 +181,8 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
       <Autocomplete
         options={projects || []}
         getOptionLabel={(option) => option.name}
-        value={selectedProject}
+        //@ts-ignore
+        value={selectedProject || null}
         onChange={(_, value) => setSelectedProject(value)}
         renderInput={(params) => (
           <TextField
