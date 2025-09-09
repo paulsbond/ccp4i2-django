@@ -2,10 +2,12 @@ import logging
 import uuid
 from typing import Union
 from ccp4i2.core.CCP4Container import CContainer
+from ccp4i2.core.CCP4Data import CDict
 import json
 from core import CCP4XtalData
 from core import CCP4ModelData
 from core import CCP4File
+from core import CCP4Data
 from ccp4i2.core.CCP4File import CDataFile
 from .save_params_for_job import save_params_for_job
 from .find_objects import find_object_by_path
@@ -68,7 +70,45 @@ def set_parameter(
 def set_parameter_container(
     the_container: CContainer, object_path: str, value: Union[str, int, dict, None]
 ):
-    object_element = find_object_by_path(the_container, object_path)
+    try:
+        object_element = find_object_by_path(the_container, object_path)
+    except AttributeError as err:
+        # A possible explanation is that we have the key (the last path element)
+        # of a dictionary item here.  Test if that is the case and proceed acordingly
+        parent_path = ".".join(object_path.split(".")[:-1])
+        key_name = object_path.split(".")[-1]
+
+        try:
+            logger.info("Now searching for parent element %s", parent_path)
+            parent_element = find_object_by_path(the_container, parent_path)
+            if isinstance(parent_element, (dict, CCP4Data.CDict, CDict)):
+                parent_element[key_name] = value
+                return parent_element
+            else:
+                logger.exception(
+                    "Failed to set parameter with name %s with value %s",
+                    object_path,
+                    value,
+                    exc_info=err,
+                )
+                raise
+        except Exception as err1:
+            logger.exception(
+                "Failed to set parameter with name %s with value %s",
+                object_path,
+                value,
+                exc_info=err1,
+            )
+            raise
+    except Exception as err:
+        logger.exception(
+            "Failed to set parameter with name %s with value %s",
+            object_path,
+            value,
+            exc_info=err,
+        )
+        raise
+
     # e = object_element.getEtree()
     # print(ET.tostring(e).decode("utf-8"))
     object_element.unSet()

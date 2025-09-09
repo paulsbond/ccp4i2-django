@@ -65,28 +65,41 @@ def find_objects(within, func, multiple=False, growing_list=None, growing_name=N
 
 
 def find_object_by_path(base_element: CData, object_path: str):
-    # MN 2023-07-16 A method that searches through the content
-    # of this data object to find the given objectPath
+    """
+    Efficiently finds a descendent CData item from a root element given a dot-separated path.
+    Supports array access via [index] for CCP4Data.CList elements.
+    Example path: name1.name2.arrayname[3].name3
+    """
+
+    array_finder = re.compile(r"^(?P<base>.+)\[(?P<index>\d+)\]$")
     path_elements = object_path.split(".")
-    array_finder = re.compile(r"(?P<base_element>.*)\[(?P<index>\d+)\]$")
-    for path_element in path_elements[1:]:
-        matches = array_finder.match(path_element)
-        if matches is not None or isinstance(base_element, CCP4Data.CList):
-            if matches is not None:
-                element_list = getattr(
-                    base_element, matches.groupdict()["base_element"]
+
+    current = base_element
+    for elem in path_elements[1:]:  # skip root element name
+        match = array_finder.match(elem)
+        if match:
+            # Array access
+            base_name = match.group("base")
+            index = int(match.group("index"))
+            list_obj = getattr(current, base_name, None)
+            if list_obj is None or not isinstance(list_obj, (CCP4Data.CList, list)):
+                raise ValueError(
+                    f"Element '{base_name}' is not a CCP4Data.CList or list"
                 )
-                element_index = int(matches.groupdict()["index"])
-            elif isinstance(base_element, CCP4Data.CList):
-                element_list = getattr(base_element, path_element)
-                element_index = 0
-            while len(element_list) <= element_index:
-                element_list.append(element_list.makeItem())
-            try:
-                base_element = element_list[element_index]
-            except TypeError as err:
-                logger.error(f"Failed deindexing {object_path} at {path_element}")
-                raise err
+            # Expand list if needed
+            while len(list_obj) <= index:
+                if hasattr(list_obj, "makeItem"):
+                    list_obj.append(list_obj.makeItem())
+                else:
+                    raise IndexError(
+                        f"Cannot expand list '{base_name}' to index {index}"
+                    )
+            current = list_obj[index]
         else:
-            base_element = getattr(base_element, path_element)
-    return base_element
+            # Simple attribute access
+            next_obj = getattr(current, elem, None)
+            if next_obj is None:
+                raise AttributeError(f"Element '{elem}' not found in '{current}'")
+            # print(f"Successfully found '{elem}' in '{current.objectName()}'")
+            current = next_obj
+    return current

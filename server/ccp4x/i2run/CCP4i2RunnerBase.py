@@ -243,8 +243,16 @@ class CCP4i2RunnerBase(object):
         return str(final_dest)
 
     def handleItem(self, thePlugin: CPluginScript, objectPath, value):
-        if isinstance(value, str) and "=" in value:
-            subPath, subValue = value.split("=")
+        the_object = find_object_by_path(thePlugin.container, objectPath)
+        if the_object is None:
+            return
+        is_complex_object = (
+            hasattr(the_object, "children")
+            and callable(the_object.children)
+            and len(the_object.children()) > 0
+        )
+        if is_complex_object and isinstance(value, str) and "=" in value:
+            subPath, subValue = value.split("=", 1)
             # Intercept some things to do with (e.g.) columnLabels
             if subPath == "columnLabels":
                 theObject = find_object_by_path(
@@ -272,6 +280,7 @@ class CCP4i2RunnerBase(object):
                 logger.info("Setting parameter to %s %s", compositePath, subValue)
                 set_parameter_container(thePlugin.container, compositePath, subValue)
         elif value is not None:
+            logger.info("Setting parameter to %s %s", objectPath, value)
             set_parameter_container(thePlugin.container, objectPath, value)
 
     def fileForFileUse(
@@ -287,7 +296,7 @@ class CCP4i2RunnerBase(object):
         return {}
 
     def handleItemOrList(self, thePlugin, objectPath, value):
-        # print(f'In handleItemOrList {objectPath} {value}')
+        # print(f"In handleItemOrList {objectPath} {value}")
         if isinstance(value, list):
             for item in value:
                 self.handleItem(thePlugin, objectPath, item)
