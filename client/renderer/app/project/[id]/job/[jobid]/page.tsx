@@ -24,6 +24,7 @@ import { JobLogViewer } from "../../../../../components/job-log-viewer";
 import { TaskProvider } from "../../../../../providers/task-provider";
 import { ValidationViewer } from "../../../../../components/validation-viewer";
 import { useRunCheck } from "../../../../../providers/run-check-provider";
+import { useJobTab } from "../../../../../providers/job-tab-provider";
 
 export default function JobPage({
   params,
@@ -48,9 +49,8 @@ export default function JobPage({
   );
 
   const previousJob = usePrevious(job);
-
-  const [tabValue, setTabValue] = useState<Number>(job?.status == 1 ? 0 : 3);
-
+  const { jobTabValue: tabValue, setJobTabValue: setTabValue } = useJobTab();
+  //const [tabValue, setTabValue] = useState<Number>(job?.status == 1 ? 0 : 3);
   const { data: report_xml_json, mutate: mutateReportXml } = useSWR<any>(
     job ? `/api/proxy/jobs/${job.id}/report_xml/` : null,
     (url) => fetch(url).then((r) => r.json()),
