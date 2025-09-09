@@ -1,7 +1,6 @@
 import {
   Button,
   Stack,
-  useMediaQuery,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -21,7 +20,7 @@ import {
   SystemUpdateAlt,
   MoreVert,
 } from "@mui/icons-material";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useApi } from "../api";
 import { Job } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
@@ -30,6 +29,14 @@ import { HelpIframe } from "./help_iframe";
 import { usePopcorn } from "../providers/popcorn-provider";
 import { useRunCheck } from "../providers/run-check-provider";
 import { useJobTab } from "../providers/job-tab-provider";
+
+interface ToolbarButton {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  show: boolean;
+}
 
 export default function ToolBar() {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -53,8 +60,6 @@ export default function ToolBar() {
   const { setMessage } = usePopcorn();
   const { confirmTaskRun } = useRunCheck();
   const { setJobTabValue } = useJobTab();
-
-  // For menu of hidden buttons
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
@@ -78,6 +83,7 @@ export default function ToolBar() {
       }
     }
   };
+
   const handleRun = async () => {
     if (job) {
       const confirmed = await confirmTaskRun(job.id);
@@ -107,58 +113,74 @@ export default function ToolBar() {
     }
   };
 
-  const handleLog = () => {
-    setJobTabValue(10);
-  };
+  const handleLog = () => setJobTabValue(10);
 
-  // Example breakpoints for button visibility
-  const showClone = panelWidth > 550;
-  const showHelp = panelWidth > 650;
-  const showBibliography = panelWidth > 750;
-  const showExportMTZ = panelWidth > 950;
-  const showLogFile = panelWidth > 1100;
-  const showI2Run = panelWidth > 1200;
-
-  // Track which buttons are hidden
-  const hiddenButtons = [
-    !showClone && {
-      label: "Clone job",
-      icon: <ContentCopy />,
-      onClick: handleClone,
-    },
-    !showHelp && {
-      label: "Help",
-      icon: <Help />,
-      onClick: () => {
-        if (window?.open) {
-          window.open(
-            `https://ccp4i2.gitlab.io/rstdocs/tasks/${job?.task_name}/index.html`
-          );
-        }
+  // Button definitions with breakpoints
+  const toolbarButtons: ToolbarButton[] = useMemo(
+    () => [
+      {
+        label: "Task menu",
+        icon: <Menu />,
+        onClick: () => router.push(`/project/${projectId}`),
+        show: true,
       },
-    },
-    !showBibliography && {
-      label: "Bibliography",
-      icon: <MenuBook />,
-      onClick: () => {},
-    },
-    !showExportMTZ && {
-      label: "Export MTZ",
-      icon: <SystemUpdateAlt />,
-      onClick: () => {},
-      disabled: job?.status != 6,
-    },
-    !showLogFile && {
-      label: "Show log files",
-      icon: <Description />,
-      onClick: handleLog,
-    },
-    !showI2Run && {
-      label: "i2run command",
-      icon: <Code />,
-      onClick: handleI2Run,
-    },
-  ].filter(Boolean);
+      {
+        label: "Run",
+        icon: <DirectionsRun />,
+        onClick: handleRun,
+        disabled: job?.status !== 1,
+        show: true,
+      },
+      {
+        label: "Clone job",
+        icon: <ContentCopy />,
+        onClick: handleClone,
+        show: panelWidth > 550,
+      },
+      {
+        label: "Help",
+        icon: <Help />,
+        onClick: () => {
+          if (window?.open) {
+            window.open(
+              `https://ccp4i2.gitlab.io/rstdocs/tasks/${job?.task_name}/index.html`
+            );
+          }
+        },
+        show: panelWidth > 650,
+      },
+      {
+        label: "Bibliography",
+        icon: <MenuBook />,
+        onClick: () => {},
+        show: panelWidth > 750,
+      },
+      {
+        label: "Export MTZ",
+        icon: <SystemUpdateAlt />,
+        onClick: () => {},
+        disabled: job?.status !== 6,
+        show: panelWidth > 950,
+      },
+      {
+        label: "Show log file",
+        icon: <Description />,
+        onClick: handleLog,
+        disabled: job?.status !== 6,
+        show: panelWidth > 1100,
+      },
+      {
+        label: "i2run command",
+        icon: <Code />,
+        onClick: handleI2Run,
+        show: panelWidth > 1200,
+      },
+    ],
+    [panelWidth, job, projectId, router]
+  );
+
+  const visibleButtons = toolbarButtons.filter((btn) => btn.show);
+  const hiddenButtons = toolbarButtons.filter((btn) => !btn.show);
 
   return (
     <>
@@ -169,80 +191,17 @@ export default function ToolBar() {
           useFlexGap
           sx={{ flexWrap: "wrap", justifyContent: "center", px: 2, mb: 1 }}
         >
-          <Button
-            variant="outlined"
-            startIcon={<Menu />}
-            onClick={() => {
-              router.push(`/project/${projectId}`);
-            }}
-          >
-            Task menu
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DirectionsRun />}
-            disabled={job?.status != 1}
-            onClick={handleRun}
-          >
-            Run
-          </Button>
-          {showClone && (
+          {visibleButtons.map((btn) => (
             <Button
+              key={btn.label}
               variant="outlined"
-              startIcon={<ContentCopy />}
-              onClick={handleClone}
+              startIcon={btn.icon}
+              onClick={btn.onClick}
+              disabled={btn.disabled}
             >
-              Clone job
+              {btn.label}
             </Button>
-          )}
-          {showHelp && (
-            <Button
-              variant="outlined"
-              startIcon={<Help />}
-              onClick={() => {
-                if (window?.open) {
-                  window.open(
-                    `https://ccp4i2.gitlab.io/rstdocs/tasks/${job?.task_name}/index.html`
-                  );
-                }
-              }}
-            >
-              Help
-            </Button>
-          )}
-          {showBibliography && (
-            <Button variant="outlined" startIcon={<MenuBook />}>
-              Bibliography
-            </Button>
-          )}
-          {showExportMTZ && (
-            <Button
-              variant="outlined"
-              startIcon={<SystemUpdateAlt />}
-              disabled={job?.status != 6}
-            >
-              Export MTZ
-            </Button>
-          )}
-          {showLogFile && (
-            <Button
-              variant="outlined"
-              startIcon={<Description />}
-              disabled={job?.status != 6}
-              onClick={handleLog}
-            >
-              Show log file
-            </Button>
-          )}
-          {showI2Run && (
-            <Button
-              variant="outlined"
-              startIcon={<Code />}
-              onClick={handleI2Run}
-            >
-              i2run command
-            </Button>
-          )}
+          ))}
           {hiddenButtons.length > 0 && (
             <>
               <IconButton
@@ -257,31 +216,26 @@ export default function ToolBar() {
                 open={Boolean(menuAnchor)}
                 onClose={() => setMenuAnchor(null)}
               >
-                {hiddenButtons.map(
-                  (btn, idx) =>
-                    btn && (
-                      <MenuItem
-                        key={btn.label}
-                        onClick={() => {
-                          btn.onClick();
-                          setMenuAnchor(null);
-                        }}
-                        disabled={btn.disabled}
-                      >
-                        {btn.icon}
-                        <span style={{ marginLeft: 8 }}>{btn.label}</span>
-                      </MenuItem>
-                    )
-                )}
+                {hiddenButtons.map((btn) => (
+                  <MenuItem
+                    key={btn.label}
+                    onClick={() => {
+                      btn.onClick();
+                      setMenuAnchor(null);
+                    }}
+                    disabled={btn.disabled}
+                  >
+                    {btn.icon}
+                    <span style={{ marginLeft: 8 }}>{btn.label}</span>
+                  </MenuItem>
+                ))}
               </MuiMenu>
             </>
           )}
           <HelpIframe
             url={`/help/html/tasks/${job?.task_name}/index.html`}
             open={showHelpPanel}
-            handleClose={() => {
-              setShowHelpPanel(false);
-            }}
+            handleClose={() => setShowHelpPanel(false)}
           />
         </Stack>
       </div>
