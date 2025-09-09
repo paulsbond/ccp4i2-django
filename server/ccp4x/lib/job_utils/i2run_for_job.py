@@ -62,7 +62,7 @@ def minimal_path(full_path, container: CCP4Container) -> str:
 
 
 def _is_list(object: CData) -> bool:
-    return isinstance(object, (CList, CCP4Data.CList, list))
+    return isinstance(object, (CList, CCP4Data.CList))
 
 
 def _is_container(object: CData) -> bool:
@@ -165,6 +165,12 @@ def handle_element(item: CData) -> str:
                 and node._value is not None
             ):
                 results.append(f'"{path}={value}" ')
+
+        elif _is_list(node):
+            for i_item, item in enumerate(node):
+                next_path_parts[-1] = next_path_parts[-1] + f"[{i_item}]"
+                results.extend(traverse(item, next_path_parts, is_root=True))
+
         else:
             child_nodes = node.children() if hasattr(node, "children") else []
             filtered_nodes = [

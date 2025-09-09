@@ -23,6 +23,67 @@ from ..lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
 logger = logging.getLogger("root")
 
 
+def get_leaf_paths(container):
+    """
+    Given a container, return a list of unique leaf element dictionaries.
+    A leaf is any child that is not a CContainer or CCP4Container.CContainer.
+    Paths are dot-separated objectName() values from the root to the leaf.
+    Only one item is returned for each unique path.
+    """
+
+    def traverse(node, path_parts):
+        leaf_paths = []
+        for child in node.children():
+            if isinstance(child, (CContainer, CCP4Container.CContainer)):
+                leaf_paths.extend(traverse(child, path_parts + [child.objectName()]))
+            else:
+                leaf_paths.append(
+                    {
+                        "path": child.objectPath(),
+                        "minimumPath": child.objectPath(),
+                        "qualifiers": child.qualifiers(),
+                        "className": type(child).__name__,
+                        "object": child,
+                    }
+                )
+        return leaf_paths
+
+    all_leafs = traverse(container, [container.objectName()])
+    # Filter so only one item per unique path is returned
+    unique = {}
+    for leaf in all_leafs:
+        if leaf["path"] not in unique:
+            unique[leaf["path"]] = leaf
+    return list(unique.values())
+
+
+def compute_minimum_paths(keywords):
+    """
+    Given a list of dicts with 'path' keys (dot-separated), add a 'minimumPath' key to each dict
+    containing the shortest suffix of the path that uniquely identifies the element.
+    """
+    paths = [kw["path"].split(".") for kw in keywords]
+    n = len(paths)
+    for i, kw in enumerate(keywords):
+        this_path = paths[i]
+        # Try increasing suffix lengths until unique
+        for suffix_len in range(1, len(this_path) + 1):
+            candidate = ".".join(this_path[-suffix_len:])
+            # Count how many keywords have this candidate as their suffix
+            count = sum(
+                1
+                for other_path in paths
+                if len(other_path) >= suffix_len
+                and other_path[-suffix_len:] == this_path[-suffix_len:]
+            )
+            if count == 1:
+                kw["minimumPath"] = candidate
+                break
+        else:
+            # Fallback: use full path
+            kw["minimumPath"] = ".".join(this_path)
+
+
 class CCP4i2RunnerBase(object):
     def __init__(self, the_args=None, command_line=None, parser=None, parent=None):
         self.parent = parent
@@ -93,28 +154,7 @@ class CCP4i2RunnerBase(object):
 
     @staticmethod
     def keywordsOfContainer(container: CContainer, growingList=None):
-        if growingList is None:
-            growingList = []
-        for child in container.children():
-            if (
-                isinstance(child, (CContainer, CCP4Container.CContainer))
-                and "temporary" not in child.objectName()
-            ):
-                growingList = CCP4i2RunnerBase.keywordsOfContainer(child, growingList)
-            else:
-                try:
-                    growingList.append(
-                        {
-                            "path": child.objectPath(),
-                            "minimumPath": child.objectPath(),
-                            "qualifiers": child.qualifiers(),
-                            "className": type(child).__name__,
-                            "object": child,
-                        }
-                    )
-                except AttributeError as err:
-                    print("Issue ", err, " for child ", child)
-        return growingList
+        return get_leaf_paths(container)
 
     @staticmethod
     def getCandidatePath(currentPath):
@@ -123,32 +163,7 @@ class CCP4i2RunnerBase(object):
 
     @staticmethod
     def minimisePaths(allKeywords):
-        nShrunk = len(allKeywords)
-        while nShrunk > 0:
-            nShrunk = 0
-            for iKeyword, keyword in enumerate(allKeywords):
-                if keyword["path"].endswith("."):
-                    del keyword
-                    continue
-                if len(keyword["minimumPath"].split(".")) > 1:
-                    candidatePath = CCP4i2RunnerBase.getCandidatePath(
-                        keyword["minimumPath"]
-                    )
-                    okayToShrink = True
-                    for iOtherKeyword, otherKeyword in enumerate(allKeywords):
-                        if iKeyword != iOtherKeyword:
-                            if len(otherKeyword["minimumPath"].split(".")) > 1:
-                                otherCandidatePath = CCP4i2RunnerBase.getCandidatePath(
-                                    otherKeyword["minimumPath"]
-                                )
-                            else:
-                                otherCandidatePath = otherKeyword["minimumPath"]
-                            if candidatePath == otherCandidatePath:
-                                okayToShrink = False
-                                break
-                    if okayToShrink:
-                        nShrunk += 1
-                        keyword["minimumPath"] = candidatePath
+        compute_minimum_paths(allKeywords)
         return allKeywords
 
     @staticmethod
