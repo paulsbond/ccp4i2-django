@@ -29,6 +29,7 @@ import { HelpIframe } from "./help_iframe";
 import { usePopcorn } from "../providers/popcorn-provider";
 import { useRunCheck } from "../providers/run-check-provider";
 import { useJobTab } from "../providers/job-tab-provider";
+import { I2RunDialog } from "./i2run-dialog";
 
 interface ToolbarButton {
   label: string;
@@ -239,19 +240,11 @@ export default function ToolBar() {
           />
         </Stack>
       </div>
-      <Dialog open={showI2RunDialog} onClose={() => setShowI2RunDialog(false)}>
-        <DialogTitle>i2run Command</DialogTitle>
-        <DialogContent>
-          <code style={{ wordBreak: "break-all", whiteSpace: "pre-wrap" }}>
-            {i2RunCommand}
-          </code>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowI2RunDialog(false)} variant="contained">
-            Dismiss
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <I2RunDialog
+        open={showI2RunDialog}
+        command={i2RunCommand}
+        onClose={() => setShowI2RunDialog(false)}
+      />
     </>
   );
 }

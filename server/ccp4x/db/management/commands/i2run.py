@@ -17,18 +17,18 @@ class Command(BaseCommand):
     requires_system_checks = []
 
     def add_arguments(self, parser):
-        logger.info(f"sys.argv is [{sys.argv}]")
-        self.i2Runner = CCP4i2RunnerDjango.CCP4i2RunnerDjango(
+        logger.info("sys.argv is [%s]", sys.argv)
+        self.i2_runner = CCP4i2RunnerDjango.CCP4i2RunnerDjango(
             the_args=sys.argv[2:],
             parser=parser,
             parent=CCP4Modules.QTAPPLICATION(graphical=False),
         )
-        self.i2Runner.parseArgs()
+        self.i2_runner.parseArgs()
 
     def handle(self, *args, **options):
         @using_django_pm
         def execute():
-            self.i2Runner.execute()
+            self.i2_runner.execute()
 
         execute()
         return

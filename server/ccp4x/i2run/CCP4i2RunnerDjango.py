@@ -146,7 +146,7 @@ class CCP4i2RunnerDjango(CCP4i2RunnerBase):
         return result
 
     def execute(self):
-        thePlugin = self.getPlugin()
+        thePlugin = self.getPlugin(arguments_parsed=True)
         assert self.jobId is not None
         assert self.projectId is not None
         thePlugin.saveParams()

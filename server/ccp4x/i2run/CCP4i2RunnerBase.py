@@ -53,16 +53,17 @@ class CCP4i2RunnerBase(object):
     def keywordsOfTask(self):
         return self.keywordsOfTaskName(self.task_name)
 
-    def parseArgs(self):
-        CCP4i2RunnerBase.addTaskArguments(
-            self.parser, self.task_name, parent=self.parent
-        )
+    def parseArgs(self, arguments_parsed=False):
+        if not arguments_parsed:
+            CCP4i2RunnerBase.addTaskArguments(
+                self.parser, self.task_name, parent=self.parent
+            )
         if self.parsed_args is None:
             self.parsed_args = self.parser.parse_args(self.args)
         return self.parsed_args
 
-    def getPlugin(self, jobId=None):
-        parsed_args = self.parseArgs()
+    def getPlugin(self, jobId=None, arguments_parsed=False):
+        parsed_args = self.parseArgs(arguments_parsed)
         logger.debug(f"parsed_args is {parsed_args}")
         sys.stdout.flush()
         if parsed_args.project_name is not None:
@@ -345,10 +346,13 @@ class CCP4i2RunnerBase(object):
                             theObject.append(theObject.makeItem())
                         theItem = theObject[-1]
                         if value is not None:
-                            for item in value:
+                            for iItem, item in enumerate(value):
                                 self.handleItemOrList(
                                     thePlugin, theItem.objectPath(), item
                                 )
+                                if iItem < len(value) - 1:
+                                    theObject.append(theObject.makeItem())
+                                    theItem = theObject[-1]
                         # Delete known unset exemplars
                         theObject.removeUnsetListItems()
                     elif value is not None:
