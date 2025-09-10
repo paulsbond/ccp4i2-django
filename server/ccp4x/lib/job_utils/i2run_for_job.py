@@ -16,17 +16,19 @@ def i2run_for_job(job: models.Job):
     if not container:
         return None
     command: str = f"{job.task_name} --project_name {job.project.name} "
-    for child in container.children():
-        if isinstance(child, (CCP4Container.CContainer, CContainer)):
-            if child.objectName() not in [
-                "outputData",
-                "guiAdmin",
-                "guiControls",
-                "patchSelection",
-                "guiParameters",
-                "temporary",
-            ]:
-                command = extend_i2run(command, child, container)
+    command = extend_i2run(
+        command,
+        container,
+        container,
+        exclude=[
+            "outputData",
+            "guiAdmin",
+            "guiControls",
+            "patchSelection",
+            "guiParameters",
+            "temporary",
+        ],
+    )
     return command
 
 
@@ -37,28 +39,20 @@ def minimal_path(full_path, container: CCP4Container) -> str:
     """
     full_parts = full_path.split(".")
 
-    # First, try to get relative path from container
-    container_parts = container.objectPath().split(".")
-    if full_parts[: len(container_parts)] == container_parts:
-        relative_parts = full_parts[len(container_parts) :]
-    else:
-        relative_parts = full_parts
-
-    if not relative_parts:
-        return ""
-
     # Start with the last element and gradually add more elements
-    for i in range(1, len(relative_parts) + 1):
+    for i in range(1, len(full_parts) + 1):
         # Take the last i elements
-        candidate_path_parts = relative_parts[-i:]
+        candidate_path_parts = full_parts[-i:]
         candidate_path = ".".join(candidate_path_parts)
 
         # Test if this path is unique within the container
         if _is_path_unique(candidate_path, container, full_path):
+            print(full_path, candidate_path)
             return candidate_path
 
     # If no unique shorter path found, return the full relative path
-    return ".".join(relative_parts)
+    print(full_path, ".".join(full_parts))
+    return ".".join(full_parts)
 
 
 def _is_list(object: CData) -> bool:
@@ -99,58 +93,64 @@ def _is_leaf(object: CData) -> bool:
     return False
 
 
-def _handle_file(element: CData, command: str, container: CCP4Container) -> str:
-    command += f" --{minimal_path(element.objectPath(), container)} "
-    filteredChildren = [
-        child
-        for child in element.children()
-        if child.objectName() not in ["annotation", "contentFlag", "subType"]
-    ]
-    for child in filteredChildren:
-        if hasattr(child, "isSet") and not child.isSet(allowDefault=False):
-            continue
-        else:
-            command += f'"{child.objectName()}={str(child)}" '
+def extend_i2run(
+    command: str, element: CData, container: CCP4Container, exclude: list[str] = None
+) -> str:
+    if exclude is None:
+        exclude = []
 
-    return command
+    def should_skip_child(child, exclude):
+        return child.objectName() in exclude or child.objectName() == "temporary"
 
-
-def extend_i2run(command: str, element: CData, container: CCP4Container) -> str:
-    for child in element.children():
-        if child.objectName() == "temporary":
-            continue
-        elif (
+    def is_unset_nonlist_noncontainer(child):
+        return (
             hasattr(child, "isSet")
             and not _is_list(child)
+            and not _is_container(child)
             and not child.isSet(allowDefault=False)
-        ):
-            continue
+        )
 
-        elif _is_container(child):
-            command = extend_i2run(command, child, container)
-
-        elif _is_list(child):
-            for grandchild in child:
-                element_text = handle_element(grandchild)
-                if len(element_text) > 0:
-                    command += f" --{minimal_path(child.objectPath(), container)} "
-                    command += handle_element(grandchild)
-
-        elif not _is_leaf(child):
-            element_text = handle_element(child)
+    def handle_list_child(command, child, container):
+        for grandchild in child:
+            element_text = handle_element(grandchild)
+            print("grandchild", grandchild, element_text)
             if len(element_text) > 0:
                 command += f" --{minimal_path(child.objectPath(), container)} "
-                command += handle_element(child)
+                command += handle_element(grandchild)
+        return command
 
-        else:
-            command += (
-                f' --{minimal_path(child.objectPath(), container)} "{str(child)}" '
-            )
+    def handle_nonleaf_child(command, child, container):
+        element_text = handle_element(child)
+        if len(element_text) > 0:
+            command += f" --{minimal_path(child.objectPath(), container)} "
+            command += handle_element(child)
+        return command
+
+    def process_child(command, child, container, exclude):
+        if should_skip_child(child, exclude):
+            return command
+        if is_unset_nonlist_noncontainer(child):
+            return command
+        if _is_container(child):
+            return extend_i2run(command, child, container, exclude)
+        if _is_list(child):
+            return handle_list_child(command, child, container)
+        if not _is_leaf(child):
+            return handle_nonleaf_child(command, child, container)
+        command += f' --{minimal_path(child.objectPath(), container)} "{str(child)}" '
+        return command
+
+    for child in element.children():
+        command = process_child(command, child, container, exclude)
 
     return command
 
 
 def handle_element(item: CData) -> str:
+    # If this is a simple element, then simply return the corresponding quoted string value
+    if _is_leaf(item):
+        return f'"{str(item)}"'
+
     def traverse(node, path_parts, is_root=False):
         results = []
         # Don't include root node's objectName in path_parts

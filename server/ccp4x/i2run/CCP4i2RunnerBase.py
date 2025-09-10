@@ -59,8 +59,8 @@ def get_leaf_paths(container):
 
 def compute_minimum_paths(keywords):
     """
-    Given a list of dicts with 'path' keys (dot-separated), add a 'minimumPath' key to each dict
-    containing the shortest suffix of the path that uniquely identifies the element.
+    For each keyword dict with a 'path' key, add a 'minimumPath' key containing the shortest
+    suffix of the path that uniquely identifies the element among all keywords.
     """
     paths = [kw["path"].split(".") for kw in keywords]
     n = len(paths)
@@ -69,19 +69,20 @@ def compute_minimum_paths(keywords):
         # Try increasing suffix lengths until unique
         for suffix_len in range(1, len(this_path) + 1):
             candidate = ".".join(this_path[-suffix_len:])
-            # Count how many keywords have this candidate as their suffix
-            count = sum(
-                1
-                for other_path in paths
+            # Check if any other path shares this suffix
+            matches = [
+                j
+                for j, other_path in enumerate(paths)
                 if len(other_path) >= suffix_len
                 and other_path[-suffix_len:] == this_path[-suffix_len:]
-            )
-            if count == 1:
+            ]
+            if len(matches) == 1 and matches[0] == i:
                 kw["minimumPath"] = candidate
                 break
         else:
             # Fallback: use full path
             kw["minimumPath"] = ".".join(this_path)
+    return keywords
 
 
 class CCP4i2RunnerBase(object):
