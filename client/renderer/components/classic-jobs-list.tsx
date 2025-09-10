@@ -155,11 +155,12 @@ const useTreeItemData = (
 
     if (job) {
       displayLabel = `${job.number}: ${job.title}`;
-      timestamp = job.finish_time
-        ? `Finished ${new Date(job.finish_time).toLocaleString()}`
-        : job.creation_time
-        ? `Modified ${new Date(job.creation_time).toLocaleString()}`
-        : undefined;
+      timestamp =
+        job.finish_time && new Date(job.finish_time).getFullYear() > 1970
+          ? `Finished ${new Date(job.finish_time).toLocaleString()}`
+          : job.creation_time
+          ? `Modified ${new Date(job.creation_time).toLocaleString()}`
+          : undefined;
     } else if (file) {
       displayLabel =
         file.annotation.trim().length > 0
