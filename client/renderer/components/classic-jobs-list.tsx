@@ -345,6 +345,17 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
       [handleMenuClick]
     );
 
+    // Double click handler for jobs
+    const handleDoubleClick = useCallback(
+      (event: React.MouseEvent<HTMLElement>) => {
+        if (job) {
+          const path = `/job/${job.id}`;
+          window.open(path, "_blank", "noopener,noreferrer");
+        }
+      },
+      [job]
+    );
+
     const renderAvatar = () => {
       if (job) {
         return (
@@ -402,6 +413,7 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
         <TreeItem2Content
           {...getContentProps()}
           onContextMenu={handleContextMenu}
+          onDoubleClick={handleDoubleClick}
           sx={{
             cursor: "context-menu",
             "&:hover": {

@@ -1,6 +1,6 @@
 "use client";
-import { useParams } from "next/dist/client/components/navigation";
-import { JobView } from "../../../../../components/job-view";
+import { JobView } from "../../../components/job-view";
+import { useParams } from "next/navigation";
 
 export default function JobPage() {
   const params = useParams();

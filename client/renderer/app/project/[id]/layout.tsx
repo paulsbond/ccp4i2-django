@@ -44,18 +44,18 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
     <DraggableContext>
       <NavigationShortcutsProvider>
         <FileSystemFileBrowserProvider>
-          <Stack
-            spacing={2}
-            sx={{
-              height: "calc(100vh - 4rem)",
-              paddingTop: "1rem",
-              width: "100%",
-            }}
-          >
-            <FilePreviewProvider>
-              <JobMenuProvider>
-                <JobTabProvider>
-                  <FileMenuProvider>
+          <FilePreviewProvider>
+            <JobMenuProvider>
+              <JobTabProvider>
+                <FileMenuProvider>
+                  <Stack
+                    spacing={2}
+                    sx={{
+                      height: "calc(100vh - 4rem)",
+                      paddingTop: "1rem",
+                      width: "100%",
+                    }}
+                  >
                     <MenuBar />
                     <PanelGroup direction="horizontal">
                       <Panel defaultSize={30} minSize={20}>
@@ -112,11 +112,11 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
                         {props.children}
                       </Panel>
                     </PanelGroup>
-                  </FileMenuProvider>
-                </JobTabProvider>
-              </JobMenuProvider>
-            </FilePreviewProvider>
-          </Stack>
+                  </Stack>
+                </FileMenuProvider>
+              </JobTabProvider>
+            </JobMenuProvider>
+          </FilePreviewProvider>
         </FileSystemFileBrowserProvider>
       </NavigationShortcutsProvider>
     </DraggableContext>
