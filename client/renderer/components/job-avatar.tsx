@@ -33,7 +33,7 @@ export const CCP4i2JobAvatar = forwardRef<HTMLDivElement, CCP4i2JobAvatarProps>(
     const runningAnimation =
       job?.status === 3
         ? {
-            animation: "avatarPulse 1s infinite",
+            animation: "avatarPulse 2s infinite",
             "@keyframes avatarPulse": {
               "0%": { boxShadow: "0 0 0 0 rgba(25,118,210,0.7)" },
               "70%": { boxShadow: "0 0 0 10px rgba(25,118,210,0)" },
