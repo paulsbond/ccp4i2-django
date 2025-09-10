@@ -108,6 +108,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         { key: "WAVELENGTH", label: "Wavelength" },
         { key: "RESOLUTION_LOW", label: "Low resolution limit" },
         { key: "RESOLUTION_HIGH", label: "High resolution limit" },
+        { key: "ELEMENTS", label: "Elements for HA completion" },
       ],
       modelSimilarity: [
         {
