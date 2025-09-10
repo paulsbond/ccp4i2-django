@@ -28,7 +28,8 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
   const { job, params_xml, validation, diagnostic_xml, def_xml, container } =
     useJob(jobid);
   const { project, jobs, mutateJobs } = useProject(job?.project || 0);
-  const { devMode, setJobId } = useCCP4i2Window();
+  const { devMode, jobId, setJobId, projectId, setProjectId } =
+    useCCP4i2Window();
   const {
     setExtraDialogActions,
     setProcessedErrors,
@@ -56,8 +57,11 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
 
   useEffect(() => {
     const asyncFunc = async () => {
-      if (job && setJobId) {
+      if (job && setJobId && job.id !== jobId) {
         setJobId(job.id);
+      }
+      if (job && setProjectId && job.project !== projectId) {
+        setProjectId(job.project);
       }
       if (job && job != previousJob) {
         setTabValue(job.status == 1 ? 0 : [3, 6].includes(job.status) ? 3 : 4);
