@@ -1,4 +1,11 @@
-import { AppBar, FormControlLabel, Switch, Typography } from "@mui/material";
+import {
+  AppBar,
+  FormControlLabel,
+  Switch,
+  Typography,
+  IconButton,
+} from "@mui/material";
+import LanIcon from "@mui/icons-material/Lan";
 import EditMenu from "./edit-menu";
 import FileMenu from "./file-menu";
 import HelpMenu from "./help-menu";
@@ -10,6 +17,7 @@ import { useApi } from "../api";
 import { Job, Project } from "../types/models";
 import EditableTypography from "./editable-typography";
 import HistoryToolbar from "./history-toolbar";
+import { useRouter } from "next/navigation";
 
 export default function MenuBar() {
   const { projectId, jobId, devMode, setDevMode } = useCCP4i2Window();
@@ -18,6 +26,7 @@ export default function MenuBar() {
     `projects/${projectId}`
   );
   const { data: job } = api.get<Job>(`jobs/${jobId}`);
+  const router = useRouter();
   useEffect(() => {
     // Send a message to the main process to get the config
     if (window.electronAPI) {
@@ -64,6 +73,16 @@ export default function MenuBar() {
         <ViewMenu />
         <UtilMenu />
         <HelpMenu />
+        {project && (
+          <IconButton
+            color="info"
+            aria-label="View network"
+            onClick={() => router.push(`/project/${projectId}/network`)}
+            sx={{ ml: 1 }}
+          >
+            <LanIcon />
+          </IconButton>
+        )}
         <Typography sx={{ flexGrow: 1 }} />
         {job?.number && <Typography variant="h6">Job {job.number}</Typography>}
         {project && (
