@@ -1,3 +1,4 @@
+import "./globals.css";
 import { ThemeProvider } from "@mui/material/styles";
 import { PropsWithChildren } from "react";
 import { DeleteDialogProvider } from "../providers/delete-dialog";
