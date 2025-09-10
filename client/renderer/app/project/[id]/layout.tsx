@@ -14,6 +14,7 @@ import { FileMenuProvider } from "../../../providers/file-context-menu";
 import MenuBar from "../../../components/menu-bar";
 import { NavigationShortcutsProvider } from "../../../providers/navigation-shortcuts-provider";
 import { FileSystemFileBrowserProvider } from "../../../providers/file-system-file-browser-context";
+import { JobTabProvider } from "../../../providers/job-tab-provider";
 
 export interface ProjectLayoutProps extends PropsWithChildren {
   params: Promise<{ id: string; jobid: string }>;
@@ -43,77 +44,79 @@ export default function ProjectLayout(props: ProjectLayoutProps) {
     <DraggableContext>
       <NavigationShortcutsProvider>
         <FileSystemFileBrowserProvider>
-          <Stack
-            spacing={2}
-            sx={{
-              height: "calc(100vh - 4rem)",
-              paddingTop: "1rem",
-              width: "100%",
-            }}
-          >
-            <FilePreviewProvider>
-              <JobMenuProvider>
+          <FilePreviewProvider>
+            <JobMenuProvider>
+              <JobTabProvider>
                 <FileMenuProvider>
-                  <MenuBar />
-                  <PanelGroup direction="horizontal">
-                    <Panel defaultSize={30} minSize={20}>
-                      <Paper
-                        sx={{
-                          overflowY: "auto",
-                          height: "calc(100vh - 10rem)",
+                  <Stack
+                    spacing={2}
+                    sx={{
+                      height: "calc(100vh - 4rem)",
+                      paddingTop: "1rem",
+                      width: "100%",
+                    }}
+                  >
+                    <MenuBar />
+                    <PanelGroup direction="horizontal">
+                      <Panel defaultSize={30} minSize={20}>
+                        <Paper
+                          sx={{
+                            overflowY: "auto",
+                            height: "calc(100vh - 10rem)",
+                          }}
+                        >
+                          <Tabs
+                            value={tabValue}
+                            onChange={handleTabChange}
+                            variant="fullWidth"
+                          >
+                            <Tab value={0} label="Job list" />
+                            {/*<Tab value={1} label="Job grid" />*/}
+                            <Tab value={2} label="Project directory" />
+                          </Tabs>
+                          {tabValue == 0 && project && (
+                            <ClassicJobList projectId={project.id} />
+                          )}
+                          {/*tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />*/}
+                          {tabValue == 2 && project && (
+                            <CCP4i2DirectoryViewer projectId={project.id} />
+                          )}
+                        </Paper>
+                      </Panel>
+                      <PanelResizeHandle
+                        style={{
+                          width: 10,
+                          backgroundColor: "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "col-resize",
                         }}
                       >
-                        <Tabs
-                          value={tabValue}
-                          onChange={handleTabChange}
-                          variant="fullWidth"
-                        >
-                          <Tab value={0} label="Job list" />
-                          {/*<Tab value={1} label="Job grid" />*/}
-                          <Tab value={2} label="Project directory" />
-                        </Tabs>
-                        {tabValue == 0 && project && (
-                          <ClassicJobList projectId={project.id} />
-                        )}
-                        {/*tabValue == 1 && <JobsGrid projectId={id} size={{ xs: 12 }} />*/}
-                        {tabValue == 2 && project && (
-                          <CCP4i2DirectoryViewer projectId={project.id} />
-                        )}
-                      </Paper>
-                    </Panel>
-                    <PanelResizeHandle
-                      style={{
-                        width: 10,
-                        backgroundColor: "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "col-resize",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 4,
-                          height: "50%",
-                          backgroundColor: "gray",
-                          borderRadius: 2,
-                        }}
-                      />
-                    </PanelResizeHandle>
-                    <Panel
-                      defaultSize={70}
-                      minSize={20}
-                      onResize={(size) =>
-                        setJobPanelSize && setJobPanelSize(size)
-                      }
-                    >
-                      {props.children}
-                    </Panel>
-                  </PanelGroup>
+                        <div
+                          style={{
+                            width: 4,
+                            height: "50%",
+                            backgroundColor: "gray",
+                            borderRadius: 2,
+                          }}
+                        />
+                      </PanelResizeHandle>
+                      <Panel
+                        defaultSize={70}
+                        minSize={20}
+                        onResize={(size) =>
+                          setJobPanelSize && setJobPanelSize(size)
+                        }
+                      >
+                        {props.children}
+                      </Panel>
+                    </PanelGroup>
+                  </Stack>
                 </FileMenuProvider>
-              </JobMenuProvider>
-            </FilePreviewProvider>
-          </Stack>
+              </JobTabProvider>
+            </JobMenuProvider>
+          </FilePreviewProvider>
         </FileSystemFileBrowserProvider>
       </NavigationShortcutsProvider>
     </DraggableContext>

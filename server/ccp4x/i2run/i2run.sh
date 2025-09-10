@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # filepath: /Users/nmemn/Developer/ccp4i2-django/i2run.sh
 
-# Remove the first argument after the script name
-shift
 
 args=()
 dbfile=""

@@ -58,6 +58,16 @@ export const installIpcHandlers = (
     };
   };
 
+  const getCwdResponse = () => {
+    return {
+      message: "get-cwd",
+      status: "Success",
+      cwd: isDev
+        ? path.join(process.cwd(), "..", "server")
+        : path.join(process.resourcesPath, "server"),
+    };
+  };
+
   // IPC communication to trigger file dialog to locate a valid CCP4 directory
   ipcMain.on("locate-ccp4", (event, data) => {
     const mainWindow: BrowserWindow | null = getMainWindow();
@@ -139,6 +149,14 @@ export const installIpcHandlers = (
     console.log("get-config", data);
     const response = getConfigResponse();
     console.log("get-config response", response);
+    event.reply("message-from-main", response);
+  });
+
+  // IPC communication to prompt reply with current config response
+  ipcMain.on("get-cwd", (event, data) => {
+    console.log("get-cwd", data);
+    const response = getCwdResponse();
+    console.log("get-cwd response", response);
     event.reply("message-from-main", response);
   });
 

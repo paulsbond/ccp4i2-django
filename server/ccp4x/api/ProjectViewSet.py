@@ -221,6 +221,33 @@ class ProjectViewSet(ModelViewSet):
         detail=True,
         methods=["get"],
         permission_classes=[],
+        serializer_class=serializers.FileSerializer,
+    )
+    def file_uses(self, request, pk=None):
+        """
+        Retrieve a list of file_uses associated with a specific project.
+
+        Parameters:
+
+            request (Request): The HTTP request object.
+            pk (int, optional): The primary key of the project.
+
+        Returns:
+            Response: A Response object containing serialized file_use data.
+        """
+
+        project = models.Project.objects.get(pk=pk)
+        serializer = serializers.FileUseSerializer(
+            models.FileUse.objects.filter(job__project=project), many=True
+        )
+        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+        project.save()
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
         serializer_class=serializers.JobSerializer,
         parser_classes=[
             JSONParser,

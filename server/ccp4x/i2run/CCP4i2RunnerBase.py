@@ -23,6 +23,68 @@ from ..lib.job_utils.gemmi_split_mtz import gemmi_split_mtz
 logger = logging.getLogger("root")
 
 
+def get_leaf_paths(container):
+    """
+    Given a container, return a list of unique leaf element dictionaries.
+    A leaf is any child that is not a CContainer or CCP4Container.CContainer.
+    Paths are dot-separated objectName() values from the root to the leaf.
+    Only one item is returned for each unique path.
+    """
+
+    def traverse(node, path_parts):
+        leaf_paths = []
+        for child in node.children():
+            if isinstance(child, (CContainer, CCP4Container.CContainer)):
+                leaf_paths.extend(traverse(child, path_parts + [child.objectName()]))
+            else:
+                leaf_paths.append(
+                    {
+                        "path": child.objectPath(),
+                        "minimumPath": child.objectPath(),
+                        "qualifiers": child.qualifiers(),
+                        "className": type(child).__name__,
+                        "object": child,
+                    }
+                )
+        return leaf_paths
+
+    all_leafs = traverse(container, [container.objectName()])
+    # Filter so only one item per unique path is returned
+    unique = {}
+    for leaf in all_leafs:
+        if leaf["path"] not in unique:
+            unique[leaf["path"]] = leaf
+    return list(unique.values())
+
+
+def compute_minimum_paths(keywords):
+    """
+    For each keyword dict with a 'path' key, add a 'minimumPath' key containing the shortest
+    suffix of the path that uniquely identifies the element among all keywords.
+    """
+    paths = [kw["path"].split(".") for kw in keywords]
+    n = len(paths)
+    for i, kw in enumerate(keywords):
+        this_path = paths[i]
+        # Try increasing suffix lengths until unique
+        for suffix_len in range(1, len(this_path) + 1):
+            candidate = ".".join(this_path[-suffix_len:])
+            # Check if any other path shares this suffix
+            matches = [
+                j
+                for j, other_path in enumerate(paths)
+                if len(other_path) >= suffix_len
+                and other_path[-suffix_len:] == this_path[-suffix_len:]
+            ]
+            if len(matches) == 1 and matches[0] == i:
+                kw["minimumPath"] = candidate
+                break
+        else:
+            # Fallback: use full path
+            kw["minimumPath"] = ".".join(this_path)
+    return keywords
+
+
 class CCP4i2RunnerBase(object):
     def __init__(self, the_args=None, command_line=None, parser=None, parent=None):
         self.parent = parent
@@ -53,16 +115,17 @@ class CCP4i2RunnerBase(object):
     def keywordsOfTask(self):
         return self.keywordsOfTaskName(self.task_name)
 
-    def parseArgs(self):
-        CCP4i2RunnerBase.addTaskArguments(
-            self.parser, self.task_name, parent=self.parent
-        )
+    def parseArgs(self, arguments_parsed=False):
+        if not arguments_parsed:
+            CCP4i2RunnerBase.addTaskArguments(
+                self.parser, self.task_name, parent=self.parent
+            )
         if self.parsed_args is None:
             self.parsed_args = self.parser.parse_args(self.args)
         return self.parsed_args
 
-    def getPlugin(self, jobId=None):
-        parsed_args = self.parseArgs()
+    def getPlugin(self, jobId=None, arguments_parsed=False):
+        parsed_args = self.parseArgs(arguments_parsed)
         logger.debug(f"parsed_args is {parsed_args}")
         sys.stdout.flush()
         if parsed_args.project_name is not None:
@@ -92,28 +155,7 @@ class CCP4i2RunnerBase(object):
 
     @staticmethod
     def keywordsOfContainer(container: CContainer, growingList=None):
-        if growingList is None:
-            growingList = []
-        for child in container.children():
-            if (
-                isinstance(child, (CContainer, CCP4Container.CContainer))
-                and "temporary" not in child.objectName()
-            ):
-                growingList = CCP4i2RunnerBase.keywordsOfContainer(child, growingList)
-            else:
-                try:
-                    growingList.append(
-                        {
-                            "path": child.objectPath(),
-                            "minimumPath": child.objectPath(),
-                            "qualifiers": child.qualifiers(),
-                            "className": type(child).__name__,
-                            "object": child,
-                        }
-                    )
-                except AttributeError as err:
-                    print("Issue ", err, " for child ", child)
-        return growingList
+        return get_leaf_paths(container)
 
     @staticmethod
     def getCandidatePath(currentPath):
@@ -122,32 +164,7 @@ class CCP4i2RunnerBase(object):
 
     @staticmethod
     def minimisePaths(allKeywords):
-        nShrunk = len(allKeywords)
-        while nShrunk > 0:
-            nShrunk = 0
-            for iKeyword, keyword in enumerate(allKeywords):
-                if keyword["path"].endswith("."):
-                    del keyword
-                    continue
-                if len(keyword["minimumPath"].split(".")) > 1:
-                    candidatePath = CCP4i2RunnerBase.getCandidatePath(
-                        keyword["minimumPath"]
-                    )
-                    okayToShrink = True
-                    for iOtherKeyword, otherKeyword in enumerate(allKeywords):
-                        if iKeyword != iOtherKeyword:
-                            if len(otherKeyword["minimumPath"].split(".")) > 1:
-                                otherCandidatePath = CCP4i2RunnerBase.getCandidatePath(
-                                    otherKeyword["minimumPath"]
-                                )
-                            else:
-                                otherCandidatePath = otherKeyword["minimumPath"]
-                            if candidatePath == otherCandidatePath:
-                                okayToShrink = False
-                                break
-                    if okayToShrink:
-                        nShrunk += 1
-                        keyword["minimumPath"] = candidatePath
+        compute_minimum_paths(allKeywords)
         return allKeywords
 
     @staticmethod
@@ -242,8 +259,16 @@ class CCP4i2RunnerBase(object):
         return str(final_dest)
 
     def handleItem(self, thePlugin: CPluginScript, objectPath, value):
-        if isinstance(value, str) and "=" in value:
-            subPath, subValue = value.split("=")
+        the_object = find_object_by_path(thePlugin.container, objectPath)
+        if the_object is None:
+            return
+        is_complex_object = (
+            hasattr(the_object, "children")
+            and callable(the_object.children)
+            and len(the_object.children()) > 0
+        )
+        if is_complex_object and isinstance(value, str) and "=" in value:
+            subPath, subValue = value.split("=", 1)
             # Intercept some things to do with (e.g.) columnLabels
             if subPath == "columnLabels":
                 theObject = find_object_by_path(
@@ -271,6 +296,7 @@ class CCP4i2RunnerBase(object):
                 logger.info("Setting parameter to %s %s", compositePath, subValue)
                 set_parameter_container(thePlugin.container, compositePath, subValue)
         elif value is not None:
+            logger.info("Setting parameter to %s %s", objectPath, value)
             set_parameter_container(thePlugin.container, objectPath, value)
 
     def fileForFileUse(
@@ -286,7 +312,7 @@ class CCP4i2RunnerBase(object):
         return {}
 
     def handleItemOrList(self, thePlugin, objectPath, value):
-        # print(f'In handleItemOrList {objectPath} {value}')
+        # print(f"In handleItemOrList {objectPath} {value}")
         if isinstance(value, list):
             for item in value:
                 self.handleItem(thePlugin, objectPath, item)
@@ -345,10 +371,13 @@ class CCP4i2RunnerBase(object):
                             theObject.append(theObject.makeItem())
                         theItem = theObject[-1]
                         if value is not None:
-                            for item in value:
+                            for iItem, item in enumerate(value):
                                 self.handleItemOrList(
                                     thePlugin, theItem.objectPath(), item
                                 )
+                                if iItem < len(value) - 1:
+                                    theObject.append(theObject.makeItem())
+                                    theItem = theObject[-1]
                         # Delete known unset exemplars
                         theObject.removeUnsetListItems()
                     elif value is not None:

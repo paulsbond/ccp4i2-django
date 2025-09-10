@@ -29,6 +29,19 @@ export const CCP4i2JobAvatar = forwardRef<HTMLDivElement, CCP4i2JobAvatarProps>(
       }
     }, [job]);
 
+    // Animation for running status
+    const runningAnimation =
+      job?.status === 3
+        ? {
+            animation: "avatarPulse 2s infinite",
+            "@keyframes avatarPulse": {
+              "0%": { boxShadow: "0 0 0 0 rgba(25,118,210,0.7)" },
+              "70%": { boxShadow: "0 0 0 10px rgba(25,118,210,0)" },
+              "100%": { boxShadow: "0 0 0 0 rgba(25,118,210,0)" },
+            },
+          }
+        : {};
+
     return (
       <Avatar
         {...props}
@@ -44,6 +57,7 @@ export const CCP4i2JobAvatar = forwardRef<HTMLDivElement, CCP4i2JobAvatarProps>(
           "&:hover": {
             boxShadow: "0 0 0 3px rgba(25, 118, 210, 0.5)",
           },
+          ...runningAnimation,
         }}
         src={`/api/proxy/djangostatic/svgicons/${job.task_name}.svg`}
         alt={job.task_name}
@@ -51,3 +65,19 @@ export const CCP4i2JobAvatar = forwardRef<HTMLDivElement, CCP4i2JobAvatarProps>(
     );
   }
 );
+
+// Add global keyframes for the animation
+// Place this in your main CSS or a global style file:
+/*
+@keyframes avatarPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(25,118,210,0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(25,118,210,0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(25,118,210,0);
+  }
+}
+*/

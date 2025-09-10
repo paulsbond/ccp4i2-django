@@ -155,11 +155,12 @@ const useTreeItemData = (
 
     if (job) {
       displayLabel = `${job.number}: ${job.title}`;
-      timestamp = job.finish_time
-        ? `Finished ${new Date(job.finish_time).toLocaleString()}`
-        : job.creation_time
-        ? `Modified ${new Date(job.creation_time).toLocaleString()}`
-        : undefined;
+      timestamp =
+        job.finish_time && new Date(job.finish_time).getFullYear() > 1970
+          ? `Finished ${new Date(job.finish_time).toLocaleString()}`
+          : job.creation_time
+          ? `Modified ${new Date(job.creation_time).toLocaleString()}`
+          : undefined;
     } else if (file) {
       displayLabel =
         file.annotation.trim().length > 0
@@ -345,6 +346,17 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
       [handleMenuClick]
     );
 
+    // Double click handler for jobs
+    const handleDoubleClick = useCallback(
+      (event: React.MouseEvent<HTMLElement>) => {
+        if (job) {
+          const path = `/job/${job.id}`;
+          window.open(path, "_blank", "noopener,noreferrer");
+        }
+      },
+      [job]
+    );
+
     const renderAvatar = () => {
       if (job) {
         return (
@@ -402,6 +414,7 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
         <TreeItem2Content
           {...getContentProps()}
           onContextMenu={handleContextMenu}
+          onDoubleClick={handleDoubleClick}
           sx={{
             cursor: "context-menu",
             "&:hover": {
