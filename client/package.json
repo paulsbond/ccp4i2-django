@@ -33,6 +33,7 @@
     "@rdkit/rdkit": "^2025.3.3-1.0.0",
     "acorn": "^8.15.0",
     "cytoscape": "^3.33.1",
+    "cytoscape-cose-bilkent": "^4.1.0",
     "detect-port": "^2.1.0",
     "electron-store": "^9.0.0",
     "express": "^5.1.0",
