@@ -55,13 +55,16 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
 
   const networkElements = useMemo(() => {
     if (!topLevelFileUses || !topLevelFiles || !topLevelJobs) return [];
-    const fileNodes = topLevelFiles.map((file) => ({
-      data: {
-        id: `file-${file.id}`,
-        label: file.annotation || file.job_param_name,
-        type: "file",
-      },
-    }));
+    const fileNodes = topLevelFiles.map((file) => {
+      const job = topLevelJobs.find((j) => j.id === file.job);
+      return {
+        data: {
+          id: `file-${file.id}`,
+          label: `${job?.number}: ${file.annotation || file.job_param_name}`,
+          type: "file",
+        },
+      };
+    });
     const jobNodes = topLevelJobs.map((job) => ({
       data: {
         id: `job-${job.id}`,
@@ -107,6 +110,7 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
     const fileToFileEdges = topLevelFileUses
       .filter((fileUse) => fileUse.role === 1)
       .map((fileUse) => {
+        const job = topLevelJobs.find((j) => j.id === fileUse.job);
         const sourceFile = topLevelFiles.find((f) => f.job === fileUse.job);
         const targetFile = topLevelFiles.find((f) => f.id === fileUse.file);
         // Only create edge if both files exist and are different
@@ -117,6 +121,7 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
               source: `file-${sourceFile.id}`,
               target: `file-${targetFile.id}`,
               type: "file-to-file",
+              label: job?.task_name,
             },
           };
         }

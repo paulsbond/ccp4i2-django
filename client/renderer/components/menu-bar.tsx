@@ -84,7 +84,9 @@ export default function MenuBar() {
           </IconButton>
         )}
         <Typography sx={{ flexGrow: 1 }} />
-        {job?.number && <Typography variant="h6">Job {job.number}</Typography>}
+        {job?.number && (
+          <EditableTypography variant="h5" text={`Job ${job.number}: `} />
+        )}
         {project && (
           <EditableTypography
             variant="h5"
