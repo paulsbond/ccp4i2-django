@@ -56,10 +56,18 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
   const networkElements = useMemo(() => {
     if (!topLevelFileUses || !topLevelFiles || !topLevelJobs) return [];
     const fileNodes = topLevelFiles.map((file) => ({
-      data: { id: `file-${file.id}`, label: file.annotation, type: "file" },
+      data: {
+        id: `file-${file.id}`,
+        label: file.annotation || file.job_param_name,
+        type: "file",
+      },
     }));
     const jobNodes = topLevelJobs.map((job) => ({
-      data: { id: `job-${job.id}`, label: job.number, type: "job" },
+      data: {
+        id: `job-${job.id}`,
+        label: `${job.number}: ${job.title || job.task_name}`,
+        type: "job",
+      },
     }));
     const fileUseEdges = topLevelFileUses.map((fileUse) => ({
       data: {
