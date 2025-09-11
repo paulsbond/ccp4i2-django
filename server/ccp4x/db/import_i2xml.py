@@ -147,7 +147,7 @@ def import_ccp4_project_zip(zip_path: Path, relocate_path: Path = None):
                         f"CCP4_JOBS/job_{new_job_number}/",
                         1,
                     )
-                    if src.endswith("/"):
+                    if zip_archive.getinfo(src).is_dir():
                         destination.mkdir(exist_ok=True)
                     else:
                         with zip_archive.open(src, "r") as src_file:
