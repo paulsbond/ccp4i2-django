@@ -305,7 +305,7 @@ def import_job(node: ET.Element):
     create_dict["uuid"] = node.attrib["jobid"]
     create_dict["status"] = node.attrib["status"]
     if "evaluation" in node.attrib:
-        create_dict["evaluation"] = node.attrib["evalaluation"]
+        create_dict["evaluation"] = node.attrib["evaluation"]
     create_dict["job_number"] = node.attrib["jobnumber"]
     create_dict["task_name"] = node.attrib["taskname"]
     create_dict["creation_time"] = datetime.datetime.fromtimestamp(
