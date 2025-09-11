@@ -507,7 +507,6 @@ def _add_directory_to_zip(
     """Recursively add directory contents to ZIP archive under the given archive_dir, ensuring all parent directories are present."""
     # Ensure parent directories are added as empty entries
     parts = Path(archive_dir).parts
-    print(parts)
     for i in range(1, len(parts) + 1):
         parent_dir = Path(*parts[:i])
         zip_info = zipfile.ZipInfo(str(parent_dir) + "/")
@@ -572,9 +571,15 @@ def _add_project_files_to_zip(
         "CCP4_COOT",
         "CCP4_DOWNLOADED_FILES",
         "CCP4_PROJECT_FILES",
-        "CCP4_IMPORTED_FILES",
         "CCP4_TMP",
     ]
+    # Special handling for CCP4_IMPORTED_FILES: only add empty placeholder directory
+    imported_files_dir = project_dir / "CCP4_IMPORTED_FILES"
+    if imported_files_dir.exists():
+        zip_info = zipfile.ZipInfo("CCP4_IMPORTED_FILES/")
+        if zip_info.filename not in zip_archive.namelist():
+            zip_archive.writestr(zip_info, "")
+        # Do NOT add files from this directory here; files will be added individually below
 
     # Add standard directories
     for subdir_name in standard_dirs:
@@ -601,7 +606,9 @@ def _add_project_files_to_zip(
                 # Calculate relative path from project directory
                 try:
                     relative_path = file_path.relative_to(project_dir)
-                    zip_archive.write(file_path, str(relative_path))
+                    # Only add the file if it hasn't already been added at this relative path
+                    if str(relative_path) not in zip_archive.namelist():
+                        zip_archive.write(file_path, str(relative_path))
                     file_paths_added.add(file_path)
                 except ValueError:
                     # File is outside project directory, skip or handle as needed
