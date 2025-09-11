@@ -3,32 +3,15 @@ import os
 import subprocess
 import platform
 from pathlib import Path
+from typing import Set
 from django.core.management.base import BaseCommand
-from ccp4x.db.models import Project
+from ccp4x.db.models import Project, Job
 from ccp4x.db.export_project import export_project_to_zip
 
 
 class Command(BaseCommand):
     """
     A Django management command to export a CCP4 project to a ZIP archive.
-
-    Attributes:
-        help (str): Description of the command.
-        requires_system_checks (list): List of system checks required before running the command.
-
-    Methods:
-        add_arguments(parser):
-            Adds command-line arguments to the parser.
-
-        handle(*args, **options):
-            Handles the command execution. Retrieves the project based on provided options and exports it.
-            If the detach option is specified, the export is run in a detached subprocess.
-
-        get_project(options):
-            Retrieves the project based on the provided options. Raises Project.DoesNotExist if no project is found.
-
-        get_output_path(project, options):
-            Determines the output path for the exported ZIP file based on project and options.
     """
 
     help = "Export a CCP4 project to ZIP archive"
@@ -39,6 +22,14 @@ class Command(BaseCommand):
         parser.add_argument("-pn", "--projectname", help="Project name", type=str)
         parser.add_argument("-pi", "--projectid", help="Integer project id", type=int)
         parser.add_argument("-pu", "--projectuuid", help="Project uuid", type=str)
+
+        # Job selection arguments
+        parser.add_argument(
+            "-j",
+            "--jobs",
+            help="Comma-separated list of top-level job numbers to export (e.g., '1,3,5')",
+            type=str,
+        )
 
         # Export options
         parser.add_argument(
@@ -58,12 +49,22 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(str(e)))
             return
 
+        # Get job selection if specified (as Set[str])
+        job_selection = self.get_job_selection(project, options)
+
+        if job_selection is not None:
+            # Validate and report on selected jobs
+            valid_count = self._count_valid_jobs(project, job_selection)
+            self.stdout.write(
+                f"Exporting {valid_count} selected top-level jobs and their descendants"
+            )
+
         output_path = self.get_output_path(project, options)
 
         if options["detach"]:
-            self.run_detached_export(project, output_path)
+            self.run_detached_export(project, output_path, options.get("jobs"))
         else:
-            self.run_export(project, output_path)
+            self.run_export(project, output_path, job_selection)
 
     def get_project(self, options):
         """Retrieve project based on provided options."""
@@ -78,6 +79,58 @@ class Command(BaseCommand):
             "No project specified. Use --projectname, --projectid, or --projectuuid."
         )
 
+    def get_job_selection(self, project, options) -> Set[str]:
+        """Get the set of job numbers to export as strings."""
+        if not options.get("jobs"):
+            return None
+
+        try:
+            # Parse job numbers from comma-separated string and keep as strings
+            job_numbers = {num.strip() for num in options["jobs"].split(",")}
+
+            # Validate that the job numbers exist in the project
+            valid_jobs = set()
+            for job_num_str in job_numbers:
+                try:
+                    job_num = int(job_num_str)
+                    if Job.objects.filter(project=project, number=job_num).exists():
+                        valid_jobs.add(job_num_str)
+                    else:
+                        self.stderr.write(
+                            self.style.WARNING(
+                                f"Job number {job_num_str} not found in project"
+                            )
+                        )
+                except ValueError:
+                    self.stderr.write(
+                        self.style.WARNING(f"Invalid job number format: {job_num_str}")
+                    )
+
+            if not valid_jobs:
+                self.stderr.write(self.style.ERROR("No valid jobs found for selection"))
+                return set()
+
+            return valid_jobs
+
+        except ValueError as e:
+            self.stderr.write(self.style.ERROR(f"Invalid job numbers format: {e}"))
+            return set()
+
+    def _count_valid_jobs(self, project, job_selection: Set[str]) -> int:
+        """Count valid jobs for reporting purposes."""
+        if not job_selection:
+            return 0
+
+        count = 0
+        for job_num_str in job_selection:
+            try:
+                job_num = int(job_num_str)
+                if Job.objects.filter(project=project, number=job_num).exists():
+                    count += 1
+            except ValueError:
+                continue
+        return count
+
     def get_output_path(self, project, options):
         """Determine output path for the exported ZIP file."""
         if options["output"]:
@@ -86,11 +139,17 @@ class Command(BaseCommand):
         # Default output path: {project_name}_{uuid_first_8_chars}.zip
         safe_name = "".join(c for c in project.name if c.isalnum() or c in "._-")
         uuid_prefix = str(project.uuid).replace("-", "")[:8]
-        filename = f"{safe_name}_{uuid_prefix}.zip"
+
+        # Add job selection indicator to filename if jobs are selected
+        job_suffix = ""
+        if options.get("jobs"):
+            job_suffix = f"_jobs_{options['jobs'].replace(',', '_')}"
+
+        filename = f"{safe_name}_{uuid_prefix}{job_suffix}.zip"
 
         return Path.cwd() / filename
 
-    def run_detached_export(self, project, output_path):
+    def run_detached_export(self, project, output_path, job_selection_str):
         """Run export in a detached subprocess."""
         # Determine the program name based on the OS
         ccp4_python_program = "ccp4-python"
@@ -108,6 +167,10 @@ class Command(BaseCommand):
             str(output_path),
         ]
 
+        # Add job selection if specified
+        if job_selection_str:
+            cmd_args.extend(["-j", job_selection_str])
+
         # Create log file for detached process
         log_path = output_path.parent / f"{output_path.stem}_export.log"
 
@@ -121,10 +184,11 @@ class Command(BaseCommand):
                     cwd=os.getcwd(),
                 )
 
+                job_info = f" (Jobs: {job_selection_str})" if job_selection_str else ""
                 self.stdout.write(
                     self.style.SUCCESS(
                         f"Export started in detached process (PID: {process.pid})\n"
-                        f"Project: {project.name} (UUID: {project.uuid})\n"
+                        f"Project: {project.name} (UUID: {project.uuid}){job_info}\n"
                         f"Output: {output_path}\n"
                         f"Log file: {log_path}"
                     )
@@ -135,19 +199,28 @@ class Command(BaseCommand):
                 self.style.ERROR(f"Failed to start detached export process: {e}")
             )
 
-    def run_export(self, project, output_path):
+    def run_export(self, project, output_path, job_selection: Set[str] = None):
         """Run export in the current process."""
         try:
+            if job_selection:
+                job_info = (
+                    f" (Selected job numbers: {', '.join(sorted(job_selection))})"
+                )
+            else:
+                job_info = " (All jobs)"
+
             self.stdout.write(
-                f"Exporting project '{project.name}' (UUID: {project.uuid})"
+                f"Exporting project '{project.name}' (UUID: {project.uuid}){job_info}"
             )
             self.stdout.write(f"Output file: {output_path}")
 
             # Ensure output directory exists
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Perform the export
-            result_path = export_project_to_zip(project, output_path)
+            # Perform the export with job selection (now passing Set[str])
+            result_path = export_project_to_zip(
+                project, output_path, job_selection=job_selection
+            )
 
             # Get file size for confirmation
             file_size = result_path.stat().st_size
