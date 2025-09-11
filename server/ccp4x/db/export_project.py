@@ -504,17 +504,28 @@ def _get_key_type_id(key_name: str) -> int:
 def _add_directory_to_zip(
     zip_archive: zipfile.ZipFile, source_dir: Path, archive_dir: str
 ) -> None:
-    """Recursively add directory contents to ZIP archive."""
+    """Recursively add directory contents to ZIP archive under the given archive_dir, ensuring all parent directories are present."""
+    # Ensure parent directories are added as empty entries
+    parts = Path(archive_dir).parts
+    print(parts)
+    for i in range(1, len(parts) + 1):
+        parent_dir = Path(*parts[:i])
+        zip_info = zipfile.ZipInfo(str(parent_dir) + "/")
+        # Only add if not already present
+        if zip_info.filename not in zip_archive.namelist():
+            zip_archive.writestr(zip_info, "")
+
     for item in source_dir.rglob("*"):
         if item.is_file():
-            # Calculate relative path within the archive
-            relative_path = item.relative_to(source_dir.parent)
+            # Calculate relative path within the archive under archive_dir
+            relative_path = Path(archive_dir) / item.relative_to(source_dir)
             zip_archive.write(item, str(relative_path))
         elif item.is_dir():
-            # Add empty directories
-            relative_path = item.relative_to(source_dir.parent)
+            # Add empty directories under archive_dir
+            relative_path = Path(archive_dir) / item.relative_to(source_dir)
             zip_info = zipfile.ZipInfo(str(relative_path) + "/")
-            zip_archive.writestr(zip_info, "")
+            if zip_info.filename not in zip_archive.namelist():
+                zip_archive.writestr(zip_info, "")
 
 
 def _add_project_files_to_zip(
