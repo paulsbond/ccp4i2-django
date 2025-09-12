@@ -18,8 +18,11 @@ from ..lib.job_utils.validate_container import validate_container
 from ..lib.job_utils.digest_file import digest_param_file
 from ..lib.job_utils.validate_container import getEtree
 from ..lib.job_utils.set_input_by_context_job import set_input_by_context_job
-from ..lib.job_utils.get_job_plugin import get_job_plugin
 from ..lib.job_utils.preview_job import preview_job
+import tempfile
+from pathlib import Path
+from django.http import FileResponse
+from ..db.export_project import export_project_to_zip
 
 """
 This module defines several viewsets for handling API requests related to projects, project tags, files, and jobs in the CCP4X application.
@@ -665,3 +668,109 @@ class JobViewSet(ModelViewSet):
         job.project.last_access = datetime.datetime.now(tz=timezone("UTC"))
         job.project.save()
         return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def export_job(self, request, pk=None):
+        """
+        Export a project archive for a specific job and its dependencies.
+
+        Args:
+            request: The HTTP request object.
+            pk (int, optional): The primary key of the job.
+
+        Returns:
+            FileResponse: ZIP archive containing the exported project data.
+        """
+
+        try:
+            # Get the job and infer the project
+            job = models.Job.objects.get(id=pk)
+            project = job.project
+
+            # Create job selection set (just this job number as string)
+            job_selection = {str(job.number)}
+
+            # Create temporary file for the export
+            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_file:
+                temp_path = Path(temp_file.name)
+
+            try:
+                # Export the project with job selection
+                result_path = export_project_to_zip(
+                    project=project, output_path=temp_path, job_selection=job_selection
+                )
+
+                # Generate a meaningful filename
+                safe_project_name = "".join(
+                    c for c in project.name if c.isalnum() or c in "._-"
+                )
+                safe_job_title = "".join(
+                    c
+                    for c in (job.title or job.task_name or f"job_{job.number}")
+                    if c.isalnum() or c in "._-"
+                )
+                filename = f"{safe_project_name}_job_{job.number}_{safe_job_title}.zip"
+
+                # Create file response
+                def file_iterator():
+                    with open(result_path, "rb") as f:
+                        yield from f
+                    # Clean up temp file after reading
+                    try:
+                        os.unlink(result_path)
+                    except OSError:
+                        pass
+
+                response = FileResponse(
+                    file_iterator(),
+                    as_attachment=True,
+                    filename=filename,
+                    content_type="application/zip",
+                )
+
+                # Add custom headers with export info
+                response["X-Export-Info"] = json.dumps(
+                    {
+                        "project_name": project.name,
+                        "project_uuid": str(project.uuid),
+                        "job_number": job.number,
+                        "job_title": job.title or job.task_name,
+                        "job_uuid": str(job.uuid),
+                        "export_type": "job_selection",
+                    }
+                )
+
+                logger.info(
+                    f"Exported project archive for job {job.number} in project {project.name}"
+                )
+                return response
+
+            except Exception as e:
+                # Clean up temp file on error
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
+
+                logger.exception("Export failed for job %s", pk, exc_info=e)
+                return Response(
+                    {"status": "Failed", "reason": f"Export failed: {str(e)}"},
+                    status=500,
+                )
+
+        except models.Job.DoesNotExist as err:
+            logger.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)}, status=404)
+        except Exception as err:
+            logger.exception(
+                "Unexpected error during export for job %s", pk, exc_info=err
+            )
+            return Response(
+                {"status": "Failed", "reason": f"Unexpected error: {str(err)}"},
+                status=500,
+            )
