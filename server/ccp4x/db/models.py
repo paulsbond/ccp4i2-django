@@ -18,6 +18,7 @@ from django.db.models import (
     SET_NULL,
     TextField,
     UUIDField,
+    TextChoices,
 )
 from django.utils import timezone
 
@@ -40,6 +41,44 @@ class Project(Model):
 
     def __str__(self):
         return self.name
+
+
+class ProjectGroup(Model):
+    class GroupType(TextChoices):
+        GENERAL_SET = "general_set", "General set"
+        FRAGMENT_SET = "fragment_set", "Fragment set"
+
+    name = CharField(max_length=100, unique=True)
+    type = CharField(
+        max_length=32, choices=GroupType.choices, default=GroupType.GENERAL_SET
+    )
+
+    # Convenience relation to access projects in a group
+    projects = ManyToManyField(
+        Project,
+        related_name="groups",
+        through="ProjectGroupMembership",
+        through_fields=("group", "project"),
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class ProjectGroupMembership(Model):
+    class MembershipType(TextChoices):
+        PARENT = "parent", "Parent"
+        MEMBER = "member", "Member"
+
+    group = ForeignKey(ProjectGroup, CASCADE, related_name="memberships")
+    project = ForeignKey(Project, CASCADE, related_name="group_memberships")
+    type = CharField(max_length=16, choices=MembershipType.choices)
+
+    class Meta:
+        unique_together = ["group", "project"]
+
+    def __str__(self):
+        return f"{self.project} in {self.group} as {self.type}"
 
 
 class ProjectTag(Model):
