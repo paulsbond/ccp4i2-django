@@ -1,5 +1,5 @@
 "use client";
-import React, { PropsWithChildren, useContext, useState } from "react";
+import React, { PropsWithChildren, useContext, useState, useRef } from "react";
 import {
   Button,
   Container,
@@ -25,15 +25,19 @@ export const ImportProjectContent: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const { mutate: mutateProjects } = api.get<Project[]>("projects");
 
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    setFiles(files ? Array.from(files) : []);
-    if (files) {
+  // Create a ref for the hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (selectedFiles: FileList | null) => {
+    if (selectedFiles) {
+      const filesArray = Array.from(selectedFiles);
+      setFiles(filesArray);
+
       const formData = new FormData();
-      for (let i = 0; i < files.length; i++) {
-        formData.append("files", files[i]);
+      for (let i = 0; i < selectedFiles.length; i++) {
+        formData.append("files", selectedFiles[i]);
       }
-      // Handle the form data as needed (e.g., send it to an API)
+
       setUploading(true);
       api
         .post<any>("/projects/import_project/", formData)
@@ -45,8 +49,17 @@ export const ImportProjectContent: React.FC = () => {
         })
         .catch((error) => {
           console.error("Error uploading files:", error);
+          setUploading(false);
         });
     }
+  };
+
+  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileUpload(event.target.files);
+  };
+
+  const handlePaperClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -76,37 +89,17 @@ export const ImportProjectContent: React.FC = () => {
                   backgroundColor: "#f1f1f1",
                 },
               }}
+              onClick={handlePaperClick}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
                 const droppedFiles = e.dataTransfer.files;
                 setFiles(droppedFiles ? Array.from(droppedFiles) : []);
-                if (droppedFiles) {
-                  const formData = new FormData();
-                  for (let i = 0; i < droppedFiles.length; i++) {
-                    formData.append("files", droppedFiles[i]);
-                  }
-                  setUploading(true);
-                  api
-                    .post<any>("/projects/import_project/", formData)
-                    .then((response) => {
-                      console.log(
-                        "Files uploaded successfully:",
-                        response.data
-                      );
-                      setUploading(false);
-                      mutateProjects();
-                      router.push("/");
-                    })
-                    .catch((error) => {
-                      console.error("Error uploading files:", error);
-                      setUploading(false);
-                    });
-                }
+                handleFileUpload(droppedFiles);
               }}
             >
               <Typography variant="body1" color="textSecondary">
-                Drag and drop files here, or click the button to upload
+                Drag and drop files here, or click here to upload
               </Typography>
             </Paper>
             <Button
@@ -114,7 +107,12 @@ export const ImportProjectContent: React.FC = () => {
               variant="contained"
               startIcon={<Upload />}
             >
-              <VisuallyHiddenInput type="file" multiple onChange={onChange} />
+              <VisuallyHiddenInput
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={onChange}
+              />
             </Button>
           </Stack>
           {files?.length > 0 && (
@@ -126,8 +124,6 @@ export const ImportProjectContent: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {/* Map through the files and display their names and statuses */}
-                {/* Example static data for demonstration */}
                 {files.map((aFile, index) => (
                   <TableRow key={index}>
                     <TableCell>

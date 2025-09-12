@@ -109,8 +109,12 @@ class ProjectViewSet(ModelViewSet):
                                 logger.warning(
                                     "Failed to delete file %s: %s", file_path, e
                                 )
-                    os.rmdir(subdir_path)
-
+                    try:
+                        os.rmdir(subdir_path)
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to delete directory %s: %s", subdir_path, e
+                        )
             # Attempt to delete any special files in the project directory
             for special_file in [".DS_Store"]:
                 special_file_path = os.path.join(instance.directory, special_file)

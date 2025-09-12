@@ -35,6 +35,7 @@ import {
   SmsFailed,
   TerminalOutlined,
   Edit,
+  Download, // Add this import
 } from "@mui/icons-material";
 import { createContext } from "react";
 import { usePopcorn } from "./popcorn-provider";
@@ -379,6 +380,24 @@ export const JobMenu: React.FC = () => {
     [dependentJobs, job, mutateJobs]
   );
 
+  const handleExportJob = useCallback(
+    async (ev: SyntheticEvent) => {
+      if (!job) return;
+      ev.stopPropagation();
+
+      try {
+        const theUrl = api.noSlashUrl(`jobs/${job.id}/export_job/`);
+        doDownload(theUrl, `job_${job.number}_export.zip`);
+        setJobMenuAnchorEl(null);
+        setMessage(`Job ${job.number} exported successfully`);
+      } catch (error) {
+        console.error("Failed to export job:", error);
+        setMessage(`Failed to export job ${job.number}: ${error.message}`);
+      }
+    },
+    [job, setJobMenuAnchorEl, setMessage]
+  );
+
   return (
     job && (
       <>
@@ -403,6 +422,9 @@ export const JobMenu: React.FC = () => {
           </MenuItem>
           <MenuItem key="EditAnnotation" onClick={handleEditAnnotation}>
             <Edit sx={{ mr: 1 }} /> Edit title
+          </MenuItem>
+          <MenuItem key="ExportJob" onClick={handleExportJob}>
+            <Download sx={{ mr: 1 }} /> Export job
           </MenuItem>
           <MenuItem
             key="Delete"

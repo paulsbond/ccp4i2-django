@@ -69,7 +69,8 @@ def delete_job_and_dir(the_job: models.Job, growing_list: List[models.Job]):
             logger.error("File  not found when trying to delete it %s", job_file.path)
         job_file.delete()
     logger.warning("Deleting directory %s", the_job.directory)
-    shutil.rmtree(str(the_job.directory))
+    if the_job.directory.exists() and the_job.directory.is_dir():
+        shutil.rmtree(str(the_job.directory))
     logger.info("Deleted directory %s", the_job.directory)
     the_job.delete()
     if the_job in growing_list:
