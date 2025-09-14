@@ -21,6 +21,7 @@ import $ from "jquery";
 import { useCCP4i2Window } from "../app-context";
 import { CifTableStack } from "../components/cif-table-stack";
 import { CsvTable } from "../components/csv-table";
+import { AlignmentViewer } from "../components/alignment-viewer";
 
 export interface EditorContentSpecification {
   url: string;
@@ -131,6 +132,9 @@ const FilePreviewDialog: React.FC = () => {
           if (contentSpecification.language === "json") {
             const fileText = enc.decode(fileContent);
             setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
+          } else if (contentSpecification.language === "clustalw") {
+            const fileText = enc.decode(fileContent);
+            setPreviewContent(fileText);
           } else if (contentSpecification.language === "mtz") {
             handleMtzPreview(fileContent);
           } else if (contentSpecification.language === "cif") {
@@ -162,6 +166,8 @@ const FilePreviewDialog: React.FC = () => {
 
   const monacoLanguage = useMemo(() => {
     switch (contentSpecification?.language) {
+      case "clustal":
+        return "clustal";
       case "json":
         return "json";
       case "xml":
@@ -192,6 +198,8 @@ const FilePreviewDialog: React.FC = () => {
           <CifTableStack cifText={previewContent || ""} />
         ) : contentSpecification?.language === "csv" ? (
           <CsvTable csvText={previewContent || ""} />
+        ) : contentSpecification?.language === "clustalw" ? (
+          <AlignmentViewer alignment={previewContent || ""} />
         ) : (
           <Editor
             width="100%"

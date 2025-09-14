@@ -71,6 +71,8 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
           ? "csv"
           : menuNode.name.endsWith(".xml")
           ? "xml"
+          : menuNode.name.endsWith(".aln")
+          ? "clustalw"
           : "text",
       });
       handleClose();
@@ -172,6 +174,7 @@ export const FileSystemFileMenu: React.FC<FileSystemFileMenuProps> = ({
         )}
         {menuNode?.name &&
           [
+            "aln",
             "log",
             "xml",
             "json",
