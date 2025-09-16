@@ -17,7 +17,7 @@ import { FileSystemFileBrowserProvider } from "../../../providers/file-system-fi
 import { JobTabProvider } from "../../../providers/job-tab-provider";
 
 export interface ProjectLayoutProps extends PropsWithChildren {
-  params: Promise<{ id: string; jobid: string }>;
+  params: Promise<{ id: string }>; // Removed jobid since it's not available at this route level
 }
 
 export default function ProjectLayout(props: ProjectLayoutProps) {
