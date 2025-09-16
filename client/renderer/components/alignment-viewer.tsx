@@ -388,7 +388,8 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
   );
 
   const formatSequenceName = useCallback(
-    (name: string, maxWidth: number = 25): string => {
+    (name: string, maxWidth: number = 20): string => {
+      // Reduced from 25 to 20
       if (name.length <= maxWidth) return name.padEnd(maxWidth);
       return name.slice(0, maxWidth - 3) + "...";
     },
@@ -431,22 +432,28 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
   }
 
   return (
-    <Box sx={{ width: "100%", p: 1 }}>
+    <Box sx={{ width: "100%", p: 0.5 }}>
+      {" "}
+      {/* Reduced padding from 1 to 0.5 */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 2,
+          mb: 1, // Reduced from 2 to 1
         }}
       >
         <Typography variant="h6">
           Protein Sequence Alignment (ClustalW)
         </Typography>
 
-        <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          {" "}
+          {/* Reduced gap from 2 to 1 */}
           {/* Block size selector */}
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 0.5 }}>
+            {" "}
+            {/* Reduced gap from 1 to 0.5 */}
             {[40, 60, 80, 120].map((size) => (
               <Chip
                 key={size}
@@ -459,7 +466,6 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
               />
             ))}
           </Box>
-
           {/* Highlight toggle */}
           <Chip
             icon={<HighlightAlt />}
@@ -470,7 +476,6 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
             onClick={() => setShowHighlightPanel(!showHighlightPanel)}
             sx={{ cursor: "pointer" }}
           />
-
           {/* Color toggle */}
           <FormControlLabel
             control={
@@ -493,10 +498,11 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
           />
         </Box>
       </Box>
-
       {/* Highlight Panel */}
       {showHighlightPanel && (
-        <Accordion expanded sx={{ mb: 2 }}>
+        <Accordion expanded sx={{ mb: 1 }}>
+          {" "}
+          {/* Reduced from mb: 2 to mb: 1 */}
           <AccordionSummary>
             <Typography variant="subtitle2">
               Sequence Region Highlighting
@@ -639,28 +645,29 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
           </AccordionDetails>
         </Accordion>
       )}
-
       <Box
         ref={alignmentContainerRef}
         sx={{
           border: "1px solid #ddd",
           borderRadius: 1,
           overflow: "auto",
-          maxHeight: "600px",
+          maxHeight: "700px", // Increased from 600px to 700px
           fontFamily: "Courier, monospace",
-          fontSize: "11px",
-          lineHeight: 1.3,
+          fontSize: "13px", // Increased from 11px to 13px
+          lineHeight: 1.2, // Reduced from 1.3 to 1.2
           backgroundColor: "#fafafa",
-          p: 1,
+          p: 0.5, // Reduced from 1 to 0.5
         }}
       >
         {sequenceBlocks.map((block, blockIndex) => (
-          <Box key={blockIndex} sx={{ mb: 3, pageBreakInside: "avoid" }}>
+          <Box key={blockIndex} sx={{ mb: 2, pageBreakInside: "avoid" }}>
+            {" "}
+            {/* Reduced from mb: 3 to mb: 2 */}
             {/* Block header with position range */}
             <Box
               sx={{
-                mb: 1,
-                p: 0.5,
+                mb: 0.5, // Reduced from 1 to 0.5
+                p: 0.3, // Reduced from 0.5 to 0.3
                 backgroundColor: "#e8e8e8",
                 borderRadius: 0.5,
                 textAlign: "center",
@@ -670,15 +677,17 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
             >
               Alignment positions {block.blockStart} - {block.blockEnd}
             </Box>
-
             {/* Position ruler */}
-            <Box sx={{ display: "flex", mb: 0.5 }}>
-              <Box sx={{ width: "220px" }} />
-              <Box sx={{ width: "50px" }} />
+            <Box sx={{ display: "flex", mb: 0.3 }}>
+              {" "}
+              {/* Reduced from mb: 0.5 to mb: 0.3 */}
+              <Box sx={{ width: "160px" }} />{" "}
+              {/* Reduced from 220px to 160px */}
+              <Box sx={{ width: "40px" }} /> {/* Reduced from 50px to 40px */}
               <Box
                 sx={{
                   fontFamily: "Courier, monospace",
-                  fontSize: "8px",
+                  fontSize: "9px", // Increased from 8px to 9px
                   display: "flex",
                 }}
               >
@@ -687,7 +696,7 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                   (_, i) => (
                     <span
                       key={i}
-                      style={{ width: "10px", textAlign: "center" }}
+                      style={{ width: "12px", textAlign: "center" }} // Increased from 10px to 12px
                     >
                       {(block.blockStart + i) % 10 === 0
                         ? (block.blockStart + i) % 100
@@ -696,9 +705,8 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                   )
                 )}
               </Box>
-              <Box sx={{ width: "50px" }} />
+              <Box sx={{ width: "40px" }} /> {/* Reduced from 50px to 40px */}
             </Box>
-
             {/* Sequence rows */}
             {block.sequences.map((seqData, seqIndex) => {
               const highlightRegionsRaw = getBlockHighlightRegions(
@@ -714,16 +722,16 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
               return (
                 <Box
                   key={seqIndex}
-                  sx={{ display: "flex", alignItems: "center", mb: 0.2 }}
+                  sx={{ display: "flex", alignItems: "center", mb: 0.1 }} // Reduced from mb: 0.2 to mb: 0.1
                 >
                   {/* Sequence name */}
                   <Box
                     sx={{
-                      width: "220px",
+                      width: "160px", // Reduced from 220px to 160px
                       backgroundColor: "#f8f8f8",
                       border: "1px solid #ddd",
-                      p: 0.3,
-                      fontSize: "9px",
+                      p: 0.2, // Reduced from 0.3 to 0.2
+                      fontSize: "10px", // Increased from 9px to 10px
                       textAlign: "right",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -731,16 +739,17 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                     }}
                     title={seqData.name}
                   >
-                    {formatSequenceName(seqData.name, 25)}
+                    {formatSequenceName(seqData.name, 20)}{" "}
+                    {/* Reduced max width to 20 */}
                   </Box>
 
                   {/* Start position */}
                   <Box
                     sx={{
-                      width: "50px",
+                      width: "40px", // Reduced from 50px to 40px
                       textAlign: "right",
-                      pr: 1,
-                      fontSize: "9px",
+                      pr: 0.5, // Reduced from 1 to 0.5
+                      fontSize: "10px", // Increased from 9px to 10px
                       color: "#666",
                     }}
                   >
@@ -761,11 +770,11 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                         key={highlightIndex}
                         sx={{
                           position: "absolute",
-                          left: `${highlight.start * 10}px`,
+                          left: `${highlight.start * 12}px`, // Increased from 10px to 12px
                           width: `${
-                            (highlight.end - highlight.start + 1) * 10
+                            (highlight.end - highlight.start + 1) * 12 // Increased from 10px to 12px
                           }px`,
-                          height: "14px",
+                          height: "16px", // Increased from 14px to 16px
                           backgroundColor: "rgba(255, 107, 53, 0.7)",
                           border: "5px solid #000000",
                           borderRadius: "3px",
@@ -790,14 +799,14 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                         <Box
                           key={pos}
                           sx={{
-                            width: "10px",
-                            height: "14px",
+                            width: "12px", // Increased from 10px to 12px
+                            height: "16px", // Increased from 14px to 16px
                             backgroundColor: getResidueBackgroundColor(residue),
                             color: getResidueTextColor(residue),
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "9px",
+                            fontSize: "11px", // Increased from 9px to 11px
                             fontWeight: "bold",
                             border: showColors
                               ? "0.5px solid rgba(0,0,0,0.1)"
@@ -829,10 +838,10 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                   {/* End position */}
                   <Box
                     sx={{
-                      width: "50px",
+                      width: "40px", // Reduced from 50px to 40px
                       textAlign: "left",
-                      pl: 1,
-                      fontSize: "9px",
+                      pl: 0.5, // Reduced from 1 to 0.5
+                      fontSize: "10px", // Increased from 9px to 10px
                       color: "#666",
                     }}
                   >
@@ -841,35 +850,36 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                 </Box>
               );
             })}
-
             {/* Conservation line */}
-            <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mt: 0.3 }}>
+              {" "}
+              {/* Reduced from mt: 0.5 to mt: 0.3 */}
               <Box
                 sx={{
-                  width: "220px",
+                  width: "160px", // Reduced from 220px to 160px
                   textAlign: "right",
-                  pr: 1,
-                  fontSize: "9px",
+                  pr: 0.5, // Reduced from 1 to 0.5
+                  fontSize: "10px", // Increased from 9px to 10px
                   color: "#666",
                   fontStyle: "italic",
                 }}
               >
                 Conservation
               </Box>
-              <Box sx={{ width: "50px" }} />
+              <Box sx={{ width: "40px" }} /> {/* Reduced from 50px to 40px */}
               <Box sx={{ display: "flex" }}>
                 {block.conservation.split("").map((symbol, pos) => (
                   <Box
                     key={pos}
                     sx={{
-                      width: "10px",
-                      height: "14px",
+                      width: "12px", // Increased from 10px to 12px
+                      height: "16px", // Increased from 14px to 16px
                       backgroundColor: getConservationColor(symbol),
                       border: "0.5px solid rgba(0,0,0,0.1)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "8px",
+                      fontSize: "9px", // Increased from 8px to 9px
                       fontWeight: "bold",
                       color: !showColors ? "#000" : "#000",
                     }}
@@ -887,14 +897,15 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                   </Box>
                 ))}
               </Box>
-              <Box sx={{ width: "50px" }} />
+              <Box sx={{ width: "40px" }} /> {/* Reduced from 50px to 40px */}
             </Box>
           </Box>
         ))}
       </Box>
-
-      {/* Summary and Legend */}
-      <Box sx={{ mt: 1 }}>
+      {/* Summary and Legend - Keep existing but with reduced margin */}
+      <Box sx={{ mt: 0.5 }}>
+        {" "}
+        {/* Reduced from mt: 1 to mt: 0.5 */}
         <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
           <Chip
             size="small"
@@ -922,7 +933,6 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
             />
           )}
         </Box>
-
         {/* Conservation Legend */}
         <Box sx={{ fontSize: "11px", color: "text.secondary" }}>
           <Typography variant="caption" display="block" gutterBottom>
