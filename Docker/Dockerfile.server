@@ -1,0 +1,60 @@
+# Use Ubuntu 18.04 as the base image
+FROM ubuntu:18.04
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies including timezone data
+RUN apt-get update && apt-get install -y --fix-missing \
+    bash \
+    vim \
+    curl \
+    qt5-default \
+    nodejs \
+    libcairo2 \
+    libgomp1 \
+    bzr \
+    libxss1 \
+    libgnomecanvas2-0 \
+    libxmu6 \
+    wget \
+    libssl1.0.0 \
+    libmariadbclient-dev \
+    build-essential \
+    tcsh \
+    tzdata \
+    python3-pip \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install libpng12
+WORKDIR /tmp
+RUN wget http://se.archive.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+    dpkg -i libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+    rm libpng12-0_1.2.54-1ubuntu1_amd64.deb
+
+# Set timezone explicitly
+ENV TZ=UTC
+
+RUN echo $TZ > /etc/timezone
+#RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# set work directory
+WORKDIR /usr/src/app
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt ./
+# requirements are applied to ccp4-python...
+#RUN pip3 install -r requirements.txt
+
+
+# Copy source code
+COPY . ./
+
+EXPOSE 8000
+
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]

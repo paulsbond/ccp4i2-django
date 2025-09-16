@@ -1,5 +1,7 @@
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
+from django.db import connection
+from django.core.exceptions import ImproperlyConfigured
 from ..db import models
 from ..lib.job_utils.get_task_tree import get_task_tree
 import psutil
@@ -60,3 +62,32 @@ def active_jobs(request):
                 {"pid": pid, "error": "Process not found or access denied"}
             )
     return JsonResponse({"status": "Success", "active_jobs": active_jobs_list})
+
+
+def health_check(request):
+    """
+    Simple health check endpoint for deployment monitoring.
+    Returns 200 OK if the service is healthy.
+    """
+    try:
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+
+        return JsonResponse(
+            {
+                "status": "healthy",
+                "service": "ccp4i2-django-api",
+                "database": "connected",
+            }
+        )
+    except Exception as e:
+        return JsonResponse(
+            {
+                "status": "unhealthy",
+                "service": "ccp4i2-django-api",
+                "database": "disconnected",
+                "error": str(e),
+            },
+            status=503,
+        )

@@ -20,10 +20,11 @@
     "copy-report-files-base": "copyfiles -u 1 assets/report_files/* renderer/public/",
     "copy-report-files": "copyfiles -u 1 assets/report_files/**/* renderer/public/",
     "copy-assets": "npm run copy-rdkit-minimal && npm run copy-moorhen-base && npm run copy-moorhen-dirs && npm run copy-moorhen-pixmaps && npm run copy-moorhen-tutorials && npm run copy-moorhen-monomers-base && npm run copy-moorhen-monomers && npm run copy-report-files-base && npm run copy-report-files",
+    "electron-postinstall": "electron-builder install-app-deps",
     "build": "npm run build:electron",
     "start": "npm run start:electron",
-    "build:electron": "cross-env BUILD_TARGET=electron npm run copy-assets && next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
-    "start:electron": "cross-env BUILD_TARGET=electron npm run copy-assets && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts && electron dist/main.js",
+    "build:electron": "npm run electron-postinstall && cross-env BUILD_TARGET=electron npm run copy-assets && next build renderer && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts",
+    "start:electron": "npm run electron-postinstall && cross-env BUILD_TARGET=electron npm run copy-assets && vite build --config vite.electron.config.ts && vite build --config vite.preload.config.ts && electron dist/main.js",
     "build:web": "cross-env BUILD_TARGET=web npm run copy-assets && cd renderer && next build",
     "start:web": "cross-env BUILD_TARGET=web npm run copy-assets && cd renderer && next dev",
     "export:web": "cross-env BUILD_TARGET=web npm run build:web && cd renderer && next export",
@@ -31,12 +32,13 @@
     "package-win": "npm run build:electron && electron-builder --win",
     "package-linux-x64": "npm run build:electron && electron-builder --linux AppImage --x64",
     "package-linux-arm64": "npm run build:electron && electron-builder --linux AppImage --arm64",
-    "package-linux-all": "npm run build:electron && electron-builder --linux AppImage --x64 --arm64",
-    "postinstall": "electron-builder install-app-deps"
+    "package-linux-all": "npm run build:electron && electron-builder --linux AppImage --x64 --arm64"
   },
   "dependencies": {
     "@rdkit/rdkit": "^2025.3.3-1.0.0",
     "acorn": "^8.15.0",
+    "copyfiles": "^2.4.1",
+    "cross-env": "^7.0.3",
     "cytoscape": "^3.33.1",
     "cytoscape-cose-bilkent": "^4.1.0",
     "detect-port": "^2.1.0",
@@ -45,8 +47,9 @@
     "form-data": "^4.0.4",
     "jquery": "^3.7.1",
     "next": "latest",
+    "react": "19.1.0",
     "react-cytoscapejs": "^2.0.0",
-    "react-dom": "^19.1.0",
+    "react-dom": "19.1.0",
     "react-redux": "^9.2.0",
     "url": "^0.11.4"
   },
@@ -75,15 +78,12 @@
     "chart.js": "^4.4.8",
     "chartjs-plugin-annotation": "^3.1.0",
     "concurrently": "latest",
-    "copyfiles": "^2.4.1",
-    "cross-env": "^7.0.3",
     "electron": "^34.5.8",
     "electron-builder": "latest",
     "http-proxy-middleware": "^3.0.5",
     "install": "^0.13.0",
     "moorhen": "^0.22.0-beta.10",
     "npm": "^11.3.0",
-    "react": "19.1.0",
     "react-chartjs-2": "^5.3.0",
     "react-resizable-panels": "^2.1.7",
     "swr": "^2.3.3",
@@ -171,8 +171,5 @@
         ]
       }
     }
-  },
-  "overrides": {
-    "react": "19.1.0"
   }
 }

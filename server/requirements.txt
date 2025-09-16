@@ -8,3 +8,12 @@ requests-cache
 requests
 uvicorn
 whitenoise
+configparser
+constants
+pathlib
+pytest-dependency
+packaging
+tomli
+psycopg2-binary
+
+
