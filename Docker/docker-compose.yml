@@ -43,7 +43,7 @@ services:
     volumes:
       - static_files:/usr/src/app/staticfiles
       - media_files:/usr/src/app/media
-      - ${CCP4_DATA_HOST_PATH:-/Users/nmemn/Developer/ccp4data}:/mnt/ccp4data:ro
+      - ${CCP4_DATA_HOST_PATH:-/Users/nmemn/Developer/ccp4data}:/mnt/ccp4data:rw
     ports:
       - "${SERVER_PORT:-8000}:8000"
     depends_on:
@@ -72,6 +72,12 @@ services:
           sleep 5
           timeout=$$((timeout-5))
         done &&
+        if [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup ]; then
+          echo 'ERROR: CCP4 BINARY setup script not found'
+          exit 1
+        fi &&
+        echo 'Establishing CCP4 environment...' &&
+        /mnt/ccp4data/ccp4-9/BINARY.setup --run-from-script &&
         if [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ]; then
           echo 'ERROR: CCP4 setup script not found'
           exit 1
@@ -117,7 +123,12 @@ services:
       - server
     healthcheck:
       test:
-        ["CMD", "curl", "-f", "http://localhost:${WEB_PORT:-3003}/api/health"]
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:${WEB_PORT:-3003}/api/proxy/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

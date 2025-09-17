@@ -4,7 +4,7 @@ const isElectron = process.env.BUILD_TARGET === "electron";
 const isWeb = process.env.BUILD_TARGET === "web";
 
 const nextConfig: NextConfig = {
-  output: isWeb ? "export" : undefined,
+  //output: isWeb ? "export" : undefined,
   trailingSlash: isElectron,
   images: {
     unoptimized: isElectron || isWeb,
