@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-ccp4i2}
       POSTGRES_USER: ${DB_USER:-ccp4i2}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-ccp4i2_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ccp4i2_secure_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -21,7 +21,7 @@ services:
     networks:
       - backend
 
-  # Django Server - Production ready with Gunicorn
+  # Django Server - Production ready with Uvicorn
   server:
     build:
       context: ../server
@@ -29,14 +29,17 @@ services:
       platforms:
         - linux/amd64
     platform: linux/amd64
+
     environment:
       - DEBUG=${DEBUG:-false}
-      - DATABASE_URL=${DATABASE_URL:-postgresql://ccp4i2:ccp4i2_password@db:5432/ccp4i2}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      - DATABASE_URL=postgresql://${DB_USER:-ccp4i2}:${DB_PASSWORD:-ccp4i2_password}@db:${DB_PORT:-5432}/${DB_NAME:-ccp4i2}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,nginx,web,server}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3003,http://web:3003,http://nginx}
       - SECRET_KEY=${DJANGO_SECRET_KEY:-your-secret-key-here}
       - CCP4_DATA_PATH=${CCP4_DATA_PATH:-/mnt/ccp4data}
-      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-2}
+      - UVICORN_WORKERS=${UVICORN_WORKERS:-2}
+      - UVICORN_HOST=${UVICORN_HOST:-0.0.0.0}
+      - UVICORN_PORT=${UVICORN_PORT:-8000}
     volumes:
       - static_files:/usr/src/app/staticfiles
       - media_files:/usr/src/app/media
@@ -56,9 +59,12 @@ services:
     networks:
       - backend
       - frontend
+    labels:
+      - "app.service=ccp4i2-server"
+      - "app.environment=${ENVIRONMENT:-development}"
     command: >
       sh -c "
-        echo 'Starting CCP4i2 Django Server...' &&
+        echo 'Starting CCP4i2 Django Server with Uvicorn...' &&
         echo 'Waiting for CCP4 data volume...' &&
         timeout=60 &&
         while [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ] && [ $$timeout -gt 0 ]; do
@@ -79,8 +85,8 @@ services:
           $$CCP4_PYTHON -m pip install --upgrade pip &&
           echo 'Installing requirements...' &&
           $$CCP4_PYTHON -m pip install -r requirements.txt &&
-          echo 'Installing gunicorn...' &&
-          $$CCP4_PYTHON -m pip install gunicorn &&
+          echo 'Installing uvicorn with standard extras...' &&
+          $$CCP4_PYTHON -m pip install 'uvicorn[standard]' &&
           touch /tmp/ccp4-requirements-installed &&
           echo 'Requirements installed successfully'
         else
@@ -90,8 +96,8 @@ services:
         $$CCP4_PYTHON manage.py migrate &&
         echo 'Collecting static files...' &&
         $$CCP4_PYTHON manage.py collectstatic --noinput &&
-        echo 'Starting Gunicorn server...' &&
-        exec $$CCP4_PYTHON -m gunicorn ccp4x.config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-2} --timeout 120
+        echo 'Starting Uvicorn server...' &&
+        exec $$CCP4_PYTHON -m uvicorn asgi:application --host ${UVICORN_HOST:-0.0.0.0} --port ${UVICORN_PORT:-8000} --workers ${UVICORN_WORKERS:-2} --access-log --log-level info
       "
 
   # Next.js Web Client - Production optimized
@@ -101,17 +107,17 @@ services:
       dockerfile: ../Docker/Dockerfile.web
     environment:
       - NODE_ENV=${NODE_ENV:-production}
-      - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL:-http://localhost/api}
+      - NEXT_PUBLIC_API_BASE_URL=http://server:8000
       - NEXT_PUBLIC_IS_ELECTRON=false
       - BUILD_TARGET=web
-      - PORT=${WEB_PORT:-3000}
+      - PORT=${WEB_PORT:-3003}
     ports:
-      - "${WEB_PORT:-3000}:${WEB_PORT:-3000}"
+      - "${WEB_PORT:-3003}:${WEB_PORT:-3003}"
     depends_on:
       - server
     healthcheck:
       test:
-        ["CMD", "curl", "-f", "http://localhost:${WEB_PORT:-3000}/api/health"]
+        ["CMD", "curl", "-f", "http://localhost:${WEB_PORT:-3003}/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -122,6 +128,12 @@ services:
     labels:
       - "app.service=ccp4i2-web"
       - "app.environment=${ENVIRONMENT:-development}"
+    command: >
+      sh -c "
+        cd /app/renderer &&
+        echo 'Starting Next.js Web Client...' &&
+        npx next start -p ${WEB_PORT:-3003}
+        "
 
   # Nginx Reverse Proxy - Cloud-ready load balancer
   nginx:
@@ -137,7 +149,6 @@ services:
       - ${SSL_CERT_PATH:-./nginx/ssl}:/etc/nginx/ssl:ro
     depends_on:
       - server
-      - web
     healthcheck:
       test:
         [
@@ -158,7 +169,7 @@ services:
       - "app.service=ccp4i2-nginx"
       - "app.environment=${ENVIRONMENT:-development}"
 
-  # Management Service - Optional for admin tasks
+  # Management Service - Updated to use CCP4 Python
   management:
     build:
       context: ../server
@@ -167,8 +178,9 @@ services:
         - linux/amd64
     platform: linux/amd64
     environment:
-      - DEBUG=${DEBUG:-true}
-      - DATABASE_URL=${DATABASE_URL:-postgresql://ccp4i2:ccp4i2_password@db:5432/ccp4i2}
+      - DEBUG=${DEBUG:-false}
+      - DATABASE_URL=postgresql://${DB_USER:-ccp4i2}:${DB_PASSWORD:-ccp4i2_password}@db:${DB_PORT:-5432}/${DB_NAME:-ccp4i2}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
       - DJANGO_SETTINGS_MODULE=ccp4x.config.settings
     volumes:
       - static_files:/usr/src/app/staticfiles
@@ -183,11 +195,32 @@ services:
       - management
     command: >
       sh -c "
+        echo 'Waiting for CCP4 data volume...' &&
+        timeout=60 &&
+        while [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ] && [ $$timeout -gt 0 ]; do
+          echo 'CCP4 setup script not found, waiting... ($$timeout seconds remaining)'
+          sleep 5
+          timeout=$$((timeout-5))
+        done &&
+        if [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ]; then
+          echo 'ERROR: CCP4 setup script not found'
+          exit 1
+        fi &&
+        echo 'Loading CCP4 environment...' &&
+        . /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh &&
+        CCP4_PYTHON=/mnt/ccp4data/ccp4-9/bin/ccp4-python &&
+        if [ ! -f /tmp/ccp4-requirements-installed ]; then
+          echo 'Installing requirements for management service...' &&
+          $$CCP4_PYTHON -m pip install --upgrade pip &&
+          $$CCP4_PYTHON -m pip install -r requirements.txt &&
+          $$CCP4_PYTHON -m pip install 'uvicorn[standard]' &&
+          touch /tmp/ccp4-requirements-installed
+        fi &&
         echo 'Management service ready. Available commands:' &&
-        echo '  docker-compose exec management python3 manage.py shell' &&
-        echo '  docker-compose exec management python3 manage.py migrate' &&
-        echo '  docker-compose exec management python3 manage.py createsuperuser' &&
-        echo '  docker-compose exec management python3 manage.py collectstatic' &&
+        echo '  docker-compose exec management /mnt/ccp4data/ccp4-9/bin/ccp4-python manage.py shell' &&
+        echo '  docker-compose exec management /mnt/ccp4data/ccp4-9/bin/ccp4-python manage.py migrate' &&
+        echo '  docker-compose exec management /mnt/ccp4data/ccp4-9/bin/ccp4-python manage.py createsuperuser' &&
+        echo '  docker-compose exec management /mnt/ccp4data/ccp4-9/bin/ccp4-python manage.py collectstatic' &&
         tail -f /dev/null
       "
 
