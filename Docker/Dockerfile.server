@@ -4,7 +4,7 @@ FROM ubuntu:18.04
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies including timezone data
+# Install dependencies including timezone data and build tools
 RUN apt-get update && apt-get install -y --fix-missing \
     bash \
     vim \
@@ -25,7 +25,11 @@ RUN apt-get update && apt-get install -y --fix-missing \
     tzdata \
     python3-pip \
     python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+    gcc \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Install libpng12
 WORKDIR /tmp
@@ -35,26 +39,32 @@ RUN wget http://se.archive.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.
 
 # Set timezone explicitly
 ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN echo $TZ > /etc/timezone
-#RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# set work directory
+# Set work directory
 WORKDIR /usr/src/app
 
-# set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Copy requirements and install Python dependencies
+# Copy requirements.txt first for better layer caching
 COPY requirements.txt ./
-# requirements are applied to ccp4-python...
-#RUN pip3 install -r requirements.txt
 
-
-# Copy source code
+# Copy application code
 COPY . ./
+
+# Create directories that might be needed
+RUN mkdir -p /usr/src/app/staticfiles /usr/src/app/media /tmp
+
+# Make sure the app directory is writable for static files collection
+RUN chmod 755 /usr/src/app
 
 EXPOSE 8000
 
+# Health check using system python initially, will switch to CCP4 python after setup
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Default command - will be overridden by docker-compose
 CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]

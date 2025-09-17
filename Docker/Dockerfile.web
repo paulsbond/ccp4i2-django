@@ -2,13 +2,13 @@ FROM node:20-alpine3.20 AS builder
 
 WORKDIR /app
 
-# Copy package files - now relative to client directory context
+# Copy package files
 COPY package*.json ./
 
 # Install all dependencies (including devDependencies for building)
 RUN npm ci
 
-# Copy client source code - now copies everything from client directory
+# Copy source code
 COPY . .
 
 # Build for web
@@ -18,15 +18,29 @@ FROM node:20-alpine3.20 AS runner
 
 WORKDIR /app
 
-# Copy built application
-COPY --from=builder /app/renderer/.next ./renderer/.next
-COPY --from=builder /app/renderer/public ./renderer/public
+# Add curl for health checks
+RUN apk add --no-cache curl
+
+# Copy the built application
+COPY --from=builder /app/renderer ./renderer
 COPY --from=builder /app/package*.json ./
 
-# Install all dependencies (including cross-env which is needed for start:web)
-RUN npm ci && npm cache clean --force
+# Install production dependencies only
+RUN npm ci --only=production && npm cache clean --force
+
+# Create a non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# Change ownership of the app directory
+RUN chown -R nextjs:nodejs /app
+USER nextjs
 
 EXPOSE 3000
 
-# Start the web application
-CMD ["npm", "run", "start:web"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/ || exit 1
+
+# Start the application
+CMD ["sh", "-c", "cd renderer && npm start"]
