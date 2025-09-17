@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # PostgreSQL Database - Prepared for external database migration
   db:
@@ -72,12 +70,15 @@ services:
           sleep 5
           timeout=$$((timeout-5))
         done &&
-        if [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup ]; then
-          echo 'ERROR: CCP4 BINARY setup script not found'
-          exit 1
+        if [ ! -f /tmp/binary-setup-done ]; then
+          if [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup ]; then
+            echo 'ERROR: CCP4 BINARY setup script not found'
+            exit 1
+          fi &&
+          echo 'Establishing CCP4 environment...' &&
+          /mnt/ccp4data/ccp4-9/BINARY.setup --run-from-script &&
+          touch /tmp/binary-setup-done
         fi &&
-        echo 'Establishing CCP4 environment...' &&
-        /mnt/ccp4data/ccp4-9/BINARY.setup --run-from-script &&
         if [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ]; then
           echo 'ERROR: CCP4 setup script not found'
           exit 1
@@ -158,6 +159,7 @@ services:
       - static_files:/usr/share/nginx/html/static:ro
       - media_files:/usr/share/nginx/html/media:ro
       - ${SSL_CERT_PATH:-./nginx/ssl}:/etc/nginx/ssl:ro
+      - /Users/nmemn/Developer/ccp4data/home/user:/home/user
     depends_on:
       - server
     healthcheck:
