@@ -4,8 +4,22 @@ FROM ubuntu:18.04
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies including timezone data and build tools
-RUN apt-get update && apt-get install -y --fix-missing \
+# Configure apt for better reliability
+RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries && \
+    echo 'Acquire::http::Timeout "120";' >> /etc/apt/apt.conf.d/80-retries && \
+    echo 'Acquire::ftp::Timeout "120";' >> /etc/apt/apt.conf.d/80-retries && \
+    echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/80-retries && \
+    echo 'APT::Get::Fix-Missing "true";' >> /etc/apt/apt.conf.d/80-retries
+
+# Configure faster Ubuntu mirrors
+RUN sed -i 's|http://archive.ubuntu.com/ubuntu/|http://us.archive.ubuntu.com/ubuntu/|g' /etc/apt/sources.list && \
+    sed -i 's|http://security.ubuntu.com/ubuntu/|http://us.archive.ubuntu.com/ubuntu/|g' /etc/apt/sources.list
+
+# Update package list with retry logic
+RUN apt-get update --fix-missing || (sleep 5 && apt-get update --fix-missing) || (sleep 10 && apt-get update --fix-missing)
+
+# Install dependencies with retry logic
+RUN apt-get install -y --fix-missing \
     bash \
     vim \
     curl \
@@ -28,14 +42,89 @@ RUN apt-get update && apt-get install -y --fix-missing \
     gcc \
     g++ \
     make \
+    libxslt1.1 \  
+    libxslt-dev \
+    libxml2 \
+    libxml2-dev \
+    || (sleep 5 && apt-get install -y --fix-missing \
+        bash \
+        vim \
+        curl \
+        qt5-default \
+        nodejs \
+        libcairo2 \
+        libgomp1 \
+        bzr \
+        libxss1 \
+        libgnomecanvas2-0 \
+        libxmu6 \
+        wget \
+        libssl1.0.0 \
+        libmariadbclient-dev \
+        build-essential \
+        tcsh \
+        tzdata \
+        python3-pip \
+        python3-dev \
+        gcc \
+        g++ \
+        make \
+        libxslt1.1 \ 
+        libxslt-dev \
+        libxml2 \
+        libxml2-dev) \
+    || (sleep 10 && apt-get install -y --fix-missing \
+        bash \
+        vim \
+        curl \
+        qt5-default \
+        nodejs \
+        libcairo2 \
+        libgomp1 \
+        bzr \
+        libxss1 \
+        libgnomecanvas2-0 \
+        libxmu6 \
+        wget \
+        libssl1.0.0 \
+        libmariadbclient-dev \
+        build-essential \
+        tcsh \
+        tzdata \
+        python3-pip \
+        python3-dev \
+        libxslt1.1 \  
+        libxslt-dev \
+        libxml2 \
+        libxml2-dev \
+        gcc \
+        g++ \
+        make) \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && apt-get clean \
+    && apt-get autoremove -y
 
-# Install libpng12
+# Verify libxslt is installed
+RUN ldconfig -p | grep libxslt || (echo "libxslt not found" && exit 1)
+
+# Install libpng12 (skip on arm64 as package is not available)
 WORKDIR /tmp
-RUN wget http://se.archive.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
-    dpkg -i libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
-    rm libpng12-0_1.2.54-1ubuntu1_amd64.deb
+RUN apt-get update && \
+    ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        apt-get install -y libpng12-0 || \
+        (wget http://se.archive.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+         dpkg -i libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+         rm libpng12-0_1.2.54-1ubuntu1_amd64.deb) || \
+        (sleep 5 && wget http://us.archive.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+         dpkg -i libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+         rm libpng12-0_1.2.54-1ubuntu1_amd64.deb) || \
+        (sleep 10 && wget http://archive.ubuntu.com/ubuntu/pool/main/libp/libpng/libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+         dpkg -i libpng12-0_1.2.54-1ubuntu1_amd64.deb && \
+         rm libpng12-0_1.2.54-1ubuntu1_amd64.deb); \
+    else \
+        echo "Skipping libpng12-0 installation on $ARCH architecture"; \
+    fi
 
 # Set timezone explicitly
 ENV TZ=UTC
@@ -47,9 +136,13 @@ WORKDIR /usr/src/app
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=utf-8
 
 # Copy requirements.txt first for better layer caching
 COPY requirements.txt ./
+
+# Note: Python dependencies will be installed using CCP4-python during container startup
+# This ensures compatibility with the CCP4 environment
 
 # Copy application code
 COPY . ./
@@ -66,5 +159,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-# Default command - will be overridden by docker-compose
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+# Start the Django application
+CMD ["/bin/sh", "-c", "/usr/src/app/startup.sh"]

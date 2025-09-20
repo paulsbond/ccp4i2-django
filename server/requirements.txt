@@ -16,4 +16,8 @@ packaging
 tomli
 psycopg2-binary
 
+# Azure AD Authentication (optional - uncomment if using Azure AD auth)
+# msal==1.26.0
+# PyJWT==2.8.0
+
 

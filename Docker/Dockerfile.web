@@ -2,17 +2,24 @@ FROM node:20-alpine3.20 AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files from client directory
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies for building)
-RUN npm ci
+# Install all dependencies (including devDependencies for building) with retry logic
+RUN npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retries 5 && \
+    npm ci --verbose || (npm cache clean --force && npm ci --verbose)
 
-# Copy source code
+# Copy source code from client directory
 COPY . .
 
-# Build for web
-RUN npm run build:web
+# Build for web (from client root directory as originally intended)
+RUN npx cross-env BUILD_TARGET=web npm run copy-assets
+
+RUN cp package.json renderer/
+
+RUN cd renderer && npx next build
 
 FROM node:20-alpine3.20 AS runner
 
@@ -26,7 +33,7 @@ COPY --from=builder /app/renderer ./renderer
 COPY --from=builder /app/package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Create a non-root user
 RUN addgroup -g 1001 -S nodejs
@@ -42,5 +49,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:3000/ || exit 1
 
-# Start the application
-CMD ["sh", "-c", "cd renderer && npm start"]
+# Start the web application
+CMD ["sh", "-c", "cd renderer && npx next start"]
