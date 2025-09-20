@@ -1,12 +1,50 @@
 #!/bin/bash
 set -e
 
-# Accept environment variables as arguments
-CCP4_DATA_PATH="${1:-/mnt/ccp4data}"
-CCP4I2_PROJECTS_DIR="${2:-/mnt/ccp4data/ccp4i2-projects}"
-DATABASE_URL="${3:-postgresql://default:default@localhost/default}"
-DJANGO_SETTINGS_MODULE="${4:-ccp4x.config.settings}"
-SECRET_KEY="${5:-default-secret-key}"
+# Debug environment variables
+echo "=== DEBUGGING ENVIRONMENT VARIABLES ==="
+echo "All environment variables:"
+env | sort
+echo "=== END DEBUG ==="
+
+# Specific variable checks
+echo "DB_HOST: ${DB_HOST:-NOT_SET}"
+echo "DB_USER: ${DB_USER:-NOT_SET}"
+echo "DB_NAME: ${DB_NAME:-NOT_SET}"
+echo "DB_PASSWORD: ${DB_PASSWORD:+SET}"  # Shows SET if variable has value, nothing if empty
+echo "SECRET_KEY: ${SECRET_KEY:+SET}"
+echo "DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-NOT_SET}"
+
+# Access environment variables (including secrets passed as env vars)
+CCP4_DATA_PATH=${CCP4_DATA_PATH:-"/mnt/ccp4data"}
+CCP4I2_PROJECTS_DIR=${CCP4I2_PROJECTS_DIR:-"/mnt/ccp4data/ccp4i2-projects"}
+DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-"ccp4x.config.settings"}
+SECRET_KEY=${SECRET_KEY}
+DB_HOST=${DB_HOST:-"db-host"}
+DB_USER=${DB_USER:-"db-user"}
+DB_NAME=${DB_NAME:-"db-name"}
+DB_PASSWORD=${DB_PASSWORD:-"db-password"}
+
+
+# Construct DATABASE_URL from secure components
+export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}"
+
+# Validate required environment variables
+if [ -z "$DATABASE_URL" ]; then
+    echo "ERROR: Failed to construct DATABASE_URL"
+    echo "DB_HOST: $DB_HOST"
+    echo "DB_USER: $DB_USER" 
+    echo "DB_NAME: $DB_NAME"
+    echo "DB_PASSWORD: [REDACTED]"
+    exit 1
+fi
+echo ${DATABASE_URL}
+
+if [ -z "$SECRET_KEY" ]; then
+    echo "ERROR: SECRET_KEY environment variable is required"
+    exit 1
+fi
+
 
 # Export variables for subprocesses (e.g., uvicorn)
 export CCP4_DATA_PATH
@@ -15,6 +53,8 @@ export DATABASE_URL
 export DJANGO_SETTINGS_MODULE
 export SECRET_KEY
 
+
+# Print environment variables for debugging (avoid printing sensitive info)
 echo "=== CCP4i2 Container Startup ==="
 echo "CCP4_DATA_PATH: $CCP4_DATA_PATH"
 echo "CCP4I2_PROJECTS_DIR: $CCP4I2_PROJECTS_DIR"
@@ -64,10 +104,14 @@ fi
 # Change to app directory
 cd /usr/src/app
 
-# Install dependencies (can run on all replicas)
-echo "Installing Python dependencies..."
-$CCP4_PYTHON -m pip install --upgrade pip
-$CCP4_PYTHON -m pip install -r requirements.txt
+# Install dependencies only if uvicorn is not already installed
+if ! $CCP4_PYTHON -m pip show uvicorn > /dev/null 2>&1; then
+    echo "Installing Python dependencies..."
+    $CCP4_PYTHON -m pip install --upgrade pip
+    $CCP4_PYTHON -m pip install -r requirements.txt
+else
+    echo "Uvicorn already installed, skipping dependency installation."
+fi
 
 # Run Django setup (can run on all replicas, but migrations are idempotent)
 echo "Running Django migrations..."
