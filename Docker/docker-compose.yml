@@ -41,7 +41,7 @@ services:
     volumes:
       - static_files:/usr/src/app/staticfiles
       - media_files:/usr/src/app/media
-      - ${CCP4_DATA_HOST_PATH:-/Users/nmemn/Developer/ccp4data}:/mnt/ccp4data:rw
+      - ${CCP4_DATA_HOST_PATH:-/Users/martinnoble/Developer/ccp4data}:/mnt/ccp4data:rw
     ports:
       - "${SERVER_PORT:-8000}:8000"
     depends_on:
@@ -65,20 +65,17 @@ services:
         echo 'Starting CCP4i2 Django Server with Uvicorn...' &&
         echo 'Waiting for CCP4 data volume...' &&
         timeout=60 &&
-        while [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ] && [ $$timeout -gt 0 ]; do
-          echo 'CCP4 setup script not found, waiting... ($$timeout seconds remaining)'
+        while [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup] && [ $$timeout -gt 0 ]; do
+          echo 'BINARY.setup script not found, waiting... ($$timeout seconds remaining)'
           sleep 5
           timeout=$$((timeout-5))
         done &&
-        if [ ! -f /tmp/binary-setup-done ]; then
-          if [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup ]; then
-            echo 'ERROR: CCP4 BINARY setup script not found'
-            exit 1
-          fi &&
-          echo 'Establishing CCP4 environment...' &&
-          /mnt/ccp4data/ccp4-9/BINARY.setup --run-from-script &&
-          touch /tmp/binary-setup-done
+        if [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup ]; then
+          echo 'ERROR: BINARY.setup script not found'
+          exit 1
         fi &&
+        echo 'Preparing CCP4 environment...' &&
+        . /mnt/ccp4data/ccp4-9/BINARY.setup --run-from-script &&
         if [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ]; then
           echo 'ERROR: CCP4 setup script not found'
           exit 1
@@ -159,7 +156,7 @@ services:
       - static_files:/usr/share/nginx/html/static:ro
       - media_files:/usr/share/nginx/html/media:ro
       - ${SSL_CERT_PATH:-./nginx/ssl}:/etc/nginx/ssl:ro
-      - /Users/nmemn/Developer/ccp4data/home/user:/home/user
+      - /Users/martinnoble/Developer/ccp4data/home/user:/home/user
     depends_on:
       - server
     healthcheck:
@@ -198,7 +195,7 @@ services:
     volumes:
       - static_files:/usr/src/app/staticfiles
       - media_files:/usr/src/app/media
-      - ${CCP4_DATA_HOST_PATH:-/Users/nmemn/Developer/ccp4data}:/mnt/ccp4data:ro
+      - ${CCP4_DATA_HOST_PATH:-/Users/martinnoble/Developer/ccp4data}:/mnt/ccp4data
     depends_on:
       db:
         condition: service_healthy
@@ -210,6 +207,17 @@ services:
       sh -c "
         echo 'Waiting for CCP4 data volume...' &&
         timeout=60 &&
+        while [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup] && [ $$timeout -gt 0 ]; do
+          echo 'BINARY.setup script not found, waiting... ($$timeout seconds remaining)'
+          sleep 5
+          timeout=$$((timeout-5))
+        done &&
+        if [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup ]; then
+          echo 'ERROR: BINARY.setup script not found'
+          exit 1
+        fi &&
+        echo 'Preparing CCP4 environment...' &&
+        /mnt/ccp4data/ccp4-9/BINARY.setup --run-from-script &&
         while [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ] && [ $$timeout -gt 0 ]; do
           echo 'CCP4 setup script not found, waiting... ($$timeout seconds remaining)'
           sleep 5

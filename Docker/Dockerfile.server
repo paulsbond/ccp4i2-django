@@ -39,7 +39,7 @@ RUN apt-get install -y --fix-missing \
     gcc \
     g++ \
     make \
-    libxslt1.1 \  
+    libxslt1.1 \
     libxslt-dev \
     libxml2 \
     libxml2-dev \
@@ -63,34 +63,10 @@ RUN apt-get install -y --fix-missing \
         gcc \
         g++ \
         make \
-        libxslt1.1 \ 
+        libxslt1.1 \
         libxslt-dev \
         libxml2 \
         libxml2-dev) \
-    || (sleep 10 && apt-get install -y --fix-missing \
-        bash \
-        vim \
-        curl \
-        nodejs \
-        libcairo2 \
-        libgomp1 \
-        bzr \
-        libxss1 \
-        libgnomecanvas2-0 \
-        libxmu6 \
-        wget \
-        build-essential \
-        tcsh \
-        tzdata \
-        python3-pip \
-        python3-dev \
-        libxslt1.1 \  
-        libxslt-dev \
-        libxml2 \
-        libxml2-dev \
-        gcc \
-        g++ \
-        make) \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && apt-get autoremove -y
@@ -117,7 +93,7 @@ RUN apt-get update && apt-get install --fix-missing -y \
     libblas-dev
 
 # Install LAPACK libraries
-RUN apt-get update && apt-get install --fix-missing  -y \
+RUN apt-get update && apt-get install --fix-missing -y \
     liblapack3 \
     liblapack-dev
 
@@ -132,16 +108,13 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Set work directory
 WORKDIR /usr/src/app
 
-# Environment variables
+# Environment variables for Python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=utf-8
 
 # Copy requirements.txt first for better layer caching
 COPY requirements.txt ./
-
-# Note: Python dependencies will be installed using CCP4-python during container startup
-# This ensures compatibility with the CCP4 environment
 
 # Copy application code
 COPY . ./
@@ -152,13 +125,26 @@ RUN mkdir -p /usr/src/app/staticfiles /usr/src/app/media /tmp
 # Make sure the app directory is writable for static files collection
 RUN chmod 755 /usr/src/app
 
-# Make startup script executable
-RUN chmod +x /usr/src/app/startup.sh
+# Make startup script executable and verify it exists
+COPY startup.sh /usr/src/app/startup.sh
+RUN chmod +x /usr/src/app/startup.sh && \
+    ls -la /usr/src/app/startup.sh && \
+    head -1 /usr/src/app/startup.sh
 
+# Make entrypoint script executable and verify it exists
+COPY entrypoint.sh /usr/src/app/entrypoint.sh
+RUN chmod +x /usr/src/app/entrypoint.sh && \
+    ls -la /usr/src/app/entrypoint.sh && \
+    head -1 /usr/src/app/entrypoint.sh
+
+# Expose port
 EXPOSE 8000
 
 # Health check using system python initially, will switch to CCP4 python after setup
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
+# Use ENTRYPOINT to ensure environment variables are properly inherited
+# Container Apps will be able to override this with --command
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 CMD ["/usr/src/app/startup.sh"]

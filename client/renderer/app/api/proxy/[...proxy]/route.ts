@@ -133,6 +133,9 @@ async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
     });
   } catch (error) {
     console.error("Error forwarding request:", error);
-    return NextResponse.json({ error: "Proxy error" }, { status: 500 });
+    return NextResponse.json(
+      { error: `Proxy error: ${error.message}` },
+      { status: 500 }
+    );
   }
 }

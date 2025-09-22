@@ -25,9 +25,12 @@ DB_USER=${DB_USER:-"db-user"}
 DB_NAME=${DB_NAME:-"db-name"}
 DB_PASSWORD=${DB_PASSWORD:-"db-password"}
 
+# URL encode using Python (more reliable for complex characters)
+ENCODED_DB_USER=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_USER', safe=''))")
+ENCODED_DB_PASSWORD=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_PASSWORD', safe=''))")
 
-# Construct DATABASE_URL from secure components
-export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}"
+# Construct DATABASE_URL from secure components with encoded credentials
+export DATABASE_URL="postgresql://${ENCODED_DB_USER}:${ENCODED_DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}"
 
 # Validate required environment variables
 if [ -z "$DATABASE_URL" ]; then
@@ -91,15 +94,25 @@ echo "Health server PID: $HEALTH_PID"
 # CCP4 is pre-transferred to the file share
 echo "CCP4 distribution is pre-transferred to $CCP4_DATA_PATH/ccp4-9"
 
-# Setup CCP4 environment
-if [ -f "$CCP4_DATA_PATH/ccp4-9/bin/ccp4.setup-sh" ]; then
-  . "$CCP4_DATA_PATH/ccp4-9/bin/ccp4.setup-sh"
-  export CCP4_PYTHON="$CCP4_DATA_PATH/ccp4-9/bin/ccp4-python"
-  echo "CCP4 environment configured"
-else
-  echo "WARNING: CCP4 setup script not found"
-  export CCP4_PYTHON=python3
-fi
+# Setup CCP4 environment with retry logic for mounting delays
+CCP4_SETUP_SCRIPT="$CCP4_DATA_PATH/ccp4-9/bin/ccp4.setup-sh"
+echo "Waiting for CCP4 setup script ${CCP4_SETUP_SCRIPT} to become available..."
+WAIT_COUNT=0
+MAX_WAIT=120  # 2 minutes
+
+while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
+  if [ -f "$CCP4_SETUP_SCRIPT" ]; then
+    echo "CCP4 setup script found after ${WAIT_COUNT} seconds"
+    . "$CCP4_SETUP_SCRIPT"
+    export CCP4_PYTHON="$CCP4_DATA_PATH/ccp4-9/bin/ccp4-python"
+    echo "CCP4 environment configured successfully"
+    break
+  else
+    echo "Waiting for CCP4 setup script... (${WAIT_COUNT}/${MAX_WAIT}s)"
+    sleep 1
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+  fi
+done
 
 # Change to app directory
 cd /usr/src/app

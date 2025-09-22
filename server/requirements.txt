@@ -15,6 +15,7 @@ pytest-dependency
 packaging
 tomli
 psycopg2-binary
+clipper-python
 numpy@1.19.5; python_version < "3.8"
 numpy; python_version >= "3.8"
 scipy

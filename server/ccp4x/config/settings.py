@@ -7,7 +7,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from ccp4i2.googlecode import diff_match_patch_py3
 
 # BASE_DIR is the directory where your Django project is located (containing manage.py)
@@ -113,17 +113,18 @@ if DATABASE_URL:
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": url.path[1:],  # Remove leading slash
-            "USER": url.username,
-            "PASSWORD": url.password,
-            "HOST": url.hostname,
+            "USER": unquote(url.username),
+            "PASSWORD": unquote(url.password),
+            "HOST": unquote(url.hostname),
             "PORT": url.port or 5432,
             "OPTIONS": {
+                "sslmode": "require",  # Enforce SSL connection
                 "connect_timeout": 10,
             },
         }
     }
     print(
-        f"Using PostgreSQL database: {url.username}@{url.hostname}:{url.port}/{url.path[1:]}"
+        f"Using PostgreSQL database: {url.username}:{url.password}@{url.hostname}:{url.port}/{url.path[1:]}"
     )
 else:
     # Default SQLite configuration
