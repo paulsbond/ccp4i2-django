@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# Debug environment variables
-echo "=== DEBUGGING ENVIRONMENT VARIABLES ==="
-echo "All environment variables:"
-env | sort
-echo "=== END DEBUG ==="
-
 # Specific variable checks
 echo "DB_HOST: ${DB_HOST:-NOT_SET}"
 echo "DB_USER: ${DB_USER:-NOT_SET}"
@@ -14,6 +8,9 @@ echo "DB_NAME: ${DB_NAME:-NOT_SET}"
 echo "DB_PASSWORD: ${DB_PASSWORD:+SET}"  # Shows SET if variable has value, nothing if empty
 echo "SECRET_KEY: ${SECRET_KEY:+SET}"
 echo "DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-NOT_SET}"
+echo "DB_SSL_MODE: ${DB_SSL_MODE:-NOT_SET}"
+echo "DB_SSL_ROOT_CERT: ${DB_SSL_ROOT_CERT:-NOT_SET}"
+echo "DB_SSL_REQUIRE_CERT: ${DB_SSL_REQUIRE_CERT:-NOT_SET}"
 
 # Access environment variables (including secrets passed as env vars)
 CCP4_DATA_PATH=${CCP4_DATA_PATH:-"/mnt/ccp4data"}
@@ -25,12 +22,50 @@ DB_USER=${DB_USER:-"db-user"}
 DB_NAME=${DB_NAME:-"db-name"}
 DB_PASSWORD=${DB_PASSWORD:-"db-password"}
 
+# SSL-related environment variables
+DB_SSL_MODE=${DB_SSL_MODE}
+DB_SSL_ROOT_CERT=${DB_SSL_ROOT_CERT}
+DB_SSL_REQUIRE_CERT=${DB_SSL_REQUIRE_CERT}
+
 # URL encode using Python (more reliable for complex characters)
 ENCODED_DB_USER=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_USER', safe=''))")
 ENCODED_DB_PASSWORD=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_PASSWORD', safe=''))")
 
-# Construct DATABASE_URL from secure components with encoded credentials
-export DATABASE_URL="postgresql://${ENCODED_DB_USER}:${ENCODED_DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}"
+# Build query parameters for SSL configuration
+QUERY_PARAMS=""
+
+# Add SSL mode if set
+if [ -n "$DB_SSL_MODE" ]; then
+    ENCODED_SSL_MODE=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_SSL_MODE', safe=''))")
+    QUERY_PARAMS="${QUERY_PARAMS}sslmode=${ENCODED_SSL_MODE}&"
+    echo "Adding SSL mode: $DB_SSL_MODE"
+fi
+
+# Add SSL root certificate if set
+if [ -n "$DB_SSL_ROOT_CERT" ]; then
+    ENCODED_SSL_ROOT_CERT=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_SSL_ROOT_CERT', safe=''))")
+    QUERY_PARAMS="${QUERY_PARAMS}sslrootcert=${ENCODED_SSL_ROOT_CERT}&"
+    echo "Adding SSL root certificate: $DB_SSL_ROOT_CERT"
+fi
+
+# Add SSL require certificate if set (maps to sslcert parameter)
+if [ -n "$DB_SSL_REQUIRE_CERT" ]; then
+    ENCODED_SSL_REQUIRE_CERT=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_SSL_REQUIRE_CERT', safe=''))")
+    QUERY_PARAMS="${QUERY_PARAMS}sslcert=${ENCODED_SSL_REQUIRE_CERT}&"
+    echo "Adding SSL certificate: $DB_SSL_REQUIRE_CERT"
+fi
+
+# Remove trailing & if query parameters exist
+if [ -n "$QUERY_PARAMS" ]; then
+    QUERY_PARAMS=$(echo "$QUERY_PARAMS" | sed 's/&$//')
+    QUERY_PARAMS="?${QUERY_PARAMS}"
+fi
+
+# Construct DATABASE_URL from secure components with encoded credentials and SSL parameters
+export DATABASE_URL="postgresql://${ENCODED_DB_USER}:${ENCODED_DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}${QUERY_PARAMS}"
+
+# DEBUG print value of  DATABASE_URL
+echo "DATABASE_URL: $DATABASE_URL"
 
 # Validate required environment variables
 if [ -z "$DATABASE_URL" ]; then
@@ -41,13 +76,15 @@ if [ -z "$DATABASE_URL" ]; then
     echo "DB_PASSWORD: [REDACTED]"
     exit 1
 fi
-echo ${DATABASE_URL}
+
+# Show constructed URL (with password masked for security)
+MASKED_DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/:\/\/[^:]*:[^@]*@/:\/\/[USER]:[PASSWORD]@/')
+echo "Constructed DATABASE_URL: $MASKED_DATABASE_URL"
 
 if [ -z "$SECRET_KEY" ]; then
     echo "ERROR: SECRET_KEY environment variable is required"
     exit 1
 fi
-
 
 # Export variables for subprocesses (e.g., uvicorn)
 export CCP4_DATA_PATH
@@ -55,7 +92,6 @@ export CCP4I2_PROJECTS_DIR
 export DATABASE_URL
 export DJANGO_SETTINGS_MODULE
 export SECRET_KEY
-
 
 # Print environment variables for debugging (avoid printing sensitive info)
 echo "=== CCP4i2 Container Startup ==="

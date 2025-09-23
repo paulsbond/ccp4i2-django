@@ -328,3 +328,119 @@ class CCP4i2DjangoDbApi(object):
             return None
         logger.debug("Job directory is %s %s", the_job.directory, the_job.project)
         return str(the_job.directory)
+
+    def getJobFiles(
+        self, jobId=None, role=0, mode="all", searchFileUses=True, fileTypes=[]
+    ):
+        """
+        Retrieve files associated with a job with flexible filtering and output options.
+
+        Args:
+            jobId: The unique identifier of the job whose files you want to retrieve
+            role: Specifies which files to get:
+                FILE_ROLE_OUT (0): Output files produced by the job
+                FILE_ROLE_IN (1): Input files used by the job
+            mode: What information to return about the files:
+                'fileId': Just the file IDs
+                'fullPath': Complete file paths
+                'fileName': Just the file names
+                'annotation': File annotations/descriptions
+                'fileType' or 'fileTypeId': File type information
+                'all': Complete file information
+            searchFileUses: Whether to also search the FileUses table (default: True)
+            fileTypes: Optional filter to only return specific file types
+
+        Returns:
+            List of file information based on mode parameter
+        """
+        print("In CCP4i2DjangoDbApi getJobFiles")
+        try:
+            if jobId is None:
+                logger.warning("getJobFiles called with no jobId")
+                return []
+
+            # Handle both UUID formats (with and without dashes)
+            if "-" not in str(jobId):
+                jobId = uuid.UUID(jobId)
+
+            # Get the job
+            job = models.Job.objects.get(uuid=jobId)
+
+            # Phase 1: Direct File Search
+            files_from_direct = []
+            if role == 0:  # FILE_ROLE_OUT - output files
+                direct_files = models.File.objects.filter(job=job)
+                # Find files directly associated with the job (excluding imported files)
+                # .exclude(
+                #    fileimport__isnull=False  # Exclude files that have import records
+                # )
+
+                # Apply file type filter if specified
+                if fileTypes:
+                    direct_files = direct_files.filter(type__in=fileTypes)
+
+                files_from_direct = list(direct_files)
+
+            # Phase 2: FileUses Search (if enabled)
+            files_from_uses = []
+            if searchFileUses:
+                # Search FileUses table for file usage relationships
+                file_uses = models.FileUse.objects.filter(job=job, role=role)
+
+                # Apply file type filter if specified
+                if fileTypes:
+                    file_uses = file_uses.filter(file__type__in=fileTypes)
+
+                # Get the actual files from file uses
+                files_from_uses = [file_use.file for file_use in file_uses]
+
+            # Combine and deduplicate files
+            all_files = files_from_direct + files_from_uses
+            unique_files = []
+            seen_uuids = set()
+            for file_obj in all_files:
+                if file_obj.uuid not in seen_uuids:
+                    unique_files.append(file_obj)
+                    seen_uuids.add(file_obj.uuid)
+
+            # Format output based on mode parameter
+            if mode == "fileId":
+                return [str(file_obj.uuid) for file_obj in unique_files]
+            elif mode == "fullPath":
+                return [str(file_obj.path) for file_obj in unique_files]
+            elif mode == "fileName":
+                return [file_obj.name for file_obj in unique_files]
+            elif mode == "annotation":
+                return [file_obj.annotation or "" for file_obj in unique_files]
+            elif mode in ["fileType", "fileTypeId"]:
+                return [file_obj.type.id for file_obj in unique_files]
+            elif mode == "all":
+                # Return complete file information
+                result = []
+                for file_obj in unique_files:
+                    file_info = {
+                        "fileid": str(file_obj.uuid),
+                        "filename": file_obj.name,
+                        "fullpath": str(file_obj.path),
+                        "filetype": file_obj.type.id,
+                        "filetypename": (
+                            file_obj.type.name if hasattr(file_obj.type, "name") else ""
+                        ),
+                        "subtype": file_obj.sub_type,
+                        "annotation": file_obj.annotation or "",
+                        "jobparamname": file_obj.job_param_name or "",
+                        "content": file_obj.content,
+                        "directory": file_obj.directory,
+                    }
+                    result.append(file_info)
+                return result
+            else:
+                # Default to returning file objects for unknown modes
+                return unique_files
+
+        except models.Job.DoesNotExist:
+            logger.error("Job not found for jobId %s", jobId)
+            return []
+        except Exception as err:
+            logger.exception("Error in getJobFiles for jobId %s", jobId, exc_info=err)
+            return []

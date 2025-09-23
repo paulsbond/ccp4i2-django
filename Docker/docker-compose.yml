@@ -30,7 +30,6 @@ services:
 
     environment:
       - DEBUG=${DEBUG:-false}
-      - DATABASE_URL=postgresql://${DB_USER:-ccp4i2}:${DB_PASSWORD:-ccp4i2_password}@db:${DB_PORT:-5432}/${DB_NAME:-ccp4i2}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,nginx,web,server}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3003,http://web:3003,http://nginx}
       - SECRET_KEY=${DJANGO_SECRET_KEY:-your-secret-key-here}
@@ -38,10 +37,15 @@ services:
       - UVICORN_WORKERS=${UVICORN_WORKERS:-2}
       - UVICORN_HOST=${UVICORN_HOST:-0.0.0.0}
       - UVICORN_PORT=${UVICORN_PORT:-8000}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_USER=${DB_USER:-ccp4i2}
+      - DB_PASSWORD=${DB_PASSWORD:-ccp4i2_password}
+      - DB_NAME=${DB_NAME:-ccp4i2}
+      - DB_SSL_MODE=${DB_SSL_MODE:-disable}
     volumes:
       - static_files:/usr/src/app/staticfiles
       - media_files:/usr/src/app/media
-      - ${CCP4_DATA_HOST_PATH:-/Users/martinnoble/Developer/ccp4data}:/mnt/ccp4data:rw
+      - ${CCP4_DATA_HOST_PATH:-/Users/nmemn/Developer/ccp4data}:/mnt/ccp4data:rw
     ports:
       - "${SERVER_PORT:-8000}:8000"
     depends_on:
@@ -60,49 +64,6 @@ services:
     labels:
       - "app.service=ccp4i2-server"
       - "app.environment=${ENVIRONMENT:-development}"
-    command: >
-      sh -c "
-        echo 'Starting CCP4i2 Django Server with Uvicorn...' &&
-        echo 'Waiting for CCP4 data volume...' &&
-        timeout=60 &&
-        while [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup] && [ $$timeout -gt 0 ]; do
-          echo 'BINARY.setup script not found, waiting... ($$timeout seconds remaining)'
-          sleep 5
-          timeout=$$((timeout-5))
-        done &&
-        if [ ! -f /mnt/ccp4data/ccp4-9/BINARY.setup ]; then
-          echo 'ERROR: BINARY.setup script not found'
-          exit 1
-        fi &&
-        echo 'Preparing CCP4 environment...' &&
-        . /mnt/ccp4data/ccp4-9/BINARY.setup --run-from-script &&
-        if [ ! -f /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh ]; then
-          echo 'ERROR: CCP4 setup script not found'
-          exit 1
-        fi &&
-        echo 'Loading CCP4 environment...' &&
-        . /mnt/ccp4data/ccp4-9/bin/ccp4.setup-sh &&
-        echo 'Installing Python requirements into CCP4 Python...' &&
-        CCP4_PYTHON=/mnt/ccp4data/ccp4-9/bin/ccp4-python &&
-        if [ ! -f /tmp/ccp4-requirements-installed ]; then
-          echo 'Installing/upgrading pip...' &&
-          $$CCP4_PYTHON -m pip install --upgrade pip &&
-          echo 'Installing requirements...' &&
-          $$CCP4_PYTHON -m pip install -r requirements.txt &&
-          echo 'Installing uvicorn with standard extras...' &&
-          $$CCP4_PYTHON -m pip install 'uvicorn[standard]' &&
-          touch /tmp/ccp4-requirements-installed &&
-          echo 'Requirements installed successfully'
-        else
-          echo 'Requirements already installed, skipping...'
-        fi &&
-        echo 'Running Django migrations...' &&
-        $$CCP4_PYTHON manage.py migrate &&
-        echo 'Collecting static files...' &&
-        $$CCP4_PYTHON manage.py collectstatic --noinput &&
-        echo 'Starting Uvicorn server...' &&
-        exec $$CCP4_PYTHON -m uvicorn asgi:application --host ${UVICORN_HOST:-0.0.0.0} --port ${UVICORN_PORT:-8000} --workers ${UVICORN_WORKERS:-2} --access-log --log-level info
-      "
 
   # Next.js Web Client - Production optimized
   web:
@@ -156,7 +117,7 @@ services:
       - static_files:/usr/share/nginx/html/static:ro
       - media_files:/usr/share/nginx/html/media:ro
       - ${SSL_CERT_PATH:-./nginx/ssl}:/etc/nginx/ssl:ro
-      - /Users/martinnoble/Developer/ccp4data/home/user:/home/user
+      - /Users/nmemn/Developer/ccp4data/home/user:/home/user
     depends_on:
       - server
     healthcheck:
@@ -195,7 +156,7 @@ services:
     volumes:
       - static_files:/usr/src/app/staticfiles
       - media_files:/usr/src/app/media
-      - ${CCP4_DATA_HOST_PATH:-/Users/martinnoble/Developer/ccp4data}:/mnt/ccp4data
+      - ${CCP4_DATA_HOST_PATH:-/Users/nmemn/Developer/ccp4data}:/mnt/ccp4data
     depends_on:
       db:
         condition: service_healthy

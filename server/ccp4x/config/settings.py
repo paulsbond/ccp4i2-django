@@ -109,6 +109,34 @@ if DATABASE_URL:
     # Parse the DATABASE_URL
     url = urlparse(DATABASE_URL)
 
+    # Parse query parameters from the URL
+    from urllib.parse import parse_qs
+
+    query_params = parse_qs(url.query)
+
+    # Extract SSL mode from query parameters, default to 'require'
+    sslmode = query_params.get("sslmode", ["require"])[0]
+
+    # Extract other common PostgreSQL options from query parameters
+    connect_timeout = query_params.get("connect_timeout", ["10"])[0]
+    application_name = query_params.get("application_name", ["ccp4i2-django"])[0]
+
+    # Build OPTIONS dictionary with extracted parameters
+    db_options = {
+        "sslmode": sslmode,
+        "connect_timeout": int(connect_timeout),
+    }
+
+    # Add application_name if specified
+    if "application_name" in query_params:
+        db_options["application_name"] = application_name
+
+    # Add any other supported PostgreSQL options from query parameters
+    # Common options: sslcert, sslkey, sslrootcert, etc.
+    for param in ["sslcert", "sslkey", "sslrootcert", "sslcrl"]:
+        if param in query_params:
+            db_options[param] = query_params[param][0]
+
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -117,15 +145,26 @@ if DATABASE_URL:
             "PASSWORD": unquote(url.password),
             "HOST": unquote(url.hostname),
             "PORT": url.port or 5432,
-            "OPTIONS": {
-                "sslmode": "require",  # Enforce SSL connection
-                "connect_timeout": 10,
-            },
+            "OPTIONS": db_options,
         }
     }
+
+    # Log connection details (hide password for security)
+    masked_password = "*" * len(url.password) if url.password else "None"
     print(
-        f"Using PostgreSQL database: {url.username}:{url.password}@{url.hostname}:{url.port}/{url.path[1:]}"
+        f"Using PostgreSQL database: {url.username}:{masked_password}@{url.hostname}:{url.port}/{url.path[1:]} "
+        f"with SSL mode: {sslmode}"
     )
+
+    # Log other options if they exist
+    if len(db_options) > 2:  # More than just sslmode and connect_timeout
+        other_options = {
+            k: v
+            for k, v in db_options.items()
+            if k not in ["sslmode", "connect_timeout"]
+        }
+        print(f"Additional database options: {other_options}")
+
 else:
     # Default SQLite configuration
     DATABASES = {
