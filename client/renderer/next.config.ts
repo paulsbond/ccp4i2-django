@@ -2,19 +2,17 @@ import type { NextConfig } from "next";
 
 const isElectron = process.env.BUILD_TARGET === "electron";
 const isWeb = process.env.BUILD_TARGET === "web";
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
-  //output: isWeb ? "export" : undefined,
   trailingSlash: isElectron,
   images: {
     unoptimized: isElectron || isWeb,
   },
 
-  // Configure asset prefix for web deployment
   assetPrefix: isWeb ? "" : undefined,
   basePath: isWeb ? "" : undefined,
 
-  // API routes handling for web deployment
   rewrites: isWeb
     ? async () => [
         {
@@ -26,7 +24,6 @@ const nextConfig: NextConfig = {
       ]
     : undefined,
 
-  // Configure webpack for different targets
   webpack: (config, { isServer }) => {
     config.module.parser.javascript.importMeta = false;
     if (isServer) {
@@ -35,16 +32,41 @@ const nextConfig: NextConfig = {
     if (isElectron && !isServer) {
       config.target = "electron-renderer";
     }
-
     return config;
   },
 
   async headers() {
+    // Development headers (more permissive)
+    if (isDevelopment) {
+      return [
+        {
+          source: "/:path*",
+          headers: [
+            { key: "Access-Control-Allow-Origin", value: "*" },
+            {
+              key: "Access-Control-Allow-Headers",
+              value:
+                "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization",
+            },
+            {
+              key: "Access-Control-Allow-Methods",
+              value: "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            },
+          ],
+        },
+      ];
+    }
+
+    // Production headers (WebAssembly-compatible)
     return [
       {
         source: "/:path*",
         headers: [
-          { key: "Access-Control-Allow-Origin", value: "*" },
+          // Restrictive CORS for production
+          {
+            key: "Access-Control-Allow-Origin",
+            value: process.env.CORS_ALLOWED_ORIGINS || "https://yourdomain.com",
+          },
           {
             key: "Access-Control-Allow-Headers",
             value:
@@ -54,6 +76,7 @@ const nextConfig: NextConfig = {
             key: "Access-Control-Allow-Methods",
             value: "GET, POST, PUT, DELETE, PATCH, OPTIONS",
           },
+          // Cross-origin isolation for WebAssembly
           {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin",
@@ -61,6 +84,12 @@ const nextConfig: NextConfig = {
           {
             key: "Cross-Origin-Embedder-Policy",
             value: "require-corp",
+          },
+          // Content Security Policy for WebAssembly
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-eval'; worker-src 'self' blob:; object-src 'none';",
           },
         ],
       },

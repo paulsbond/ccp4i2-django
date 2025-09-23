@@ -42,12 +42,15 @@ import { usePopcorn } from "./popcorn-provider";
 import { useRunCheck } from "./run-check-provider";
 import { CCP4i2MoorhenIcon } from "../components/General/CCP4i2Icons";
 import { useJob } from "../utils";
+import ExportJobMenu from "../components/export-job-file-menu";
 
 interface JobMenuContextDataProps {
   jobMenuAnchorEl: HTMLElement | null;
   setJobMenuAnchorEl: (element: HTMLElement | null) => void;
   job: Job | null;
   setJob: (job: Job | null) => void;
+  fileExportJobId?: number | null;
+  setFileExportJobId?: (jobId: number | null) => void;
 }
 
 export const JobMenuContext = createContext<JobMenuContextDataProps>({
@@ -62,6 +65,7 @@ export const JobMenuProvider: React.FC<PropsWithChildren> = ({ children }) => {
     null
   );
   const [job, setJob] = useState<Job | null>(null);
+  const [fileExportJobId, setFileExportJobId] = useState<number | null>(null);
 
   return (
     <>
@@ -71,10 +75,13 @@ export const JobMenuProvider: React.FC<PropsWithChildren> = ({ children }) => {
           setJobMenuAnchorEl,
           job,
           setJob,
+          fileExportJobId,
+          setFileExportJobId,
         }}
       >
         {children}
         <JobMenu />
+        <ExportJobMenu jobId={fileExportJobId} setJobId={setFileExportJobId} />
       </JobMenuContext.Provider>
     </>
   );
@@ -85,7 +92,14 @@ export interface JobWithChildren extends Job {
 }
 
 export const JobMenu: React.FC = () => {
-  const { jobMenuAnchorEl, setJobMenuAnchorEl, job, setJob } = useJobMenu();
+  const {
+    jobMenuAnchorEl,
+    setJobMenuAnchorEl,
+    job,
+    setJob,
+    fileExportJobId,
+    setFileExportJobId,
+  } = useJobMenu();
   const api = useApi();
   const router = useRouter();
   const { setMessage } = usePopcorn();
@@ -262,33 +276,69 @@ export const JobMenu: React.FC = () => {
     async (ev: SyntheticEvent) => {
       if (!job) return;
       ev.stopPropagation();
-      const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
-      if (cloneResult?.id) {
-        mutateJobs();
-        setJobMenuAnchorEl(null);
-        router.push(`/project/${job.project}/job/${cloneResult.id}`);
+
+      // Show subtle progress message
+      setMessage(`Cloning job ${job.number}...`);
+
+      try {
+        const cloneResult: Job = await api.post(`jobs/${job.id}/clone/`);
+        if (cloneResult?.id) {
+          mutateJobs();
+          setJobMenuAnchorEl(null);
+          setMessage(`Job ${job.number} cloned successfully`);
+          router.push(`/project/${job.project}/job/${cloneResult.id}`);
+        }
+      } catch (error) {
+        setMessage(`Failed to clone job ${job.number}`);
+        console.error("Clone failed:", error);
       }
     },
-    [job, mutateJobs]
+    [job, mutateJobs, setMessage]
   );
+
+  // Add state for run loading (add this near the other useState declarations)
+  const [isRunning, setIsRunning] = useState(false);
 
   const handleRun = useCallback(
     async (ev: SyntheticEvent) => {
-      setJobMenuAnchorEl(null);
       if (!job) return;
-      const confirmed = await confirmTaskRun(job.id);
-      if (!confirmed) {
-        return;
-      }
-      ev.stopPropagation();
-      const runResult: Job = await api.post(`jobs/${job.id}/run/`);
-      setMessage(`Submitted job ${runResult?.number}: ${runResult?.task_name}`);
-      if (runResult?.id) {
-        mutateJobs();
-        router.push(`/project/${job.project}/job/${runResult.id}`);
+
+      // Set running state immediately
+      setIsRunning(true);
+      setMessage(`Preparing to run job ${job.number}...`);
+
+      try {
+        setJobMenuAnchorEl(null);
+
+        const confirmed = await confirmTaskRun(job.id);
+        if (!confirmed) {
+          setMessage(`Run cancelled for job ${job.number}`);
+          return;
+        }
+
+        ev.stopPropagation();
+
+        // Update message for actual submission
+        setMessage(`Submitting job ${job.number}...`);
+
+        const runResult: Job = await api.post(`jobs/${job.id}/run/`);
+
+        setMessage(
+          `Submitted job ${runResult?.number}: ${runResult?.task_name}`
+        );
+
+        if (runResult?.id) {
+          mutateJobs();
+          router.push(`/project/${job.project}/job/${runResult.id}`);
+        }
+      } catch (error) {
+        setMessage(`Failed to run job ${job.number}`);
+        console.error("Run failed:", error);
+      } finally {
+        setIsRunning(false);
       }
     },
-    [job, mutateJobs]
+    [job, mutateJobs, setMessage, isRunning]
   );
 
   const handleTerminalInJobDirectory = useCallback(
@@ -398,6 +448,21 @@ export const JobMenu: React.FC = () => {
     [job, setJobMenuAnchorEl, setMessage]
   );
 
+  // Add the handleExportOptions callback after the other handlers
+  const handleExportOptions = useCallback(
+    (ev: SyntheticEvent) => {
+      if (!job || !setFileExportJobId) return;
+      ev.stopPropagation();
+
+      // Set the job ID for the export dialog
+      setFileExportJobId(job.id);
+
+      // Close the context menu
+      setJobMenuAnchorEl(null);
+    },
+    [job, setFileExportJobId, setJobMenuAnchorEl]
+  );
+
   return (
     job && (
       <>
@@ -415,16 +480,20 @@ export const JobMenu: React.FC = () => {
           </MenuItem>
           <MenuItem
             key="Run"
-            disabled={job.number.includes(".") || job.status !== 1}
+            disabled={job.number.includes(".") || job.status !== 1 || isRunning}
             onClick={handleRun}
           >
-            <RunCircle sx={{ mr: 1 }} /> Run
+            <RunCircle sx={{ mr: 1, opacity: isRunning ? 0.5 : 1 }} />{" "}
+            {isRunning ? "Running..." : "Run"}
           </MenuItem>
           <MenuItem key="EditAnnotation" onClick={handleEditAnnotation}>
             <Edit sx={{ mr: 1 }} /> Edit title
           </MenuItem>
           <MenuItem key="ExportJob" onClick={handleExportJob}>
             <Download sx={{ mr: 1 }} /> Export job
+          </MenuItem>
+          <MenuItem key="ExportOptions" onClick={handleExportOptions}>
+            <Download sx={{ mr: 1 }} /> Export options
           </MenuItem>
           <MenuItem
             key="Delete"
