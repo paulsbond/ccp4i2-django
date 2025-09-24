@@ -17,9 +17,6 @@ Author: CCP4i2 Development Team
 License: CCP4 License
 Version: Compatible with CCP4i2 and Django 4.2+
 
-Azure Deployment Notes:
-    - Designed for Azure Container Apps deployment
-    - Handles files from Azure File Shares
     - Optimized for cloud-based file operations
     - Includes proper error handling for distributed environments
 """
@@ -77,8 +74,6 @@ def export_job_file(
             return error_response
         return file_response
 
-    Azure Notes:
-        - Files retrieved from Azure File Shares
         - Efficient streaming download for large files
         - Proper cleanup of temporary resources
         - Container-aware file path handling
@@ -90,12 +85,14 @@ def export_job_file(
         - Provides detailed error messages
     """
     try:
-        print(
-            f"Export job file utility called for job_id={job_id}, export_mode={export_mode}"
+        logger.debug(
+            "Export job file utility called for job_id=%s, export_mode=%s",
+            job_id,
+            export_mode,
         )
         # Retrieve the job object
         job = models.Job.objects.get(id=job_id)
-        print(f"Found job: {job.id}, UUID: {job.uuid}")
+        logger.debug("Found job: %s, UUID: %s", job.id, job.uuid)
 
         logger.debug(
             "Exporting file for job %s (UUID: %s) with mode: %s",
@@ -106,20 +103,30 @@ def export_job_file(
 
         # Get the task manager instance
         task_manager: CTaskManager = CCP4TaskManager.TASKMANAGER()
-        print("Got task manager instance")
+        logger.debug("Got task manager instance")
 
         # Call exportJobFiles to get the filename of the file to export
         job_uuid_formatted = str(str(job.uuid).replace("-", ""))
-        print(
-            f"Calling exportJobFiles with jobId={job_uuid_formatted}, taskName={job.task_name}, mode={export_mode}"
+        logger.debug(
+            "Calling exportJobFiles with jobId=%s, taskName=%s, mode=%s",
+            job_uuid_formatted,
+            job.task_name,
+            export_mode,
         )
-        exported_filename = task_manager.exportJobFiles(
-            taskName=job.task_name, jobId=job_uuid_formatted, mode=export_mode
-        )
-        print(f"exportJobFiles returned: {exported_filename}")
+        try:
+            exported_filename = task_manager.exportJobFiles(
+                taskName=job.task_name, jobId=job_uuid_formatted, mode=export_mode
+            )
+            logger.debug(
+                "exportJobFiles call succeeded, got filename: %s", exported_filename
+            )
+        except Exception as e:
+            logger.debug("Exception calling exportJobFiles: %s", e)
+            raise
+        logger.debug("exportJobFiles returned: %s", exported_filename)
 
         if not exported_filename:
-            print("No filename returned from exportJobFiles")
+            logger.debug("No filename returned from exportJobFiles")
             error_response = JsonResponse(
                 {
                     "status": "Failed",
@@ -131,8 +138,8 @@ def export_job_file(
 
         # Convert to Path object for easier handling
         export_file_path = Path(exported_filename)
-        print(f"Export file path: {export_file_path}")
-        print(f"File exists: {export_file_path.exists()}")
+        logger.debug("Export file path: %s", export_file_path)
+        logger.debug("File exists: %s", export_file_path.exists())
 
         # Verify the file exists
         if not export_file_path.exists():

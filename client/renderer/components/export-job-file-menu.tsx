@@ -62,7 +62,7 @@ interface ExportJobFileMenuResponse {
 }
 
 /**
- * Download utility function for Azure Container Apps environment
+ * Download utility function
  *
  * Handles file downloads with proper error handling and user feedback
  * optimized for cloud-based deployments.
@@ -72,10 +72,38 @@ interface ExportJobFileMenuResponse {
  */
 const doDownload = async (url: string, filename: string): Promise<void> => {
   try {
+    // Fetch the response to get headers
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Try to get filename from X-Export-Info header
+    let downloadFilename = filename; // fallback
+    const exportInfoHeader = response.headers.get("X-Export-Info");
+    if (exportInfoHeader) {
+      try {
+        const exportInfo = JSON.parse(exportInfoHeader);
+        if (exportInfo.original_filename) {
+          downloadFilename = exportInfo.original_filename;
+        }
+      } catch (parseError) {
+        console.warn("Failed to parse X-Export-Info header:", parseError);
+        // Continue with fallback filename
+      }
+    }
+
+    // Get the blob data
+    const blob = await response.blob();
+
+    // Create object URL for the blob
+    const blobUrl = window.URL.createObjectURL(blob);
+
     // Create a temporary anchor element for download
     const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
+    link.href = blobUrl;
+    link.download = downloadFilename;
 
     // Add to DOM temporarily
     document.body.appendChild(link);
@@ -85,8 +113,9 @@ const doDownload = async (url: string, filename: string): Promise<void> => {
 
     // Clean up
     document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
 
-    console.log(`Download initiated for: ${filename}`);
+    console.log(`Download initiated for: ${downloadFilename}`);
   } catch (error) {
     console.error("Download failed:", error);
     throw new Error(
@@ -104,8 +133,6 @@ const doDownload = async (url: string, filename: string): Promise<void> => {
  * Fetches available export options from the Django backend and presents them
  * in a user-friendly dialog interface.
  *
- * Azure Deployment Notes:
- * - Designed for Azure Container Apps deployment
  * - Handles API calls to containerized Django backend
  * - Optimized for cloud-based file operations
  * - Includes proper error handling for distributed environments
@@ -233,8 +260,7 @@ export const ExportJobMenu: React.FC<ExportJobMenuProps> = ({
    * Constructs the download URL using the job ID and item identifier,
    * then triggers the download using the doDownload utility function.
    *
-   * Azure Notes:
-   * - Uses Azure Container Apps proxy endpoint
+   * - Uses proxy endpoint
    * - Handles cloud-specific download patterns
    * - Includes proper error handling for distributed environments
    */

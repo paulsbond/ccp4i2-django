@@ -448,7 +448,6 @@ export const JobMenu: React.FC = () => {
     [job, setJobMenuAnchorEl, setMessage]
   );
 
-  // Add the handleExportOptions callback after the other handlers
   const handleExportOptions = useCallback(
     (ev: SyntheticEvent) => {
       if (!job || !setFileExportJobId) return;
@@ -492,7 +491,11 @@ export const JobMenu: React.FC = () => {
           <MenuItem key="ExportJob" onClick={handleExportJob}>
             <Download sx={{ mr: 1 }} /> Export job
           </MenuItem>
-          <MenuItem key="ExportOptions" onClick={handleExportOptions}>
+          <MenuItem
+            key="ExportOptions"
+            disabled={job.status !== 6}
+            onClick={handleExportOptions}
+          >
             <Download sx={{ mr: 1 }} /> Export options
           </MenuItem>
           <MenuItem

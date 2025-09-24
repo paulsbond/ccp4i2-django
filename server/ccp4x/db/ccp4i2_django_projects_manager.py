@@ -3,10 +3,10 @@ import logging
 import os
 import uuid
 from ccp4i2.core import CCP4ModelData
-
 from . import models
 from .ccp4i2_django_dbapi import CCP4i2DjangoDbApi
 from ..lib.job_utils.set_output_file_names import set_output_file_names
+from ..lib.job_utils.job_directory import job_directory
 
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
@@ -114,32 +114,10 @@ class CCP4i2DjangoProjectsManager(object):
                 return None
         return theProject.directory
 
-    def jobDirectory(self, jobId=None, projectName=None, jobNumber=None):
+    def jobDirectory(self, jobId=None, projectName=None, jobNumber=None, create=False):
         logger.debug("in FPM %s, %s, %s", jobId, projectName, jobNumber)
         assert jobId is not None or (projectName is not None and jobNumber is not None)
-        the_job = None
-        if jobId is not None:
-            the_job = models.Job.objects.get(uuid=jobId)
-        elif projectName is not None and jobNumber is not None:
-            the_job = models.Job.objects.get(
-                project__name=projectName, number=jobNumber
-            )
-        if the_job is None:
-            logger.error(
-                "No job found with jobId %s, projectName %s, jobNumber %s",
-                jobId,
-                projectName,
-                jobNumber,
-            )
-            return None
-        if the_job.directory is None:
-            logger.error(
-                "Job %s has no directory set, cannot return job directory",
-                the_job.uuid,
-            )
-            return None
-        logger.debug("Job directory is %s %s", the_job.directory, the_job.project)
-        return str(the_job.directory)
+        return job_directory(jobId, projectName, jobNumber, create)
 
     def makeFileName(self, jobId=None, mode="PROGRAMXML"):
         the_job = models.Job.objects.get(uuid=jobId)

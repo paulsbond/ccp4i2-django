@@ -30,11 +30,6 @@ docker-compose*.yml
 Dockerfile*
 .dockerignore
 
-# Exclude Azure-specific files (if not needed in images)
-azure/
-*.bicep
-*.bicepparam
-
 # Exclude large or irrelevant directories
 client/node_modules/  # Specifically for server builds
 server/__pycache__/   # Specifically for client builds

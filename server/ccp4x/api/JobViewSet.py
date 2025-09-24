@@ -21,9 +21,7 @@ Author: CCP4i2 Development Team
 License: CCP4 License
 Version: Compatible with CCP4i2 and Django 4.2+
 
-Azure Deployment Notes:
-    - Designed for Azure Container Apps deployment
-    - Supports distributed file storage via Azure File Shares
+    - Supports distributed file storage
     - Handles container-based job execution
     - Includes proper error handling for cloud environments
 """
@@ -91,8 +89,6 @@ class JobViewSet(ModelViewSet):
     - Job cloning and dependency tracking
     - XML report generation
 
-    The ViewSet is designed to work with Azure Container Apps and supports
-    distributed computing environments with shared storage.
 
     Attributes:
         queryset (QuerySet): All Job model instances
@@ -130,9 +126,7 @@ class JobViewSet(ModelViewSet):
         - GET /api/jobs/{id}/files/ - Get files associated with job
         - GET /api/jobs/{id}/export_job/ - Export job as ZIP archive
 
-    Azure Deployment Considerations:
         - Jobs execute in container environments
-        - File storage uses Azure File Shares for persistence
         - Subprocess execution adapted for container constraints
         - Error handling includes cloud-specific scenarios
         - Export functionality supports blob storage integration
@@ -185,8 +179,6 @@ class JobViewSet(ModelViewSet):
         Example:
             DELETE /api/jobs/123/
 
-        Azure Notes:
-            - Handles distributed file cleanup across Azure File Shares
             - Ensures proper cleanup of container-based job artifacts
         """
         try:
@@ -400,8 +392,6 @@ class JobViewSet(ModelViewSet):
         Example:
             GET /api/jobs/123/params_xml/
 
-        Azure Notes:
-            - XML files stored on Azure File Shares
             - Handles distributed file access patterns
         """
         try:
@@ -470,8 +460,6 @@ class JobViewSet(ModelViewSet):
         Example:
             GET /api/jobs/123/report_xml/
 
-        Azure Notes:
-            - Report files stored on Azure File Shares
             - Optimized for distributed storage access
         """
         try:
@@ -608,8 +596,6 @@ class JobViewSet(ModelViewSet):
         Example:
             POST /api/jobs/123/clone/
 
-        Azure Notes:
-            - Efficient copying within Azure File Shares
             - Preserves file references without duplication
         """
         try:
@@ -661,15 +647,12 @@ class JobViewSet(ModelViewSet):
         Platform Support:
             - Linux/Unix: Uses standard subprocess
             - Windows: Adds .bat extension to commands
-            - Container: Adapted for Azure Container Apps
 
         Example:
             POST /api/jobs/123/run/
 
-        Azure Notes:
             - Subprocess execution within container constraints
             - Process monitoring adapted for cloud environments
-            - Uses CCP4 environment from Azure File Shares
         """
         try:
             # Determine the program name based on the OS
@@ -1160,8 +1143,6 @@ class JobViewSet(ModelViewSet):
             POST /api/jobs/123/upload_file_param/
             Content-Type: multipart/form-data
 
-        Azure Notes:
-            - Files uploaded to Azure File Shares
             - Secure file handling with validation
             - Atomic upload operations
         """
@@ -1325,8 +1306,6 @@ class JobViewSet(ModelViewSet):
             - Streaming download for large archives
             - Automatic cleanup of temporary files
 
-        Azure Notes:
-            - Efficient archive creation from Azure File Shares
             - Streaming download optimized for bandwidth
             - Temporary file cleanup handled automatically
 
@@ -1464,9 +1443,6 @@ class JobViewSet(ModelViewSet):
         Example:
             GET /api/jobs/123/export_job_file_menu/
 
-        Azure Notes:
-            - Integrates with CCP4 Task Manager in Azure Container Apps
-            - Handles task definition lookups from Azure File Shares
             - Optimized for distributed computing environments
 
         Error Handling:

@@ -6,8 +6,41 @@ import uuid
 from ..lib.job_utils.glean_job_files import glean_job_files
 from ..lib.job_utils.get_file_by_job_context import get_file_by_job_context
 from . import models
+from .ccp4i2_static_data import FILETYPELIST
+from ..lib.job_utils.job_directory import job_directory
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
+
+
+def get_file_type_id_from_mimetype(mimetype):
+    """Convert mimetype back to numeric file type ID using FILETYPELIST."""
+    # Handle case where mimetype is a FileType model object
+    if hasattr(mimetype, "name"):
+        mimetype_str = mimetype.name
+    else:
+        mimetype_str = str(mimetype)
+
+    for file_type_id, file_mimetype, file_type_name in FILETYPELIST:
+        if file_mimetype == mimetype_str:
+            return file_type_id
+    # Return a default if not found
+    return 0
+
+
+def get_file_type_name_from_mimetype(mimetype):
+    """Convert mimetype to readable name using FILETYPELIST."""
+    # Handle case where mimetype is a FileType model object
+    if hasattr(mimetype, "name"):
+        mimetype_str = mimetype.name
+    else:
+        mimetype_str = str(mimetype)
+
+    for file_type_id, file_mimetype, file_type_name in FILETYPELIST:
+        if file_mimetype == mimetype_str:
+            return file_type_name
+    # Return empty string if not found
+    return ""
+
 
 project_field_old_to_new = {
     "followfromjobid": "follow_from_job",
@@ -198,7 +231,7 @@ class CCP4i2DjangoDbApi(object):
 
     def getFileInfo(self, fileId=None, mode="all", returnType=None):
         assert fileId is not None
-        the_file_qs = models.File.objects.filter(uuid=fileId)
+        the_file_qs = models.File.objects.filter(uuid=uuid.UUID(fileId))
 
         if isinstance(mode, list):
             arg = [item.lower() for item in mode]
@@ -216,7 +249,6 @@ class CCP4i2DjangoDbApi(object):
         arg = list(map(patch, arg))
 
         unpatched_values = the_file_qs.values(*arg)
-
         listOfDicts = []
         for unPatchedValue in unpatched_values:
             # outer loop over jobs matching jobId
@@ -302,35 +334,13 @@ class CCP4i2DjangoDbApi(object):
             unSetMissingFiles=unSetMissingFiles,
         )
 
-    def jobDirectory(self, jobId=None, projectName=None, jobNumber=None):
+    def jobDirectory(self, jobId=None, projectName=None, jobNumber=None, create=False):
         logger.debug("in CCP4i2DjangoDbApi %s, %s, %s", jobId, projectName, jobNumber)
         assert jobId is not None or (projectName is not None and jobNumber is not None)
-        the_job = None
-        if jobId is not None:
-            the_job = models.Job.objects.get(uuid=jobId)
-        elif projectName is not None and jobNumber is not None:
-            the_job = models.Job.objects.get(
-                project__name=projectName, number=jobNumber
-            )
-        if the_job is None:
-            logger.error(
-                "No job found with jobId %s, projectName %s, jobNumber %s",
-                jobId,
-                projectName,
-                jobNumber,
-            )
-            return None
-        if the_job.directory is None:
-            logger.error(
-                "Job %s has no directory set, cannot return job directory",
-                the_job.uuid,
-            )
-            return None
-        logger.debug("Job directory is %s %s", the_job.directory, the_job.project)
-        return str(the_job.directory)
+        return job_directory(jobId, projectName, jobNumber, create)
 
     def getJobFiles(
-        self, jobId=None, role=0, mode="all", searchFileUses=True, fileTypes=[]
+        self, jobId=None, role=0, mode="fileId", searchFileUses=True, fileTypes=[]
     ):
         """
         Retrieve files associated with a job with flexible filtering and output options.
@@ -363,24 +373,43 @@ class CCP4i2DjangoDbApi(object):
             if "-" not in str(jobId):
                 jobId = uuid.UUID(jobId)
 
+            # Convert numeric file type IDs to mimetypes if needed
+            converted_file_types = []
+            if fileTypes:
+                for file_type in fileTypes:
+                    # Check if it's a numeric ID that needs conversion
+                    if isinstance(file_type, (int, str)) and str(file_type).isdigit():
+                        file_type_id = int(file_type)
+                        # Find the mimetype for this file type ID
+                        mimetype_found = None
+                        for ft_id, ft_mimetype, ft_name in FILETYPELIST:
+                            if ft_id == file_type_id:
+                                mimetype_found = ft_mimetype
+                                break
+                        if mimetype_found is not None:
+                            converted_file_types.append(mimetype_found)
+                        else:
+                            logger.warning(f"Unknown file type ID: {file_type_id}")
+                    else:
+                        # Already a mimetype string, use as-is
+                        converted_file_types.append(file_type)
+                fileTypes = converted_file_types
+
             # Get the job
             job = models.Job.objects.get(uuid=jobId)
 
             # Phase 1: Direct File Search
             files_from_direct = []
             if role == 0:  # FILE_ROLE_OUT - output files
-                direct_files = models.File.objects.filter(job=job)
-                # Find files directly associated with the job (excluding imported files)
-                # .exclude(
-                #    fileimport__isnull=False  # Exclude files that have import records
-                # )
+                direct_files = models.File.objects.filter(job=job).exclude(
+                    fileimport__isnull=False  # Exclude files that have import records
+                )
 
                 # Apply file type filter if specified
                 if fileTypes:
                     direct_files = direct_files.filter(type__in=fileTypes)
 
                 files_from_direct = list(direct_files)
-
             # Phase 2: FileUses Search (if enabled)
             files_from_uses = []
             if searchFileUses:
@@ -402,6 +431,7 @@ class CCP4i2DjangoDbApi(object):
                 if file_obj.uuid not in seen_uuids:
                     unique_files.append(file_obj)
                     seen_uuids.add(file_obj.uuid)
+            print(f"Total unique files found: {len(unique_files)} {mode}")
 
             # Format output based on mode parameter
             if mode == "fileId":
@@ -410,10 +440,15 @@ class CCP4i2DjangoDbApi(object):
                 return [str(file_obj.path) for file_obj in unique_files]
             elif mode == "fileName":
                 return [file_obj.name for file_obj in unique_files]
+            elif mode == "jobparamname":
+                return [file_obj.job_param_name for file_obj in unique_files]
             elif mode == "annotation":
                 return [file_obj.annotation or "" for file_obj in unique_files]
             elif mode in ["fileType", "fileTypeId"]:
-                return [file_obj.type.id for file_obj in unique_files]
+                return [
+                    get_file_type_id_from_mimetype(file_obj.type)
+                    for file_obj in unique_files
+                ]
             elif mode == "all":
                 # Return complete file information
                 result = []
@@ -422,15 +457,13 @@ class CCP4i2DjangoDbApi(object):
                         "fileid": str(file_obj.uuid),
                         "filename": file_obj.name,
                         "fullpath": str(file_obj.path),
-                        "filetype": file_obj.type.id,
-                        "filetypename": (
-                            file_obj.type.name if hasattr(file_obj.type, "name") else ""
-                        ),
+                        "filetype": get_file_type_id_from_mimetype(file_obj.type),
+                        "filetypename": get_file_type_name_from_mimetype(file_obj.type),
                         "subtype": file_obj.sub_type,
                         "annotation": file_obj.annotation or "",
                         "jobparamname": file_obj.job_param_name or "",
                         "content": file_obj.content,
-                        "directory": file_obj.directory,
+                        # "directory": file_obj.directory,
                     }
                     result.append(file_info)
                 return result
@@ -443,4 +476,88 @@ class CCP4i2DjangoDbApi(object):
             return []
         except Exception as err:
             logger.exception("Error in getJobFiles for jobId %s", jobId, exc_info=err)
+            return []
+
+    def getFullPath(self, fileId=None):
+        import clipper
+
+        try:
+            if fileId is None:
+                logger.warning("getFullPath called with no fileId")
+                return None
+
+            # Handle both UUID formats (with and without dashes)
+            if "-" not in str(fileId):
+                fileId = uuid.UUID(fileId)
+
+            # Get the file
+            file = models.File.objects.get(uuid=fileId)
+            print(f"File found: {file}, path: {str(file.path)}")
+            return str(file.path)
+
+        except models.File.DoesNotExist:
+            logger.error("File not found for fileId %s", fileId)
+            return None
+        except Exception as err:
+            logger.exception("Error in getFullPath for fileId %s", fileId, exc_info=err)
+            return None
+
+    def getChildJobs(
+        self, jobId: str, descendents: bool = False, details: bool = False
+    ):
+        """
+        Retrieve child jobs for a given parent job.
+
+        Args:
+            jobId: The UUID of the parent job
+            descendents: If True, recursively get all descendant jobs
+            details: If True, return detailed info; if False, return just UUIDs
+
+        Returns:
+            If details=False: List of child job UUIDs (without dashes)
+            If details=True: List of tuples (job_number, uuid_without_dashes, task_name)
+        """
+        try:
+            # Handle both UUID formats (with and without dashes)
+            if "-" not in str(jobId):
+                jobId = uuid.UUID(jobId)
+            else:
+                jobId = uuid.UUID(jobId)
+
+            # Get the parent job
+            parent_job = models.Job.objects.get(uuid=jobId)
+
+            def get_children_recursive(job, include_descendants=False):
+                """Helper function to get children, optionally recursive."""
+                # Get direct children
+                children = list(models.Job.objects.filter(parent=job))
+                result = []
+
+                for child in children:
+                    if details:
+                        # Return tuple with (number, uuid_without_dashes, task_name)
+                        uuid_str = str(child.uuid).replace("-", "")
+                        result.append((child.number, uuid_str, child.task_name))
+                    else:
+                        # Return just UUID without dashes
+                        uuid_str = str(child.uuid).replace("-", "")
+                        result.append(uuid_str)
+
+                    # If descendents is True, recursively get children of this child
+                    if include_descendants:
+                        descendant_results = get_children_recursive(
+                            child, include_descendants
+                        )
+                        result.extend(descendant_results)
+
+                return result
+
+            # Get the results
+            return get_children_recursive(parent_job, descendents)
+
+        except models.Job.DoesNotExist:
+            logger.error("Parent job not found for jobId %s", jobId)
+            return []
+        except Exception as err:
+            logger.exception("Error in getChildJobs for jobId %s", jobId, exc_info=err)
             return []
