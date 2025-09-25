@@ -19,3 +19,4 @@ client/tsconfig.tsbuildinfo
 client/renderer/.env.local
 server/ccp4x/staticfiles
 server/ccp4x/i2run/tmp*
+client/renderer/.env.local
