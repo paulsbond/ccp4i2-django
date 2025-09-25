@@ -41,9 +41,7 @@ interface RequestInitWithDuplex extends RequestInit {
 // Common handler for all HTTP methods
 async function handleProxy(req: NextRequest, params: { proxy: string[] }) {
   let backendBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.BACKEND_URL ||
-    "http://localhost:8000"; // Default backend URL
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"; // Default backend URL
 
   if (req.headers.get("x-backend-url")) {
     backendBaseUrl = req.headers.get("x-backend-url") as string;
