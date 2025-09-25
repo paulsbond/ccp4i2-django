@@ -1,2 +1,6 @@
 package.json merge=ours
 package-lock.json merge=ours
+ccp4i2-next-server.ts merge=ours
+next.config.ts merge=ours
+client/renderer/layout.tsx merge=ours
+

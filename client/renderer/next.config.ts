@@ -7,7 +7,7 @@ const isDevelopment = process.env.NODE_ENV === "development";
 const ContentSecurityPolicy = `
   default-src 'self';
   img-src 'self' data: blob:;
-  connect-src 'self' https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/;
+  connect-src 'self' https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/ https://login.microsoftonline.com https://graph.microsoft.com;
   style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.googleapis.com/css2;
   font-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.gstatic.com;
   script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval' 'wasm-eval';
