@@ -1,3 +1,4 @@
+"use client";
 import { PropsWithChildren } from "react";
 import RequireAuth from "./require-auth";
 import { CCP4i2App } from "../../providers/ccp4i2-app";
