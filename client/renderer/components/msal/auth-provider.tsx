@@ -5,8 +5,8 @@ import { PublicClientApplication } from "@azure/msal-browser";
 
 const msalConfig = {
   auth: {
-    clientId: process.env.AAD_CLIENT_ID || "",
-    authority: `https://login.microsoftonline.com/${process.env.AAD_TENANT_ID}`,
+    clientId: process.env.NEXT_PUBLIC_AAD_CLIENT_ID || "",
+    authority: `https://login.microsoftonline.com/${process.env.NEXT_PUBLIC_AAD_TENANT_ID}`,
     redirectUri: "/",
   },
 };
