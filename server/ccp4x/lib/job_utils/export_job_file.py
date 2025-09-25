@@ -34,6 +34,7 @@ from ccp4x.db import models
 from ...db.ccp4i2_django_wrapper import using_django_pm
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
+logger.setLevel(logging.DEBUG)
 
 
 @using_django_pm

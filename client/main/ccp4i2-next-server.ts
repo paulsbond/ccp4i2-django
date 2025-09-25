@@ -55,16 +55,16 @@ export const startNextServer = async (
     workerSrc: "'self' blob:",
   };
 
-  const cspString = `
-    default-src ${csp.defaultSrc};
-    img-src ${csp.imgSrc};
-    connect-src ${csp.connectSrc};
-    style-src ${csp.styleSrc};
-    font-src ${csp.fontSrc};
-    script-src ${csp.scriptSrc};
-    worker-src ${csp.workerSrc};
-  `
-    .replace(/\n\s+/g, " ")
+  const cspString = [
+    `default-src ${csp.defaultSrc}`,
+    `img-src ${csp.imgSrc}`,
+    `connect-src ${csp.connectSrc}`,
+    `style-src ${csp.styleSrc}`,
+    `font-src ${csp.fontSrc}`,
+    `script-src ${csp.scriptSrc}`,
+    `worker-src ${csp.workerSrc}`,
+  ]
+    .join("; ")
     .trim(); // Clean up whitespace
 
   //const server = createServer((req, res) => handle(req, res));

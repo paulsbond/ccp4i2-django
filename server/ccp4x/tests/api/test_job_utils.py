@@ -59,6 +59,13 @@ class CCP4i2TestCase(TestCase):
             / "bucc_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "parrot_test_0.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
         self.pm = CCP4i2DjangoProjectsManager()
         self.client = Client()
         return super().setUp()
@@ -308,10 +315,16 @@ class CCP4i2TestCase(TestCase):
         print(i2run_command)
         self.assertIsNotNone(i2run_command)
 
-    def test_export_job_file(self):
+    def test_export_job_refmac_file(self):
         old_job = models.Job.objects.get(
             project__name="refmac_gamma_test_0", number="1"
         )
+        exported_files = export_job_file(str(old_job.id), "FoFc_as_map")
+        print(exported_files)
+        self.assertIsNotNone(exported_files)
+
+    def test_export_job_file(self):
+        old_job = models.Job.objects.get(project__name="parrot_test_0", number="1")
         exported_files = export_job_file(str(old_job.id), "complete_mtz")
         print(exported_files)
         self.assertIsNotNone(exported_files)
