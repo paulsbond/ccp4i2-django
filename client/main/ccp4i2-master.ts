@@ -82,7 +82,7 @@ app
     installWillDownloadHandler(session.defaultSession);
     addNewWindowMenuItem(nextServerPort, djangoServerPort);
     setupZoomLevel(store);
-    process.env.BACKEND_URL = `http://localhost:${djangoServerPort}`;
+    process.env.NEXT_PUBLIC_API_BASE_URL = `http://localhost:${djangoServerPort}`;
     nextServer = await startNextServer(isDev, nextServerPort, djangoServerPort);
   })
   .then(async () => {
