@@ -4,18 +4,31 @@ const isElectron = process.env.BUILD_TARGET === "electron";
 const isWeb = process.env.BUILD_TARGET === "web";
 const isDevelopment = process.env.NODE_ENV === "development";
 
-const ContentSecurityPolicy = `
-  default-src 'self';
-  img-src 'self' data: blob:;
-  connect-src 'self' https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/;
-  style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.googleapis.com/css2;
-  font-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.gstatic.com;
-  script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval' 'wasm-eval';
-  worker-src 'self' blob:;
-  object-src 'none';
-`
-  .replace(/\s{2,}/g, " ")
-  .trim();
+// Set the Content Security Policy header
+const csp = {
+  defaultSrc: "'self'",
+  imgSrc: "'self' data: blob:",
+  connectSrc:
+    "'self' https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/ https://login.microsoftonline.com",
+  styleSrc:
+    "'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.googleapis.com/css2",
+  fontSrc:
+    "'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.gstatic.com",
+  scriptSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'",
+  workerSrc: "'self' blob:",
+};
+
+const cspString = [
+  `default-src ${csp.defaultSrc}`,
+  `img-src ${csp.imgSrc}`,
+  `connect-src ${csp.connectSrc}`,
+  `style-src ${csp.styleSrc}`,
+  `font-src ${csp.fontSrc}`,
+  `script-src ${csp.scriptSrc}`,
+  `worker-src ${csp.workerSrc}`,
+]
+  .join("; ")
+  .trim(); // Clean up whitespace
 
 const nextConfig: NextConfig = {
   trailingSlash: isElectron,
@@ -55,7 +68,7 @@ const nextConfig: NextConfig = {
         {
           source: "/:path*",
           headers: [
-            { key: "Content-Security-Policy", value: ContentSecurityPolicy },
+            { key: "Content-Security-Policy", value: cspString },
             { key: "Access-Control-Allow-Origin", value: "*" },
             {
               key: "Access-Control-Allow-Headers",
@@ -76,7 +89,7 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: ContentSecurityPolicy },
+          { key: "Content-Security-Policy", value: cspString },
           // Restrictive CORS for production
           {
             key: "Access-Control-Allow-Origin",
