@@ -8,6 +8,8 @@ import {
   LinearScale,
   PointElement,
   BarElement,
+  BarController,
+  ScatterController,
   LineElement,
   Title,
   Tooltip,
@@ -37,6 +39,8 @@ ChartJS.register(
   LinearScale,
   PointElement,
   BarElement,
+  BarController,
+  ScatterController,
   LineElement,
   Title,
   Tooltip,
@@ -86,8 +90,8 @@ export const CCP4i2ApplicationOutputView: React.FC<
               Array.isArray(graph.plot)
                 ? graph.plot[0]
                 : graph.plot
-                ? graph.plot
-                : null
+                  ? graph.plot
+                  : null
             );
           }
         }
