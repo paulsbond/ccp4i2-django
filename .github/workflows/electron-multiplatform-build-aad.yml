@@ -21,12 +21,15 @@ jobs:
         run: npm ci
         working-directory: client
 
+      - name: Setup environment variables
+        run: |
+          echo "NEXT_PUBLIC_AAD_CLIENT_ID=${{ secrets.AAD_CLIENT_ID }}" >> renderer/.env.local
+          echo "NEXT_PUBLIC_AAD_TENANT_ID=${{ secrets.AAD_TENANT_ID }}" >> renderer/.env.local
+        working-directory: client
+
       - name: Build Electron app
         run: npm run build:electron
         working-directory: client
-        env:
-          NEXT_PUBLIC_AAD_CLIENT_ID: ${{ secrets.AAD_CLIENT_ID }}
-          NEXT_PUBLIC_AAD_TENANT_ID: ${{ secrets.AAD_TENANT_ID }}
 
       - name: Package macOS app (dmg)
         run: npm run package-mac
@@ -53,12 +56,15 @@ jobs:
         run: npm ci
         working-directory: client
 
+      - name: Setup environment variables
+        run: |
+          echo "NEXT_PUBLIC_AAD_CLIENT_ID=${{ secrets.AAD_CLIENT_ID }}" >> renderer/.env.local
+          echo "NEXT_PUBLIC_AAD_TENANT_ID=${{ secrets.AAD_TENANT_ID }}" >> renderer/.env.local
+        working-directory: client
+
       - name: Build Electron app
         run: npm run build:electron
         working-directory: client
-        env:
-          NEXT_PUBLIC_AAD_CLIENT_ID: ${{ secrets.AAD_CLIENT_ID }}
-          NEXT_PUBLIC_AAD_TENANT_ID: ${{ secrets.AAD_TENANT_ID }}
 
       - name: Package Windows app (nsis & portable)
         run: npm run package-win
@@ -86,12 +92,15 @@ jobs:
         run: npm ci
         working-directory: client
 
+      - name: Setup environment variables
+        run: |
+          echo "NEXT_PUBLIC_AAD_CLIENT_ID=${{ secrets.AAD_CLIENT_ID }}" >> renderer/.env.local
+          echo "NEXT_PUBLIC_AAD_TENANT_ID=${{ secrets.AAD_TENANT_ID }}" >> renderer/.env.local
+        working-directory: client
+
       - name: Build Electron app
         run: npm run build:electron
         working-directory: client
-        env:
-          NEXT_PUBLIC_AAD_CLIENT_ID: ${{ secrets.AAD_CLIENT_ID }}
-          NEXT_PUBLIC_AAD_TENANT_ID: ${{ secrets.AAD_TENANT_ID }}
 
       - name: Package Linux x64 and arm64 AppImages
         run: npm run package-linux-all
