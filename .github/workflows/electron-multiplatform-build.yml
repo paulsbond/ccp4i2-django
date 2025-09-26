@@ -24,12 +24,6 @@ jobs:
         run: npm ci
         working-directory: client
 
-      - name: Setup environment variables
-        run: |
-          echo "NEXT_PUBLIC_AAD_CLIENT_ID=${{ secrets.AAD_CLIENT_ID }}" >> renderer/.env.local
-          echo "NEXT_PUBLIC_AAD_TENANT_ID=${{ secrets.AAD_TENANT_ID }}" >> renderer/.env.local
-        working-directory: client
-
       - name: Build Electron app
         run: npm run build:electron
         working-directory: client
@@ -57,12 +51,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        working-directory: client
-
-      - name: Setup environment variables
-        run: |
-          echo "NEXT_PUBLIC_AAD_CLIENT_ID=${{ secrets.AAD_CLIENT_ID }}" >> renderer/.env.local
-          echo "NEXT_PUBLIC_AAD_TENANT_ID=${{ secrets.AAD_TENANT_ID }}" >> renderer/.env.local
         working-directory: client
 
       - name: Build Electron app
@@ -95,18 +83,12 @@ jobs:
         run: npm ci
         working-directory: client
 
-      - name: Setup environment variables
-        run: |
-          echo "NEXT_PUBLIC_AAD_CLIENT_ID=${{ secrets.AAD_CLIENT_ID }}" >> renderer/.env.local
-          echo "NEXT_PUBLIC_AAD_TENANT_ID=${{ secrets.AAD_TENANT_ID }}" >> renderer/.env.local
-        working-directory: client
-
       - name: Build Electron app
         run: npm run build:electron
         working-directory: client
 
-      - name: Package Linux x64 AppImages
-        run: npm run package-linux-x64
+      - name: Package Linux x64 and arm64 AppImages
+        run: npm run package-linux-all
         working-directory: client
 
       - name: List dist contents
