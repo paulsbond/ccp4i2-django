@@ -102,8 +102,8 @@ jobs:
         run: npm run build:electron
         working-directory: client
 
-      - name: Package Linux x64 and arm64 AppImages
-        run: npm run package-linux-all
+      - name: Package Linux x64 AppImage
+        run: npm run package-linux-x64
         working-directory: client
 
       - name: List dist contents
