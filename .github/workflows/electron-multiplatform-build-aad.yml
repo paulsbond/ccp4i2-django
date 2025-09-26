@@ -3,10 +3,7 @@ name: Electron Multiplatform Build
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - azure-msal-specialization
 
 jobs:
   build-mac:
@@ -105,7 +102,7 @@ jobs:
         run: npm run build:electron
         working-directory: client
 
-      - name: Package Linux x64 AppImages
+      - name: Package Linux x64 AppImage
         run: npm run package-linux-x64
         working-directory: client
 
