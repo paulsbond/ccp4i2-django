@@ -64,9 +64,6 @@ fi
 # Construct DATABASE_URL from secure components with encoded credentials and SSL parameters
 export DATABASE_URL="postgresql://${ENCODED_DB_USER}:${ENCODED_DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}${QUERY_PARAMS}"
 
-# DEBUG print value of  DATABASE_URL
-echo "DATABASE_URL: $DATABASE_URL"
-
 # Validate required environment variables
 if [ -z "$DATABASE_URL" ]; then
     echo "ERROR: Failed to construct DATABASE_URL"
