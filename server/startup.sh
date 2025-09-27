@@ -175,5 +175,5 @@ else
 fi
 
 # Start Django server
-echo "Starting Django server..."
-exec $CCP4_PYTHON -m uvicorn asgi:application --host 0.0.0.0 --port 8000
+echo "Starting Django server with gunicorn..."
+exec $CCP4_PYTHON -m gunicorn asgi:application -b 0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker

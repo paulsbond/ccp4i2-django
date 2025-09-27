@@ -21,4 +21,5 @@ scipy
 pandas
 biopython
 Pillow
+gunicorn
 

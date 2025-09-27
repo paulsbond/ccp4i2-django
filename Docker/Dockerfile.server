@@ -1,150 +1,57 @@
 # Use Ubuntu 22.04 as the base image
 FROM ubuntu:22.04
 
-# Prevent interactive prompts
-ENV DEBIAN_FRONTEND=noninteractive
+# Prevent interactive prompts and set timezone
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8
 
-# Configure apt for better reliability
-RUN echo 'Acquire::Retries "3";' > /etc/apt/apt.conf.d/80-retries && \
-    echo 'Acquire::http::Timeout "120";' >> /etc/apt/apt.conf.d/80-retries && \
-    echo 'Acquire::ftp::Timeout "120";' >> /etc/apt/apt.conf.d/80-retries && \
-    echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/80-retries && \
-    echo 'APT::Get::Fix-Missing "true";' >> /etc/apt/apt.conf.d/80-retries
-
-# Configure faster Ubuntu mirrors
-RUN sed -i 's|http://archive.ubuntu.com/ubuntu/|http://us.archive.ubuntu.com/ubuntu/|g' /etc/apt/sources.list && \
-    sed -i 's|http://security.ubuntu.com/ubuntu/|http://us.archive.ubuntu.com/ubuntu/|g' /etc/apt/sources.list
-
-# Update package list with retry logic
-RUN apt-get update --fix-missing || (sleep 5 && apt-get update --fix-missing) || (sleep 10 && apt-get update --fix-missing)
-
-# Install dependencies with retry logic
-RUN apt-get install -y --fix-missing \
-    bash \
-    vim \
-    curl \
-    nodejs \
-    libcairo2 \
-    libgomp1 \
-    bzr \
-    libxss1 \
-    libgnomecanvas2-0 \
-    libxmu6 \
-    wget \
-    build-essential \
-    tcsh \
-    tzdata \
-    python3-pip \
-    python3-dev \
-    gcc \
-    g++ \
-    make \
-    libxslt1.1 \
-    libxslt-dev \
-    libxml2 \
-    libxml2-dev \
-    || (sleep 5 && apt-get install -y --fix-missing \
-        bash \
-        vim \
-        curl \
-        nodejs \
-        libcairo2 \
-        libgomp1 \
-        bzr \
-        libxss1 \
-        libgnomecanvas2-0 \
-        libxmu6 \
-        wget \
-        build-essential \
-        tcsh \
-        tzdata \
-        python3-pip \
-        python3-dev \
-        gcc \
-        g++ \
-        make \
-        libxslt1.1 \
-        libxslt-dev \
-        libxml2 \
-        libxml2-dev) \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean \
-    && apt-get autoremove -y
-
-# Verify libxslt is installed
-RUN ldconfig -p | grep libxslt || (echo "libxslt not found" && exit 1)
-
-# Install additional Qt5 libraries
-RUN apt-get update && apt-get install -y \
-    qtbase5-dev \
-    qt5-qmake \
-    libqt5qml5 \
-    libqt5quick5 \
-    libqt5core5a \
-    libqt5gui5 \
-    libqt5widgets5 \
-    libqt5network5 \
-    libqt5sql5 \
-    libqt5sql5-sqlite
-
-# Install BLAS libraries
-RUN apt-get update && apt-get install --fix-missing -y \
-    libblas3 \
-    libblas-dev
-
-# Install LAPACK libraries
-RUN apt-get update && apt-get install --fix-missing -y \
-    liblapack3 \
-    liblapack-dev
-
-# Install ATLAS libraries
-RUN apt-get update && apt-get install --fix-missing -y \
-    libatlas-base-dev
-
-# Set timezone explicitly
-ENV TZ=UTC
+# Set timezone
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install all system dependencies in one layer
+RUN apt-get update && apt-get install -y \
+    # Basic tools
+    bash vim curl wget build-essential \
+    # Python
+    python3-pip python3-dev \
+    # Libraries for CCP4/scientific computing
+    libcairo2 libgomp1 libxss1 libgnomecanvas2-0 libxmu6 \
+    libxslt1.1 libxslt-dev libxml2 libxml2-dev \
+    libblas3 libblas-dev liblapack3 liblapack-dev libatlas-base-dev \
+    # Qt5 libraries
+    qtbase5-dev qt5-qmake libqt5qml5 libqt5quick5 \
+    libqt5core5a libqt5gui5 libqt5widgets5 libqt5network5 libqt5sql5 \
+    # Version control and other tools
+    bzr tcsh nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Set work directory
 WORKDIR /usr/src/app
 
-# Environment variables for Python
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONIOENCODING=utf-8
-
-# Copy requirements.txt first for better layer caching
+# Copy requirements first for better caching
 COPY requirements.txt ./
 
 # Copy application code
 COPY . ./
 
-# Create directories that might be needed
-RUN mkdir -p /usr/src/app/staticfiles /usr/src/app/media /tmp
+# Create necessary directories
+RUN mkdir -p /usr/src/app/staticfiles /usr/src/app/media /tmp \
+    && chmod 755 /usr/src/app
 
-# Make sure the app directory is writable for static files collection
-RUN chmod 755 /usr/src/app
-
-# Make startup script executable and verify it exists
-COPY startup.sh /usr/src/app/startup.sh
-RUN chmod +x /usr/src/app/startup.sh && \
-    ls -la /usr/src/app/startup.sh && \
-    head -1 /usr/src/app/startup.sh
-
-# Make entrypoint script executable and verify it exists
-COPY entrypoint.sh /usr/src/app/entrypoint.sh
-RUN chmod +x /usr/src/app/entrypoint.sh && \
-    ls -la /usr/src/app/entrypoint.sh && \
-    head -1 /usr/src/app/entrypoint.sh
+# Make scripts executable
+RUN chmod +x /usr/src/app/startup.sh /usr/src/app/entrypoint.sh
 
 # Expose port
 EXPOSE 8000
 
-# Health check using system python initially, will switch to CCP4 python after setup
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+# Simple health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
-# Use ENTRYPOINT to ensure environment variables are properly inherited
-# Container Apps will be able to override this with --command
+# Use entrypoint
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 CMD ["/usr/src/app/startup.sh"]
