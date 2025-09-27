@@ -105,9 +105,11 @@ const useFormState = (initialValue: InputValue, type: InputType) => {
 const parseValueByType = (inputValue: string, type: InputType): InputValue => {
   switch (type) {
     case INPUT_TYPES.INT:
-      return parseInt(inputValue, 10);
+      // Only parse if it's a valid integer string
+      return /^\d+$/.test(inputValue) ? parseInt(inputValue, 10) : inputValue;
     case INPUT_TYPES.FLOAT:
-      return parseFloat(inputValue);
+      // Only parse if it's a valid float string
+      return /^-?\d*\.?\d*$/.test(inputValue) ? inputValue : inputValue;
     case INPUT_TYPES.TEXT:
     default:
       return inputValue;
@@ -115,8 +117,15 @@ const parseValueByType = (inputValue: string, type: InputType): InputValue => {
 };
 
 const isValueValid = (value: InputValue, type: InputType): boolean => {
-  if (type === INPUT_TYPES.INT || type === INPUT_TYPES.FLOAT) {
-    return !Number.isNaN(value);
+  if (type === INPUT_TYPES.INT) {
+    return typeof value === "string"
+      ? /^\d+$/.test(value)
+      : Number.isInteger(value);
+  }
+  if (type === INPUT_TYPES.FLOAT) {
+    return typeof value === "string"
+      ? /^-?\d*\.?\d*$/.test(value)
+      : typeof value === "number" && !Number.isNaN(value);
   }
   return true;
 };
@@ -215,9 +224,25 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
         return;
       }
 
+      let parsedValue = newValue;
+      if (
+        type === INPUT_TYPES.INT &&
+        typeof newValue === "string" &&
+        /^\d+$/.test(newValue)
+      ) {
+        parsedValue = parseInt(newValue, 10);
+      }
+      if (
+        type === INPUT_TYPES.FLOAT &&
+        typeof newValue === "string" &&
+        /^-?\d*\.?\d+$/.test(newValue)
+      ) {
+        parsedValue = parseFloat(newValue);
+      }
+
       const setParameterArg = {
         object_path: objectPath,
-        value: newValue,
+        value: parsedValue,
       };
 
       setInFlight(true);
@@ -227,9 +252,8 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
         const updateFn = suppressMutations
           ? setParameterNoMutate
           : setParameter;
-        const result: SetParameterResponse | undefined = await updateFn(
-          setParameterArg
-        );
+        const result: SetParameterResponse | undefined =
+          await updateFn(setParameterArg);
 
         if (result?.status === "Failed") {
           setMessage(`Unacceptable value provided: "${newValue}"`);
@@ -258,6 +282,7 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
       setMessage,
       onChange,
       item,
+      type,
     ]
   );
 
@@ -270,11 +295,10 @@ export const CSimpleTextFieldElement: React.FC<CCP4i2CSimpleElementProps> = ({
         handleParameterUpdate(newValue);
       } else {
         const inputValue = event.target.value;
-        const parsedValue = parseValueByType(inputValue, type as InputType);
-        setValue(parsedValue);
+        setValue(inputValue); // Always store as string while editing
 
         // Debounce updates for text inputs
-        setDebouncedValue(parsedValue, handleParameterUpdate);
+        setDebouncedValue(inputValue, handleParameterUpdate);
       }
     },
     [type, handleParameterUpdate, setDebouncedValue]
