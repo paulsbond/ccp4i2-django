@@ -104,8 +104,8 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
   return (
     item && (
       <>
-        <Toolbar sx={{ m: 0, p: 0 }}>
-          <Typography variant="body1" sx={{ flexGrow: 1 }}>
+        <Toolbar sx={{ m: 0, p: 0, mt: 0, pt: 0 }}>
+          <Typography variant="body1" sx={{ mt: 0, pt: 0, flexGrow: 1 }}>
             Click a table row to edit the constituents of the ASU
           </Typography>
           <Button
@@ -117,7 +117,7 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
           />
         </Toolbar>
 
-        <Table style={{ width: "100%" }}>
+        <Table>
           <TableHead>
             <TableRow>
               <TableCell style={{ maxWidth: "5rem" }}>Name</TableCell>
@@ -156,14 +156,16 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
                         property
                       )
                         ? "5rem"
-                        : property === "sequence"
-                          ? "30rem"
-                          : undefined,
+                        : property === "description"
+                          ? "10rem"
+                          : property === "sequence"
+                            ? "20rem"
+                            : undefined,
                     }}
                   >
                     <div
                       style={{
-                        maxHeight: "10rem",
+                        maxHeight: "12rem",
                         overflowY: "auto",
                         wordWrap: "break-word",
                         whiteSpace: "pre-wrap",
