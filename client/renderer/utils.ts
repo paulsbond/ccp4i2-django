@@ -11,6 +11,7 @@ import {
   File as DjangoFile,
 } from "./types/models";
 import { useRunCheck } from "./providers/run-check-provider";
+import { useParameterChangeIntent } from "./providers/parameter-change-intent-provider";
 
 // ============================================================================
 // Types and Interfaces
@@ -710,6 +711,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
 
   const { mutateJobs } = useProject(job?.project || 0);
   const { processedErrors } = useRunCheck();
+  const { setIntent } = useParameterChangeIntent();
 
   // Memoized functions
   const setParameter = useCallback(
@@ -812,6 +814,13 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         if (JSON.stringify({ value }) === JSON.stringify({ value: newValue })) {
           return false;
         }
+
+        setIntent({
+          jobId: job.id,
+          parameterPath: item._objectPath,
+          reason: "UserEdit",
+          previousValue: value,
+        });
 
         // Use the queued setParameter instead of direct fetch
         try {
