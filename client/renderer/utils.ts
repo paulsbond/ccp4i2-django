@@ -264,7 +264,7 @@ const determineValidationColor = (
     return VALIDATION_COLORS.SUCCESS;
   }
 
-  let maxSeverity = SEVERITY_LEVELS.SUCCESS;
+  let maxSeverity: number = SEVERITY_LEVELS.SUCCESS;
 
   try {
     if (Array.isArray(fieldErrors)) {
@@ -274,7 +274,17 @@ const determineValidationColor = (
         return Math.max(highest, currentSeverity);
       }, SEVERITY_LEVELS.SUCCESS);
     } else {
-      maxSeverity = fieldErrors?.maxSeverity ?? SEVERITY_LEVELS.SUCCESS;
+      if (
+        fieldErrors &&
+        typeof fieldErrors === "object" &&
+        "maxSeverity" in fieldErrors
+      ) {
+        maxSeverity =
+          (fieldErrors as { maxSeverity: number }).maxSeverity ??
+          SEVERITY_LEVELS.SUCCESS;
+      } else {
+        maxSeverity = SEVERITY_LEVELS.SUCCESS;
+      }
     }
   } catch (error) {
     console.error("Error determining validation color:", error);
