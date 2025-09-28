@@ -23,3 +23,17 @@ biopython
 Pillow
 gunicorn
 
+# Azure Service Bus for queuing job messages
+azure-servicebus>=7.8.0
+
+# Azure Identity for secure authentication (managed identities, service principals)
+azure-identity>=1.12.0
+
+# Azure Key Vault for secure storage of connection strings and secrets
+azure-keyvault-secrets>=4.7.0
+
+# Azure Monitor for logging and telemetry (optional but recommended for production)
+azure-monitor-opentelemetry>=1.0.0
+
+# Azure Storage Blob for any file-related operations (if jobs involve blob storage)
+azure-storage-blob>=12.14.0

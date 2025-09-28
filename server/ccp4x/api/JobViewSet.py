@@ -26,6 +26,7 @@ Version: Compatible with CCP4i2 and Django 4.2+
     - Includes proper error handling for cloud environments
 """
 
+# Add these imports at the top of the file (after existing imports)
 import logging
 import datetime
 import json
@@ -35,6 +36,7 @@ import platform
 from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser
 from ccp4i2.core import CCP4TaskManager
@@ -615,73 +617,96 @@ class JobViewSet(ModelViewSet):
     )
     def run(self, request, pk=None):
         """
-        Execute a crystallographic computing job.
+        Queue a job for execution via Azure Service Bus.
 
-        Initiates job execution using the CCP4 task management system,
-        launching the appropriate computational process in a subprocess
-        with proper resource management.
+        Sends a message to the Azure Service Bus queue containing job details,
+        allowing asynchronous processing by worker container apps.
 
         Args:
             request (Request): HTTP request object
-            pk (int): Primary key of the job to execute
+            pk (int): Primary key of the job to queue
 
         Returns:
-            Response: Updated job data with execution status
+            Response: Updated job data with queued status
 
-        Response Format:
+        Message Format:
             {
-                "id": 123,
-                "status": "QUEUED",
-                "process_id": 12345,
-                "start_time": "2024-01-01T12:00:00Z",
-                ...
+                "job_uuid": "550e8400-e29b-41d4-a716-446655440000",
+                "job_id": 123,
+                "task_name": "refmac5",
+                "project_uuid": "project-uuid-here"
             }
-
-        Execution Process:
-            1. Validate job parameters
-            2. Launch CCP4 task subprocess
-            3. Update job status to QUEUED
-            4. Store process ID for monitoring
-            5. Return updated job information
-
-        Platform Support:
-            - Linux/Unix: Uses standard subprocess
-            - Windows: Adds .bat extension to commands
 
         Example:
             POST /api/jobs/123/run/
 
-            - Subprocess execution within container constraints
-            - Process monitoring adapted for cloud environments
+        Security Notes:
+            - Uses managed identities for secure authentication
+            - Connection strings stored in environment variables
+            - Sensitive data masked in logs
         """
         try:
-            # Determine the program name based on the OS
-            ccp4_python_program = "ccp4-python"
-            if platform.system() == "Windows":
-                ccp4_python_program += ".bat"
-            ccp4_python = str(
-                pathlib.Path(os.environ["CCP4"]) / "bin" / ccp4_python_program
-            )
-            manage_py = str(pathlib.Path(__file__).parent.parent.parent / "manage.py")
             job = models.Job.objects.get(id=pk)
-            process = subprocess.Popen(
-                [
-                    ccp4_python,
-                    manage_py,
-                    "run_job",
-                    "-ju",
-                    f"{str(job.uuid)}",
-                ],
-                start_new_session=True,
-            )
-            job.process_id = process.pid
+
+            # Prepare message payload
+            message_body = {
+                "action": "run_job",
+                "job_uuid": str(job.uuid),
+                "job_id": job.id,
+                "task_name": job.task_name,
+                "project_uuid": str(job.project.uuid),
+            }
+
+            # Get Service Bus configuration from environment
+            connection_string = os.getenv("SERVICE_BUS_CONNECTION_STRING")
+            queue_name = os.getenv("SERVICE_BUS_QUEUE_NAME", "job-queue")
+
+            if not connection_string:
+                logger.error("Azure Service Bus connection string not configured")
+                return Response(
+                    {"status": "Failed", "reason": "Service Bus configuration missing"},
+                    status=500,
+                )
+
+            # Send message to Service Bus
+            try:
+                with ServiceBusClient.from_connection_string(
+                    connection_string
+                ) as client:
+                    with client.get_queue_sender(queue_name) as sender:
+                        message = ServiceBusMessage(json.dumps(message_body))
+                        sender.send_messages(message)
+            except Exception as sb_error:
+                logger.exception(
+                    "Failed to send message to Service Bus", exc_info=sb_error
+                )
+                return Response(
+                    {
+                        "status": "Failed",
+                        "reason": f"Service Bus error: {str(sb_error)}",
+                    },
+                    status=500,
+                )
+
+            # Update job status to QUEUED
             job.status = models.Job.Status.QUEUED
             job.save()
+
             serializer = serializers.JobSerializer(job)
+            logger.info(
+                f"Queued job {job.id} ({job.uuid}) for execution via Azure Service Bus"
+            )
             return Response(serializer.data)
-        except (ValueError, models.Job.DoesNotExist) as err:
-            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
-            return Response({"status": "Failed", "reason": str(err)})
+
+        except models.Job.DoesNotExist as err:
+            logger.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)}, status=404)
+        except Exception as err:
+            logger.exception("Unexpected error queuing job %s", pk, exc_info=err)
+            return Response(
+                {"status": "Failed", "reason": f"Unexpected error: {str(err)}"},
+                status=500,
+            )
 
     @action(
         detail=True,

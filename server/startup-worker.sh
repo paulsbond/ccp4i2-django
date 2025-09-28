@@ -1,4 +1,7 @@
 #!/bin/bash
+# Worker startup script for CCP4i2 Django Azure
+# This script launches the queue monitor instead of the Django server
+
 set -e
 
 # Specific variable checks
@@ -150,14 +153,13 @@ done
 # Change to app directory
 cd /usr/src/app
 
-$CCP4_PYTHON -m pip install -r requirements.txt
-# Install dependencies only if gunicorn is not already installed
-if ! $CCP4_PYTHON -m pip show gunicorn > /dev/null 2>&1; then
+# Install dependencies only if uvicorn is not already installed
+if ! $CCP4_PYTHON -m pip show uvicorn > /dev/null 2>&1; then
     echo "Installing Python dependencies..."
     $CCP4_PYTHON -m pip install --upgrade pip
     $CCP4_PYTHON -m pip install -r requirements.txt
 else
-    echo "Gunicorn already installed, skipping dependency installation."
+    echo "Uvicorn already installed, skipping dependency installation."
 fi
 
 # Run Django setup (can run on all replicas, but migrations are idempotent)
@@ -175,6 +177,17 @@ else
     echo "Health server was already stopped or not found"
 fi
 
-# Start Django server
-echo "Starting Django server with gunicorn..."
-exec $CCP4_PYTHON -m gunicorn asgi:application -b 0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker
+echo "=========================================="
+echo "CCP4i2 Worker Container Starting"
+echo "=========================================="
+echo "Date: $(date)"
+echo "Container: Worker"
+echo "=========================================="
+
+# Wait for database to be ready (reuse from entrypoint.sh logic if needed)
+echo "Checking database connectivity..."
+# Add database health check here if needed
+
+# Launch the worker queue monitor
+echo "Starting queue monitor..."
+exec $CCP4_PYTHON  /usr/src/app/worker.py
