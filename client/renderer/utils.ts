@@ -258,6 +258,7 @@ const determineValidationColor = (
 ): string => {
   if (
     !fieldErrors ||
+    !Array.isArray(fieldErrors) ||
     (Array.isArray(fieldErrors) && fieldErrors.length === 0)
   ) {
     return VALIDATION_COLORS.SUCCESS;
@@ -690,11 +691,23 @@ export const useJob = (jobId: number | null | undefined): JobData => {
       endpoint: "params_xml",
     });
 
+  const { processedErrors, setProcessedErrors } = useRunCheck();
+
+  // Get mutateValidation from useSWR
   const { data: validation, mutate: mutateValidation } = api.get_validation({
     type: "jobs",
     id: jobId,
     endpoint: "validation",
   });
+
+  // Decorate mutateValidation so it always resets processed errors
+  const mutateValidationWithProcessedErrors = useCallback(
+    async (...args: any[]) => {
+      setProcessedErrors(null);
+      return mutateValidation(...args);
+    },
+    [mutateValidation, setProcessedErrors]
+  );
 
   const { data: diagnostic_xml, mutate: mutateDiagnosticXml } =
     api.get_pretty_endpoint_xml({
@@ -710,7 +723,6 @@ export const useJob = (jobId: number | null | undefined): JobData => {
   });
 
   const { mutateJobs } = useProject(job?.project || 0);
-  const { processedErrors } = useRunCheck();
   const { setIntent } = useParameterChangeIntent();
 
   // Memoized functions
@@ -737,12 +749,12 @@ export const useJob = (jobId: number | null | undefined): JobData => {
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
-
+          setProcessedErrors(null);
           // Update all related data
           await Promise.all([
+            mutateValidation(),
             mutateContainer(),
             mutateParams_xml(),
-            mutateValidation(),
           ]);
 
           console.log("Parameter set successfully:", result);
@@ -753,7 +765,14 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         }
       });
     },
-    [job, mutateContainer, mutateValidation, mutateParams_xml, api]
+    [
+      job,
+      mutateContainer,
+      mutateValidation,
+      mutateParams_xml,
+      api,
+      setProcessedErrors,
+    ]
   );
 
   const setParameterNoMutate = useCallback(
@@ -1085,7 +1104,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     params_xml,
     mutateParams_xml,
     validation,
-    mutateValidation,
+    mutateValidation: mutateValidationWithProcessedErrors, // use the decorated version
     diagnostic_xml,
     mutateDiagnosticXml,
     def_xml,
