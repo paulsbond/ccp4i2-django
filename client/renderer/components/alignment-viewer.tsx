@@ -116,23 +116,33 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
       }
 
       // Parse sequence blocks
+      let seqStartPos, seqBlockLength;
       for (let i = startIndex; i < lines.length; i++) {
-        const line = lines[i].trim();
+        const line = lines[i];
 
         // Skip empty lines
-        if (!line) continue;
+        if (!line.trim()) continue;
 
         // Check if this is a conservation line (starts with spaces/symbols, no sequence name)
-        if (line.match(/^[\s\*\:\.\s]+$/)) {
-          conservation += line.replace(/^\s+/, ""); // Remove leading spaces
+        if (line.trim().match(/^[\s\*\:\.\s]+$/)) {
+          //const seqStartPos = line.search(/\S/); // Find position of first non-whitespace character
+          conservation += line.substring(
+            seqStartPos,
+            seqStartPos + seqBlockLength
+          ); // Take from sequence start position
           continue;
         }
 
         // Parse sequence line: "sequence_name    SEQUENCE_DATA"
-        const parts = line.split(/\s+/);
+        const trimmedLine = line.trim();
+        const parts = trimmedLine.split(/\s+/);
         if (parts.length >= 2) {
           const seqName = parts[0];
-          const seqData = parts.slice(1).join("");
+          // Preserve trailing spaces by taking everything after the sequence name
+          const seqDataStart = line.indexOf(parts[1]);
+          seqStartPos = seqDataStart;
+          const seqData = line.substring(seqDataStart);
+          seqBlockLength = seqData.length;
 
           // Initialize sequence if first occurrence
           if (!seqMap[seqName]) {
@@ -170,7 +180,9 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
           };
         });
 
-        const blockConservation = conservation.slice(start, end);
+        const blockConservation = conservation
+          .slice(start, end)
+          .padEnd(end - start, " ");
 
         blocks.push({
           sequences: blockSequences,
@@ -887,10 +899,10 @@ export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
                       symbol === "*"
                         ? "Fully conserved"
                         : symbol === ":"
-                        ? "Strongly similar"
-                        : symbol === "."
-                        ? "Weakly similar"
-                        : "Variable"
+                          ? "Strongly similar"
+                          : symbol === "."
+                            ? "Weakly similar"
+                            : "Variable"
                     }`}
                   >
                     {symbol}
