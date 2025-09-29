@@ -153,30 +153,6 @@ done
 # Change to app directory
 cd /usr/src/app
 
-# Install dependencies only if uvicorn is not already installed
-if ! $CCP4_PYTHON -m pip show uvicorn > /dev/null 2>&1; then
-    echo "Installing Python dependencies..."
-    $CCP4_PYTHON -m pip install --upgrade pip
-    $CCP4_PYTHON -m pip install -r requirements.txt
-else
-    echo "Uvicorn already installed, skipping dependency installation."
-fi
-
-# Run Django setup (can run on all replicas, but migrations are idempotent)
-echo "Running Django migrations..."
-$CCP4_PYTHON manage.py migrate
-$CCP4_PYTHON manage.py collectstatic --noinput
-
-# Before starting Django, kill the health server
-echo "Stopping health check server to free port 8000..."
-if kill -TERM $HEALTH_PID 2>/dev/null; then
-    echo "Health server stopped successfully"
-    # Wait a bit for the port to be freed
-    sleep 2
-else
-    echo "Health server was already stopped or not found"
-fi
-
 echo "=========================================="
 echo "CCP4i2 Worker Container Starting"
 echo "=========================================="
