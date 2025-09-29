@@ -150,11 +150,10 @@ done
 # Change to app directory
 cd /usr/src/app
 
-$CCP4_PYTHON -m pip install -r requirements.txt
 # Install dependencies only if gunicorn is not already installed
 if ! $CCP4_PYTHON -m pip show gunicorn > /dev/null 2>&1; then
     echo "Installing Python dependencies..."
-    $CCP4_PYTHON -m pip install --upgrade pip
+    $CCP4_PYTHON -m pip install --upgrade pip wheel setuptools
     $CCP4_PYTHON -m pip install -r requirements.txt
 else
     echo "Gunicorn already installed, skipping dependency installation."
