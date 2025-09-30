@@ -78,6 +78,17 @@ from django.utils.text import slugify
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
 
+# Service Bus client cache
+_service_bus_client_cache = {}
+
+
+def get_cached_service_bus_client(connection_string):
+    if connection_string not in _service_bus_client_cache:
+        _service_bus_client_cache[connection_string] = (
+            ServiceBusClient.from_connection_string(connection_string)
+        )
+    return _service_bus_client_cache[connection_string]
+
 
 class JobViewSet(ModelViewSet):
     """
@@ -670,9 +681,7 @@ class JobViewSet(ModelViewSet):
 
             # Send message to Service Bus
             try:
-                with ServiceBusClient.from_connection_string(
-                    connection_string
-                ) as client:
+                with get_cached_service_bus_client(connection_string) as client:
                     with client.get_queue_sender(queue_name) as sender:
                         message = ServiceBusMessage(json.dumps(message_body))
                         sender.send_messages(message)
