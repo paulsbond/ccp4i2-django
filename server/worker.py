@@ -24,26 +24,32 @@ def process_job(job_data):
     job_uuid = job_data.get("uuid", "unknown")
     action = job_data.get("action", "unknown")
 
-    logger.info(f"Processing job: {job_uuid}, action: {action}")
+    logger.info("Processing job: %s, action: %s", job_uuid, action)
 
     try:
         # Add your job processing logic here
         if action == "run_job":
             # Example: run CCP4 analysis
             result = run_ccp4_analysis(job_data)
-            logger.info(f"CCP4 analysis completed for job {job_uuid}")
+            logger.info("CCP4 analysis completed for job %s", job_uuid)
+
+            # Update job status based on analysis result
+            if result.get("status") == "completed":
+                update_job_status(job_uuid, "FINISHED")
+            elif result.get("status") == "failed":
+                update_job_status(job_uuid, "FAILED")
+            else:
+                logger.warning("Unknown result status: %s", result.get("status"))
+                update_job_status(job_uuid, "FAILED")
 
         else:
-            logger.warning(f"Unknown action type: {action}")
-            raise ValueError(f"Unsupported action: {action}")
-
-        # Update job status in database if needed
-        # update_job_status(job_uuid, 'completed', result)
+            logger.warning("Unknown action type: %s", action)
+            raise ValueError("Unsupported action: %s" % action)
 
         return True
 
-    except Exception as e:
-        logger.error(f"Error processing job {job_uuid}: {e}")
+    except (ValueError, KeyError) as e:
+        logger.error("Error processing job %s: %s", job_uuid, str(e))
         raise
 
 
@@ -68,7 +74,7 @@ def run_ccp4_analysis(parameters):
         return {"status": "failed", "error": error_msg}
 
     # Prepare command arguments
-    cmd = [ccp4_python, "/usr/src/app/manage.py", "run_job", "-ju", job_uuid, "-d"]
+    cmd = [ccp4_python, "/usr/src/app/manage.py", "run_job", "-ju", job_uuid]
 
     logger.info("Executing command: %s", " ".join(cmd))
 
@@ -121,10 +127,109 @@ def run_ccp4_analysis(parameters):
 
 
 def update_job_status(job_uuid, status, result=None):
-    """Update job status in database (optional)"""
-    # If you want to track job status, implement this
-    # This would require Django ORM or direct database access
-    pass
+    """Update job status using the set_job_status management command"""
+
+    import subprocess
+
+    logger.info("Updating job %s status to %s", job_uuid, status)
+
+    # Get the CCP4 Python executable from environment
+    ccp4_python = os.getenv("CCP4_PYTHON")
+    if not ccp4_python:
+        logger.error("CCP4_PYTHON environment variable not set")
+        return False
+
+    # Prepare command arguments for set_job_status management command
+    cmd = [
+        ccp4_python,
+        "/usr/src/app/manage.py",
+        "set_job_status",
+        "-ju",
+        job_uuid,
+        "-s",
+        status.upper(),  # Status should be uppercase for the command
+    ]
+
+    logger.info("Executing status update command: %s", " ".join(cmd))
+
+    try:
+        # Run the command
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,  # 30 second timeout for status updates
+            cwd="/usr/src/app",
+            check=False,
+        )
+
+        if result.returncode == 0:
+            logger.info("Job status updated successfully for job %s", job_uuid)
+            return True
+        else:
+            logger.error("Failed to update job status for job %s", job_uuid)
+            logger.error("STDOUT: %s", result.stdout)
+            logger.error("STDERR: %s", result.stderr)
+            return False
+
+    except subprocess.TimeoutExpired:
+        logger.error("Status update timed out for job %s", job_uuid)
+        return False
+    except OSError as e:
+        logger.error("OS error updating job status for job %s: %s", job_uuid, str(e))
+        return False
+
+
+def create_service_bus_client(connection_string):
+    """Create and return a Service Bus client"""
+    if connection_string.startswith("https://"):
+        # Key Vault reference - use managed identity
+        logger.info("Using managed identity for Service Bus authentication")
+        credential = DefaultAzureCredential()
+        return ServiceBusClient(
+            fully_qualified_namespace=connection_string, credential=credential
+        )
+    else:
+        # Direct connection string
+        logger.info("Using connection string for Service Bus authentication")
+        return ServiceBusClient.from_connection_string(connection_string)
+
+
+def run_worker_loop(sb_client, queue_name):
+    """Run the main worker message processing loop"""
+    with sb_client:
+        receiver = sb_client.get_queue_receiver(queue_name=queue_name)
+
+        with receiver:
+            logger.info("Worker ready to process jobs...")
+
+            while True:
+                try:
+                    # Receive messages with timeout
+                    messages = receiver.receive_messages(
+                        max_message_count=1, max_wait_time=30
+                    )
+
+                    for msg in messages:
+                        try:
+                            job_data = json.loads(str(msg))
+                            process_job(job_data)
+                            receiver.complete_message(msg)
+                            logger.info("Job processed and completed successfully")
+
+                        except (json.JSONDecodeError, ValueError, KeyError) as e:
+                            logger.error("Error processing job: %s", str(e))
+                            # Send to dead-letter queue for manual inspection
+                            try:
+                                receiver.dead_letter_message(msg, reason=str(e))
+                            except OSError as dlq_error:
+                                logger.error(
+                                    "Failed to dead-letter message: %s", str(dlq_error)
+                                )
+
+                except OSError as e:
+                    logger.error("Error receiving messages: %s", str(e))
+                    time.sleep(5)  # Brief pause before retry
 
 
 def main():
@@ -137,60 +242,17 @@ def main():
         logger.error("SERVICE_BUS_CONNECTION_STRING environment variable not set")
         return
 
-    logger.info(f"Starting worker for queue: {queue_name}")
+    logger.info("Starting worker for queue: %s", queue_name)
 
     # Initialize Service Bus client
     try:
-        if connection_string.startswith("https://"):
-            # Key Vault reference - use managed identity
-            logger.info("Using managed identity for Service Bus authentication")
-            credential = DefaultAzureCredential()
-            sb_client = ServiceBusClient(
-                fully_qualified_namespace=connection_string, credential=credential
-            )
-        else:
-            # Direct connection string
-            logger.info("Using connection string for Service Bus authentication")
-            sb_client = ServiceBusClient.from_connection_string(connection_string)
-
-        with sb_client:
-            receiver = sb_client.get_queue_receiver(queue_name=queue_name)
-
-            with receiver:
-                logger.info("Worker ready to process jobs...")
-
-                while True:
-                    try:
-                        # Receive messages with timeout
-                        messages = receiver.receive_messages(
-                            max_message_count=1, max_wait_time=30
-                        )
-
-                        for msg in messages:
-                            try:
-                                job_data = json.loads(str(msg))
-                                process_job(job_data)
-                                receiver.complete_message(msg)
-                                logger.info("Job processed and completed successfully")
-
-                            except Exception as e:
-                                logger.error(f"Error processing job: {e}")
-                                # Send to dead-letter queue for manual inspection
-                                try:
-                                    receiver.dead_letter_message(msg, reason=str(e))
-                                except Exception as dlq_error:
-                                    logger.error(
-                                        f"Failed to dead-letter message: {dlq_error}"
-                                    )
-
-                    except Exception as e:
-                        logger.error(f"Error receiving messages: {e}")
-                        time.sleep(5)  # Brief pause before retry
+        sb_client = create_service_bus_client(connection_string)
+        run_worker_loop(sb_client, queue_name)
 
     except KeyboardInterrupt:
         logger.info("Worker stopped by user")
-    except Exception as e:
-        logger.error(f"Worker error: {e}")
+    except OSError as e:
+        logger.error("Worker error: %s", str(e))
         raise
 
 
