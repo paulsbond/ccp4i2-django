@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y \
     libcairo2 libgomp1 libxss1 libgnomecanvas2-0 libxmu6 \
     libxslt1.1 libxslt-dev libxml2 libxml2-dev \
     libblas3 libblas-dev liblapack3 liblapack-dev libatlas-base-dev \
+    # Some ccp4 dependencies
+    libclipper-dev libclipper2 libclipper-doc libgomp1 libgfortran5 \
     # Qt5 libraries
     qtbase5-dev qt5-qmake libqt5qml5 libqt5quick5 \
     libqt5core5a libqt5gui5 libqt5widgets5 libqt5network5 libqt5sql5 \
