@@ -68,7 +68,7 @@ def run_ccp4_analysis(parameters):
         return {"status": "failed", "error": error_msg}
 
     # Prepare command arguments
-    cmd = [ccp4_python, "/usr/src/app/manage.py", "run_job", "-ju", job_uuid]
+    cmd = [ccp4_python, "/usr/src/app/manage.py", "run_job", "-ju", job_uuid, "-d"]
 
     logger.info("Executing command: %s", " ".join(cmd))
 
