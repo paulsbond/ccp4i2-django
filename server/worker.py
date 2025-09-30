@@ -24,7 +24,7 @@ def process_job(job_data):
     job_uuid = job_data.get("uuid", "unknown")
     action = job_data.get("action", "unknown")
 
-    logger.info(f"Processing job: {job_id}, action: {action}")
+    logger.info(f"Processing job: {job_uuid}, action: {action}")
 
     try:
         # Add your job processing logic here
@@ -38,25 +38,89 @@ def process_job(job_data):
             raise ValueError(f"Unsupported action: {action}")
 
         # Update job status in database if needed
-        # update_job_status(job_id, 'completed', result)
+        # update_job_status(job_uuid, 'completed', result)
 
         return True
 
     except Exception as e:
-        logger.error(f"Error processing job {job_id}: {e}")
+        logger.error(f"Error processing job {job_uuid}: {e}")
         raise
 
 
 def run_ccp4_analysis(parameters):
-    """Placeholder for CCP4 analysis logic"""
+    """Run CCP4 analysis using the configured Python executable"""
 
-    logger.info(f"Running CCP4 analysis with parameters: {parameters}")
-    # Add your CCP4 processing code here
-    time.sleep(10)  # Simulate processing time
-    return {"status": "completed", "result": "analysis_result"}
+    import subprocess
+
+    logger.info("Running CCP4 analysis with parameters: %s", parameters)
+
+    # Get the CCP4 Python executable from environment
+    ccp4_python = os.getenv("CCP4_PYTHON")
+    if not ccp4_python:
+        error_msg = "CCP4_PYTHON environment variable not set"
+        logger.error(error_msg)
+        return {"status": "failed", "error": error_msg}
+
+    job_uuid = parameters.get("job_uuid")
+    if not job_uuid:
+        error_msg = "job_uuid not provided in parameters"
+        logger.error(error_msg)
+        return {"status": "failed", "error": error_msg}
+
+    # Prepare command arguments
+    cmd = [ccp4_python, "/usr/src/app/manage.py", "run_job", "-ju", job_uuid]
+
+    logger.info("Executing command: %s", " ".join(cmd))
+
+    try:
+        # Run the command
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=3600,  # 1 hour timeout
+            cwd="/usr/src/app",
+            check=False,  # We handle return codes manually
+        )
+
+        logger.info("Command completed with return code: %s", result.returncode)
+
+        if result.returncode == 0:
+            logger.info("CCP4 analysis completed successfully")
+            return {
+                "status": "completed",
+                "result": "analysis_result",
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+        else:
+            logger.error("CCP4 analysis failed with return code %s", result.returncode)
+            logger.error("STDOUT: %s", result.stdout)
+            logger.error("STDERR: %s", result.stderr)
+            return {
+                "status": "failed",
+                "error": "Command failed with return code %s" % result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+
+    except subprocess.TimeoutExpired:
+        error_msg = "CCP4 analysis timed out after 1 hour"
+        logger.error(error_msg)
+        return {"status": "failed", "error": error_msg}
+
+    except FileNotFoundError:
+        error_msg = "CCP4 Python executable not found: %s" % ccp4_python
+        logger.error(error_msg)
+        return {"status": "failed", "error": error_msg}
+
+    except Exception as e:
+        error_msg = "Unexpected error running CCP4 analysis: %s" % str(e)
+        logger.error(error_msg)
+        return {"status": "failed", "error": error_msg}
 
 
-def update_job_status(job_id, status, result=None):
+def update_job_status(job_uuid, status, result=None):
     """Update job status in database (optional)"""
     # If you want to track job status, implement this
     # This would require Django ORM or direct database access
