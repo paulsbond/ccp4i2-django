@@ -166,4 +166,6 @@ echo "Checking database connectivity..."
 
 # Launch the worker queue monitor
 echo "Starting queue monitor..."
+export CCP4=/mnt/ccp4data/ccp4-9
+export LD_LIBRARY_PATH=$CCP4/lib:$LD_LIBRARY_PATH
 exec $CCP4_PYTHON  /usr/src/app/worker.py

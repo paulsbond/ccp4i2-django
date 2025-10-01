@@ -174,6 +174,17 @@ else
     echo "Health server was already stopped or not found"
 fi
 
-# Start Django server
-echo "Starting Django server with gunicorn..."
-exec $CCP4_PYTHON -m gunicorn asgi:application -b 0.0.0.0:8000 --worker-class uvicorn.workers.UvicornWorker
+# Start Django server (choose one of the following options)
+
+echo "Starting Django server with gunicorn (uvicorn workers)..."
+export CCP4=/mnt/ccp4data/ccp4-9
+export LD_LIBRARY_PATH=$CCP4/lib:$LD_LIBRARY_PATH
+exec $CCP4_PYTHON -m gunicorn asgi:application \
+  -b 0.0.0.0:8000 \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --workers 2 \
+  --timeout 60 \
+  --keep-alive 10 \
+  --graceful-timeout 30 \
+  --max-requests 100 \
+  --max-requests-jitter 10
