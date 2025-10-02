@@ -11,11 +11,8 @@ whitenoise
 configparser
 constants
 pathlib
-pytest-dependency
-packaging
 tomli
 psycopg2-binary
-clipper-python
 numpy
 scipy
 pandas
