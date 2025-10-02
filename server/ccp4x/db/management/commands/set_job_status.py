@@ -1,15 +1,11 @@
 import uuid
-import os
-import subprocess
-import platform
 from django.core.management.base import BaseCommand
 from ccp4x.db.models import Job, Project
-from ccp4x.lib.job_utils.run_job import run_job
 
 
 class Command(BaseCommand):
     """
-    A Django management command to import a project and run a job.
+    A Django management command to set the status of a job.
 
     Attributes:
         help (str): Description of the command.
@@ -20,14 +16,13 @@ class Command(BaseCommand):
             Adds command-line arguments to the parser.
 
         handle(*args, **options):
-            Handles the command execution. Retrieves the job based on provided options and runs it.
-            If the detach option is specified, the job is run in a detached subprocess.
+            Handles the command execution. Retrieves the job based on provided options and sets its status.
 
         get_job(options):
             Retrieves the job based on the provided options. Raises Job.DoesNotExist if no job is found.
     """
 
-    help = "Import a project"
+    help = "Set the status of a job"
     requires_system_checks = []
 
     def add_arguments(self, parser):
@@ -37,7 +32,25 @@ class Command(BaseCommand):
         parser.add_argument("-pi", "--projectid", help="Integer project id", type=int)
         parser.add_argument("-pu", "--projectuuid", help="Project uuid", type=str)
         parser.add_argument("-jn", "--jobnumber", help="Job number", type=str)
-        parser.add_argument("-d", "--detach", help="Detach job", action="store_true")
+        parser.add_argument(
+            "-s",
+            "--status",
+            help="Job status",
+            choices=[
+                "UNKNOWN",
+                "PENDING",
+                "QUEUED",
+                "RUNNING",
+                "INTERRUPTED",
+                "FAILED",
+                "FINISHED",
+                "RUNNING_REMOTELY",
+                "FILE_HOLDER",
+                "TO_DELETE",
+                "UNSATISFACTORY",
+            ],
+            required=True,
+        )
 
     def handle(self, *args, **options):
         try:
@@ -46,39 +59,25 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(str(e)))
             return
 
-        if options["detach"]:
-            # Determine the program name based on the OS
-            ccp4_python_program = "ccp4-python"
-            if platform.system() == "Windows":
-                ccp4_python_program += ".bat"
+        # Get the status value from the Status enum
+        status_value = options["status"]
+        try:
+            new_status = getattr(Job.Status, status_value)
+        except AttributeError:
+            self.stderr.write(self.style.ERROR(f"Invalid status: {status_value}"))
+            return
 
-            # Open file for capturing stdout
-            with open(
-                the_job.directory / "cplusplus_stdout.txt", "w", encoding="utf-8"
-            ) as stdout_file:
-                process = subprocess.Popen(
-                    [
-                        ccp4_python_program,
-                        "manage.py",
-                        "run_job",
-                        "-ju",
-                        f"{str(the_job.uuid)}",
-                    ],
-                    start_new_session=True,
-                    stdout=stdout_file,  # Capture stdout
-                    stderr=subprocess.STDOUT,  # Merge stderr into stdout
-                )
-                the_job.process_id = process.pid
-                the_job.save()
-        else:
-            with open(
-                the_job.directory / "cplusplus_stdout.txt", "w", encoding="utf-8"
-            ) as stdout_file:
-                # Redirect file descriptors
-                stdout_fd = stdout_file.fileno()
-                os.dup2(stdout_fd, 1)  # Redirect stdout
-                os.dup2(stdout_fd, 2)  # Redirect stderr
-                run_job(str(the_job.uuid))
+        # Set the job status
+        old_status = the_job.status
+        the_job.status = new_status
+        the_job.save()
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Job {the_job.id} ({the_job.uuid}) status changed from "
+                f"{old_status} to {new_status}"
+            )
+        )
 
     def get_job(self, options):
         if options["jobid"] is not None:

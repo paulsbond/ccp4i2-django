@@ -108,6 +108,31 @@ const useDecoratedJobs = (
   return useMemo<(JobWithChildren | DjangoFile)[] | undefined>(() => {
     if (!jobs?.filter) return [];
 
+    // Helper function to parse job number into comparable array
+    const parseJobNumber = (jobNumber: string): number[] => {
+      return jobNumber.split(".").map((num) => parseInt(num, 10) || 0);
+    };
+
+    // Helper function to compare job numbers (highest ordinal first)
+    const compareJobNumbers = (a: string, b: string): number => {
+      const aParts = parseJobNumber(a);
+      const bParts = parseJobNumber(b);
+
+      // Compare each part
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aPart = aParts[i] || 0;
+        const bPart = bParts[i] || 0;
+
+        if (aPart !== bPart) {
+          // Higher numbers first (descending order)
+          return bPart - aPart;
+        }
+      }
+
+      // If all parts are equal, maintain original order
+      return 0;
+    };
+
     return jobs
       .filter((job) => job.parent === parent)
       .map((job) => {
@@ -120,7 +145,7 @@ const useDecoratedJobs = (
           children: [...childJobs, ...childFiles],
         };
       })
-      .reverse();
+      .sort((a, b) => compareJobNumbers(a.number, b.number));
   }, [jobs, files, parent]);
 };
 
@@ -159,8 +184,8 @@ const useTreeItemData = (
         job.finish_time && new Date(job.finish_time).getFullYear() > 1970
           ? `Finished ${new Date(job.finish_time).toLocaleString()}`
           : job.creation_time
-          ? `Modified ${new Date(job.creation_time).toLocaleString()}`
-          : undefined;
+            ? `Modified ${new Date(job.creation_time).toLocaleString()}`
+            : undefined;
     } else if (file) {
       displayLabel =
         file.annotation.trim().length > 0
@@ -422,7 +447,22 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
             },
           }}
         >
-          <TreeItem2IconContainer {...getIconContainerProps()}>
+          <TreeItem2IconContainer
+            {...getIconContainerProps()}
+            sx={{
+              width: 24,
+              height: 24,
+              minWidth: 24,
+              minHeight: 24,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 4,
+              backgroundColor: children ? "rgba(0,0,0,0.04)" : "transparent", // Only show background if there are children
+              boxSizing: "border-box",
+              mr: 1,
+            }}
+          >
             <TreeItem2Icon status={status} />
           </TreeItem2IconContainer>
 
