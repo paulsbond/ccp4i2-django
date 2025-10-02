@@ -209,3 +209,35 @@ STATICFILES_DIRS = [
 # Disable manifest storage features that require collectstatic
 WHITENOISE_USE_FINDERS = True  # Serve directly from STATICFILES_DIRS
 WHITENOISE_AUTOREFRESH = True  # Enable in development
+
+
+def parse_size_value(value_str, default):
+    """Parse size value that might contain expressions like '104857600*1000'"""
+    if not value_str:
+        return default
+    try:
+        # Handle simple multiplication expressions safely
+        if "*" in value_str and value_str.count("*") == 1:
+            parts = value_str.split("*")
+            if len(parts) == 2:
+                return int(parts[0].strip()) * int(parts[1].strip())
+        # Handle simple numeric values
+        return int(value_str)
+    except (ValueError, IndexError):
+        print(f"Warning: Invalid size value '{value_str}', using default {default}")
+        return default
+
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = parse_size_value(
+    os.environ.get("FILE_UPLOAD_MAX_MEMORY_SIZE"), 104857600
+)  # Default: 100MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = parse_size_value(
+    os.environ.get("DATA_UPLOAD_MAX_MEMORY_SIZE"), 104857600
+)  # Default: 100MB
+FILE_UPLOAD_MAX_NUMBER_FILES = int(
+    os.environ.get("FILE_UPLOAD_MAX_NUMBER_FILES", 10)
+)  # Default: 10 files
+
+print(
+    f"File upload settings: MAX_MEMORY_SIZE={FILE_UPLOAD_MAX_MEMORY_SIZE}, DATA_MAX_MEMORY_SIZE={DATA_UPLOAD_MAX_MEMORY_SIZE}, MAX_FILES={FILE_UPLOAD_MAX_NUMBER_FILES}"
+)
