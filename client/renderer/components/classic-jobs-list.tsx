@@ -447,7 +447,22 @@ const CustomTreeItem = forwardRef<HTMLLIElement, TreeItem2Props>(
             },
           }}
         >
-          <TreeItem2IconContainer {...getIconContainerProps()}>
+          <TreeItem2IconContainer
+            {...getIconContainerProps()}
+            sx={{
+              width: 24,
+              height: 24,
+              minWidth: 24,
+              minHeight: 24,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 4,
+              backgroundColor: children ? "rgba(0,0,0,0.04)" : "transparent", // Only show background if there are children
+              boxSizing: "border-box",
+              mr: 1,
+            }}
+          >
             <TreeItem2Icon status={status} />
           </TreeItem2IconContainer>
 
