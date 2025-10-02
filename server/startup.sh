@@ -177,8 +177,6 @@ fi
 # Start Django server (choose one of the following options)
 
 echo "Starting Django server with gunicorn (uvicorn workers)..."
-export CCP4=/mnt/ccp4data/ccp4-9
-export LD_LIBRARY_PATH=$CCP4/lib:$LD_LIBRARY_PATH
 exec $CCP4_PYTHON -m gunicorn asgi:application \
   -b 0.0.0.0:8000 \
   --worker-class uvicorn.workers.UvicornWorker \
