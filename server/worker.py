@@ -6,6 +6,7 @@ This runs independently of Django and monitors the queue for new jobs.
 import os
 import json
 import time
+import threading
 import logging
 from azure.servicebus import ServiceBusClient
 from azure.identity import DefaultAzureCredential
@@ -16,17 +17,42 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def process_job(job_data):
+def renew_lock_periodically(msg, stop_event, interval=30):
+    """Thread target to renew Service Bus message lock periodically."""
+    while not stop_event.is_set():
+        try:
+            msg.renew_lock()
+            logger.debug(
+                "Renewed Service Bus message lock for job %s",
+                getattr(msg, "job_uuid", "unknown"),
+            )
+        except Exception as e:
+            logger.error("Failed to renew message lock: %s", str(e))
+        stop_event.wait(interval)
+
+
+def process_job(job_data, msg=None):
     """
     Process a job from the queue.
-    Add your specific job processing logic here.
+    If msg is provided, start a thread to renew its lock during processing.
     """
     job_uuid = job_data.get("uuid", "unknown")
     action = job_data.get("action", "unknown")
 
     logger.info("Processing job: %s, action: %s", job_uuid, action)
 
+    lock_stop_event = threading.Event()
+    lock_thread = None
+
     try:
+        if msg is not None:
+            # Start lock renewal thread
+            lock_thread = threading.Thread(
+                target=renew_lock_periodically, args=(msg, lock_stop_event)
+            )
+            lock_thread.daemon = True
+            lock_thread.start()
+
         # Add your job processing logic here
         if action == "run_job":
             # Example: run CCP4 analysis
@@ -51,6 +77,10 @@ def process_job(job_data):
     except (ValueError, KeyError) as e:
         logger.error("Error processing job %s: %s", job_uuid, str(e))
         raise
+    finally:
+        if lock_thread is not None:
+            lock_stop_event.set()
+            lock_thread.join()
 
 
 def run_ccp4_analysis(parameters):
@@ -213,8 +243,7 @@ def run_worker_loop(sb_client, queue_name):
                     for msg in messages:
                         try:
                             job_data = json.loads(str(msg))
-                            process_job(job_data)
-                            receiver.complete_message(msg)
+                            process_job(job_data, msg=msg)
                             logger.info("Job processed and completed successfully")
 
                         except (json.JSONDecodeError, ValueError, KeyError) as e:
