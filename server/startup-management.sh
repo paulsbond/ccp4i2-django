@@ -150,39 +150,8 @@ done
 # Change to app directory
 cd /usr/src/app
 
-# Install dependencies only if gunicorn is not already installed
-if ! $CCP4_PYTHON -m pip show gunicorn > /dev/null 2>&1; then
-    echo "Installing Python dependencies..."
-    $CCP4_PYTHON -m pip install --upgrade pip wheel setuptools
-    $CCP4_PYTHON -m pip install -r requirements.txt
-else
-    echo "Gunicorn already installed, skipping dependency installation."
-fi
-
-# Run Django setup (can run on all replicas, but migrations are idempotent)
-echo "Running Django migrations..."
-$CCP4_PYTHON manage.py migrate
-$CCP4_PYTHON manage.py collectstatic --noinput
-
-# Before starting Django, kill the health server
-echo "Stopping health check server to free port 8000..."
-if kill -TERM $HEALTH_PID 2>/dev/null; then
-    echo "Health server stopped successfully"
-    # Wait a bit for the port to be freed
-    sleep 2
-else
-    echo "Health server was already stopped or not found"
-fi
-
-# Start Django server (choose one of the following options)
-
-echo "Starting Django server with gunicorn (uvicorn workers)..."
-exec $CCP4_PYTHON -m gunicorn asgi:application \
-  -b 0.0.0.0:8000 \
-  --worker-class uvicorn.workers.UvicornWorker \
-  --workers 2 \
-  --timeout 60 \
-  --keep-alive 10 \
-  --graceful-timeout 30 \
-  --max-requests 100 \
-  --max-requests-jitter 10
+while true; 
+do;
+echo "In infinite loop";
+sleep 10;
+done
