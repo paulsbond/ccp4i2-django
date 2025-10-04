@@ -3,6 +3,9 @@ import React, { useCallback } from "react";
 import {
   Button,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   Stack,
   Switch,
@@ -10,6 +13,9 @@ import {
   TableBody,
   TableCell,
   TableRow,
+  Typography,
+  Paper,
+  CircularProgress,
 } from "@mui/material";
 import { useApi } from "../api";
 import { Cancel, Check, Folder } from "@mui/icons-material";
@@ -26,6 +32,15 @@ export const ConfigContent: React.FC = () => {
   const [existingFiles, setExistingFiles] = useState<any | null>(null);
   const [requirementsExist, setRequirementsExist] = useState<boolean>(false);
   const { setMessage } = usePopcorn();
+  const [installProgress, setInstallProgress] = useState<{
+    isInstalling: boolean;
+    output: string[];
+    status: "idle" | "started" | "installing" | "completed" | "failed";
+  }>({
+    isInstalling: false,
+    output: [],
+    status: "idle",
+  });
 
   useEffect(() => {
     // Send a message to the main process to get the config
@@ -80,8 +95,31 @@ export const ConfigContent: React.FC = () => {
         setRequirementsExist(false);
         setMessage(data.error || "Requirements are missing");
       }
+      // Add new handler for installation progress
+      else if (data.message === "install-requirements-progress") {
+        setInstallProgress((prev) => {
+          const newOutput = data.output
+            ? [...prev.output, data.output]
+            : prev.output;
+
+          return {
+            isInstalling:
+              data.status === "started" || data.status === "installing",
+            output: newOutput,
+            status: data.status,
+          };
+        });
+
+        // Show success message when completed
+        if (data.status === "completed") {
+          setMessage("Requirements installed successfully");
+          setRequirementsExist(true);
+        } else if (data.status === "failed") {
+          setMessage("Requirements installation failed");
+        }
+      }
     },
-    [config]
+    [config, setMessage]
   );
 
   useEffect(() => {
@@ -152,6 +190,13 @@ export const ConfigContent: React.FC = () => {
       return;
     }
 
+    // Reset progress state
+    setInstallProgress({
+      isInstalling: true,
+      output: [],
+      status: "started",
+    });
+
     window.electronAPI.sendMessage("install-requirements", {
       ...config,
       CCP4Dir: config.CCP4Dir.path,
@@ -168,6 +213,14 @@ export const ConfigContent: React.FC = () => {
     window.electronAPI.sendMessage("toggle-dev-mode", {});
     ev.preventDefault();
     ev.stopPropagation();
+  };
+
+  const onCloseProgressDialog = () => {
+    setInstallProgress({
+      isInstalling: false,
+      status: "idle",
+      output: [],
+    });
   };
 
   return (
@@ -302,6 +355,72 @@ export const ConfigContent: React.FC = () => {
             Launch CCP4i2
           </Button>
         </Stack>
+
+        {/* Installation Progress Dialog */}
+        <Dialog
+          open={
+            installProgress.isInstalling ||
+            installProgress.status === "completed" ||
+            installProgress.status === "failed"
+          }
+          onClose={onCloseProgressDialog}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            {installProgress.status === "completed"
+              ? "Installation Complete"
+              : installProgress.status === "failed"
+                ? "Installation Failed"
+                : "Installing Requirements"}
+            {installProgress.status === "installing" && (
+              <CircularProgress size={20} sx={{ ml: 2 }} />
+            )}
+          </DialogTitle>
+          <DialogContent>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                bgcolor: "grey.900",
+                color: "grey.100",
+                maxHeight: 400,
+                overflowY: "auto",
+                fontFamily: "monospace",
+                fontSize: "0.875rem",
+              }}
+            >
+              {installProgress.output.length === 0 ? (
+                <Typography>Initializing installation...</Typography>
+              ) : (
+                installProgress.output.map((line, index) => (
+                  <Typography
+                    key={index}
+                    component="pre"
+                    sx={{
+                      m: 0,
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {line}
+                  </Typography>
+                ))
+              )}
+            </Paper>
+            {(installProgress.status === "completed" ||
+              installProgress.status === "failed") && (
+              <Button
+                onClick={onCloseProgressDialog}
+                variant="contained"
+                sx={{ mt: 2 }}
+                fullWidth
+              >
+                Close
+              </Button>
+            )}
+          </DialogContent>
+        </Dialog>
       </Stack>
     </Container>
   );

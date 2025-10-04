@@ -6,7 +6,10 @@ import { dialog } from "electron";
 import path from "node:path";
 import fs from "node:fs";
 import { spawn, ChildProcessWithoutNullStreams } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { StoreSchema } from "../types/store";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Installs IPC handlers for communication between the Electron main process and renderer processes.
@@ -248,175 +251,82 @@ export const installIpcHandlers = (
       console.error("Failed to spawn process:", error);
       event.reply("message-from-main", {
         message: "requirements-missing",
-        error: `Spawn failed: ${error.message}`,
+        error: `Spawn failed: ${error instanceof Error ? error.message : String(error)}`,
       });
     }
   });
 
-  ipcMain.on("install-requirements", (event, data) => {
-    const ccp4_python =
-      process.platform === "win32" ? "ccp4-python.bat" : "ccp4-python";
-    const ccp4Dir = store.get("CCP4Dir") || "";
-    const ccp4PythonPath = path.join(ccp4Dir, "bin", ccp4_python);
+  ipcMain.on("install-requirements", (event, config) => {
+    // Path to requirements.txt - use same logic as Django server
+    const serverPath = isDev
+      ? path.join(process.cwd(), "..", "server")
+      : path.join(process.resourcesPath, "server");
+    const requirementsPath = path.join(serverPath, "requirements.txt");
 
-    console.log("In install-requirements", ccp4PythonPath);
+    // Spawn pip install process
+    const pipProcess = spawn(config.ccp4_python, [
+      "-m",
+      "pip",
+      "install",
+      "-r",
+      requirementsPath,
+      "--verbose", // For more detailed output
+    ]);
 
-    // Validate CCP4 Python executable exists
-    if (!fs.existsSync(ccp4PythonPath)) {
-      event.reply("message-from-main", {
-        message: "requirements-install-failed",
-        error: `CCP4 Python executable not found at: ${ccp4PythonPath}`,
+    // Send start message
+    event.sender.send("message-from-main", {
+      message: "install-requirements-progress",
+      status: "started",
+    });
+
+    // Capture stdout
+    pipProcess.stdout.on("data", (data) => {
+      const output = data.toString();
+      event.sender.send("message-from-main", {
+        message: "install-requirements-progress",
+        status: "installing",
+        output: output,
       });
-      return;
-    }
+    });
 
-    const requirementsPath = isDev
-      ? path.join(process.cwd(), "..", "server", "requirements.txt")
-      : path.join(process.resourcesPath, "server", "requirements.txt");
-
-    // Validate requirements.txt exists
-    if (!fs.existsSync(requirementsPath)) {
-      event.reply("message-from-main", {
-        message: "requirements-install-failed",
-        error: `Requirements file not found at: ${requirementsPath}`,
+    // Capture stderr (pip sends progress info here too)
+    pipProcess.stderr.on("data", (data) => {
+      const output = data.toString();
+      event.sender.send("message-from-main", {
+        message: "install-requirements-progress",
+        status: "installing",
+        output: output,
       });
-      return;
-    }
+    });
 
-    console.log("Installing requirements from:", requirementsPath);
-
-    let errorOutput = "";
-    let stdOutput = "";
-    let hasReplied = false;
-
-    const sendReply = (message: string, error?: string, output?: string) => {
-      if (!hasReplied) {
-        hasReplied = true;
-        event.reply("message-from-main", {
-          message,
-          ...(error && { error }),
-          ...(output && { output }),
+    // Handle completion
+    pipProcess.on("close", (code) => {
+      if (code === 0) {
+        event.sender.send("message-from-main", {
+          message: "install-requirements-progress",
+          status: "completed",
+          output: "All requirements installed successfully",
+        });
+        // Recheck requirements
+        event.sender.send("message-from-main", {
+          message: "requirements-exist",
+        });
+      } else {
+        event.sender.send("message-from-main", {
+          message: "install-requirements-progress",
+          status: "failed",
+          output: `Installation failed with code ${code}`,
         });
       }
-    };
+    });
 
-    try {
-      const child = spawn(
-        ccp4PythonPath,
-        ["-m", "pip", "install", "-r", requirementsPath],
-        {
-          stdio: ["ignore", "pipe", "pipe"],
-          shell: process.platform === "win32",
-          env: {
-            ...process.env,
-            CCP4: ccp4Dir,
-            MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
-            //QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
-          },
-          timeout: 300000, // 5 minute timeout
-        }
-      );
-
-      // Set up timeout handling
-      const timeoutId = setTimeout(() => {
-        if (!hasReplied) {
-          console.error("pip install timeout - killing process");
-          child.kill("SIGTERM");
-          sendReply(
-            "requirements-install-failed",
-            "Installation timed out after 5 minutes"
-          );
-        }
-      }, 300000);
-
-      child.stdout?.on("data", (data) => {
-        const output = data.toString();
-        stdOutput += output;
-        console.log("pip stdout:", output.trim());
+    // Handle errors
+    pipProcess.on("error", (error) => {
+      event.sender.send("message-from-main", {
+        message: "install-requirements-progress",
+        status: "failed",
+        output: `Error: ${error.message}`,
       });
-
-      child.stderr?.on("data", (data) => {
-        const output = data.toString();
-        errorOutput += output;
-        console.error("pip stderr:", output.trim());
-      });
-
-      child.on("exit", (code: number | null, signal: string | null) => {
-        clearTimeout(timeoutId);
-
-        console.log(
-          `Child process exited with code: ${code}, signal: ${signal}`
-        );
-
-        if (signal) {
-          sendReply(
-            "requirements-install-failed",
-            `Installation was terminated by signal: ${signal}`,
-            stdOutput.trim()
-          );
-        } else if (code === 0) {
-          sendReply(
-            "requirements-exist",
-            undefined,
-            stdOutput.trim() || "Requirements installed successfully"
-          );
-        } else {
-          // Parse common pip error patterns for better error messages
-          let errorMessage = errorOutput.trim();
-
-          if (errorMessage.includes("Could not find a version")) {
-            errorMessage =
-              "Some packages could not be found. Check your internet connection and package names.";
-          } else if (errorMessage.includes("Permission denied")) {
-            errorMessage =
-              "Permission denied. Try running as administrator or check file permissions.";
-          } else if (errorMessage.includes("No space left")) {
-            errorMessage = "Not enough disk space to install packages.";
-          } else if (errorMessage.includes("network")) {
-            errorMessage =
-              "Network error occurred. Check your internet connection.";
-          } else if (!errorMessage) {
-            errorMessage = `Installation failed with exit code ${code}`;
-          }
-
-          sendReply(
-            "requirements-install-failed",
-            errorMessage,
-            stdOutput.trim()
-          );
-        }
-      });
-
-      child.on("error", (error: Error) => {
-        clearTimeout(timeoutId);
-        console.error("Spawn error during pip install:", error);
-
-        let errorMessage = error.message;
-
-        // Handle specific spawn errors
-        if (error.message.includes("ENOENT")) {
-          errorMessage = `Could not execute pip: ${ccp4PythonPath} not found`;
-        } else if (error.message.includes("EACCES")) {
-          errorMessage = `Permission denied executing: ${ccp4PythonPath}`;
-        } else if (error.message.includes("EINVAL")) {
-          errorMessage = `Invalid arguments or path: ${ccp4PythonPath}`;
-        }
-
-        sendReply("requirements-install-failed", errorMessage);
-      });
-
-      child.on("close", (code: number | null, signal: string | null) => {
-        clearTimeout(timeoutId);
-        console.log(
-          `Child process closed with code: ${code}, signal: ${signal}`
-        );
-      });
-    } catch (error: any) {
-      console.error("Failed to spawn pip install process:", error);
-      sendReply(
-        "requirements-install-failed",
-        `Failed to start installation: ${error.message}`
-      );
-    }
+    });
   });
 };
