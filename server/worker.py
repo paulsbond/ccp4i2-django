@@ -17,24 +17,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def renew_lock_periodically(msg, stop_event, interval=30):
+def renew_lock_periodically(receiver, msg, stop_event, interval=30):
     """Thread target to renew Service Bus message lock periodically."""
     while not stop_event.is_set():
         try:
-            msg.renew_lock()
-            logger.debug(
-                "Renewed Service Bus message lock for job %s",
-                getattr(msg, "job_uuid", "unknown"),
-            )
+            receiver.renew_message_lock(msg)
+            logger.debug("Renewed Service Bus message lock")
         except Exception as e:
             logger.error("Failed to renew message lock: %s", str(e))
         stop_event.wait(interval)
 
 
-def process_job(job_data, msg=None):
+def process_job(job_data, receiver=None, msg=None):
     """
     Process a job from the queue.
-    If msg is provided, start a thread to renew its lock during processing.
+    If receiver and msg are provided, start a thread to renew the lock during processing.
     """
     job_uuid = job_data.get("uuid", "unknown")
     action = job_data.get("action", "unknown")
@@ -45,10 +42,10 @@ def process_job(job_data, msg=None):
     lock_thread = None
 
     try:
-        if msg is not None:
+        if receiver is not None and msg is not None:
             # Start lock renewal thread
             lock_thread = threading.Thread(
-                target=renew_lock_periodically, args=(msg, lock_stop_event)
+                target=renew_lock_periodically, args=(receiver, msg, lock_stop_event)
             )
             lock_thread.daemon = True
             lock_thread.start()
@@ -243,7 +240,7 @@ def run_worker_loop(sb_client, queue_name):
                     for msg in messages:
                         try:
                             job_data = json.loads(str(msg))
-                            process_job(job_data, msg=msg)
+                            process_job(job_data, receiver=receiver, msg=msg)
                             logger.info("Job processed and completed successfully")
 
                         except (json.JSONDecodeError, ValueError, KeyError) as e:
