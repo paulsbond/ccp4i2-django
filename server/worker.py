@@ -65,7 +65,8 @@ def process_job(job_data, receiver=None, msg=None):
 
             # Update job status based on analysis result
             if result.get("status") == "completed":
-                update_job_status(job_uuid, "FINISHED")
+                # update_job_status(job_uuid, "FINISHED")
+                # I think that succesfully completed jobs are already marked as FINISHED by manage.py run_job
                 return True
             elif result.get("status") == "failed":
                 update_job_status(job_uuid, "FAILED")
