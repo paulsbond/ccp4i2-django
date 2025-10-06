@@ -12,6 +12,7 @@ import {
 } from "./types/models";
 import { useRunCheck } from "./providers/run-check-provider";
 import { useParameterChangeIntent } from "./providers/parameter-change-intent-provider";
+import { apiJson, apiText } from "./api-fetch";
 
 // ============================================================================
 // Types and Interfaces
@@ -936,17 +937,10 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         console.warn(`Parameter ${paramName} not found in container`);
         return Promise.resolve(null);
       }
-      return fetch(url)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .catch((error) => {
-          console.error(`Error fetching file digest for ${paramName}:`, error);
-          return null;
-        });
+      return apiJson(url).catch((error) => {
+        console.error(`Error fetching file digest for ${paramName}:`, error);
+        return null;
+      });
     };
   }, [container]);
 
@@ -967,12 +961,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         );
       }
       const url = `/api/proxy/${swrKey}`;
-      return fetch(url).then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text();
-      });
+      return apiText(url);
     };
 
     return useSWR<string, Error>(swrKey, swrKey ? fetcher : null, {
@@ -1006,12 +995,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         throw new Error("Parameter not found");
       }
       const url = `/api/proxy/${swrKey}`;
-      return fetch(url).then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      });
+      return apiJson(url);
     };
 
     return useSWR<string, Error>(swrKey, swrKey ? fetcher : null, {
