@@ -1,6 +1,7 @@
 "use client";
 import React, { useCallback } from "react";
 import {
+  Box,
   Button,
   Container,
   Dialog,
@@ -17,6 +18,7 @@ import {
   Paper,
   CircularProgress,
 } from "@mui/material";
+import { green } from "@mui/material/colors";
 import { useApi } from "../api";
 import { Cancel, Check, Folder } from "@mui/icons-material";
 import { useEffect, useState } from "react";
@@ -224,204 +226,336 @@ export const ConfigContent: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Stack spacing={2}>
-        {config && (
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableBody>
-              <TableRow>
-                <TableCell variant="head">CCP4Dir</TableCell>
-                <TableCell variant="body">{config.CCP4Dir}</TableCell>
-                <TableCell variant="body">
-                  {existingFiles?.CCP4Dir ? <Check /> : <Cancel />}
-                </TableCell>
-                <TableCell variant="body">
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    startIcon={<Folder />}
-                    onClick={onLaunchBrowser}
-                    sx={{ minWidth: 320 }}
-                  >
-                    Select...
-                  </Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell variant="head">CCP4Python</TableCell>
-                <TableCell variant="body">{config.ccp4_python}</TableCell>
-                <TableCell variant="body">
-                  {existingFiles?.ccp4_python ? <Check /> : <Cancel />}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell variant="head">CCP4I2_PROJECTS_DIR</TableCell>
-                <TableCell variant="body">
-                  {config.CCP4I2_PROJECTS_DIR}
-                </TableCell>
-                <TableCell variant="body">
-                  {existingFiles?.CCP4I2_PROJECTS_DIR ? <Check /> : <Cancel />}
-                </TableCell>
-                <TableCell variant="body">
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    startIcon={<Folder />}
-                    onClick={onSelectProjectsDir}
-                    sx={{ minWidth: 320 }}
-                  >
-                    Select...
-                  </Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell variant="head">NEXT Port</TableCell>
-                <TableCell
-                  variant="body"
-                  colSpan={3}
-                  sx={{ display: "flex", justifyContent: "center" }}
-                >
-                  {config.NEXT_PORT}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell variant="head">Uvicorn Port</TableCell>
-                <TableCell
-                  variant="body"
-                  colSpan={3}
-                  sx={{ display: "flex", justifyContent: "center" }}
-                >
-                  {config.UVICORN_PORT}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell variant="head">Requirements installed</TableCell>
-                <TableCell
-                  variant="body"
-                  colSpan={1}
-                  sx={{ display: "flex", justifyContent: "center" }}
-                >
-                  {requirementsExist ? <Check /> : <Cancel />}
-                </TableCell>
-                <TableCell colSpan={2}>
-                  <Button
-                    component="label"
-                    onClick={onInstallRequirements}
-                    variant="contained"
-                    sx={{ minWidth: 320, p: 0, m: 0 }}
-                  >
-                    Install
-                  </Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell variant="head">Dev. mode</TableCell>
-                <TableCell
-                  variant="body"
-                  colSpan={3}
-                  sx={{ display: "flex", justifyContent: "center" }}
-                >
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={devMode}
-                        onChange={onToggleDevMode}
-                        name="devModeToggle"
-                        color="warning"
-                      />
-                    }
-                    label="Dev Mode"
-                  />
-                </TableCell>
-                <TableCell variant="body">
-                  <Button />
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        )}
-        <Stack spacing={2} direction="row">
-          <Button
-            key="start-uvicorn"
-            component="label"
-            variant="contained"
-            startIcon={<Folder />}
-            onClick={onStartUvicorn}
-            sx={{ minWidth: 320 }}
-            disabled={
-              !existingFiles?.ccp4_python || (!devMode && !requirementsExist)
-            }
-          >
-            Launch CCP4i2
-          </Button>
-        </Stack>
+    <Stack spacing={3}>
+      {config && (
+        <>
+          {/* Launch Section - Moved to Top */}
+          <Stack spacing={2}>
+            <Typography variant="h6" color="primary" fontWeight={600}>
+              Launch Application
+            </Typography>
 
-        {/* Installation Progress Dialog */}
-        <Dialog
-          open={
-            installProgress.isInstalling ||
-            installProgress.status === "completed" ||
-            installProgress.status === "failed"
-          }
-          onClose={onCloseProgressDialog}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>
-            {installProgress.status === "completed"
-              ? "Installation Complete"
-              : installProgress.status === "failed"
-                ? "Installation Failed"
-                : "Installing Requirements"}
-            {installProgress.status === "installing" && (
-              <CircularProgress size={20} sx={{ ml: 2 }} />
-            )}
-          </DialogTitle>
-          <DialogContent>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2,
-                bgcolor: "grey.900",
-                color: "grey.100",
-                maxHeight: 400,
-                overflowY: "auto",
-                fontFamily: "monospace",
-                fontSize: "0.875rem",
-              }}
-            >
-              {installProgress.output.length === 0 ? (
-                <Typography>Initializing installation...</Typography>
-              ) : (
-                installProgress.output.map((line, index) => (
-                  <Typography
-                    key={index}
-                    component="pre"
-                    sx={{
-                      m: 0,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {line}
+            <Paper variant="outlined" sx={{ p: 3, textAlign: "center" }}>
+              <Stack spacing={2} alignItems="center">
+                <Typography variant="body1" color="text.secondary">
+                  {existingFiles?.ccp4_python && (devMode || requirementsExist)
+                    ? "Ready to start CCP4i2 with current configuration"
+                    : "Configure paths and install requirements to launch CCP4i2"}
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<Folder />}
+                  onClick={onStartUvicorn}
+                  disabled={
+                    !existingFiles?.ccp4_python ||
+                    (!devMode && !requirementsExist)
+                  }
+                  sx={{
+                    minWidth: 300,
+                    bgcolor:
+                      existingFiles?.ccp4_python &&
+                      (devMode || requirementsExist)
+                        ? green[500]
+                        : undefined,
+                    "&:hover": {
+                      bgcolor:
+                        existingFiles?.ccp4_python &&
+                        (devMode || requirementsExist)
+                          ? green[600]
+                          : undefined,
+                    },
+                    "&.Mui-disabled": {
+                      bgcolor: "action.disabledBackground",
+                      color: "action.disabled",
+                    },
+                  }}
+                >
+                  Launch CCP4i2
+                </Button>
+                {(!existingFiles?.ccp4_python ||
+                  (!devMode && !requirementsExist)) && (
+                  <Typography variant="caption" color="error">
+                    Please configure paths and install requirements first
                   </Typography>
-                ))
-              )}
+                )}
+              </Stack>
             </Paper>
-            {(installProgress.status === "completed" ||
-              installProgress.status === "failed") && (
-              <Button
-                onClick={onCloseProgressDialog}
-                variant="contained"
-                sx={{ mt: 2 }}
-                fullWidth
+          </Stack>
+
+          {/* File Paths Section */}
+          <Stack spacing={2}>
+            <Typography variant="h6" color="primary" fontWeight={600}>
+              File Paths
+            </Typography>
+
+            {/* CCP4Dir */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack spacing={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography variant="subtitle1" fontWeight={500}>
+                    CCP4 Installation Directory
+                  </Typography>
+                  {existingFiles?.CCP4Dir ? (
+                    <Check color="success" />
+                  ) : (
+                    <Cancel color="error" />
+                  )}
+                </Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    fontFamily: "monospace",
+                    bgcolor: "grey.50",
+                    p: 1,
+                    borderRadius: 1,
+                  }}
+                >
+                  {config.CCP4Dir}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<Folder />}
+                  onClick={onLaunchBrowser}
+                  sx={{ alignSelf: "flex-start" }}
+                >
+                  Select Directory...
+                </Button>
+              </Stack>
+            </Paper>
+
+            {/* CCP4Python */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack spacing={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography variant="subtitle1" fontWeight={500}>
+                    CCP4 Python Executable
+                  </Typography>
+                  {existingFiles?.ccp4_python ? (
+                    <Check color="success" />
+                  ) : (
+                    <Cancel color="error" />
+                  )}
+                </Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    fontFamily: "monospace",
+                    bgcolor: "grey.50",
+                    p: 1,
+                    borderRadius: 1,
+                  }}
+                >
+                  {config.ccp4_python}
+                </Typography>
+              </Stack>
+            </Paper>
+
+            {/* Projects Directory */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack spacing={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography variant="subtitle1" fontWeight={500}>
+                    CCP4i2 Projects Directory
+                  </Typography>
+                  {existingFiles?.CCP4I2_PROJECTS_DIR ? (
+                    <Check color="success" />
+                  ) : (
+                    <Cancel color="error" />
+                  )}
+                </Box>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    fontFamily: "monospace",
+                    bgcolor: "grey.50",
+                    p: 1,
+                    borderRadius: 1,
+                  }}
+                >
+                  {config.CCP4I2_PROJECTS_DIR}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<Folder />}
+                  onClick={onSelectProjectsDir}
+                  sx={{ alignSelf: "flex-start" }}
+                >
+                  Select Directory...
+                </Button>
+              </Stack>
+            </Paper>
+          </Stack>
+
+          {/* Server Configuration Section */}
+          <Stack spacing={2}>
+            <Typography variant="h6" color="primary" fontWeight={600}>
+              Server Configuration
+            </Typography>
+
+            <Box display="flex" gap={2} flexWrap="wrap">
+              <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 200 }}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Next.js Port
+                  </Typography>
+                  <Typography variant="h4" color="primary" fontWeight={600}>
+                    {config.NEXT_PORT}
+                  </Typography>
+                </Stack>
+              </Paper>
+
+              <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 200 }}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Uvicorn Port
+                  </Typography>
+                  <Typography variant="h4" color="primary" fontWeight={600}>
+                    {config.UVICORN_PORT}
+                  </Typography>
+                </Stack>
+              </Paper>
+            </Box>
+          </Stack>
+
+          {/* System Setup Section */}
+          <Stack spacing={2}>
+            <Typography variant="h6" color="primary" fontWeight={600}>
+              System Setup
+            </Typography>
+
+            {/* Requirements */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
               >
-                Close
-              </Button>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={500}>
+                      Python Requirements
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Required packages for CCP4i2 operation
+                    </Typography>
+                  </Box>
+                  {requirementsExist ? (
+                    <Check color="success" />
+                  ) : (
+                    <Cancel color="error" />
+                  )}
+                </Box>
+                <Button
+                  variant="contained"
+                  onClick={onInstallRequirements}
+                  disabled={!existingFiles?.ccp4_python}
+                >
+                  {requirementsExist ? "Reinstall" : "Install"}
+                </Button>
+              </Stack>
+            </Paper>
+
+            {/* Dev Mode */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={500}>
+                    Development Mode
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Enable additional debugging features
+                  </Typography>
+                </Box>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={devMode}
+                      onChange={onToggleDevMode}
+                      name="devModeToggle"
+                      color="primary"
+                    />
+                  }
+                  label={devMode ? "Enabled" : "Disabled"}
+                />
+              </Stack>
+            </Paper>
+          </Stack>
+        </>
+      )}
+
+      {/* Installation Progress Dialog */}
+      <Dialog
+        open={
+          installProgress.isInstalling ||
+          installProgress.status === "completed" ||
+          installProgress.status === "failed"
+        }
+        onClose={onCloseProgressDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {installProgress.status === "completed"
+            ? "Installation Complete"
+            : installProgress.status === "failed"
+              ? "Installation Failed"
+              : "Installing Requirements"}
+          {installProgress.status === "installing" && (
+            <CircularProgress size={20} sx={{ ml: 2 }} />
+          )}
+        </DialogTitle>
+        <DialogContent>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2,
+              bgcolor: "grey.900",
+              color: "grey.100",
+              maxHeight: 400,
+              overflowY: "auto",
+              fontFamily: "monospace",
+              fontSize: "0.875rem",
+            }}
+          >
+            {installProgress.output.length === 0 ? (
+              <Typography>Initializing installation...</Typography>
+            ) : (
+              installProgress.output.map((line, index) => (
+                <Typography
+                  key={index}
+                  component="pre"
+                  sx={{
+                    m: 0,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {line}
+                </Typography>
+              ))
             )}
-          </DialogContent>
-        </Dialog>
-      </Stack>
-    </Container>
+          </Paper>
+          {(installProgress.status === "completed" ||
+            installProgress.status === "failed") && (
+            <Button
+              onClick={onCloseProgressDialog}
+              variant="contained"
+              sx={{ mt: 2 }}
+              fullWidth
+            >
+              Close
+            </Button>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Stack>
   );
 };

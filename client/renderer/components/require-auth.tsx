@@ -100,51 +100,45 @@ export default function RequireAuth({ children }: RequireAuthProps) {
         return;
       }
 
-      // Strategy 2: Temporarily skip Teams check to prevent infinite loops
+      // Strategy 2: Teams membership check
       console.log(
-        "No 'User' app role found, skipping Teams check for now and using domain fallback"
+        "No 'User' app role found, checking Teams membership for Newcastle Drug Discovery Unit"
       );
 
-      // TODO: Re-enable Teams check once we fix the consent loop issue
-      // const teamsResult = await checkTeamsMembership(instance, DEFAULT_TEAMS_CONFIG);
-      // console.log("Teams check result:", teamsResult);
+      try {
+        const teamsResult = await checkTeamsMembership(
+          instance,
+          DEFAULT_TEAMS_CONFIG
+        );
+        console.log("Teams check result:", teamsResult);
 
-      // Strategy 3: Domain-based access (fallback)
-      const email = account.username;
-      const emailDomain = email.split("@")[1];
-      const tenantId = account.tenantId;
+        if (teamsResult.hasAccess) {
+          console.log("✅ Access granted via Teams membership");
+          setAuthState({
+            isChecking: false,
+            hasAccess: true,
+            reason: teamsResult.reason,
+          });
+          isCheckingRef.current = false;
+          return;
+        }
 
-      console.log("Checking domain-based access:", {
-        email,
-        emailDomain,
-        tenantId,
-      });
-
-      // Allow access for Newcastle University domains
-      const allowedDomains = ["ncl.ac.uk", "newcastle.ac.uk"];
-      const allowedTenantId = "b9e7b7e9-8f0a-4b4a-8b1a-9b7e9b7e9b7e"; // Replace with actual Newcastle tenant ID
-
-      if (
-        allowedDomains.includes(emailDomain) ||
-        tenantId === allowedTenantId
-      ) {
-        console.log("✅ Access granted via domain/tenant verification");
+        // Teams check failed
+        console.log("❌ Access denied - not a member of required team");
         setAuthState({
           isChecking: false,
-          hasAccess: true,
-          reason: `Authorized via domain: ${emailDomain}`,
+          hasAccess: false,
+          reason: teamsResult.reason,
         });
-        isCheckingRef.current = false;
-        return;
+      } catch (teamsError) {
+        console.error("Teams membership check failed:", teamsError);
+        setAuthState({
+          isChecking: false,
+          hasAccess: false,
+          reason: `Teams membership check failed: ${teamsError}`,
+          error: "teams_check_failed",
+        });
       }
-
-      // No access granted
-      console.log("❌ Access denied - no valid authorization found");
-      setAuthState({
-        isChecking: false,
-        hasAccess: false,
-        reason: `Access denied: Not authorized for domain ${emailDomain} and no Teams access available`,
-      });
     } catch (error) {
       console.error("Authorization check failed:", error);
       setAuthState({
@@ -265,6 +259,37 @@ export default function RequireAuth({ children }: RequireAuthProps) {
               </Typography>
             </Alert>
           )}
+
+          {authState.error === "teams_check_failed" && (
+            <Alert severity="warning" sx={{ mb: 3, textAlign: "left" }}>
+              <Typography variant="body2">
+                <strong>Teams Access Required:</strong> This application
+                requires membership in the "Newcastle Drug Discovery Unit"
+                Microsoft Team to access the system.
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <strong>If you believe this is an error:</strong> Please contact
+                your team administrator or try "Retry Authorization" to refresh
+                your Teams membership status.
+              </Typography>
+            </Alert>
+          )}
+
+          {(!authState.error || authState.error === "check_failed") &&
+            authState.reason?.includes("not a member") && (
+              <Alert severity="info" sx={{ mb: 3, textAlign: "left" }}>
+                <Typography variant="body2">
+                  <strong>Team Membership Required:</strong> Access to this
+                  application is restricted to members of the "Newcastle Drug
+                  Discovery Unit" Microsoft Team.
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>To request access:</strong> Please contact your team
+                  administrator to be added to the Newcastle Drug Discovery Unit
+                  team in Microsoft Teams.
+                </Typography>
+              </Alert>
+            )}
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Signed in as: <strong>{accounts[0].username}</strong>

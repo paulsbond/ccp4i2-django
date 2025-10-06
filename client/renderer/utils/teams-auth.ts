@@ -9,7 +9,7 @@ import { AuthenticationProvider } from "@microsoft/microsoft-graph-client";
 /**
  * Custom authentication provider for Microsoft Graph using MSAL
  */
-class MsalAuthProvider implements AuthenticationProvider {
+export class MsalAuthProvider implements AuthenticationProvider {
   constructor(private msalInstance: IPublicClientApplication) {}
 
   async getAccessToken(): Promise<string> {
@@ -320,21 +320,16 @@ export async function checkTeamsMembership(
  * You can customize this based on your organization's Teams setup
  */
 export const DEFAULT_TEAMS_CONFIG: TeamsAuthConfig = {
-  // Option 1: Allow any team membership
-  anyTeamMembership: true,
+  // Option 1: Specific team IDs (most secure) - Newcastle Drug Discovery Unit only
+  authorizedTeamIds: [
+    "6f35cbeb-5f5d-4cf3-9b93-fe0b6eb6306d", // Newcastle Drug Discovery Unit
+  ],
 
-  // Option 2: Specific team names (uncomment and customize)
-  // authorizedTeamNames: [
-  //   "CCP4 Development",
-  //   "Research Team",
-  //   "Newcastle Crystallography"
-  // ],
+  // Option 2: Backup - Team name matching (less secure but more flexible)
+  authorizedTeamNames: ["Newcastle Drug Discovery Unit"],
 
-  // Option 3: Specific team IDs (most secure, uncomment and add real IDs)
-  // authorizedTeamIds: [
-  //   "19:abcd1234-5678-90ab-cdef-1234567890ab@thread.skype",
-  //   "19:efgh5678-9012-34cd-ef56-7890123456cd@thread.skype"
-  // ],
+  // Option 3: Disabled - no longer allow any team membership
+  anyTeamMembership: false,
 };
 
 /**
