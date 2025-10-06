@@ -8,11 +8,16 @@ import json
 import time
 import threading
 import logging
+import socket
 from azure.servicebus import ServiceBusClient
 from azure.identity import DefaultAzureCredential
 
+# Get worker identity for logging
+WORKER_ID = os.getenv("HOSTNAME", socket.gethostname())
+
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format=f"%(asctime)s - [{WORKER_ID}] - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -33,10 +38,12 @@ def process_job(job_data, receiver=None, msg=None):
     Process a job from the queue.
     If receiver and msg are provided, start a thread to renew the lock during processing.
     """
-    job_uuid = job_data.get("uuid", "unknown")
+    job_uuid = job_data.get("uuid", job_data.get("job_uuid", "unknown"))
     action = job_data.get("action", "unknown")
 
-    logger.info("Processing job: %s, action: %s", job_uuid, action)
+    logger.info(
+        "=== WORKER %s STARTING JOB %s (action: %s) ===", WORKER_ID, job_uuid, action
+    )
 
     lock_stop_event = threading.Event()
     lock_thread = None
@@ -52,28 +59,48 @@ def process_job(job_data, receiver=None, msg=None):
 
         # Add your job processing logic here
         if action == "run_job":
-            # Example: run CCP4 analysis
+            # Run CCP4 analysis
             result = run_ccp4_analysis(job_data)
             logger.info("CCP4 analysis completed for job %s", job_uuid)
 
             # Update job status based on analysis result
             if result.get("status") == "completed":
                 update_job_status(job_uuid, "FINISHED")
+                return True
             elif result.get("status") == "failed":
                 update_job_status(job_uuid, "FAILED")
+                return False
             else:
                 logger.warning("Unknown result status: %s", result.get("status"))
                 update_job_status(job_uuid, "FAILED")
+                return False
 
         else:
             logger.warning("Unknown action type: %s", action)
+            update_job_status(job_uuid, "FAILED")
             raise ValueError("Unsupported action: %s" % action)
-
-        return True
 
     except (ValueError, KeyError) as e:
         logger.error("Error processing job %s: %s", job_uuid, str(e))
-        raise
+        # Ensure job status is updated to FAILED on exception
+        try:
+            update_job_status(job_uuid, "FAILED")
+        except Exception as status_error:
+            logger.error(
+                "Failed to update job status after error: %s", str(status_error)
+            )
+        return False
+    except Exception as e:
+        # Catch any unexpected exceptions
+        logger.error("Unexpected error processing job %s: %s", job_uuid, str(e))
+        # Ensure job status is updated to FAILED
+        try:
+            update_job_status(job_uuid, "FAILED")
+        except Exception as status_error:
+            logger.error(
+                "Failed to update job status after error: %s", str(status_error)
+            )
+        return False
     finally:
         if lock_thread is not None:
             lock_stop_event.set()
@@ -256,17 +283,39 @@ def run_worker_loop(sb_client, queue_name):
                     for msg in messages:
                         try:
                             job_data = json.loads(str(msg))
-                            process_job(job_data, receiver=receiver, msg=msg)
-                            logger.info("Job processed and completed successfully")
+                            success = process_job(job_data, receiver=receiver, msg=msg)
+
+                            if success:
+                                # Mark message as completed to remove it from queue
+                                receiver.complete_message(msg)
+                                logger.info(
+                                    "Job processed and message completed successfully"
+                                )
+                            else:
+                                # Job failed, abandon message so it can be retried
+                                receiver.abandon_message(msg)
+                                logger.warning(
+                                    "Job processing failed, message abandoned for retry"
+                                )
 
                         except (json.JSONDecodeError, ValueError, KeyError) as e:
                             logger.error("Error processing job: %s", str(e))
                             # Send to dead-letter queue for manual inspection
                             try:
                                 receiver.dead_letter_message(msg, reason=str(e))
+                                logger.info("Invalid message sent to dead-letter queue")
                             except OSError as dlq_error:
                                 logger.error(
                                     "Failed to dead-letter message: %s", str(dlq_error)
+                                )
+                        except Exception as e:
+                            # Unexpected error - abandon message for retry
+                            logger.error("Unexpected error processing job: %s", str(e))
+                            try:
+                                receiver.abandon_message(msg)
+                            except OSError as abandon_error:
+                                logger.error(
+                                    "Failed to abandon message: %s", str(abandon_error)
                                 )
 
                 except OSError as e:
