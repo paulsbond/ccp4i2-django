@@ -3,6 +3,7 @@
 ## Overview
 
 CCP4i2 supports two authentication modes:
+
 - **MSAL Authentication Required**: Azure AD login required before accessing the app
 - **No Authentication**: Direct access without login (suitable for desktop Electron app)
 
@@ -13,19 +14,23 @@ This is controlled by the `NEXT_PUBLIC_REQUIRE_AUTH` environment variable.
 ### Setting the Environment Variable
 
 #### Electron Desktop App (No Authentication)
+
 Set in `client/main/ccp4i2-django-server.ts`:
+
 ```typescript
 const pythonEnv = {
   // ...
-  NEXT_PUBLIC_REQUIRE_AUTH: "false",  // No auth for desktop
+  NEXT_PUBLIC_REQUIRE_AUTH: "false", // No auth for desktop
   // ...
 };
 ```
 
 #### Web Deployment (MSAL Authentication Required)
+
 Set in your deployment environment:
 
 **Azure Web App**:
+
 ```bash
 az webapp config appsettings set \
   --resource-group <resource-group> \
@@ -34,6 +39,7 @@ az webapp config appsettings set \
 ```
 
 **Docker**:
+
 ```yaml
 # docker-compose.yml
 services:
@@ -43,6 +49,7 @@ services:
 ```
 
 **Local Development**:
+
 ```bash
 # .env.local (in client/renderer/)
 NEXT_PUBLIC_REQUIRE_AUTH=true
@@ -51,10 +58,11 @@ NEXT_PUBLIC_REQUIRE_AUTH=true
 ## How It Works
 
 ### Code Implementation
+
 In `client/renderer/app/layout.tsx`:
 
 ```tsx
-const REQUIRE_AUTH = process.env.NEXT_PUBLIC_REQUIRE_AUTH === 'true';
+const REQUIRE_AUTH = process.env.NEXT_PUBLIC_REQUIRE_AUTH === "true";
 
 export default function RootLayout(props: PropsWithChildren) {
   return (
@@ -86,6 +94,7 @@ export default function RootLayout(props: PropsWithChildren) {
 ### Component Tree
 
 **With Authentication** (`NEXT_PUBLIC_REQUIRE_AUTH=true`):
+
 ```
 AuthProvider (MSAL context)
   └─ ThemeProvider
@@ -96,6 +105,7 @@ AuthProvider (MSAL context)
 ```
 
 **Without Authentication** (`NEXT_PUBLIC_REQUIRE_AUTH=false`):
+
 ```
 ThemeProvider
   └─ DeleteDialogProvider
@@ -105,17 +115,18 @@ ThemeProvider
 
 ## Configuration per Deployment Type
 
-| Deployment Type | NEXT_PUBLIC_REQUIRE_AUTH | Where to Set |
-|----------------|--------------------------|--------------|
-| Electron Desktop | `false` | `client/main/ccp4i2-django-server.ts` |
-| Azure Web App | `true` | Azure Portal → Configuration → Application Settings |
-| Docker (Web) | `true` | `Docker/docker-compose.yml` environment section |
-| Local Dev (Web) | `true` | `client/renderer/.env.local` |
-| Local Dev (Electron) | `false` | Already set in `ccp4i2-django-server.ts` |
+| Deployment Type      | NEXT_PUBLIC_REQUIRE_AUTH | Where to Set                                        |
+| -------------------- | ------------------------ | --------------------------------------------------- |
+| Electron Desktop     | `false`                  | `client/main/ccp4i2-django-server.ts`               |
+| Azure Web App        | `true`                   | Azure Portal → Configuration → Application Settings |
+| Docker (Web)         | `true`                   | `Docker/docker-compose.yml` environment section     |
+| Local Dev (Web)      | `true`                   | `client/renderer/.env.local`                        |
+| Local Dev (Electron) | `false`                  | Already set in `ccp4i2-django-server.ts`            |
 
 ## Verification
 
 ### Check Current Setting
+
 ```bash
 # In the browser console (web deployment)
 console.log(process.env.NEXT_PUBLIC_REQUIRE_AUTH);
@@ -127,11 +138,13 @@ console.log(process.env.NEXT_PUBLIC_REQUIRE_AUTH);
 ### Test Authentication Mode
 
 **With Auth Enabled**:
+
 1. Launch app
 2. Should redirect to Microsoft login page
 3. After login, access main interface
 
 **With Auth Disabled**:
+
 1. Launch app
 2. Direct access to main interface
 3. No login prompt
@@ -139,16 +152,19 @@ console.log(process.env.NEXT_PUBLIC_REQUIRE_AUTH);
 ## Troubleshooting
 
 ### Auth Not Working in Web Deployment
+
 - Verify `NEXT_PUBLIC_REQUIRE_AUTH=true` is set in Azure App Service Configuration
 - Check that MSAL configuration (client ID, tenant ID) is properly set
 - Ensure `client/renderer/components/auth-provider.tsx` is configured correctly
 
 ### Auth Showing in Electron Desktop
+
 - Verify `NEXT_PUBLIC_REQUIRE_AUTH: "false"` in `ccp4i2-django-server.ts`
 - Rebuild Electron app: `npm run build` in client directory
 - Check Electron main process logs for environment variables
 
 ### Environment Variable Not Taking Effect
+
 - **Next.js rule**: Environment variables prefixed with `NEXT_PUBLIC_` are embedded at **build time**
 - Changes require rebuilding the app
 - For Electron: `npm run build`
@@ -157,11 +173,13 @@ console.log(process.env.NEXT_PUBLIC_REQUIRE_AUTH);
 ## Security Considerations
 
 ### Desktop (Electron) - No Auth
+
 - **Rationale**: Desktop app runs locally, user already has physical access to machine
 - **Security**: Relies on OS-level user authentication
 - **Use Case**: Single-user desktop installation
 
 ### Web Deployment - MSAL Auth
+
 - **Rationale**: Multi-user web access requires identity management
 - **Security**: Azure AD integration, token-based authentication
 - **Use Case**: Team collaboration, cloud deployment
