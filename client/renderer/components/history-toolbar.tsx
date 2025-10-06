@@ -9,6 +9,8 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Stack from "@mui/material/Stack";
 
+const REQUIRE_AUTH = process.env.NEXT_PUBLIC_REQUIRE_AUTH === "true";
+
 export default function HistoryToolbar(props) {
   const router = useRouter();
   const { instance } = useMsal();
@@ -34,9 +36,11 @@ export default function HistoryToolbar(props) {
         >
           <ArrowForwardIcon />
         </IconButton>
-        <IconButton aria-label="Logout" onClick={handleLogout} size="large">
-          <LogoutIcon />
-        </IconButton>
+        {REQUIRE_AUTH && (
+          <IconButton aria-label="Logout" onClick={handleLogout} size="large">
+            <LogoutIcon />
+          </IconButton>
+        )}
       </Stack>
       {props.children}
     </Toolbar>
