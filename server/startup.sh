@@ -139,6 +139,10 @@ while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
     . "$CCP4_SETUP_SCRIPT"
     export CCP4_PYTHON="$CCP4_DATA_PATH/ccp4-9/bin/ccp4-python"
     echo "CCP4 environment configured successfully"
+    
+    # After sourcing CCP4 setup, restore py-packages and app paths at the front
+    export PYTHONPATH="/mnt/ccp4data/py-packages:/usr/src/app:$PYTHONPATH"
+    echo "PYTHONPATH manually corrected: $PYTHONPATH"
     break
   else
     echo "Waiting for CCP4 setup script... (${WAIT_COUNT}/${MAX_WAIT}s)"
@@ -149,15 +153,6 @@ done
 
 # Change to app directory
 cd /usr/src/app
-
-# Install dependencies only if gunicorn is not already installed
-if ! $CCP4_PYTHON -m pip show gunicorn > /dev/null 2>&1; then
-    echo "Installing Python dependencies..."
-    $CCP4_PYTHON -m pip install --upgrade pip wheel setuptools
-    $CCP4_PYTHON -m pip install -r requirements.txt
-else
-    echo "Gunicorn already installed, skipping dependency installation."
-fi
 
 # Run Django setup (can run on all replicas, but migrations are idempotent)
 echo "Running Django migrations..."

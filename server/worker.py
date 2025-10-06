@@ -82,8 +82,8 @@ def process_job(job_data, receiver=None, msg=None):
 
 def run_ccp4_analysis(parameters):
     """Run CCP4 analysis using the configured Python executable"""
-
     import subprocess
+    import os
 
     logger.info("Running CCP4 analysis with parameters: %s", parameters)
 
@@ -105,8 +105,15 @@ def run_ccp4_analysis(parameters):
 
     logger.info("Executing command: %s", " ".join(cmd))
 
+    # Ensure subprocess inherits PYTHONPATH
+    env = os.environ.copy()
+    if "PYTHONPATH" in env:
+        logger.info("PYTHONPATH passed to subprocess: %s", env["PYTHONPATH"])
+    else:
+        logger.warning("PYTHONPATH not set in environment")
+
     try:
-        # Run the command
+        # Run the command with inherited environment
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -114,6 +121,7 @@ def run_ccp4_analysis(parameters):
             timeout=3600,  # 1 hour timeout
             cwd="/usr/src/app",
             check=False,  # We handle return codes manually
+            env=env,  # <-- ADD THIS LINE
         )
 
         logger.info("Command completed with return code: %s", result.returncode)
@@ -179,6 +187,13 @@ def update_job_status(job_uuid, status, result=None):
 
     logger.info("Executing status update command: %s", " ".join(cmd))
 
+    # Ensure subprocess inherits PYTHONPATH
+    env = os.environ.copy()
+    if "PYTHONPATH" in env:
+        logger.info("PYTHONPATH passed to subprocess: %s", env["PYTHONPATH"])
+    else:
+        logger.warning("PYTHONPATH not set in environment")
+
     try:
         # Run the command
         result = subprocess.run(
@@ -188,6 +203,7 @@ def update_job_status(job_uuid, status, result=None):
             timeout=30,  # 30 second timeout for status updates
             cwd="/usr/src/app",
             check=False,
+            env=env,
         )
 
         if result.returncode == 0:

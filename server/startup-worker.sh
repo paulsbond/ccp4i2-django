@@ -153,6 +153,10 @@ done
 # Change to app directory
 cd /usr/src/app
 
+# After sourcing CCP4 setup, ensure PYTHONPATH starts with py-packages
+export PYTHONPATH="/mnt/ccp4data/py-packages:$PYTHONPATH"
+echo "PYTHONPATH manually corrected: $PYTHONPATH"
+
 echo "=========================================="
 echo "CCP4i2 Worker Container Starting"
 echo "=========================================="
