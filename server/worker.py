@@ -8,75 +8,100 @@ import json
 import time
 import threading
 import logging
+import socket
 from azure.servicebus import ServiceBusClient
 from azure.identity import DefaultAzureCredential
 
+# Get worker identity for logging
+WORKER_ID = os.getenv("HOSTNAME", socket.gethostname())
+
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format=f"%(asctime)s - [{WORKER_ID}] - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
 
-def renew_lock_periodically(msg, stop_event, interval=30):
+def renew_lock_periodically(receiver, msg, stop_event, interval=30):
     """Thread target to renew Service Bus message lock periodically."""
     while not stop_event.is_set():
         try:
-            msg.renew_lock()
-            logger.debug(
-                "Renewed Service Bus message lock for job %s",
-                getattr(msg, "job_uuid", "unknown"),
-            )
+            receiver.renew_message_lock(msg)
+            logger.debug("Renewed Service Bus message lock")
         except Exception as e:
             logger.error("Failed to renew message lock: %s", str(e))
         stop_event.wait(interval)
 
 
-def process_job(job_data, msg=None):
+def process_job(job_data, receiver=None, msg=None):
     """
     Process a job from the queue.
-    If msg is provided, start a thread to renew its lock during processing.
+    If receiver and msg are provided, start a thread to renew the lock during processing.
     """
-    job_uuid = job_data.get("uuid", "unknown")
+    job_uuid = job_data.get("uuid", job_data.get("job_uuid", "unknown"))
     action = job_data.get("action", "unknown")
 
-    logger.info("Processing job: %s, action: %s", job_uuid, action)
+    logger.info(
+        "=== WORKER %s STARTING JOB %s (action: %s) ===", WORKER_ID, job_uuid, action
+    )
 
     lock_stop_event = threading.Event()
     lock_thread = None
 
     try:
-        if msg is not None:
+        if receiver is not None and msg is not None:
             # Start lock renewal thread
             lock_thread = threading.Thread(
-                target=renew_lock_periodically, args=(msg, lock_stop_event)
+                target=renew_lock_periodically, args=(receiver, msg, lock_stop_event)
             )
             lock_thread.daemon = True
             lock_thread.start()
 
         # Add your job processing logic here
         if action == "run_job":
-            # Example: run CCP4 analysis
+            # Run CCP4 analysis
             result = run_ccp4_analysis(job_data)
             logger.info("CCP4 analysis completed for job %s", job_uuid)
 
             # Update job status based on analysis result
             if result.get("status") == "completed":
-                update_job_status(job_uuid, "FINISHED")
+                # update_job_status(job_uuid, "FINISHED")
+                # I think that succesfully completed jobs are already marked as FINISHED by manage.py run_job
+                return True
             elif result.get("status") == "failed":
                 update_job_status(job_uuid, "FAILED")
+                return False
             else:
                 logger.warning("Unknown result status: %s", result.get("status"))
                 update_job_status(job_uuid, "FAILED")
+                return False
 
         else:
             logger.warning("Unknown action type: %s", action)
+            update_job_status(job_uuid, "FAILED")
             raise ValueError("Unsupported action: %s" % action)
-
-        return True
 
     except (ValueError, KeyError) as e:
         logger.error("Error processing job %s: %s", job_uuid, str(e))
-        raise
+        # Ensure job status is updated to FAILED on exception
+        try:
+            update_job_status(job_uuid, "FAILED")
+        except Exception as status_error:
+            logger.error(
+                "Failed to update job status after error: %s", str(status_error)
+            )
+        return False
+    except Exception as e:
+        # Catch any unexpected exceptions
+        logger.error("Unexpected error processing job %s: %s", job_uuid, str(e))
+        # Ensure job status is updated to FAILED
+        try:
+            update_job_status(job_uuid, "FAILED")
+        except Exception as status_error:
+            logger.error(
+                "Failed to update job status after error: %s", str(status_error)
+            )
+        return False
     finally:
         if lock_thread is not None:
             lock_stop_event.set()
@@ -85,8 +110,8 @@ def process_job(job_data, msg=None):
 
 def run_ccp4_analysis(parameters):
     """Run CCP4 analysis using the configured Python executable"""
-
     import subprocess
+    import os
 
     logger.info("Running CCP4 analysis with parameters: %s", parameters)
 
@@ -108,8 +133,15 @@ def run_ccp4_analysis(parameters):
 
     logger.info("Executing command: %s", " ".join(cmd))
 
+    # Ensure subprocess inherits PYTHONPATH
+    env = os.environ.copy()
+    if "PYTHONPATH" in env:
+        logger.info("PYTHONPATH passed to subprocess: %s", env["PYTHONPATH"])
+    else:
+        logger.warning("PYTHONPATH not set in environment")
+
     try:
-        # Run the command
+        # Run the command with inherited environment
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -117,6 +149,7 @@ def run_ccp4_analysis(parameters):
             timeout=3600,  # 1 hour timeout
             cwd="/usr/src/app",
             check=False,  # We handle return codes manually
+            env=env,  # <-- ADD THIS LINE
         )
 
         logger.info("Command completed with return code: %s", result.returncode)
@@ -182,6 +215,13 @@ def update_job_status(job_uuid, status, result=None):
 
     logger.info("Executing status update command: %s", " ".join(cmd))
 
+    # Ensure subprocess inherits PYTHONPATH
+    env = os.environ.copy()
+    if "PYTHONPATH" in env:
+        logger.info("PYTHONPATH passed to subprocess: %s", env["PYTHONPATH"])
+    else:
+        logger.warning("PYTHONPATH not set in environment")
+
     try:
         # Run the command
         result = subprocess.run(
@@ -191,6 +231,7 @@ def update_job_status(job_uuid, status, result=None):
             timeout=30,  # 30 second timeout for status updates
             cwd="/usr/src/app",
             check=False,
+            env=env,
         )
 
         if result.returncode == 0:
@@ -243,17 +284,39 @@ def run_worker_loop(sb_client, queue_name):
                     for msg in messages:
                         try:
                             job_data = json.loads(str(msg))
-                            process_job(job_data, msg=msg)
-                            logger.info("Job processed and completed successfully")
+                            success = process_job(job_data, receiver=receiver, msg=msg)
+
+                            if success:
+                                # Mark message as completed to remove it from queue
+                                receiver.complete_message(msg)
+                                logger.info(
+                                    "Job processed and message completed successfully"
+                                )
+                            else:
+                                # Job failed, abandon message so it can be retried
+                                receiver.abandon_message(msg)
+                                logger.warning(
+                                    "Job processing failed, message abandoned for retry"
+                                )
 
                         except (json.JSONDecodeError, ValueError, KeyError) as e:
                             logger.error("Error processing job: %s", str(e))
                             # Send to dead-letter queue for manual inspection
                             try:
                                 receiver.dead_letter_message(msg, reason=str(e))
+                                logger.info("Invalid message sent to dead-letter queue")
                             except OSError as dlq_error:
                                 logger.error(
                                     "Failed to dead-letter message: %s", str(dlq_error)
+                                )
+                        except Exception as e:
+                            # Unexpected error - abandon message for retry
+                            logger.error("Unexpected error processing job: %s", str(e))
+                            try:
+                                receiver.abandon_message(msg)
+                            except OSError as abandon_error:
+                                logger.error(
+                                    "Failed to abandon message: %s", str(abandon_error)
                                 )
 
                 except OSError as e:
