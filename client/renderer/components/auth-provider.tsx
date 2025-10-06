@@ -21,7 +21,22 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    pca.initialize().then(() => setInitialized(true));
+    pca
+      .initialize()
+      .then(() => {
+        // Handle redirect promises when app loads (for redirect-based auth flows)
+        return pca.handleRedirectPromise();
+      })
+      .then(() => {
+        setInitialized(true);
+      })
+      .catch((error) => {
+        console.error(
+          "MSAL initialization or redirect handling failed:",
+          error
+        );
+        setInitialized(true); // Initialize anyway to prevent blocking
+      });
   }, []);
 
   if (!initialized) return null; // or a loading spinner

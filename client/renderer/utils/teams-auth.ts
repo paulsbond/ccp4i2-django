@@ -35,15 +35,14 @@ export class MsalAuthProvider implements AuthenticationProvider {
       );
 
       try {
-        // Try interactive consent with Teams permissions
-        const response = await this.msalInstance.acquireTokenPopup({
+        // Try interactive consent with Teams permissions using redirect
+        await this.msalInstance.acquireTokenRedirect({
           scopes: ["User.Read", "Team.ReadBasic.All"],
           prompt: "consent", // Force consent dialog
         });
-        console.log(
-          "Successfully acquired Teams token with interactive consent"
-        );
-        return response.accessToken;
+        // Note: This will redirect, so we won't return from here
+        // The token will be available after redirect completes
+        throw new Error("Redirect initiated for Teams consent");
       } catch (interactiveError) {
         console.error(
           "Interactive Teams token acquisition failed:",
@@ -100,15 +99,16 @@ export class MsalAuthProvider implements AuthenticationProvider {
       // Since admin consent is not required according to portal,
       // this should be a user consent issue that interactive login can resolve
       try {
-        console.log("Trying interactive consent for Teams permissions...");
-        const response = await this.msalInstance.acquireTokenPopup({
+        console.log(
+          "Trying interactive consent for Teams permissions via redirect..."
+        );
+        await this.msalInstance.acquireTokenRedirect({
           scopes: ["User.Read", "Team.ReadBasic.All"],
           prompt: "consent", // Force consent screen to ensure user grants Teams permission
         });
-        console.log(
-          "Successfully acquired Teams token with interactive consent"
-        );
-        return response.accessToken;
+        // Note: This will redirect, so we won't return from here
+        // The token will be available after redirect completes
+        throw new Error("Redirect initiated for Teams consent");
       } catch (interactiveError) {
         console.error("Teams interactive token acquisition failed:", {
           errorCode: interactiveError.errorCode,
