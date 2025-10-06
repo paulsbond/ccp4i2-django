@@ -27,7 +27,8 @@ scipy<2.0  # Installs 1.15.3 - requires NumPy 1.x
 pandas<3.0  # Installs 2.3.3 - compatible with NumPy 1.x
 
 # CCP4-related
-gemmi==0.7.3
+# gemmi - DO NOT INSTALL: Must use CCP4's bundled version to avoid conflicts
+#         Installing gemmi from PyPI can cause issues with CCP4's internal gemmi integration
 biopython==1.85
 
 # Testing
