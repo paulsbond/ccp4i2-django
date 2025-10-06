@@ -26,6 +26,7 @@ Version: Compatible with CCP4i2 and Django 4.2+
     - Includes proper error handling for cloud environments
 """
 
+# Add these imports at the top of the file (after existing imports)
 import logging
 import datetime
 import json
@@ -615,73 +616,56 @@ class JobViewSet(ModelViewSet):
     )
     def run(self, request, pk=None):
         """
-        Execute a crystallographic computing job.
+        Execute a job using environment-appropriate backend.
 
-        Initiates job execution using the CCP4 task management system,
-        launching the appropriate computational process in a subprocess
-        with proper resource management.
+        Automatically adapts to deployment context:
+        - Local Mode: Executes job via subprocess (laptop/development)
+        - Azure Mode: Queues job via Service Bus (container apps)
+
+        The execution mode is determined from environment variables.
+        See ccp4x.lib.context_dependent_run for implementation details.
 
         Args:
             request (Request): HTTP request object
             pk (int): Primary key of the job to execute
 
         Returns:
-            Response: Updated job data with execution status
-
-        Response Format:
-            {
-                "id": 123,
-                "status": "QUEUED",
-                "process_id": 12345,
-                "start_time": "2024-01-01T12:00:00Z",
-                ...
-            }
-
-        Execution Process:
-            1. Validate job parameters
-            2. Launch CCP4 task subprocess
-            3. Update job status to QUEUED
-            4. Store process ID for monitoring
-            5. Return updated job information
-
-        Platform Support:
-            - Linux/Unix: Uses standard subprocess
-            - Windows: Adds .bat extension to commands
+            Response: Updated job data with appropriate status
 
         Example:
             POST /api/jobs/123/run/
 
-            - Subprocess execution within container constraints
-            - Process monitoring adapted for cloud environments
+        Environment Variables:
+            EXECUTION_MODE: Explicit mode ('local' or 'azure')
+            SERVICE_BUS_CONNECTION_STRING: Azure connection (implies azure)
+            CCP4: Path to CCP4 installation (for local mode)
         """
         try:
-            # Determine the program name based on the OS
-            ccp4_python_program = "ccp4-python"
-            if platform.system() == "Windows":
-                ccp4_python_program += ".bat"
-            ccp4_python = str(
-                pathlib.Path(os.environ["CCP4"]) / "bin" / ccp4_python_program
-            )
-            manage_py = str(pathlib.Path(__file__).parent.parent.parent / "manage.py")
+            from ..lib.job_utils.context_dependent_run import run_job_context_aware
+
             job = models.Job.objects.get(id=pk)
-            process = subprocess.Popen(
-                [
-                    ccp4_python,
-                    manage_py,
-                    "run_job",
-                    "-ju",
-                    f"{str(job.uuid)}",
-                ],
-                start_new_session=True,
+
+            # Execute job using context-aware backend
+            result = run_job_context_aware(job)
+
+            if result["success"]:
+                serializer = serializers.JobSerializer(result["data"])
+                return Response(serializer.data)
+            else:
+                return Response(
+                    {"status": "Failed", "reason": result["error"]},
+                    status=result["status"],
+                )
+
+        except models.Job.DoesNotExist as err:
+            logger.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)}, status=404)
+        except Exception as err:
+            logger.exception("Unexpected error running job %s", pk, exc_info=err)
+            return Response(
+                {"status": "Failed", "reason": f"Unexpected error: {str(err)}"},
+                status=500,
             )
-            job.process_id = process.pid
-            job.status = models.Job.Status.QUEUED
-            job.save()
-            serializer = serializers.JobSerializer(job)
-            return Response(serializer.data)
-        except (ValueError, models.Job.DoesNotExist) as err:
-            logging.exception("Failed to retrieve job with id %s", pk, exc_info=err)
-            return Response({"status": "Failed", "reason": str(err)})
 
     @action(
         detail=True,
