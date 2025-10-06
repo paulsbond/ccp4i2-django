@@ -36,7 +36,6 @@ import platform
 from xml.etree import ElementTree as ET
 from pytz import timezone
 from django.http import Http404
-from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser
 from ccp4i2.core import CCP4TaskManager
@@ -77,17 +76,6 @@ from django.conf import settings
 from django.utils.text import slugify
 
 logger = logging.getLogger(f"ccp4x:{__name__}")
-
-# Service Bus client cache
-_service_bus_client_cache = {}
-
-
-def get_cached_service_bus_client(connection_string):
-    if connection_string not in _service_bus_client_cache:
-        _service_bus_client_cache[connection_string] = (
-            ServiceBusClient.from_connection_string(connection_string)
-        )
-    return _service_bus_client_cache[connection_string]
 
 
 class JobViewSet(ModelViewSet):
@@ -628,90 +616,52 @@ class JobViewSet(ModelViewSet):
     )
     def run(self, request, pk=None):
         """
-        Queue a job for execution via Azure Service Bus.
+        Execute a job using environment-appropriate backend.
 
-        Sends a message to the Azure Service Bus queue containing job details,
-        allowing asynchronous processing by worker container apps.
+        Automatically adapts to deployment context:
+        - Local Mode: Executes job via subprocess (laptop/development)
+        - Azure Mode: Queues job via Service Bus (container apps)
+
+        The execution mode is determined from environment variables.
+        See ccp4x.lib.context_dependent_run for implementation details.
 
         Args:
             request (Request): HTTP request object
-            pk (int): Primary key of the job to queue
+            pk (int): Primary key of the job to execute
 
         Returns:
-            Response: Updated job data with queued status
-
-        Message Format:
-            {
-                "job_uuid": "550e8400-e29b-41d4-a716-446655440000",
-                "job_id": 123,
-                "task_name": "refmac5",
-                "project_uuid": "project-uuid-here"
-            }
+            Response: Updated job data with appropriate status
 
         Example:
             POST /api/jobs/123/run/
 
-        Security Notes:
-            - Uses managed identities for secure authentication
-            - Connection strings stored in environment variables
-            - Sensitive data masked in logs
+        Environment Variables:
+            EXECUTION_MODE: Explicit mode ('local' or 'azure')
+            SERVICE_BUS_CONNECTION_STRING: Azure connection (implies azure)
+            CCP4: Path to CCP4 installation (for local mode)
         """
         try:
+            from ..lib.job_utils.context_dependent_run import run_job_context_aware
+
             job = models.Job.objects.get(id=pk)
 
-            # Prepare message payload
-            message_body = {
-                "action": "run_job",
-                "job_uuid": str(job.uuid),
-                "job_id": job.id,
-                "task_name": job.task_name,
-                "project_uuid": str(job.project.uuid),
-            }
+            # Execute job using context-aware backend
+            result = run_job_context_aware(job)
 
-            # Get Service Bus configuration from environment
-            connection_string = os.getenv("SERVICE_BUS_CONNECTION_STRING")
-            queue_name = os.getenv("SERVICE_BUS_QUEUE_NAME", "job-queue")
-
-            if not connection_string:
-                logger.error("Azure Service Bus connection string not configured")
+            if result["success"]:
+                serializer = serializers.JobSerializer(result["data"])
+                return Response(serializer.data)
+            else:
                 return Response(
-                    {"status": "Failed", "reason": "Service Bus configuration missing"},
-                    status=500,
+                    {"status": "Failed", "reason": result["error"]},
+                    status=result["status"],
                 )
-
-            # Send message to Service Bus
-            try:
-                with get_cached_service_bus_client(connection_string) as client:
-                    with client.get_queue_sender(queue_name) as sender:
-                        message = ServiceBusMessage(json.dumps(message_body))
-                        sender.send_messages(message)
-            except Exception as sb_error:
-                logger.exception(
-                    "Failed to send message to Service Bus", exc_info=sb_error
-                )
-                return Response(
-                    {
-                        "status": "Failed",
-                        "reason": f"Service Bus error: {str(sb_error)}",
-                    },
-                    status=500,
-                )
-
-            # Update job status to QUEUED
-            job.status = models.Job.Status.QUEUED
-            job.save()
-
-            serializer = serializers.JobSerializer(job)
-            logger.info(
-                f"Queued job {job.id} ({job.uuid}) for execution via Azure Service Bus"
-            )
-            return Response(serializer.data)
 
         except models.Job.DoesNotExist as err:
             logger.exception("Failed to retrieve job with id %s", pk, exc_info=err)
             return Response({"status": "Failed", "reason": str(err)}, status=404)
         except Exception as err:
-            logger.exception("Unexpected error queuing job %s", pk, exc_info=err)
+            logger.exception("Unexpected error running job %s", pk, exc_info=err)
             return Response(
                 {"status": "Failed", "reason": f"Unexpected error: {str(err)}"},
                 status=500,

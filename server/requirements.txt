@@ -40,13 +40,6 @@ requests-cache==1.2.1
 tomli==2.2.1
 Pillow==11.3.0
 
-# Azure Integration
-azure-servicebus==7.14.2
-azure-identity==1.25.0
-azure-keyvault-secrets==4.10.0
-azure-monitor-opentelemetry==1.8.1
-azure-storage-blob==12.26.0
-
 # DO NOT INSTALL (built-in to Python 3.4+):
 # - pathlib (Python 2.7 backport that breaks Path.home())
 # - configparser (built-in to Python 3)
