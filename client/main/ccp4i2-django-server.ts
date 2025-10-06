@@ -100,6 +100,8 @@ export async function startDjangoServer(
     NEXT_ADDRESS: `http://localhost:${NEXT_PORT}`,
     // Force local execution mode for Electron app
     EXECUTION_MODE: "local",
+    // Set authentication requirement (false for Electron desktop app)
+    NEXT_PUBLIC_REQUIRE_AUTH: "false",
     MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
     //QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
     // Windows-specific DLL path fixes
