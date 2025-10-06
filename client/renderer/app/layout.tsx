@@ -11,7 +11,7 @@ export const metadata = {
   description: "Software for Macromolecular X-Ray Crystallography",
 };
 
-const REQUIRE_AUTH = process.env.NEXT_PUBLIC_REQUIRE_AUTH === 'true';
+const REQUIRE_AUTH = process.env.NEXT_PUBLIC_REQUIRE_AUTH === "true";
 
 export default function RootLayout(props: PropsWithChildren) {
   return (
