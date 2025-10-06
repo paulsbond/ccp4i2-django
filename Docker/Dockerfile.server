@@ -39,6 +39,7 @@ WORKDIR /usr/src/app
 
 # Copy requirements first for better caching
 COPY requirements.txt ./
+COPY requirements-azure.txt ./
 
 # Copy application code
 COPY . ./
