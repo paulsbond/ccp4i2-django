@@ -70,7 +70,6 @@ const nextConfig: NextConfig = {
           source: "/:path*",
           headers: [
             { key: "Content-Security-Policy", value: cspString },
-            { key: "Content-Security-Policy", value: cspString },
             { key: "Access-Control-Allow-Origin", value: "*" },
             {
               key: "Access-Control-Allow-Headers",
@@ -91,7 +90,6 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: cspString },
           { key: "Content-Security-Policy", value: cspString },
           // Restrictive CORS for production
           {
