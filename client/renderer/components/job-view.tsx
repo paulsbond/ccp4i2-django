@@ -15,6 +15,7 @@ import { JobDirectoryView } from "../components/job-directory-view";
 import useSWR from "swr";
 import $ from "jquery";
 import Diagnostic from "../components/diagnostic";
+import { swrFetcher } from "../api-fetch";
 import { JobLogViewer } from "../components/job-log-viewer";
 import { TaskProvider } from "../providers/task-provider";
 import { ValidationViewer } from "../components/validation-viewer";
@@ -42,7 +43,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
   //const [tabValue, setTabValue] = useState<Number>(job?.status == 1 ? 0 : 3);
   const { data: report_xml_json, mutate: mutateReportXml } = useSWR<any>(
     job ? `/api/proxy/jobs/${job.id}/report_xml/` : null,
-    (url) => fetch(url).then((r) => r.json()),
+    swrFetcher,
     { refreshInterval: job?.status == 3 || job?.status == 2 ? 5000 : 0 }
   );
 

@@ -14,6 +14,7 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import { apiArrayBuffer } from "../api-fetch";
 import { Editor } from "@monaco-editor/react";
 import { prettifyXml } from "../utils";
 import { createContext } from "react";
@@ -125,9 +126,7 @@ const FilePreviewDialog: React.FC = () => {
           return;
         }
         {
-          const fileContent = await fetch(contentSpecification.url).then(
-            (response) => response.arrayBuffer()
-          );
+          const fileContent = await apiArrayBuffer(contentSpecification.url);
           var enc = new TextDecoder("utf-8");
           if (contentSpecification.language === "json") {
             const fileText = enc.decode(fileContent);

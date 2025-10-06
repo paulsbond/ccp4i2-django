@@ -1,67 +1,314 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
 import { useRouter } from "next/navigation";
+import {
+  checkTeamsMembership,
+  DEFAULT_TEAMS_CONFIG,
+} from "../utils/teams-auth";
+import {
+  Box,
+  Typography,
+  Paper,
+  CircularProgress,
+  Alert,
+  Button,
+} from "@mui/material";
+import { Security, Warning, Info } from "@mui/icons-material";
 
 interface RequireAuthProps {
   children: ReactNode;
 }
 
+interface AuthState {
+  isChecking: boolean;
+  hasAccess: boolean;
+  reason: string;
+  error?: string;
+  requiresAdminConsent?: boolean;
+}
+
 export default function RequireAuth({ children }: RequireAuthProps) {
   const { instance, accounts, inProgress } = useMsal();
   const router = useRouter();
+  const [authState, setAuthState] = useState<AuthState>({
+    isChecking: true,
+    hasAccess: false,
+    reason: "Initializing...",
+  });
+
+  // Prevent infinite loops during auth checks
+  const isCheckingRef = useRef(false);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (accounts.length === 0 && inProgress === InteractionStatus.None) {
+    // Prevent running multiple times or during interactions
+    if (isCheckingRef.current || inProgress !== InteractionStatus.None) {
+      return;
+    }
+
+    if (accounts.length === 0) {
+      console.log("No accounts found, redirecting to login");
       instance.loginRedirect();
+      return;
+    }
+
+    if (accounts.length > 0 && !hasInitialized.current) {
+      console.log("Starting authorization check");
+      hasInitialized.current = true;
+      checkUserAccess();
     }
   }, [accounts, inProgress, instance]);
 
-  // Check if user is signed in
-  if (accounts.length === 0) return null;
+  const checkUserAccess = async () => {
+    if (isCheckingRef.current) {
+      console.log("Auth check already in progress, skipping");
+      return;
+    }
 
-  // Get the current user's account
-  const currentAccount = accounts[0];
+    try {
+      isCheckingRef.current = true;
+      setAuthState({
+        isChecking: true,
+        hasAccess: false,
+        reason: "Checking authorization...",
+      });
 
-  // Check if the user has the required "User" role
-  const userRoles = currentAccount.idTokenClaims?.roles as string[] | undefined;
-  const hasUserRole = userRoles?.includes("User");
+      console.log("=== STARTING AUTHORIZATION CHECK ===");
+      const account = accounts[0];
+      console.log("Account details:", {
+        username: account.username,
+        name: account.name,
+        tenantId: account.tenantId,
+        claims: account.idTokenClaims,
+      });
 
-  if (!hasUserRole) {
+      // Strategy 1: Check for app roles in ID token
+      const roles = account.idTokenClaims?.roles as string[] | undefined;
+      console.log("App roles found in token:", roles);
+
+      if (roles && roles.includes("User")) {
+        console.log("✅ Access granted via app role 'User'");
+        setAuthState({
+          isChecking: false,
+          hasAccess: true,
+          reason: "Authorized via app role",
+        });
+        isCheckingRef.current = false;
+        return;
+      }
+
+      // Strategy 2: Temporarily skip Teams check to prevent infinite loops
+      console.log(
+        "No 'User' app role found, skipping Teams check for now and using domain fallback"
+      );
+
+      // TODO: Re-enable Teams check once we fix the consent loop issue
+      // const teamsResult = await checkTeamsMembership(instance, DEFAULT_TEAMS_CONFIG);
+      // console.log("Teams check result:", teamsResult);
+
+      // Strategy 3: Domain-based access (fallback)
+      const email = account.username;
+      const emailDomain = email.split("@")[1];
+      const tenantId = account.tenantId;
+
+      console.log("Checking domain-based access:", {
+        email,
+        emailDomain,
+        tenantId,
+      });
+
+      // Allow access for Newcastle University domains
+      const allowedDomains = ["ncl.ac.uk", "newcastle.ac.uk"];
+      const allowedTenantId = "b9e7b7e9-8f0a-4b4a-8b1a-9b7e9b7e9b7e"; // Replace with actual Newcastle tenant ID
+
+      if (
+        allowedDomains.includes(emailDomain) ||
+        tenantId === allowedTenantId
+      ) {
+        console.log("✅ Access granted via domain/tenant verification");
+        setAuthState({
+          isChecking: false,
+          hasAccess: true,
+          reason: `Authorized via domain: ${emailDomain}`,
+        });
+        isCheckingRef.current = false;
+        return;
+      }
+
+      // No access granted
+      console.log("❌ Access denied - no valid authorization found");
+      setAuthState({
+        isChecking: false,
+        hasAccess: false,
+        reason: `Access denied: Not authorized for domain ${emailDomain} and no Teams access available`,
+      });
+    } catch (error) {
+      console.error("Authorization check failed:", error);
+      setAuthState({
+        isChecking: false,
+        hasAccess: false,
+        reason: `Authorization check failed: ${error}`,
+        error: "check_failed",
+      });
+    } finally {
+      isCheckingRef.current = false;
+    }
+  };
+
+  const handleRetryAuth = () => {
+    // Reset the checking flag and allow retry
+    isCheckingRef.current = false;
+    hasInitialized.current = false;
+
+    setAuthState({
+      isChecking: true,
+      hasAccess: false,
+      reason: "Retrying authorization...",
+    });
+
+    checkUserAccess();
+  };
+
+  if (accounts.length === 0) {
     return (
-      <div
-        style={{
-          padding: "2rem",
-          textAlign: "center",
-          color: "#d32f2f",
-          backgroundColor: "#ffebee",
-          border: "1px solid #f8bbd9",
-          borderRadius: "4px",
-          margin: "1rem",
-        }}
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
       >
-        <h2>Access Denied</h2>
-        <p>
-          You don't have the required permissions to access this application.
-        </p>
-        <p>Please contact your administrator to request the "User" role.</p>
-        <button
-          onClick={() => instance.logout()}
-          style={{
-            marginTop: "1rem",
-            padding: "0.5rem 1rem",
-            backgroundColor: "#1976d2",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
+        <CircularProgress size={40} />
+        <Typography variant="body1" sx={{ ml: 2 }}>
+          Signing you in...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (authState.isChecking) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <CircularProgress size={40} />
+        <Typography variant="body1" sx={{ ml: 2 }}>
+          {authState.reason}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!authState.hasAccess) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        bgcolor="#f5f5f5"
+        p={3}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            maxWidth: 600,
+            textAlign: "center",
+            borderRadius: 2,
           }}
         >
-          Sign Out
-        </button>
-      </div>
+          <Security
+            sx={{
+              fontSize: 60,
+              color: authState.requiresAdminConsent ? "orange" : "error.main",
+              mb: 2,
+            }}
+          />
+
+          <Typography
+            variant="h4"
+            gutterBottom
+            color="text.primary"
+            fontWeight="bold"
+          >
+            {authState.error === "admin_consent_required"
+              ? "Permission Required"
+              : "Access Denied"}
+          </Typography>
+
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 3, lineHeight: 1.6 }}
+          >
+            {authState.reason}
+          </Typography>
+
+          {authState.error === "admin_consent_required" && (
+            <Alert severity="info" sx={{ mb: 3, textAlign: "left" }}>
+              <Typography variant="body2">
+                <strong>What this means:</strong> The application needs your
+                permission to access Microsoft Teams data to verify your
+                membership. This is a one-time consent that you can grant by
+                clicking "Retry Authorization" below.
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <strong>Next steps:</strong> Click "Retry Authorization" and
+                when prompted, grant permission for the application to read
+                basic Teams information.
+              </Typography>
+            </Alert>
+          )}
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Signed in as: <strong>{accounts[0].username}</strong>
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              justifyContent: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={handleRetryAuth}
+              startIcon={<Info />}
+            >
+              Retry Authorization
+            </Button>
+
+            <Button
+              variant="outlined"
+              onClick={() => instance.logoutRedirect()}
+              startIcon={<Warning />}
+            >
+              Sign Out
+            </Button>
+          </Box>
+
+          {process.env.NODE_ENV === "development" && (
+            <Alert severity="info" sx={{ mt: 3, textAlign: "left" }}>
+              <Typography variant="body2">
+                <strong>Development Info:</strong>
+              </Typography>
+              <Typography variant="body2" component="div">
+                • Error Code: {authState.error || "access_denied"}
+                <br />• Tenant ID: {accounts[0].tenantId}
+                <br />• Account Type: {accounts[0].idTokenClaims?.aud}
+              </Typography>
+            </Alert>
+          )}
+        </Paper>
+      </Box>
     );
   }
 

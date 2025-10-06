@@ -16,6 +16,7 @@ import { useJob, usePrevious } from "../../utils";
 import { useRouter } from "next/navigation";
 import { usePopcorn } from "../../providers/popcorn-provider";
 import useSWR from "swr";
+import { swrFetcher } from "../../api-fetch";
 
 export const CCP4i2ReportXMLView = () => {
   const api = useApi();
@@ -29,7 +30,7 @@ export const CCP4i2ReportXMLView = () => {
 
   const { data: report_xml_json, mutate: mutateReportXml } = useSWR<any>(
     job ? `/api/proxy/jobs/${job.id}/report_xml/` : null,
-    (url) => fetch(url).then((r) => r.json()),
+    swrFetcher,
     { refreshInterval: job?.status == 3 || job?.status == 2 ? 5000 : 0 }
   );
 

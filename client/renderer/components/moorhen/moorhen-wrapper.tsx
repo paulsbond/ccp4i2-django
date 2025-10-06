@@ -21,6 +21,7 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
 import { useCCP4i2Window } from "../../app-context";
 import { MoorhenControlPanel } from "./moorhen-control-panel";
+import { apiGet, apiText } from "../../api-fetch";
 
 export interface MoorhenWrapperProps {
   fileIds?: number[];
@@ -124,9 +125,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   }, [cootInitialized, leftPanelWidth, windowHeight]);
 
   const fetchFile = async (fileId: number) => {
-    const fileInfo = await fetch(`/api/proxy/files/${fileId}/`).then((res) =>
-      res.json()
-    );
+    const fileInfo = await apiGet(`/api/proxy/files/${fileId}/`);
     console.log(fileInfo);
     if (!fileInfo) {
       console.warn(`File with ID ${fileId} not found.`);
@@ -209,8 +208,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     newMolecules: moorhen.Molecule[] = []
   ) => {
     if (!commandCentre.current) return;
-    const fileResponse = await fetch(url);
-    const fileContent = await fileResponse.text();
+    const fileContent = await apiText(url);
     await commandCentre.current.cootCommand(
       {
         returnType: "status",

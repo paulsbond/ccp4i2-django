@@ -1,4 +1,5 @@
 import React, { JSX, useCallback, useEffect, useState } from "react";
+import { apiText } from "../../api-fetch";
 import {
   Box,
   Typography,
@@ -289,18 +290,11 @@ export const CCP4i2ReportVerdict: React.FC<CCP4i2ReportElementProps> = ({
           `CCP4_JOBS/job_${job.number}/program.xml`
         )}`;
 
-        const response = await fetch(composite_path, {
+        const xmlText = await apiText(composite_path, {
           headers: {
             "Content-Type": "application/xml",
           },
         });
-
-        if (!response.ok) {
-          console.log(`Failed to fetch program.xml: ${response.status}`);
-          return;
-        }
-
-        const xmlText = await response.text();
 
         // Parse the XML
         const parser = new DOMParser();
