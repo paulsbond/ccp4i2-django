@@ -24,6 +24,7 @@ import {
   Image,
   DataObject,
 } from "@mui/icons-material";
+import { apiFetch, apiGet } from "../api-fetch";
 
 /**
  * Props interface for the ExportJobMenu component
@@ -73,11 +74,9 @@ interface ExportJobFileMenuResponse {
 const doDownload = async (url: string, filename: string): Promise<void> => {
   try {
     // Fetch the response to get headers
-    const response = await fetch(url);
+    const response = await apiFetch(url);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    // apiFetch already checks response.ok, so we don't need to check again
 
     // Try to get filename from X-Export-Info header
     let downloadFilename = filename; // fallback
@@ -187,15 +186,9 @@ export const ExportJobMenu: React.FC<ExportJobMenuProps> = ({
     setError(null);
 
     try {
-      const response = await fetch(
+      const data: ExportJobFileMenuResponse = await apiGet(
         `/api/proxy/jobs/${currentJobId}/export_job_file_menu/`
       );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: ExportJobFileMenuResponse = await response.json();
 
       if (data.status === "Success" && data.result) {
         let menuItems: FileMenuItem[] = [];

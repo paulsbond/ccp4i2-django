@@ -5,6 +5,7 @@ import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
 import { fullUrl, useApi } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
+import { apiGet } from "../../../api-fetch";
 import { useCallback, useEffect, useMemo } from "react";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
@@ -30,11 +31,11 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const setSEQUENCEFromSEQIN = useCallback(async () => {
     if (!setSEQUENCETEXT) return;
 
-    const seqinDigest = await fetch(
+    const seqinDigest = await apiGet(
       fullUrl(
         `jobs/${job.id}/digest?object_path=ProvideSequence.inputData.SEQIN`
       )
-    ).then((response) => response.json());
+    );
     const newSequence = seqinDigest?.sequence || "";
     if (job?.status == 1 && newSequence !== SEQUENCETEXT) {
       await setSEQUENCETEXT(

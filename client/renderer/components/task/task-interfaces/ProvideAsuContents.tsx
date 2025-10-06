@@ -18,6 +18,7 @@ import { useJob, usePrevious, valueOfItem } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
 import useSWR from "swr";
+import { apiPost, apiGet } from "../../../api-fetch";
 
 const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const api = useApi();
@@ -46,21 +47,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
   const { data: molWeight, mutate: mutateMolWeight } = useSWR(
     `/api/proxy/jobs/${job.id}/object_method/`,
     (url) =>
-      fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          object_path: "ProvideAsuContents.inputData.ASU_CONTENT",
-          method_name: "molecularWeight",
-        }),
-      }).then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error("Failed to fetch molecular weight");
+      apiPost(url, {
+        object_path: "ProvideAsuContents.inputData.ASU_CONTENT",
+        method_name: "molecularWeight",
       })
   );
 
@@ -94,23 +83,10 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       HKLINDigest,
     ],
     ([url, molWeightResult, hklinDigest]) =>
-      fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          object_path: "ProvideAsuContents.inputData.HKLIN.fileContent",
-          method_name: "matthewsCoeff",
-          kwargs: { molWt: molWeightResult },
-        }),
-      }).then(async (response) => {
-        if (response.ok) {
-          const analysis = await response.json();
-          return analysis;
-        }
-        throw new Error("Failed to fetch matthews analysis");
+      apiPost(url, {
+        object_path: "ProvideAsuContents.inputData.HKLIN.fileContent",
+        method_name: "matthewsCoeff",
+        kwargs: { molWt: molWeightResult },
       }),
     { keepPreviousData: true }
   );
@@ -120,9 +96,9 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       if (!setAsuContent) return;
       const { dbFileId } = valueOfItem(updatedItem);
       if (dbFileId) {
-        const digest = await fetch(
+        const digest = await apiGet(
           fullUrl(`files/${dbFileId}/digest_by_uuid/`)
-        ).then((response) => response.json());
+        );
         //Note here I filter out the source file information, which may not be properly formed
         await setAsuContent(
           digest.seqList.map((seq: any) => {

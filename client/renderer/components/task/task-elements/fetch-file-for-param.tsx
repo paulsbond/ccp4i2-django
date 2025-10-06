@@ -11,6 +11,7 @@ import {
 import { useApi } from "../../../api";
 import { Job } from "../../../types/models";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { apiFetch, apiBlob, apiText } from "../../../api-fetch";
 import { useCCP4i2Window } from "../../../app-context";
 import { useJob } from "../../../utils";
 import { usePopcorn } from "../../../providers/popcorn-provider";
@@ -111,27 +112,21 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
     if (identifier) {
       try {
         const url = `https://www.ebi.ac.uk/pdbe/api/pdb/entry/files/${identifier.toLowerCase()}`;
-        const result = await fetch(url);
-        if (result.ok) {
-          const data = await result.json();
-          if (data && data[identifier.toLowerCase()]) {
-            const file = data[identifier.toLowerCase()];
-            let fetchURL = file.PDB.downloads
-              .filter((item: any) => item.label === "Archive mmCIF file")
-              .at(0).url;
-            setMessage(`Fetching file from ${fetchURL}`);
-            const fileContent = await fetch(fetchURL);
-            setMessage(`Fetched file from ${fetchURL}`);
-            if (fileContent.ok) {
-              const content = await fileContent.blob();
-              uploadFile(content, fetchURL.split("/").at(-1));
-              onClose();
-            } else {
-              setMessage(await fileContent.text());
-            }
-          }
+        const result = await apiFetch(url);
+        const data = await result.json();
+        if (data && data[identifier.toLowerCase()]) {
+          const file = data[identifier.toLowerCase()];
+          let fetchURL = file.PDB.downloads
+            .filter((item: any) => item.label === "Archive mmCIF file")
+            .at(0).url;
+          setMessage(`Fetching file from ${fetchURL}`);
+          const content = await apiBlob(fetchURL);
+          setMessage(`Fetched file from ${fetchURL}`);
+          uploadFile(content, fetchURL.split("/").at(-1));
+          onClose();
         } else {
-          setMessage(await result.text());
+          const errorText = await result.text();
+          setMessage(errorText);
           console.log("FetchFileForParam handleFetch result", result);
         }
       } catch (err: any) {
@@ -145,27 +140,21 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
   const handleEbiSFsFetch = useCallback(async () => {
     if (identifier) {
       const url = `https://www.ebi.ac.uk/pdbe/api/pdb/entry/files/${identifier.toLowerCase()}`;
-      const result = await fetch(url);
-      if (result.ok) {
-        const data = await result.json();
-        if (data && data[identifier.toLowerCase()]) {
-          const file = data[identifier.toLowerCase()];
-          let fetchURL = file.PDB.downloads
-            .filter((item: any) => item.label === "Structure Factors")
-            .at(0).url;
-          setMessage(`Fetching file from ${fetchURL}`);
-          const fileContent = await fetch(fetchURL);
-          setMessage(`Fetched file from ${fetchURL}`);
-          if (fileContent.ok) {
-            const content = await fileContent.blob();
-            uploadFile(content, fetchURL.split("/").at(-1));
-            onClose();
-          } else {
-            setMessage(await fileContent.text());
-          }
-        }
+      const result = await apiFetch(url);
+      const data = await result.json();
+      if (data && data[identifier.toLowerCase()]) {
+        const file = data[identifier.toLowerCase()];
+        let fetchURL = file.PDB.downloads
+          .filter((item: any) => item.label === "Structure Factors")
+          .at(0).url;
+        setMessage(`Fetching file from ${fetchURL}`);
+        const content = await apiBlob(fetchURL);
+        setMessage(`Fetched file from ${fetchURL}`);
+        uploadFile(content, fetchURL.split("/").at(-1));
+        onClose();
       } else {
-        setMessage(await result.text());
+        const errorText = await result.text();
+        setMessage(errorText);
         console.log("FetchFileForParam handleFetch result", result);
       }
     }
@@ -175,19 +164,13 @@ export const FetchFileForParam: React.FC<FetchFileForParamProps> = ({
     if (identifier) {
       const url = `/api/proxy/uniprot/${identifier.toUpperCase()}.fasta`;
       setMessage(`Fetching FASTA file for ${identifier.toUpperCase()}`);
-      const result = await fetch(url);
+      const data = await apiText(url);
       setMessage(`Fetched FASTA file for ${identifier.toUpperCase()}`);
-      if (result.ok) {
-        const data = await result.text();
-        const content = new Blob([data], {
-          type: "text/plain",
-        });
-        uploadFile(content, `${identifier.toUpperCase()}.fasta`);
-        onClose();
-      } else {
-        setMessage(await result.text());
-        console.log("FetchFileForParam handleFetch result", result);
-      }
+      const content = new Blob([data], {
+        type: "text/plain",
+      });
+      uploadFile(content, `${identifier.toUpperCase()}.fasta`);
+      onClose();
     }
   }, [identifier, uploadFile, onClose, setMessage]);
 

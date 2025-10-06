@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { useJob, valueOfItem } from "../../../utils";
+import { apiGet } from "../../../api-fetch";
 import { Grid2, Typography } from "@mui/material";
 import { CSimpleDataFileElement } from "./csimpledatafile";
 
@@ -42,9 +43,9 @@ export const CImportUnmergedElement: React.FC<CCP4i2TaskElementProps> = (
     async (updated: any) => {
       if (!item || !setParameterNoMutate || !updated) return;
       const updatedValue = valueOfItem(updated);
-      const fileDigest = await fetch(
+      const fileDigest = await apiGet(
         `/api/proxy/files/${updatedValue.dbFileId}/digest_by_uuid/`
-      ).then((result) => result.json());
+      );
       const updates: Promise<any>[] = [];
       if (
         fileDigest?.cell &&
