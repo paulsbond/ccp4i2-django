@@ -10,12 +10,15 @@ import {
   MenuItem,
 } from "@mui/material";
 import { Add, Download, Menu as MenuIcon, Upload } from "@mui/icons-material";
-import { useApi } from "../api";
+import { makeApiUrl, useApi } from "../api";
 import { Project } from "../types/models";
+import { useCCP4i2Window } from "../app-context";
+import { apiPost } from "../api-fetch";
 
 export default function FileMenu() {
   const router = useRouter();
   const api = useApi();
+  const { projectId } = useCCP4i2Window();
   const { data: projects, mutate: mutateProjects } =
     api.get<Project[]>("projects");
 
@@ -39,6 +42,13 @@ export default function FileMenu() {
         "Failed to open new window. It might be blocked by a popup blocker."
       );
     }
+  };
+
+  const handleExportProject = () => {
+    const url = makeApiUrl(`projects/${projectId}/export/`);
+    const result = apiPost(url, {}).then((blob: any) => {
+      handleClose();
+    });
   };
 
   const handleImportProject = () => {
@@ -84,7 +94,7 @@ export default function FileMenu() {
           </ListItemIcon>
           <ListItemText>New project</ListItemText>
         </MenuItem>
-        <MenuItem key="Export" onClick={handleClose}>
+        <MenuItem key="Export" onClick={handleExportProject}>
           <ListItemIcon>
             <Download fontSize="small" />
           </ListItemIcon>

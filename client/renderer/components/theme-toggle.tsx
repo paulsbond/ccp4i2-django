@@ -4,7 +4,7 @@ import { IconButton, Tooltip } from "@mui/material";
 import { Brightness4, Brightness7 } from "@mui/icons-material";
 import { useTheme } from "../theme/theme-provider";
 
-export const ThemeToggle: React.FC = () => {
+export const ThemeToggle = React.forwardRef<HTMLButtonElement>((props, ref) => {
   const { mode, toggleTheme } = useTheme();
 
   const handleToggleTheme = () => {
@@ -22,6 +22,7 @@ export const ThemeToggle: React.FC = () => {
   return (
     <Tooltip title={`Switch to ${mode === "light" ? "dark" : "light"} mode`}>
       <IconButton
+        ref={ref}
         onClick={handleToggleTheme}
         color="inherit"
         size="small"
@@ -36,4 +37,4 @@ export const ThemeToggle: React.FC = () => {
       </IconButton>
     </Tooltip>
   );
-};
+});
