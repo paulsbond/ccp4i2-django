@@ -3,6 +3,7 @@ import datetime
 import json
 import pathlib
 import os
+import subprocess
 from pytz import timezone
 from django.http import Http404
 from django.http import FileResponse
@@ -477,3 +478,65 @@ class ProjectViewSet(ModelViewSet):
         new_job = create_task(the_project, json.loads(request.body.decode("utf-8")))
         serializer = serializers.JobSerializer(new_job)
         return JsonResponse({"status": "Success", "new_job": serializer.data})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectSerializer,
+    )
+    def export(self, request, pk=None):
+        the_project = models.Project.objects.get(pk=pk)
+
+        # Generate unique filepath based on project name, rooted in project.directory
+        project_name = slugify(the_project.name or f"project_{the_project.id}")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        export_file_name = f"{project_name}_{timestamp}.ccp4_project.zip"
+        export_file_path = os.path.join(the_project.directory, export_file_name)
+
+        # Ensure the export file path doesn't already exist (add counter if needed)
+        counter = 1
+        base_name = export_file_name
+        while os.path.exists(export_file_path):
+            name_without_ext = base_name.rsplit(".", 1)[0]
+            export_file_name = f"{name_without_ext}_{counter}.ccp4_project.zip"
+            export_file_path = os.path.join(the_project.directory, export_file_name)
+            counter += 1
+
+        # Create log file path with same base name but .export.log extension
+        log_file_name = export_file_name.replace(".ccp4_project.zip", ".export.log")
+        log_file_path = os.path.join(the_project.directory, log_file_name)
+
+        # Start subprocess to run export_project management command in background
+        try:
+            with open(log_file_path, "w") as log_file:
+                process = subprocess.Popen(
+                    [
+                        "ccp4-python",
+                        "manage.py",
+                        "export_project",
+                        "-pi",
+                        str(the_project.id),
+                        "-o",
+                        export_file_path,
+                    ],
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                )
+
+            return JsonResponse(
+                {
+                    "status": "Success",
+                    "export_file_name": export_file_name,
+                    "log_file_name": log_file_name,
+                    "process_id": process.pid,
+                }
+            )
+        except Exception as e:
+            logger.exception(
+                "Failed to start export process for project %s",
+                the_project.id,
+                exc_info=e,
+            )
+            return JsonResponse({"status": "Failed", "reason": str(e)})
