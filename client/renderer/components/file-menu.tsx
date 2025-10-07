@@ -14,6 +14,7 @@ import { makeApiUrl, useApi } from "../api";
 import { Project } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
 import { apiPost } from "../api-fetch";
+import { ProjectExportsDialog } from "./project-exports";
 
 export default function FileMenu() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function FileMenu() {
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const [exportsDialogOpen, setExportsDialogOpen] = useState(false);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -62,6 +64,11 @@ export default function FileMenu() {
         "Failed to open new window. It might be blocked by a popup blocker."
       );
     }
+  };
+
+  const handleOpenExportsDialog = () => {
+    setExportsDialogOpen(true);
+    handleClose();
   };
 
   return (
@@ -106,6 +113,12 @@ export default function FileMenu() {
           </ListItemIcon>
           <ListItemText>Import project</ListItemText>
         </MenuItem>
+        <MenuItem key="Exports" onClick={handleOpenExportsDialog}>
+          <ListItemIcon>
+            <Download fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Exports...</ListItemText>
+        </MenuItem>
         <Divider />
         {Array.isArray(projects) &&
           projects
@@ -149,6 +162,10 @@ export default function FileMenu() {
           Quit CCP4i2
         </MenuItem>
       </Menu>
+      <ProjectExportsDialog
+        open={exportsDialogOpen}
+        onClose={() => setExportsDialogOpen(false)}
+      />
     </>
   );
 }

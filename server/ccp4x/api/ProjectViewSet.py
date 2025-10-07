@@ -490,9 +490,15 @@ class ProjectViewSet(ModelViewSet):
 
         # Generate unique filepath based on project name, rooted in project.directory
         project_name = slugify(the_project.name or f"project_{the_project.id}")
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        export_file_name = f"{project_name}_{timestamp}.ccp4_project.zip"
-        export_file_path = os.path.join(the_project.directory, export_file_name)
+        project_export = models.ProjectExport.objects.create(
+            project=the_project, time=datetime.datetime.now(tz=timezone("UTC"))
+        )
+        project_export.save()
+        timestamp = project_export.time.strftime("%Y%m%d_%H%M%S")
+        export_file_name = f"{project_name}_export_{timestamp}.ccp4_project.zip"
+        export_file_path = os.path.join(
+            the_project.directory, "CCP4_PROJECT_FILES", export_file_name
+        )
 
         # Ensure the export file path doesn't already exist (add counter if needed)
         counter = 1
@@ -500,7 +506,9 @@ class ProjectViewSet(ModelViewSet):
         while os.path.exists(export_file_path):
             name_without_ext = base_name.rsplit(".", 1)[0]
             export_file_name = f"{name_without_ext}_{counter}.ccp4_project.zip"
-            export_file_path = os.path.join(the_project.directory, export_file_name)
+            export_file_path = os.path.join(
+                the_project.directory, "CCP4_PROJECT_FILES", export_file_name
+            )
             counter += 1
 
         # Create log file path with same base name but .export.log extension
