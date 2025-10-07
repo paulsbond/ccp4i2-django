@@ -6,8 +6,13 @@ import {
   setActiveMap,
   setWidth,
   setHeight,
+  setTheme,
+  setBackgroundColor,
+  MoorhenContainer,
+  MoorhenMolecule,
+  MoorhenMap,
 } from "moorhen";
-import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
+
 import {
   RefObject,
   useCallback,
@@ -22,6 +27,7 @@ import { webGL } from "moorhen/types/mgWebGL";
 import { useCCP4i2Window } from "../../app-context";
 import { MoorhenControlPanel } from "./moorhen-control-panel";
 import { apiGet, apiText } from "../../api-fetch";
+import { useTheme } from "../../theme/theme-provider";
 
 export interface MoorhenWrapperProps {
   fileIds?: number[];
@@ -29,7 +35,7 @@ export interface MoorhenWrapperProps {
 
 const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   const dispatch = useDispatch();
-
+  const theme = useTheme();
   const glRef: RefObject<webGL.MGWebGL | null> = useRef(null);
   const commandCentre = useRef<null | moorhen.CommandCentre>(null);
   const moleculesRef = useRef<null | moorhen.Molecule[]>(null);
@@ -49,6 +55,13 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       (window as any).CCP4Module = cootModule;
     }
   }, [cootModule]);
+
+  useEffect(() => {
+    dispatch(
+      setBackgroundColor(theme.mode === "light" ? [1, 1, 1, 1] : [0, 0, 0, 1])
+    );
+    dispatch(setTheme(theme.mode === "light" ? "flatly" : "darkly"));
+  }, [theme.mode]);
 
   const monomerLibraryPath =
     "https://raw.githubusercontent.com/MonomerLibrary/monomers/master/";
@@ -90,15 +103,15 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
 
   const { origin } = useSelector((state: moorhen.State) => state.glRef);
 
+  const handleResize = () => {
+    setWindowWidth(window.innerWidth);
+    setWindowHeight(window.innerHeight - 30);
+    console.log("Window resized");
+  };
+
   useEffect(() => {
     //What to do when the component mounts
     console.log("MoorhenWrapper mounted");
-
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-      setWindowHeight(window.innerHeight - 150);
-      console.log("Window resized");
-    };
 
     window.addEventListener("resize", handleResize);
 
@@ -121,6 +134,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       console.log("Coot is initialized, you can now load molecules and maps.");
       dispatch(setWidth(leftPanelWidth));
       dispatch(setHeight(windowHeight - 75));
+      handleResize();
     }
   }, [cootInitialized, leftPanelWidth, windowHeight]);
 

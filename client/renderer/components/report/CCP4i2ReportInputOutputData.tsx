@@ -8,6 +8,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { JobMenu } from "../../providers/job-context-menu";
 import { CCP4i2ReportFile } from "./CCP4i2ReportFile";
@@ -15,6 +16,7 @@ import { CCP4i2ReportFile } from "./CCP4i2ReportFile";
 export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
   props
 ) => {
+  const theme = useTheme();
   const [fileUUIDs, setFileUUIDs] = useState<string[]>([]);
   const [expanded, setExpanded] = useState(true);
 
@@ -65,9 +67,9 @@ export const CCP4i2ReportInputOutputData: React.FC<CCP4i2ReportElementProps> = (
           aria-controls="input-output-content"
           id="input-output-header"
           sx={{
-            backgroundColor: "grey.100",
+            backgroundColor: theme.palette.action.hover,
             "&:hover": {
-              backgroundColor: "grey.200",
+              backgroundColor: theme.palette.action.selected,
             },
             minHeight: 48,
             "& .MuiAccordionSummary-content": {

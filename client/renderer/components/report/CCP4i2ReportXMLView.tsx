@@ -17,8 +17,11 @@ import { useRouter } from "next/navigation";
 import { usePopcorn } from "../../providers/popcorn-provider";
 import useSWR from "swr";
 import { swrFetcher } from "../../api-fetch";
+import { useTheme } from "../../theme/theme-provider";
+import { CCP4i2WhatNext } from "./CCP4i2WhatNext";
 
 export const CCP4i2ReportXMLView = () => {
+  const { customColors } = useTheme();
   const api = useApi();
   const { jobId } = useCCP4i2Window();
   const { job } = useJob(jobId);
@@ -38,12 +41,6 @@ export const CCP4i2ReportXMLView = () => {
     if (!report_xml_json || !report_xml_json.xml) return null;
     return $.parseXML(report_xml_json.xml);
   }, [report_xml_json]);
-
-  const { data: what_next } = api.get_endpoint<any>({
-    type: "jobs",
-    id: job?.id,
-    endpoint: "what_next",
-  });
 
   const oldJob = usePrevious(job);
 
@@ -79,25 +76,6 @@ export const CCP4i2ReportXMLView = () => {
       .toArray();
   }, [report_xml, job]);
 
-  const handleTaskSelect = useCallback(
-    async (task_name: string) => {
-      if (!job) return;
-      const created_job_result: any = await api.post(
-        `projects/${job.project}/create_task/`,
-        {
-          task_name,
-          context_job_uuid: job.uuid,
-        }
-      );
-      if (created_job_result?.status === "Success") {
-        const created_job: Job = created_job_result.new_job;
-        mutateJobs();
-        router.push(`/project/${job.project}/job/${created_job.id}`);
-      }
-    },
-    [job, mutateJobs]
-  );
-
   return !reportContent ? (
     <Skeleton />
   ) : (
@@ -110,50 +88,8 @@ export const CCP4i2ReportXMLView = () => {
         }}
       >
         {reportContent}
+        <CCP4i2WhatNext />
       </Paper>
-      {what_next?.Status === "Success" &&
-        what_next?.result.length > 0 &&
-        job?.status == 6 && (
-          <Stack
-            direction="row"
-            sx={{
-              width: "100%",
-              justifyContent: "space-between",
-              p: 0,
-              position: "sticky",
-              bottom: 0,
-              backgroundColor: "white",
-              zIndex: 1,
-              borderTop: "1px solid #e0e0e0",
-            }}
-          >
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-              What next?
-            </Typography>
-            {what_next.result.map((task: any, iTask: number) => (
-              <Button
-                key={iTask}
-                variant="outlined"
-                sx={{ minWidth: "15rem" }}
-                onClick={() => {
-                  handleTaskSelect(task.taskName);
-                }}
-              >
-                {" "}
-                <Avatar
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    mr: 1,
-                  }}
-                  src={`/api/proxy/djangostatic/svgicons/${task.taskName}.svg`}
-                  alt={`/api/proxy/djangostatic/qticons/${task.taskName}.png`}
-                />
-                {task.shortTitle}
-              </Button>
-            ))}
-          </Stack>
-        )}
     </>
   );
 };

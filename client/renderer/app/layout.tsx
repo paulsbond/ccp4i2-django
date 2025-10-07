@@ -1,8 +1,7 @@
 import "./globals.css";
-import { ThemeProvider } from "@mui/material/styles";
 import { PropsWithChildren } from "react";
 import { DeleteDialogProvider } from "../providers/delete-dialog";
-import theme from "../theme";
+import { CCP4i2ThemeProvider } from "../theme/theme-provider";
 import { CCP4i2App } from "../providers/ccp4i2-app";
 import AuthProvider from "../components/auth-provider";
 import RequireAuth from "../components/require-auth";
@@ -19,20 +18,20 @@ export default function RootLayout(props: PropsWithChildren) {
       <body>
         {REQUIRE_AUTH ? (
           <AuthProvider>
-            <ThemeProvider theme={theme}>
+            <CCP4i2ThemeProvider>
               <DeleteDialogProvider>
                 <RequireAuth>
                   <CCP4i2App>{props.children}</CCP4i2App>
                 </RequireAuth>
               </DeleteDialogProvider>
-            </ThemeProvider>
+            </CCP4i2ThemeProvider>
           </AuthProvider>
         ) : (
-          <ThemeProvider theme={theme}>
+          <CCP4i2ThemeProvider>
             <DeleteDialogProvider>
               <CCP4i2App>{props.children}</CCP4i2App>
             </DeleteDialogProvider>
-          </ThemeProvider>
+          </CCP4i2ThemeProvider>
         )}
       </body>
     </html>

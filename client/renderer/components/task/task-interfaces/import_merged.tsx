@@ -4,7 +4,7 @@ import {
   CCP4i2TaskElementProps,
 } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
-import { doRetrieve, useApi, fullUrl } from "../../../api";
+import { doRetrieve, useApi, makeApiUrl } from "../../../api";
 import { useJob, usePrevious } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
@@ -123,7 +123,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
         return;
       if (JSON.stringify(hklinValue) === JSON.stringify(oldHKLINValue)) return;
       const asyncFunc = async () => {
-        const downloadURL = fullUrl(
+        const downloadURL = makeApiUrl(
           `files/${hklinValue.dbFileId}/download_by_uuid/`
         );
         const arrayBuffer = await doRetrieve(downloadURL, hklinValue.baseName);

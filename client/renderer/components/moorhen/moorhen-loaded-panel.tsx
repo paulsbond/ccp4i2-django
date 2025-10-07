@@ -28,6 +28,7 @@ import {
 import { MoreVert, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { useApi } from "../../api";
+import { useTheme } from "../../theme/theme-provider";
 import { PushToCCP4i2Panel } from "./push-to-ccp4i2-panel";
 import {
   extractFileId,
@@ -59,6 +60,7 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
   onFileSelect,
   type = "Molecule",
 }) => {
+  const { customColors } = useTheme();
   const [menuState, setMenuState] = useState<ItemMenuState>({
     anchorEl: null,
     item: null,
@@ -432,7 +434,7 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
           flex: 1,
           overflow: "auto",
           boxShadow: "none",
-          border: "1px solid #e0e0e0",
+          border: `1px solid ${customColors.ui.mediumGray}`,
         }}
       >
         <List
@@ -460,7 +462,7 @@ export const MoorhenLoadedContent: React.FC<MoorhenLoadedContentProps> = ({
                     paddingY: 1,
                     paddingX: 2,
                     "&:hover": {
-                      backgroundColor: "#f9f9f9",
+                      backgroundColor: customColors.ui.lightGray,
                     },
                     opacity: itemIsVisible ? 1 : 0.7,
                   }}

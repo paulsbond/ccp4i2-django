@@ -2,12 +2,14 @@ import { Avatar } from "@mui/material";
 import { Job } from "../types/models";
 import { forwardRef, useMemo } from "react";
 import { useDraggable } from "@dnd-kit/core";
+import { useTheme } from "../theme/theme-provider";
 
 interface CCP4i2JobAvatarProps {
   job: Job;
 }
 export const CCP4i2JobAvatar = forwardRef<HTMLDivElement, CCP4i2JobAvatarProps>(
   ({ job, ...props }, ref) => {
+    const { customColors } = useTheme();
     const bgColor = useMemo(() => {
       switch (job?.status) {
         case 0:
@@ -50,7 +52,7 @@ export const CCP4i2JobAvatar = forwardRef<HTMLDivElement, CCP4i2JobAvatarProps>(
           width: "2rem",
           height: "2rem",
           backgroundColor: bgColor,
-          border: "2px dashed #1976d2",
+          border: `2px dashed ${customColors.ui.lightBlue}`,
           padding: "4px",
           cursor: "grab",
           transition: "box-shadow 0.2s ease",

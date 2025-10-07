@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Box, Stack, Typography } from "@mui/material";
 import { CCP4i2HierarchyBrowser } from "./ccp4i2-hierarchy-browser";
 import { MoorhenLoadedContent } from "./moorhen-loaded-panel";
+import { useTheme } from "../../theme/theme-provider";
 
 interface MoorhenControlPanelProps {
   onFileSelect: (fileId: number) => Promise<void>;
@@ -11,6 +12,7 @@ interface MoorhenControlPanelProps {
 export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
   onFileSelect,
 }) => {
+  const { customColors } = useTheme();
   const cootInitialized = useSelector(
     (state: moorhen.State) => state.generalStates.cootInitialized
   );
@@ -59,9 +61,9 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
           flex: 1,
           minHeight: 0, // Allows flex item to shrink
           overflow: "hidden",
-          backgroundColor: "#f9f9f9",
-          border: "1px solid #e0e0e0",
-          borderTop: "2px solid #1976d2",
+          backgroundColor: customColors.ui.lightGray,
+          border: `1px solid ${customColors.ui.mediumGray}`,
+          borderTop: `2px solid ${customColors.ui.lightBlue}`,
           position: "relative",
           display: "flex",
           flexDirection: "column",
@@ -75,7 +77,7 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
             left: 6,
             fontSize: "0.7rem",
             fontWeight: 500,
-            color: "#1976d2",
+            color: customColors.ui.lightBlue,
             backgroundColor: "rgba(255, 255, 255, 0.8)",
             px: 0.5,
             py: 0.25,
@@ -106,9 +108,9 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
           flex: 1,
           minHeight: 0, // Allows flex item to shrink
           overflow: "hidden",
-          backgroundColor: "#f9f9f9",
-          border: "1px solid #e0e0e0",
-          borderTop: "2px solid #1976d2",
+          backgroundColor: customColors.ui.lightGray,
+          border: `1px solid ${customColors.ui.mediumGray}`,
+          borderTop: `2px solid ${customColors.ui.lightBlue}`,
           position: "relative",
           display: "flex",
           flexDirection: "column",
@@ -122,7 +124,7 @@ export const MoorhenControlPanel: React.FC<MoorhenControlPanelProps> = ({
             left: 6,
             fontSize: "0.7rem",
             fontWeight: 500,
-            color: "#1976d2",
+            color: customColors.ui.lightBlue,
             backgroundColor: "rgba(255, 255, 255, 0.8)",
             px: 0.5,
             py: 0.25,

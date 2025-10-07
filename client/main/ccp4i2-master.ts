@@ -40,6 +40,7 @@ export const store = new Store<StoreSchema>({
     devMode: false,
     zoomLevel: -2,
     CCP4I2_PROJECTS_DIR: getProjectsDir(),
+    theme: "dark",
   },
 });
 

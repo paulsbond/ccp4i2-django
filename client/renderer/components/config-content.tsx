@@ -3,17 +3,12 @@ import React, { useCallback } from "react";
 import {
   Box,
   Button,
-  Container,
   Dialog,
   DialogContent,
   DialogTitle,
   FormControlLabel,
   Stack,
   Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
   Typography,
   Paper,
   CircularProgress,
@@ -25,9 +20,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCCP4i2Window } from "../app-context";
 import { usePopcorn } from "../providers/popcorn-provider";
+import { ThemeToggle } from "./theme-toggle";
+import { useTheme } from "../theme/theme-provider";
 
 export const ConfigContent: React.FC = () => {
   const api = useApi();
+  const { setTheme, mode, customColors } = useTheme();
   const [config, setConfig] = useState<any | null>(null);
   const router = useRouter();
   const { devMode, setDevMode } = useCCP4i2Window();
@@ -46,7 +44,7 @@ export const ConfigContent: React.FC = () => {
 
   useEffect(() => {
     // Send a message to the main process to get the config
-    if (window.electronAPI) {
+    if (typeof window !== "undefined" && window.electronAPI) {
       window.electronAPI.sendMessage("get-config");
       // Listen for messages from the main process
 
@@ -59,7 +57,7 @@ export const ConfigContent: React.FC = () => {
         );
       };
     } else {
-      console.log("window.electron is not available");
+      console.log("Electron API is not available - running in web mode");
     }
   }, []);
 
@@ -68,6 +66,7 @@ export const ConfigContent: React.FC = () => {
       if (data.message === "get-config") {
         setConfig(data.config);
         setDevMode(data.config.devMode);
+        setTheme(data.config.theme || "dark");
       } else if (data.message === "start-uvicorn") {
         router.push("/");
       } else if (data.message === "check-file-exists") {
@@ -126,12 +125,12 @@ export const ConfigContent: React.FC = () => {
 
   useEffect(() => {
     if (config) {
-      window.electronAPI.removeMessageListener(
-        "message-from-main",
-        messageHandler
-      );
-      window.electronAPI.onMessage("message-from-main", messageHandler);
       if (typeof window !== "undefined" && window.electronAPI) {
+        window.electronAPI.removeMessageListener(
+          "message-from-main",
+          messageHandler
+        );
+        window.electronAPI.onMessage("message-from-main", messageHandler);
         window.electronAPI.sendMessage("check-file-exists", {
           path: config.CCP4I2_PROJECTS_DIR,
         });
@@ -145,74 +144,72 @@ export const ConfigContent: React.FC = () => {
           path: config.ccp4_python,
         });
       }
+      return () => {
+        if (typeof window !== "undefined" && window.electronAPI) {
+          window.electronAPI.removeMessageListener(
+            "message-from-main",
+            messageHandler
+          );
+        }
+      };
     }
-    return () => {
-      window.electronAPI.removeMessageListener(
-        "message-from-main",
-        messageHandler
-      );
-    };
   }, [config]);
 
   const onLaunchBrowser = async () => {
-    if (!window?.electronAPI) {
+    if (typeof window !== "undefined" && window?.electronAPI) {
+      console.log("Gonna send locate-ccp4");
+      console.log(window.electronAPI);
+      window.electronAPI.sendMessage("locate-ccp4");
+    } else {
       console.error("Electron API is not available");
-      return;
     }
-    console.log("Gonna send locate-ccp4");
-    console.log(window.electronAPI);
-    window.electronAPI.sendMessage("locate-ccp4");
   };
 
   const onSelectProjectsDir = async () => {
-    if (!window.electronAPI) {
+    if (typeof window !== "undefined" && window.electronAPI) {
+      console.log("Gonna send locate-ccp4");
+      console.log(window.electronAPI);
+      window.electronAPI.sendMessage("locate-ccp4i2-project-directory");
+    } else {
       console.error("Electron API is not available");
-      return;
     }
-    console.log("Gonna send locate-ccp4");
-    console.log(window.electronAPI);
-    window.electronAPI.sendMessage("locate-ccp4i2-project-directory");
   };
 
   const onStartUvicorn = async () => {
-    if (!window.electronAPI) {
+    if (typeof window !== "undefined" && window.electronAPI) {
+      window.electronAPI.sendMessage("start-uvicorn", {
+        ...config,
+        CCP4Dir: config.CCP4Dir.path,
+      });
+    } else {
       console.error("Electron API is not available");
-      return;
     }
-
-    window.electronAPI.sendMessage("start-uvicorn", {
-      ...config,
-      CCP4Dir: config.CCP4Dir.path,
-    });
   };
 
   const onInstallRequirements = async () => {
-    if (!window.electronAPI) {
+    if (typeof window !== "undefined" && window.electronAPI) {
+      // Reset progress state
+      setInstallProgress({
+        isInstalling: true,
+        output: [],
+        status: "started",
+      });
+
+      window.electronAPI.sendMessage("install-requirements", {
+        ...config,
+        CCP4Dir: config.CCP4Dir.path,
+      });
+    } else {
       console.error("Electron API is not available");
-      return;
     }
-
-    // Reset progress state
-    setInstallProgress({
-      isInstalling: true,
-      output: [],
-      status: "started",
-    });
-
-    window.electronAPI.sendMessage("install-requirements", {
-      ...config,
-      CCP4Dir: config.CCP4Dir.path,
-    });
   };
 
   const onToggleDevMode = async (
     ev: React.ChangeEvent<HTMLInputElement>
   ): Promise<void> => {
-    if (!window?.electronAPI) {
-      console.error("Electron API is not available");
-      return;
+    if (typeof window !== "undefined" && window?.electronAPI) {
+      window.electronAPI.sendMessage("toggle-dev-mode", {});
     }
-    window.electronAPI.sendMessage("toggle-dev-mode", {});
     ev.preventDefault();
     ev.stopPropagation();
   };
@@ -227,62 +224,108 @@ export const ConfigContent: React.FC = () => {
 
   return (
     <Stack spacing={3}>
-      {config && (
-        <>
-          {/* Launch Section - Moved to Top */}
-          <Stack spacing={2}>
-            <Typography variant="h6" color="primary" fontWeight={600}>
-              Launch Application
-            </Typography>
+      {/* Appearance Section - Available regardless of config */}
+      <Stack spacing={2}>
+        <Typography variant="h6" color="primary" fontWeight={600}>
+          Appearance
+        </Typography>
 
-            <Paper variant="outlined" sx={{ p: 3, textAlign: "center" }}>
-              <Stack spacing={2} alignItems="center">
-                <Typography variant="body1" color="text.secondary">
-                  {existingFiles?.ccp4_python && (devMode || requirementsExist)
+        <Paper variant="outlined" sx={{ p: 2 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <Box>
+              <Typography variant="subtitle1" fontWeight={500}>
+                Theme
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Choose between light and dark theme
+              </Typography>
+            </Box>
+            <ThemeToggle />
+          </Stack>
+        </Paper>
+      </Stack>
+
+      {/* Launch Section - Available regardless of config */}
+      <Stack spacing={2}>
+        <Typography variant="h6" color="primary" fontWeight={600}>
+          Launch Application
+        </Typography>
+
+        <Paper variant="outlined" sx={{ p: 3, textAlign: "center" }}>
+          <Stack spacing={2} alignItems="center">
+            <Typography variant="body1" color="text.secondary">
+              {config
+                ? typeof window !== "undefined" && window.electronAPI
+                  ? existingFiles?.ccp4_python && (devMode || requirementsExist)
                     ? "Ready to start CCP4i2 with current configuration"
-                    : "Configure paths and install requirements to launch CCP4i2"}
-                </Typography>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<Folder />}
-                  onClick={onStartUvicorn}
-                  disabled={
+                    : "Configure paths and install requirements to launch CCP4i2"
+                  : "CCP4i2 configuration - running in web mode"
+                : "Access CCP4i2 web interface"}
+            </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<Folder />}
+              onClick={config ? onStartUvicorn : () => router.push("/")}
+              disabled={
+                config
+                  ? !(typeof window !== "undefined" && window.electronAPI) ||
                     !existingFiles?.ccp4_python ||
                     (!devMode && !requirementsExist)
-                  }
-                  sx={{
-                    minWidth: 300,
-                    bgcolor:
+                  : false
+              }
+              sx={{
+                minWidth: 300,
+                bgcolor: config
+                  ? typeof window !== "undefined" &&
+                    window.electronAPI &&
+                    existingFiles?.ccp4_python &&
+                    (devMode || requirementsExist)
+                    ? green[500]
+                    : undefined
+                  : green[500], // Always green for web launch
+                "&:hover": {
+                  bgcolor: config
+                    ? typeof window !== "undefined" &&
+                      window.electronAPI &&
                       existingFiles?.ccp4_python &&
                       (devMode || requirementsExist)
-                        ? green[500]
-                        : undefined,
-                    "&:hover": {
-                      bgcolor:
-                        existingFiles?.ccp4_python &&
-                        (devMode || requirementsExist)
-                          ? green[600]
-                          : undefined,
-                    },
-                    "&.Mui-disabled": {
-                      bgcolor: "action.disabledBackground",
-                      color: "action.disabled",
-                    },
-                  }}
-                >
-                  Launch CCP4i2
-                </Button>
-                {(!existingFiles?.ccp4_python ||
-                  (!devMode && !requirementsExist)) && (
-                  <Typography variant="caption" color="error">
-                    Please configure paths and install requirements first
-                  </Typography>
-                )}
-              </Stack>
-            </Paper>
+                      ? green[600]
+                      : undefined
+                    : green[600], // Always green hover for web launch
+                },
+                "&.Mui-disabled": {
+                  bgcolor: "action.disabledBackground",
+                  color: "action.disabled",
+                },
+              }}
+            >
+              {config
+                ? typeof window !== "undefined" && window.electronAPI
+                  ? "Launch CCP4i2"
+                  : "Web Mode - Launch Unavailable"
+                : "Launch CCP4i2"}
+            </Button>
+            {config &&
+              (!existingFiles?.ccp4_python ||
+                (!devMode && !requirementsExist) ||
+                !(typeof window !== "undefined" && window.electronAPI)) && (
+                <Typography variant="caption" color="error">
+                  {typeof window !== "undefined" && window.electronAPI
+                    ? "Please configure paths and install requirements first"
+                    : "CCP4i2 launch requires Electron environment"}
+                </Typography>
+              )}
           </Stack>
+        </Paper>
+      </Stack>
 
+      {config && (
+        <>
           {/* File Paths Section */}
           <Stack spacing={2}>
             <Typography variant="h6" color="primary" fontWeight={600}>
@@ -307,7 +350,7 @@ export const ConfigContent: React.FC = () => {
                   color="text.secondary"
                   sx={{
                     fontFamily: "monospace",
-                    bgcolor: "grey.50",
+                    bgcolor: mode === "dark" ? "grey.800" : "grey.50",
                     p: 1,
                     borderRadius: 1,
                   }}
@@ -318,6 +361,9 @@ export const ConfigContent: React.FC = () => {
                   variant="outlined"
                   startIcon={<Folder />}
                   onClick={onLaunchBrowser}
+                  disabled={
+                    !(typeof window !== "undefined" && window.electronAPI)
+                  }
                   sx={{ alignSelf: "flex-start" }}
                 >
                   Select Directory...
@@ -343,7 +389,7 @@ export const ConfigContent: React.FC = () => {
                   color="text.secondary"
                   sx={{
                     fontFamily: "monospace",
-                    bgcolor: "grey.50",
+                    bgcolor: mode === "dark" ? "grey.800" : "grey.50",
                     p: 1,
                     borderRadius: 1,
                   }}
@@ -371,7 +417,7 @@ export const ConfigContent: React.FC = () => {
                   color="text.secondary"
                   sx={{
                     fontFamily: "monospace",
-                    bgcolor: "grey.50",
+                    bgcolor: mode === "dark" ? "grey.800" : "grey.50",
                     p: 1,
                     borderRadius: 1,
                   }}
@@ -382,6 +428,9 @@ export const ConfigContent: React.FC = () => {
                   variant="outlined"
                   startIcon={<Folder />}
                   onClick={onSelectProjectsDir}
+                  disabled={
+                    !(typeof window !== "undefined" && window.electronAPI)
+                  }
                   sx={{ alignSelf: "flex-start" }}
                 >
                   Select Directory...
@@ -452,7 +501,10 @@ export const ConfigContent: React.FC = () => {
                 <Button
                   variant="contained"
                   onClick={onInstallRequirements}
-                  disabled={!existingFiles?.ccp4_python}
+                  disabled={
+                    !(typeof window !== "undefined" && window.electronAPI) ||
+                    !existingFiles?.ccp4_python
+                  }
                 >
                   {requirementsExist ? "Reinstall" : "Install"}
                 </Button>
@@ -481,6 +533,9 @@ export const ConfigContent: React.FC = () => {
                       onChange={onToggleDevMode}
                       name="devModeToggle"
                       color="primary"
+                      disabled={
+                        !(typeof window !== "undefined" && window.electronAPI)
+                      }
                     />
                   }
                   label={devMode ? "Enabled" : "Disabled"}
