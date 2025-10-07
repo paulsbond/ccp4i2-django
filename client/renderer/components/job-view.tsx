@@ -21,6 +21,7 @@ import { TaskProvider } from "../providers/task-provider";
 import { ValidationViewer } from "../components/validation-viewer";
 import { useRunCheck } from "../providers/run-check-provider";
 import { useJobTab } from "../providers/job-tab-provider";
+import { useTheme } from "../theme/theme-provider";
 
 export interface JobViewProps {
   jobid: number;
@@ -37,6 +38,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
     extraDialogActions,
     processedErrors,
   } = useRunCheck();
+  const { mode } = useTheme();
 
   const previousJob = usePrevious(job);
   const { jobTabValue: tabValue, setJobTabValue: setTabValue } = useJobTab();
@@ -114,6 +116,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
             height="calc(100vh - 15rem)"
             value={params_xml}
             language="xml"
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
         {devMode && tabValue == 2 && report_xml && (
@@ -121,6 +124,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
             height="calc(100vh - 15rem)"
             value={prettifyXml(report_xml)}
             language="xml"
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
         {tabValue == 3 && jobid && <CCP4i2ReportXMLView />}
@@ -128,7 +132,12 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
           <Diagnostic xmlDocument={diagnostic_xml} />
         )}
         {devMode && tabValue == 5 && def_xml && (
-          <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
+          <Editor
+            height="calc(100vh - 15rem)"
+            value={def_xml}
+            language="xml"
+            theme={mode === "dark" ? "vs-dark" : "light"}
+          />
         )}
         {(devMode || job?.status === 1) && tabValue == 6 && validation && (
           <ValidationViewer job={job} />
@@ -138,6 +147,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
             height="calc(100vh - 15rem)"
             value={JSON.stringify(container.container, null, 2)}
             language="json"
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
         {tabValue == 8 && container && (

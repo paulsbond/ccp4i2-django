@@ -53,6 +53,7 @@ const cleanErrorMessage = (message: string): string => {
 
 export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
   const { customColors } = useTheme();
+  const { mode } = useTheme();
   const { processedErrors } = useRunCheck();
   const { validation } = useJob(job?.id || -1);
   const { devMode } = useCCP4i2Window();
@@ -140,6 +141,7 @@ export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
           height="100%"
           defaultLanguage="json"
           value={prettifiedValidation}
+          theme={mode === "dark" ? "vs-dark" : "light"}
           options={{
             readOnly: true,
             minimap: { enabled: false },

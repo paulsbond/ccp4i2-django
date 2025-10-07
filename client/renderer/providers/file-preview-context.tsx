@@ -23,6 +23,7 @@ import { useCCP4i2Window } from "../app-context";
 import { CifTableStack } from "../components/cif-table-stack";
 import { CsvTable } from "../components/csv-table";
 import { AlignmentViewer } from "../components/alignment-viewer";
+import { useTheme } from "../theme/theme-provider";
 
 export interface EditorContentSpecification {
   url: string;
@@ -62,7 +63,7 @@ const FilePreviewDialog: React.FC = () => {
     useFilePreviewContext();
   const [previewContent, setPreviewContent] = useState<string | null>("");
   const { cootModule } = useCCP4i2Window();
-
+  const { mode } = useTheme();
   const handleMtzPreview = useCallback(
     async (fileContent: ArrayBuffer) => {
       if (cootModule) {
@@ -205,6 +206,7 @@ const FilePreviewDialog: React.FC = () => {
             height="calc(100vh - 20rem)"
             value={previewContent || ""}
             language={monacoLanguage}
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
       </DialogContent>
