@@ -7,10 +7,22 @@ import { useTheme } from "../theme/theme-provider";
 export const ThemeToggle: React.FC = () => {
   const { mode, toggleTheme } = useTheme();
 
+  const handleToggleTheme = () => {
+    const newMode = mode === "light" ? "dark" : "light";
+
+    // Send message to Electron API if available
+    if (typeof window !== "undefined" && window.electronAPI) {
+      window.electronAPI.sendMessage("set-theme-mode", { theme: newMode });
+    }
+
+    // Toggle the theme
+    toggleTheme();
+  };
+
   return (
     <Tooltip title={`Switch to ${mode === "light" ? "dark" : "light"} mode`}>
       <IconButton
-        onClick={toggleTheme}
+        onClick={handleToggleTheme}
         color="inherit"
         size="small"
         sx={{

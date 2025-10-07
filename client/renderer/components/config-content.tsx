@@ -21,9 +21,11 @@ import { useRouter } from "next/navigation";
 import { useCCP4i2Window } from "../app-context";
 import { usePopcorn } from "../providers/popcorn-provider";
 import { ThemeToggle } from "./theme-toggle";
+import { useTheme } from "../theme/theme-provider";
 
 export const ConfigContent: React.FC = () => {
   const api = useApi();
+  const { setTheme, mode, customColors } = useTheme();
   const [config, setConfig] = useState<any | null>(null);
   const router = useRouter();
   const { devMode, setDevMode } = useCCP4i2Window();
@@ -64,6 +66,7 @@ export const ConfigContent: React.FC = () => {
       if (data.message === "get-config") {
         setConfig(data.config);
         setDevMode(data.config.devMode);
+        setTheme(data.config.theme || "dark");
       } else if (data.message === "start-uvicorn") {
         router.push("/");
       } else if (data.message === "check-file-exists") {
@@ -347,7 +350,7 @@ export const ConfigContent: React.FC = () => {
                   color="text.secondary"
                   sx={{
                     fontFamily: "monospace",
-                    bgcolor: "grey.50",
+                    bgcolor: mode === "dark" ? "grey.800" : "grey.50",
                     p: 1,
                     borderRadius: 1,
                   }}
@@ -386,7 +389,7 @@ export const ConfigContent: React.FC = () => {
                   color="text.secondary"
                   sx={{
                     fontFamily: "monospace",
-                    bgcolor: "grey.50",
+                    bgcolor: mode === "dark" ? "grey.800" : "grey.50",
                     p: 1,
                     borderRadius: 1,
                   }}
@@ -414,7 +417,7 @@ export const ConfigContent: React.FC = () => {
                   color="text.secondary"
                   sx={{
                     fontFamily: "monospace",
-                    bgcolor: "grey.50",
+                    bgcolor: mode === "dark" ? "grey.800" : "grey.50",
                     p: 1,
                     borderRadius: 1,
                   }}

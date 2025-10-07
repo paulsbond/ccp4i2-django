@@ -172,6 +172,21 @@ export const installIpcHandlers = (
     event.reply("message-from-main", getConfigResponse());
   });
 
+  // IPC communication to set theme mode
+  ipcMain.on("set-theme-mode", (event, data) => {
+    if (data.theme !== "light" && data.theme !== "dark") {
+      console.error("Invalid theme mode:", data.theme);
+      return;
+    }
+    store.set("theme", data.theme);
+    console.log("Theme mode set to", data.theme);
+    event.reply("message-from-main", {
+      message: "set-theme-mode",
+      status: "Success",
+      theme: data.theme,
+    });
+  });
+
   ipcMain.on("zoom-in", (event, data) => {
     console.log("Zooming in", data);
     BrowserWindow.getAllWindows().forEach((win) => {
