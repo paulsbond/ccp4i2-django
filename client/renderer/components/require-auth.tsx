@@ -17,6 +17,7 @@ import {
   Button,
 } from "@mui/material";
 import { Security, Warning, Info } from "@mui/icons-material";
+import { useTheme } from "../theme/theme-provider";
 
 interface RequireAuthProps {
   children: ReactNode;
@@ -31,6 +32,7 @@ interface AuthState {
 }
 
 export default function RequireAuth({ children }: RequireAuthProps) {
+  const { customColors } = useTheme();
   const { instance, accounts, inProgress } = useMsal();
   const router = useRouter();
   const [authState, setAuthState] = useState<AuthState>({
@@ -205,7 +207,7 @@ export default function RequireAuth({ children }: RequireAuthProps) {
         justifyContent="center"
         alignItems="center"
         minHeight="100vh"
-        bgcolor="#f5f5f5"
+        bgcolor={customColors.ui.veryLightGray}
         p={3}
       >
         <Paper

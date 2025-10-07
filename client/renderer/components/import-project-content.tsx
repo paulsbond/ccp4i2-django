@@ -17,8 +17,10 @@ import { Cancel, Check, Folder, Upload } from "@mui/icons-material";
 import { VisuallyHiddenInput } from "./task/task-elements/input-file-upload";
 import { useRouter } from "next/navigation";
 import { Project } from "../types/models";
+import { useTheme } from "../theme/theme-provider";
 
 export const ImportProjectContent: React.FC = () => {
+  const { customColors } = useTheme();
   const api = useApi();
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
@@ -84,7 +86,7 @@ export const ImportProjectContent: React.FC = () => {
                 padding: 4,
                 textAlign: "center",
                 cursor: "pointer",
-                backgroundColor: "#f9f9f9",
+                backgroundColor: customColors.ui.lightGray,
                 "&:hover": {
                   backgroundColor: "#f1f1f1",
                 },

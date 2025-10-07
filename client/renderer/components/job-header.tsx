@@ -17,6 +17,7 @@ import { JobMenu, useJobMenu } from "../providers/job-context-menu";
 import { Menu } from "@mui/icons-material";
 import { useJob } from "../utils";
 import { useDroppable } from "@dnd-kit/core";
+import { useTheme } from "../theme/theme-provider";
 
 interface JobHeaderProps {
   job: Job;
@@ -24,6 +25,7 @@ interface JobHeaderProps {
   mutateJob?: KeyedMutator<Job>;
 }
 export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
+  const { customColors } = useTheme();
   const [contextJob, setContextJob] = useState<Job | null>(null);
   const { setJobMenuAnchorEl, setJob } = useJobMenu();
   const api = useApi();
@@ -65,8 +67,8 @@ export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
         variant="regular"
         ref={setNodeRef}
         sx={{
-          backgroundColor: isOver ? "#e0e0e0" : "#f0f0f0",
-          border: isOver ? "2px dashed #1976d2" : "none",
+          backgroundColor: isOver ? customColors.ui.mediumGray : "#f0f0f0",
+          border: isOver ? `2px dashed ${customColors.ui.lightBlue}` : "none",
           transition: "background-color 0.3s, border 0.3s",
         }}
       >

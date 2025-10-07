@@ -17,8 +17,10 @@ import { useRouter } from "next/navigation";
 import { usePopcorn } from "../../providers/popcorn-provider";
 import useSWR from "swr";
 import { swrFetcher } from "../../api-fetch";
+import { useTheme } from "../../theme/theme-provider";
 
 export const CCP4i2ReportXMLView = () => {
+  const { customColors } = useTheme();
   const api = useApi();
   const { jobId } = useCCP4i2Window();
   const { job } = useJob(jobId);
@@ -124,7 +126,7 @@ export const CCP4i2ReportXMLView = () => {
               bottom: 0,
               backgroundColor: "white",
               zIndex: 1,
-              borderTop: "1px solid #e0e0e0",
+              borderTop: `1px solid ${customColors.ui.mediumGray}`,
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: "bold" }}>

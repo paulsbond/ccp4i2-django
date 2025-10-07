@@ -3,6 +3,7 @@ import { File } from "../types/models";
 import { fileTypeMapping } from "./files-table";
 import { useDraggable } from "@dnd-kit/core";
 import { forwardRef } from "react";
+import { useTheme } from "../theme/theme-provider";
 
 export const fileTypeIcon = (type: string) => {
   return Object.keys(fileTypeMapping).includes(type)
@@ -12,6 +13,7 @@ export const fileTypeIcon = (type: string) => {
 
 export const FileAvatar = forwardRef<HTMLDivElement, { file: File }>(
   ({ file, ...props }, ref) => {
+    const { customColors } = useTheme();
     return (
       <Avatar
         {...props}
@@ -19,7 +21,7 @@ export const FileAvatar = forwardRef<HTMLDivElement, { file: File }>(
         sx={{
           width: "2rem",
           height: "2rem",
-          border: "2px dashed #1976d2",
+          border: `2px dashed ${customColors.ui.lightBlue}`,
           padding: "4px",
           cursor: "grab",
           transition: "box-shadow 0.2s ease",

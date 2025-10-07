@@ -29,6 +29,7 @@ import { useRunCheck } from "../providers/run-check-provider";
 import { useJob } from "../utils";
 import { Job } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
+import { useTheme } from "../theme/theme-provider";
 
 interface AlignmentViewerProps {
   alignment: string;
@@ -84,6 +85,8 @@ interface HighlightRegion {
 export const AlignmentViewer: React.FC<AlignmentViewerProps> = ({
   alignment,
 }) => {
+  const { customColors } = useTheme();
+  const AMINO_ACID_COLORS = customColors.aminoAcids;
   const [showColors, setShowColors] = useState(true);
   const [blockSize, setBlockSize] = useState(60);
   const [highlightInput, setHighlightInput] = useState("");
