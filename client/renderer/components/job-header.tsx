@@ -67,7 +67,9 @@ export const JobHeader: React.FC<JobHeaderProps> = ({ job, mutateJobs }) => {
         variant="regular"
         ref={setNodeRef}
         sx={{
-          backgroundColor: isOver ? customColors.ui.mediumGray : "#f0f0f0",
+          backgroundColor: isOver
+            ? customColors.ui.mediumGray
+            : customColors.ui.veryLightGray,
           border: isOver ? `2px dashed ${customColors.ui.lightBlue}` : "none",
           transition: "background-color 0.3s, border 0.3s",
         }}

@@ -138,14 +138,14 @@ export const createComponentVariants = (theme: Theme): Components => ({
           {
             props: { variant: "lightGrey" },
             style: {
-              backgroundColor: theme.palette.grey[100],
+              backgroundColor: theme.palette.action.hover,
               color: theme.palette.text.primary,
               cursor: "pointer",
               "& .MuiCardHeader-title": {
                 color: theme.palette.text.primary,
               },
               "&:hover": {
-                backgroundColor: theme.palette.grey[200],
+                backgroundColor: theme.palette.action.selected,
               },
             },
           },
@@ -167,7 +167,7 @@ export const createComponentVariants = (theme: Theme): Components => ({
       {
         props: { variant: "lightGrey" },
         style: {
-          backgroundColor: theme.palette.grey[100],
+          backgroundColor: theme.palette.action.hover,
           color: theme.palette.text.primary,
           "& .MuiTypography-root": {
             color: theme.palette.text.primary,
@@ -176,7 +176,7 @@ export const createComponentVariants = (theme: Theme): Components => ({
             color: theme.palette.text.primary,
           },
           "&:hover": {
-            backgroundColor: theme.palette.grey[200],
+            backgroundColor: theme.palette.action.selected,
           },
         },
       },

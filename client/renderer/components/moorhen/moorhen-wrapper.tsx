@@ -90,15 +90,15 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
 
   const { origin } = useSelector((state: moorhen.State) => state.glRef);
 
+  const handleResize = () => {
+    setWindowWidth(window.innerWidth);
+    setWindowHeight(window.innerHeight - 150);
+    console.log("Window resized");
+  };
+
   useEffect(() => {
     //What to do when the component mounts
     console.log("MoorhenWrapper mounted");
-
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-      setWindowHeight(window.innerHeight - 150);
-      console.log("Window resized");
-    };
 
     window.addEventListener("resize", handleResize);
 
@@ -121,6 +121,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       console.log("Coot is initialized, you can now load molecules and maps.");
       dispatch(setWidth(leftPanelWidth));
       dispatch(setHeight(windowHeight - 75));
+      handleResize();
     }
   }, [cootInitialized, leftPanelWidth, windowHeight]);
 
