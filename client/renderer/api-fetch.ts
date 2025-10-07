@@ -7,8 +7,8 @@
  * - Retry logic
  */
 
-// Re-export the existing fullUrl helper
-export { fullUrl } from "./api";
+// Re-export the existing makeApiUrl helper
+export { makeApiUrl } from "./api";
 
 /**
  * Configuration for API requests

@@ -5,7 +5,7 @@ import { useRadioGroup } from "@mui/material";
 import { useMsal } from "@azure/msal-react";
 import { apiFetch, apiJson, apiText } from "./api-fetch";
 
-export function fullUrl(endpoint: string): string {
+export function makeApiUrl(endpoint: string): string {
   let api_path = `/api/proxy/${endpoint}`;
   if (api_path.charAt(api_path.length - 1) !== "/") api_path += "/";
   return api_path;
@@ -19,7 +19,7 @@ export interface EndpointFetch {
 
 const endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
   return apiJson(url).then((r1) =>
@@ -29,7 +29,7 @@ const endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
 
 const endpoint_validation_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
   return apiJson(url).then((r1) => {
@@ -64,7 +64,7 @@ const endpoint_validation_fetcher = (endpointFetch: EndpointFetch) => {
 
 const pretty_endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
   return apiJson(url).then((r1) =>
@@ -76,7 +76,7 @@ const pretty_endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
 
 const endpoint_wrapped_json_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
   return apiJson(url).then((r) => {
@@ -114,7 +114,7 @@ const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id || !endpointFetch.type) {
     throw new Error("Invalid endpointFetch: and id are required");
   }
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
   return apiJson(url);
@@ -139,7 +139,7 @@ export function useApi() {
     noSlashUrl,
 
     get: function <T>(endpoint: string, refreshInterval: number = 0) {
-      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval });
+      return useSWR<T>(makeApiUrl(endpoint), fetcher, { refreshInterval });
     },
 
     config: function <T>() {
@@ -177,7 +177,7 @@ export function useApi() {
     },
 
     digest: function <T>(endpoint: string) {
-      const result = useSWR<T>(fullUrl(endpoint), digest_fetcher, {
+      const result = useSWR<T>(makeApiUrl(endpoint), digest_fetcher, {
         onError: (error) => {
           console.warn(`Digest error for endpoint "${endpoint}":`, error);
         },
@@ -193,7 +193,7 @@ export function useApi() {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify(body);
       }
-      const response = await apiFetch(fullUrl(endpoint), {
+      const response = await apiFetch(makeApiUrl(endpoint), {
         method: "POST",
         headers: headers,
         body: body,
@@ -206,7 +206,7 @@ export function useApi() {
     },
 
     delete: async function (endpoint: string): Promise<void> {
-      const result = await apiFetch(fullUrl(endpoint), { method: "DELETE" });
+      const result = await apiFetch(makeApiUrl(endpoint), { method: "DELETE" });
       //console.log(result);
     },
 
@@ -216,7 +216,7 @@ export function useApi() {
         headers["Content-Type"] = "application/json";
         body = JSON.stringify(body);
       }
-      const response = await apiFetch(fullUrl(endpoint), {
+      const response = await apiFetch(makeApiUrl(endpoint), {
         method: "PATCH",
         headers: headers,
         body: body,

@@ -13,7 +13,7 @@ import {
 import { CCP4i2TaskInterfaceProps } from "./task-container";
 import { CCP4i2TaskElement } from "../task-elements/task-element";
 import { CCP4i2Tab, CCP4i2Tabs } from "../task-elements/tabs";
-import { fullUrl, useApi } from "../../../api";
+import { makeApiUrl, useApi } from "../../../api";
 import { useJob, usePrevious, valueOfItem } from "../../../utils";
 import { CCP4i2ContainerElement } from "../task-elements/ccontainer";
 import { useCallback, useEffect, useMemo } from "react";
@@ -97,7 +97,7 @@ const TaskInterface: React.FC<CCP4i2TaskInterfaceProps> = (props) => {
       const { dbFileId } = valueOfItem(updatedItem);
       if (dbFileId) {
         const digest = await apiGet(
-          fullUrl(`files/${dbFileId}/digest_by_uuid/`)
+          makeApiUrl(`files/${dbFileId}/digest_by_uuid/`)
         );
         //Note here I filter out the source file information, which may not be properly formed
         await setAsuContent(
