@@ -51,20 +51,25 @@ class Command(BaseCommand):
             ccp4_python_program = "ccp4-python"
             if platform.system() == "Windows":
                 ccp4_python_program += ".bat"
-            process = subprocess.Popen(
-                [
-                    ccp4_python_program,
-                    "manage.py",
-                    "run_job",
-                    "-ju",
-                    f"{str(the_job.uuid)}",
-                ],
-                start_new_session=True,
-                stdout=stdout_file,  # Capture stdout
-                stderr=subprocess.STDOUT,  # Merge stderr into stdout
-            )
-            the_job.process_id = process.pid
-            the_job.save()
+
+            # Open file for capturing stdout
+            with open(
+                the_job.directory / "cplusplus_stdout.txt", "w", encoding="utf-8"
+            ) as stdout_file:
+                process = subprocess.Popen(
+                    [
+                        ccp4_python_program,
+                        "manage.py",
+                        "run_job",
+                        "-ju",
+                        f"{str(the_job.uuid)}",
+                    ],
+                    start_new_session=True,
+                    stdout=stdout_file,  # Capture stdout
+                    stderr=subprocess.STDOUT,  # Merge stderr into stdout
+                )
+                the_job.process_id = process.pid
+                the_job.save()
         else:
             with open(
                 the_job.directory / "cplusplus_stdout.txt", "w", encoding="utf-8"

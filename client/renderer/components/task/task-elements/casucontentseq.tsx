@@ -1,9 +1,10 @@
 import { CCP4i2TaskElement, CCP4i2TaskElementProps } from "./task-element";
 import { CCP4i2ContainerElement } from "./ccontainer";
 import { Card, CardContent, CardHeader, Grid2 } from "@mui/material";
-import { fullUrl, useApi } from "../../../api";
+import { makeApiUrl, useApi } from "../../../api";
 import { useJob, usePrevious, valueOfItem } from "../../../utils";
 import { ErrorInfo } from "./error-info";
+import { apiGet } from "../../../api-fetch";
 import { useCallback, useEffect } from "react";
 
 export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
@@ -142,9 +143,9 @@ export const CAsuContentSeqElement: React.FC<CCP4i2TaskElementProps> = (
                 onChange={async (updatedItem: any) => {
                   console.log("Fetch file for param", updatedItem);
                   const { dbFileId, annotation } = valueOfItem(updatedItem);
-                  const digest = await fetch(
-                    fullUrl(`files/${dbFileId}/digest_by_uuid/`)
-                  ).then((response) => response.json());
+                  const digest = await apiGet(
+                    makeApiUrl(`files/${dbFileId}/digest_by_uuid/`)
+                  );
                   console.log({ digest, annotation });
                   setSEQUENCEFromSEQIN(digest, annotation);
                 }}

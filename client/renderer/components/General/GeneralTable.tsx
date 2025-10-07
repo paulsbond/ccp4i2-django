@@ -32,7 +32,7 @@ import {
   TableRowProps,
   TableCellProps,
 } from "@mui/material";
-import theme from "../../theme";
+import { useTheme } from "@mui/material/styles";
 import * as XLSX from "xlsx";
 
 export interface GeneralTableColumn {
@@ -68,6 +68,7 @@ export interface GeneralTableProps {
 }
 
 export const GeneralTable = (props: GeneralTableProps) => {
+  const theme = useTheme();
   const [filteredItems, setFilteredItems] = useState<any[] | null>(null);
   const [paginatedItems, setPaginatedItems] = useState<any[] | null>(null);
   const [paginationLength, setPaginationLength] = useState(30);
@@ -572,8 +573,8 @@ export const GeneralTable = (props: GeneralTableProps) => {
                     typeof props.dataIndex === "function"
                       ? props.dataIndex(djangoItem)
                       : props.dataIndex
-                      ? djangoItem[props.dataIndex]
-                      : iDjangoItem
+                        ? djangoItem[props.dataIndex]
+                        : iDjangoItem
                   }
                   hover
                   onClick={(e: any) => {

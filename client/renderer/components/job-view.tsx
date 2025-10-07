@@ -15,11 +15,13 @@ import { JobDirectoryView } from "../components/job-directory-view";
 import useSWR from "swr";
 import $ from "jquery";
 import Diagnostic from "../components/diagnostic";
+import { swrFetcher } from "../api-fetch";
 import { JobLogViewer } from "../components/job-log-viewer";
 import { TaskProvider } from "../providers/task-provider";
 import { ValidationViewer } from "../components/validation-viewer";
 import { useRunCheck } from "../providers/run-check-provider";
 import { useJobTab } from "../providers/job-tab-provider";
+import { useTheme } from "../theme/theme-provider";
 
 export interface JobViewProps {
   jobid: number;
@@ -36,13 +38,14 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
     extraDialogActions,
     processedErrors,
   } = useRunCheck();
+  const { mode } = useTheme();
 
   const previousJob = usePrevious(job);
   const { jobTabValue: tabValue, setJobTabValue: setTabValue } = useJobTab();
   //const [tabValue, setTabValue] = useState<Number>(job?.status == 1 ? 0 : 3);
   const { data: report_xml_json, mutate: mutateReportXml } = useSWR<any>(
     job ? `/api/proxy/jobs/${job.id}/report_xml/` : null,
-    (url) => fetch(url).then((r) => r.json()),
+    swrFetcher,
     { refreshInterval: job?.status == 3 || job?.status == 2 ? 5000 : 0 }
   );
 
@@ -113,6 +116,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
             height="calc(100vh - 15rem)"
             value={params_xml}
             language="xml"
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
         {devMode && tabValue == 2 && report_xml && (
@@ -120,6 +124,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
             height="calc(100vh - 15rem)"
             value={prettifyXml(report_xml)}
             language="xml"
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
         {tabValue == 3 && jobid && <CCP4i2ReportXMLView />}
@@ -127,7 +132,12 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
           <Diagnostic xmlDocument={diagnostic_xml} />
         )}
         {devMode && tabValue == 5 && def_xml && (
-          <Editor height="calc(100vh - 15rem)" value={def_xml} language="xml" />
+          <Editor
+            height="calc(100vh - 15rem)"
+            value={def_xml}
+            language="xml"
+            theme={mode === "dark" ? "vs-dark" : "light"}
+          />
         )}
         {(devMode || job?.status === 1) && tabValue == 6 && validation && (
           <ValidationViewer job={job} />
@@ -137,6 +147,7 @@ export const JobView: React.FC<JobViewProps> = ({ jobid }) => {
             height="calc(100vh - 15rem)"
             value={JSON.stringify(container.container, null, 2)}
             language="json"
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
         {tabValue == 8 && container && (

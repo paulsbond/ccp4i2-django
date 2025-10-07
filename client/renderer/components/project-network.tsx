@@ -12,6 +12,7 @@ import {
   Job as JobInfo,
 } from "../types/models";
 import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
+import { useTheme } from "../theme/theme-provider";
 // (single useRouter import only)
 
 export interface ProjectNetworkProps {
@@ -23,6 +24,7 @@ Cytoscape.use(COSEBilkent);
 export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
   const api = useApi();
   const router = useRouter();
+  const { mode } = useTheme();
   const cyRef = useRef<any | null>(null);
   const viewportRef = useRef<
     Record<string, { zoom: number; pan: { x: number; y: number } }>
@@ -410,25 +412,26 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
           "text-wrap": "wrap",
           "text-max-width": 180,
           "font-size": 10,
-          "background-color": "#e0e0e0",
+          "background-color": mode === "dark" ? "#424242" : "#e0e0e0",
           "border-width": 1,
-          "border-color": "#999",
+          "border-color": mode === "dark" ? "#757575" : "#999",
+          color: mode === "dark" ? "#ffffff" : "#000000",
         },
       },
       {
         selector: 'node[type = "job"]',
         style: {
           shape: "round-rectangle",
-          "background-color": "#d1eaff",
-          "border-color": "#5aa6e8",
+          "background-color": mode === "dark" ? "#1e3a5f" : "#d1eaff",
+          "border-color": mode === "dark" ? "#4fc3f7" : "#5aa6e8",
         },
       },
       {
         selector: 'node[type = "file"]',
         style: {
           shape: "ellipse",
-          "background-color": "#ffe7cc",
-          "border-color": "#ffb366",
+          "background-color": mode === "dark" ? "#4a2c17" : "#ffe7cc",
+          "border-color": mode === "dark" ? "#ffb74d" : "#ffb366",
         },
       },
       {
@@ -436,7 +439,7 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
         style: {
           width: 2,
           "curve-style": "bezier",
-          "line-color": "#999",
+          "line-color": mode === "dark" ? "#757575" : "#999",
           // no arrows by default; scoped by type rules below
           "source-arrow-shape": "none",
           "target-arrow-shape": "none",
@@ -445,30 +448,31 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
           "font-size": 9,
           "text-rotation": "autorotate",
           "text-margin-y": -6,
+          color: mode === "dark" ? "#ffffff" : "#000000",
         },
       },
       {
         selector: 'edge[type = "job-to-job"]',
         style: {
-          "line-color": "#6a5acd",
+          "line-color": mode === "dark" ? "#9575cd" : "#6a5acd",
           // arrow at the descendent end (target)
           "source-arrow-shape": "none",
           "target-arrow-shape": "triangle",
-          "target-arrow-color": "#6a5acd",
+          "target-arrow-color": mode === "dark" ? "#9575cd" : "#6a5acd",
         },
       },
       {
         selector: 'edge[type = "file-to-file"]',
         style: {
-          "line-color": "#2e8b57",
+          "line-color": mode === "dark" ? "#4db6ac" : "#2e8b57",
           // arrow at the antecedent end (source)
           "target-arrow-shape": "none",
           "source-arrow-shape": "triangle",
-          "source-arrow-color": "#2e8b57",
+          "source-arrow-color": mode === "dark" ? "#4db6ac" : "#2e8b57",
         },
       },
     ],
-    []
+    [mode]
   );
 
   // Layout options: compact for all except "full" view
@@ -613,7 +617,11 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
         <CytoscapeComponent
           elements={networkElements}
           stylesheet={cytoscapeStyles}
-          style={{ width: "1200px", height: "1200px" }}
+          style={{
+            width: "1200px",
+            height: "1200px",
+            backgroundColor: mode === "dark" ? "#121212" : "#ffffff",
+          }}
           layout={layoutOptions}
           cy={(cy) => {
             // Save cy instance and restore viewport if available

@@ -6,6 +6,7 @@ import { useRunCheck } from "../providers/run-check-provider";
 import { useJob } from "../utils";
 import { Job } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
+import { useTheme } from "../theme/theme-provider";
 
 interface ValidationViewerProps {
   job?: Job;
@@ -51,6 +52,8 @@ const cleanErrorMessage = (message: string): string => {
 };
 
 export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
+  const { customColors } = useTheme();
+  const { mode } = useTheme();
   const { processedErrors } = useRunCheck();
   const { validation } = useJob(job?.id || -1);
   const { devMode } = useCCP4i2Window();
@@ -138,6 +141,7 @@ export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
           height="100%"
           defaultLanguage="json"
           value={prettifiedValidation}
+          theme={mode === "dark" ? "vs-dark" : "light"}
           options={{
             readOnly: true,
             minimap: { enabled: false },
@@ -158,9 +162,9 @@ export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
       <Box
         sx={{
           p: 3,
-          border: "1px solid #e0e0e0",
+          border: `1px solid ${customColors.ui.mediumGray}`,
           borderRadius: 1,
-          backgroundColor: "#f5f5f5",
+          backgroundColor: customColors.ui.veryLightGray,
           textAlign: "center",
         }}
       >
@@ -212,7 +216,7 @@ export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
           key={group.severity}
           sx={{
             mb: 2,
-            border: "1px solid #e0e0e0",
+            border: `1px solid ${customColors.ui.mediumGray}`,
             borderRadius: 1,
             overflow: "hidden",
           }}
@@ -224,7 +228,7 @@ export const ValidationViewer: React.FC<ValidationViewerProps> = ({ job }) => {
               p: 2,
               backgroundColor: `${group.color}10`,
               borderBottom: expandedGroups.has(group.severity)
-                ? "1px solid #e0e0e0"
+                ? `1px solid ${customColors.ui.mediumGray}`
                 : "none",
               cursor: "pointer",
               display: "flex",

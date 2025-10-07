@@ -139,6 +139,10 @@ while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
     . "$CCP4_SETUP_SCRIPT"
     export CCP4_PYTHON="$CCP4_DATA_PATH/ccp4-9/bin/ccp4-python"
     echo "CCP4 environment configured successfully"
+    
+    # After sourcing CCP4 setup, restore py-packages and app paths at the front
+    export PYTHONPATH="/mnt/ccp4data/py-packages:/usr/src/app:$PYTHONPATH"
+    echo "PYTHONPATH manually corrected: $PYTHONPATH"
     break
   else
     echo "Waiting for CCP4 setup script... (${WAIT_COUNT}/${MAX_WAIT}s)"
@@ -149,15 +153,6 @@ done
 
 # Change to app directory
 cd /usr/src/app
-
-# Install dependencies only if uvicorn is not already installed
-if ! $CCP4_PYTHON -m pip show uvicorn > /dev/null 2>&1; then
-    echo "Installing Python dependencies..."
-    $CCP4_PYTHON -m pip install --upgrade pip
-    $CCP4_PYTHON -m pip install -r requirements.txt
-else
-    echo "Uvicorn already installed, skipping dependency installation."
-fi
 
 # Run Django setup (can run on all replicas, but migrations are idempotent)
 echo "Running Django migrations..."
@@ -174,6 +169,15 @@ else
     echo "Health server was already stopped or not found"
 fi
 
-# Start Django server
-echo "Starting Django server..."
-exec $CCP4_PYTHON -m uvicorn asgi:application --host 0.0.0.0 --port 8000
+# Start Django server (choose one of the following options)
+
+echo "Starting Django server with gunicorn (uvicorn workers)..."
+exec $CCP4_PYTHON -m gunicorn asgi:application \
+  -b 0.0.0.0:8000 \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --workers 2 \
+  --timeout 60 \
+  --keep-alive 10 \
+  --graceful-timeout 30 \
+  --max-requests 100 \
+  --max-requests-jitter 10

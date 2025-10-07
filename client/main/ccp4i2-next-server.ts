@@ -47,7 +47,9 @@ export const startNextServer = async (
     defaultSrc: "'self'",
     imgSrc: "'self' data: blob:",
     connectSrc:
-      "'self' https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/ https://login.microsoftonline.com https://graph.microsoft.com " +
+      "'self' https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/ " +
+      "https://login.microsoftonline.com https://graph.microsoft.com https://*.microsoftonline.com https://*.microsoft.com " +
+      "https://graph.windows.net https://management.azure.com " +
       process.env.NEXT_PUBLIC_API_BASE_URL,
     styleSrc:
       "'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.googleapis.com/css2",
@@ -55,6 +57,9 @@ export const startNextServer = async (
       "'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.gstatic.com",
     scriptSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'",
     workerSrc: "'self' blob:",
+    frameSrc:
+      "'self' https://login.microsoftonline.com https://*.microsoftonline.com",
+    frameAncestors: "'self'",
   };
 
   const cspString = [
@@ -65,6 +70,8 @@ export const startNextServer = async (
     `font-src ${csp.fontSrc}`,
     `script-src ${csp.scriptSrc}`,
     `worker-src ${csp.workerSrc}`,
+    `frame-src ${csp.frameSrc}`,
+    `frame-ancestors ${csp.frameAncestors}`,
   ]
     .join("; ")
     .trim(); // Clean up whitespace

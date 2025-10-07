@@ -3,6 +3,7 @@ import { useApi } from "../api";
 import { useJob } from "../utils";
 import { Stack } from "@mui/material";
 import { use, useEffect, useRef, useState } from "react";
+import { useTheme } from "../theme/theme-provider";
 
 export const JobCommentEditor: React.FC<{
   jobId: number;
@@ -11,6 +12,7 @@ export const JobCommentEditor: React.FC<{
   const { job } = useJob(jobId);
   const timerRef = useRef<any | null>(null);
   const [inFlight, setInFlight] = useState<boolean>(false);
+  const { mode } = useTheme();
 
   useEffect(() => {
     return () => {
@@ -57,6 +59,7 @@ export const JobCommentEditor: React.FC<{
         value={job?.comments || ""}
         language="text"
         onChange={handleChange}
+        theme={mode === "dark" ? "vs-dark" : "light"}
         options={{ readOnly: inFlight }}
       />
     </Stack>

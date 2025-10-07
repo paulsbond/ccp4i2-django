@@ -4,4 +4,5 @@ export interface StoreSchema {
   zoomLevel: number;
   devMode: boolean;
   CCP4I2_PROJECTS_DIR: string;
+  theme: "light" | "dark";
 }

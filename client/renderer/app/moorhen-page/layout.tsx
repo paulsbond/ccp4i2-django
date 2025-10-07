@@ -4,6 +4,7 @@ import { CootProvider } from "../../providers/coot-provider";
 import { AppBar, Toolbar, Typography } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
 import { NavigationShortcutsProvider } from "../../providers/navigation-shortcuts-provider";
+import { ThemeToggle } from "../../components/theme-toggle";
 
 export default function MoorhenPageLayout(props: PropsWithChildren) {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function MoorhenPageLayout(props: PropsWithChildren) {
       <NavigationShortcutsProvider>
         <AppBar position="static">
           <Toolbar sx={{ gap: 2 }}>
+            <ThemeToggle />
             <Typography
               variant="h6"
               style={{ textAlign: "center", margin: "10px" }}

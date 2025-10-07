@@ -31,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import { useApi } from "../../api";
 import { Project, Job, File as DjangoFile } from "../../types/models";
+import { useTheme } from "../../theme/theme-provider";
 
 interface CCP4i2HierarchyBrowserProps {
   onFileSelect: (fileId: number) => Promise<void>;
@@ -44,6 +45,7 @@ interface HierarchyPanelProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
+  customColors: typeof import("../../theme/palette").lightCustomColors;
 }
 
 const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
@@ -54,6 +56,7 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
   searchValue,
   onSearchChange,
   searchPlaceholder = "Search...",
+  customColors,
 }) => (
   <Paper
     elevation={1}
@@ -61,7 +64,7 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
       height: "100%",
       display: "flex",
       flexDirection: "column",
-      border: "1px solid #e0e0e0",
+      border: `1px solid ${customColors.ui.mediumGray}`,
     }}
   >
     {/* Compact Header */}
@@ -69,9 +72,9 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
       sx={{
         px: 1.5,
         py: 0.75,
-        backgroundColor: "#1976d2",
+        backgroundColor: customColors.ui.lightBlue,
         color: "white",
-        borderBottom: "1px solid #e0e0e0",
+        borderBottom: `1px solid ${customColors.ui.mediumGray}`,
         display: "flex",
         alignItems: "center",
         gap: 0.5,
@@ -100,7 +103,7 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
     </Box>
 
     {/* Compact Search Box */}
-    <Box sx={{ p: 1, borderBottom: "1px solid #e0e0e0" }}>
+    <Box sx={{ p: 1, borderBottom: `1px solid ${customColors.ui.mediumGray}` }}>
       <TextField
         fullWidth
         size="small"
@@ -148,9 +151,14 @@ const HierarchyPanel: React.FC<HierarchyPanelProps> = ({
 interface ProjectItemProps {
   project: Project;
   onSelect: (project: Project) => void;
+  customColors: typeof import("../../theme/palette").lightCustomColors;
 }
 
-const ProjectItem: React.FC<ProjectItemProps> = ({ project, onSelect }) => (
+const ProjectItem: React.FC<ProjectItemProps> = ({
+  project,
+  onSelect,
+  customColors,
+}) => (
   <ListItem disablePadding sx={{ py: 0 }}>
     <ListItemButton
       onClick={() => onSelect(project)}
@@ -158,7 +166,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onSelect }) => (
         py: 0.5,
         px: 1,
         "&:hover": {
-          backgroundColor: "#f5f5f5",
+          backgroundColor: customColors.ui.veryLightGray,
         },
       }}
     >
@@ -191,9 +199,10 @@ const ProjectItem: React.FC<ProjectItemProps> = ({ project, onSelect }) => (
 interface JobItemProps {
   job: Job;
   onSelect: (job: Job) => void;
+  customColors: typeof import("../../theme/palette").lightCustomColors;
 }
 
-const JobItem: React.FC<JobItemProps> = ({ job, onSelect }) => {
+const JobItem: React.FC<JobItemProps> = ({ job, onSelect, customColors }) => {
   const getStatusColor = (status: number) => {
     switch (status) {
       case 1:
@@ -232,7 +241,7 @@ const JobItem: React.FC<JobItemProps> = ({ job, onSelect }) => {
           py: 0.5,
           px: 1,
           "&:hover": {
-            backgroundColor: "#f5f5f5",
+            backgroundColor: customColors.ui.veryLightGray,
           },
         }}
       >
@@ -281,9 +290,14 @@ const JobItem: React.FC<JobItemProps> = ({ job, onSelect }) => {
 interface FileItemProps {
   file: DjangoFile;
   onSelect?: (file: DjangoFile) => void;
+  customColors: typeof import("../../theme/palette").lightCustomColors;
 }
 
-const FileItem: React.FC<FileItemProps> = ({ file, onSelect }) => {
+const FileItem: React.FC<FileItemProps> = ({
+  file,
+  onSelect,
+  customColors,
+}) => {
   const getFileTypeColor = (type: string) => {
     if (type.includes("pdb")) return "primary";
     if (type.includes("mtz")) return "secondary";
@@ -299,7 +313,7 @@ const FileItem: React.FC<FileItemProps> = ({ file, onSelect }) => {
           py: 0.5,
           px: 1,
           "&:hover": {
-            backgroundColor: "#f5f5f5",
+            backgroundColor: customColors.ui.veryLightGray,
           },
         }}
       >
@@ -381,6 +395,7 @@ const REFRESH_INTERVALS = {
 export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
   onFileSelect,
 }) => {
+  const { customColors } = useTheme();
   const api = useApi();
 
   // State management
@@ -626,6 +641,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
           searchValue={fileSearchTerm}
           onSearchChange={setFileSearchTerm}
           searchPlaceholder="Search files..."
+          customColors={customColors}
         >
           {filesLoading && renderLoading()}
           {filesError && renderError(filesError)}
@@ -644,7 +660,11 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
             <List sx={{ py: 0 }}>
               {filteredFiles.map((file, index) => (
                 <React.Fragment key={file.id}>
-                  <FileItem file={file} onSelect={handleFileSelect} />
+                  <FileItem
+                    file={file}
+                    onSelect={handleFileSelect}
+                    customColors={customColors}
+                  />
                   {index < filteredFiles.length - 1 && (
                     <Divider sx={{ my: 0 }} />
                   )}
@@ -666,6 +686,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
           searchValue={jobSearchTerm}
           onSearchChange={setJobSearchTerm}
           searchPlaceholder="Search jobs..."
+          customColors={customColors}
         >
           {jobsLoading && renderLoading()}
           {jobsError && renderError(jobsError)}
@@ -682,7 +703,11 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
             <List sx={{ py: 0 }}>
               {filteredJobs.map((job, index) => (
                 <React.Fragment key={job.id}>
-                  <JobItem job={job} onSelect={handleJobSelect} />
+                  <JobItem
+                    job={job}
+                    onSelect={handleJobSelect}
+                    customColors={customColors}
+                  />
                   {index < filteredJobs.length - 1 && (
                     <Divider sx={{ my: 0 }} />
                   )}
@@ -700,6 +725,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
           searchValue={projectSearchTerm}
           onSearchChange={setProjectSearchTerm}
           searchPlaceholder="Search projects..."
+          customColors={customColors}
         >
           {projectsLoading && renderLoading()}
           {projectsError && renderError(projectsError)}
@@ -719,6 +745,7 @@ export const CCP4i2HierarchyBrowser: React.FC<CCP4i2HierarchyBrowserProps> = ({
                   <ProjectItem
                     project={project}
                     onSelect={handleProjectSelect}
+                    customColors={customColors}
                   />
                   {index < filteredProjects.length - 1 && (
                     <Divider sx={{ my: 0 }} />

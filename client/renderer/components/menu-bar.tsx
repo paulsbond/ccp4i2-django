@@ -18,6 +18,7 @@ import { Job, Project } from "../types/models";
 import EditableTypography from "./editable-typography";
 import HistoryToolbar from "./history-toolbar";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 
 export default function MenuBar() {
   const { projectId, jobId, devMode, setDevMode } = useCCP4i2Window();
@@ -68,6 +69,7 @@ export default function MenuBar() {
           }
           label="Dev Mode"
         />
+        <ThemeToggle />
         <FileMenu />
         <EditMenu />
         <ViewMenu />
