@@ -5,7 +5,7 @@ interface CCP4i2Context {
   projectId?: number | null;
   setProjectId?: (projectId: number) => void | null;
   jobId?: number | null;
-  setJobId?: (jobId: number) => void | null;
+  setJobId?: (jobId: number | null) => void | null;
   jobPanelSize?: number;
   setJobPanelSize?: (size: number) => void;
   cootModule?: any | null;
