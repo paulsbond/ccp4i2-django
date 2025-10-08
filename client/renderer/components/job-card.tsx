@@ -38,6 +38,7 @@ import { CCP4i2JobAvatar } from "./job-avatar";
 import { useProject } from "../utils";
 import { usePopcorn } from "../providers/popcorn-provider";
 import { useRunCheck } from "../providers/run-check-provider";
+import { useCCP4i2Window } from "../app-context";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -55,6 +56,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   const api = useApi();
   const router = useRouter();
   const deleteDialog = useDeleteDialog();
+  const { setJobId } = useCCP4i2Window();
   const projectId = useMemo(() => {
     return job.project;
   }, [job]);
@@ -154,6 +156,7 @@ export const JobCard: React.FC<JobCardProps> = ({
         onDelete: () => {
           api.delete(`jobs/${job.id}`).then(() => {
             mutateJobs();
+            setJobId(null);
           });
         },
         children: [
