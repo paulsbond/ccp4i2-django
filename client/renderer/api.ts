@@ -139,7 +139,14 @@ export function useApi() {
     noSlashUrl,
 
     get: function <T>(endpoint: string, refreshInterval: number = 0) {
-      return useSWR<T>(makeApiUrl(endpoint), fetcher, { refreshInterval });
+      // Return null key if endpoint contains undefined/null values - prevents SWR from fetching
+      const swrKey =
+        endpoint &&
+        !endpoint.includes("undefined") &&
+        !endpoint.includes("null")
+          ? makeApiUrl(endpoint)
+          : null;
+      return useSWR<T>(swrKey, fetcher, { refreshInterval });
     },
 
     config: function <T>() {
@@ -152,7 +159,10 @@ export function useApi() {
       endpointFetch: EndpointFetch,
       refreshInterval: number = 0
     ) {
-      return useSWR<T>(endpointFetch, endpoint_fetcher as any, {
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR<T>(swrKey, endpoint_fetcher as any, {
         refreshInterval,
       });
     },
@@ -161,23 +171,42 @@ export function useApi() {
       endpointFetch: EndpointFetch,
       refreshInterval: number = 0
     ) {
-      return useSWR(endpointFetch, endpoint_xml_fetcher, { refreshInterval });
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR(swrKey, endpoint_xml_fetcher, { refreshInterval });
     },
 
     get_pretty_endpoint_xml: function (endpointFetch: EndpointFetch) {
-      return useSWR(endpointFetch, pretty_endpoint_xml_fetcher);
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR(swrKey, pretty_endpoint_xml_fetcher);
     },
 
     get_wrapped_endpoint_json: function <T>(endpointFetch: EndpointFetch) {
-      return useSWR<T>(endpointFetch, endpoint_wrapped_json_fetcher, {});
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR<T>(swrKey, endpoint_wrapped_json_fetcher, {});
     },
 
     get_validation: function (endpointFetch: EndpointFetch) {
-      return useSWR(endpointFetch, endpoint_validation_fetcher, {});
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR(swrKey, endpoint_validation_fetcher, {});
     },
 
     digest: function <T>(endpoint: string) {
-      const result = useSWR<T>(makeApiUrl(endpoint), digest_fetcher, {
+      // Return null key if endpoint contains undefined/null values - prevents SWR from fetching
+      const swrKey =
+        endpoint &&
+        !endpoint.includes("undefined") &&
+        !endpoint.includes("null")
+          ? makeApiUrl(endpoint)
+          : null;
+      const result = useSWR<T>(swrKey, digest_fetcher, {
         onError: (error) => {
           console.warn(`Digest error for endpoint "${endpoint}":`, error);
         },
@@ -225,12 +254,13 @@ export function useApi() {
     },
 
     fileTextContent: function (djangoFile: any) {
-      return useSWR(
-        `/api/proxy/files/${djangoFile?.dbFileId}/download_by_uuid/`,
-        (url) => {
-          return apiText(url);
-        }
-      );
+      // Return null key if djangoFile or dbFileId is invalid - prevents SWR from fetching
+      const swrKey = djangoFile?.dbFileId
+        ? `/api/proxy/files/${djangoFile.dbFileId}/download_by_uuid/`
+        : null;
+      return useSWR(swrKey, (url) => {
+        return apiText(url);
+      });
     },
   };
 }
