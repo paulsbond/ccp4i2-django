@@ -2,6 +2,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
 from rest_framework import routers
+
+from .ProjectExportViewSet import ProjectExportViewSet
 from .ProjectViewSet import ProjectViewSet
 from .ProjectTagViewSet import ProjectTagViewSet
 from .FileViewSet import FileViewSet
@@ -19,6 +21,7 @@ router.register("jobs", JobViewSet)
 router.register("filetypes", FileTypeViewSet)
 router.register("fileimports", FileImportViewSet)
 router.register("fileuses", FileUseViewSet)
+router.register("projectexports", ProjectExportViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),

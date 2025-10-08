@@ -37,14 +37,58 @@ async function coreFetch(
 ): Promise<Response> {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
+  // Prepare headers - don't assume JSON content type
+  const headers: Record<string, string> = {
+    ...finalConfig.headers,
+  };
+
+  // Convert options.headers to Record<string, string> format
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      // Convert Headers object to Record<string, string>
+      options.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      // Convert string[][] to Record<string, string>
+      options.headers.forEach(([key, value]) => {
+        headers[key] = value;
+      });
+    } else {
+      // Already Record<string, string>, safe to spread
+      Object.assign(headers, options.headers);
+    }
+  }
+
+  // Only set JSON content-type if:
+  // 1. No Content-Type is already set
+  // 2. Body is not FormData (which needs multipart/form-data with boundary)
+  // 3. Body exists and appears to be JSON
+  const hasContentType = Object.keys(headers).some(
+    (key) => key.toLowerCase() === "content-type"
+  );
+
+  if (!hasContentType && options.body) {
+    // Don't set Content-Type for FormData - browser will set multipart/form-data with boundary
+    if (!(options.body instanceof FormData)) {
+      // Only set JSON content-type for non-FormData bodies
+      if (
+        typeof options.body === "string" ||
+        options.body instanceof URLSearchParams
+      ) {
+        // Assume JSON for string bodies, form-encoded for URLSearchParams
+        headers["Content-Type"] =
+          typeof options.body === "string"
+            ? "application/json"
+            : "application/x-www-form-urlencoded";
+      }
+    }
+  }
+
   // Set up request options
   const requestOptions: RequestInit = {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...finalConfig.headers,
-      ...options.headers,
-    },
+    headers,
   };
 
   // Add timeout if specified
@@ -142,36 +186,105 @@ export async function apiArrayBuffer(
 }
 
 /**
- * POST request with JSON payload
+ * POST request with automatic body type handling
+ * Supports JSON objects, FormData, strings, etc.
+ * Content-Type is automatically set based on body type
  */
 export async function apiPost<T = any>(
   url: string,
   data: any,
   config: ApiFetchConfig = {}
 ): Promise<T> {
+  let body: any;
+
+  // Let coreFetch handle FormData and other types automatically
+  if (
+    data instanceof FormData ||
+    typeof data === "string" ||
+    data instanceof URLSearchParams
+  ) {
+    body = data;
+  } else {
+    // For plain objects, JSON stringify them
+    body = JSON.stringify(data);
+  }
+
   return apiJson<T>(
     url,
     {
       method: "POST",
-      body: JSON.stringify(data),
+      body,
+      // Don't set Content-Type here - let coreFetch decide based on body type
     },
     config
   );
 }
 
 /**
- * PUT request with JSON payload
+ * PUT request with automatic body type handling
+ * Supports JSON objects, FormData, strings, etc.
+ * Content-Type is automatically set based on body type
  */
 export async function apiPut<T = any>(
   url: string,
   data: any,
   config: ApiFetchConfig = {}
 ): Promise<T> {
+  let body: any;
+
+  // Let coreFetch handle FormData and other types automatically
+  if (
+    data instanceof FormData ||
+    typeof data === "string" ||
+    data instanceof URLSearchParams
+  ) {
+    body = data;
+  } else {
+    // For plain objects, JSON stringify them
+    body = JSON.stringify(data);
+  }
+
   return apiJson<T>(
     url,
     {
       method: "PUT",
-      body: JSON.stringify(data),
+      body,
+      // Don't set Content-Type here - let coreFetch decide based on body type
+    },
+    config
+  );
+}
+
+/**
+ * PATCH request with automatic body type handling
+ * Supports JSON objects, FormData, strings, etc.
+ * Content-Type is automatically set based on body type
+ */
+export async function apiPatch<T = any>(
+  url: string,
+  data: any,
+  config: ApiFetchConfig = {}
+): Promise<T> {
+  let body: any;
+
+  // Let coreFetch handle FormData and other types automatically
+  if (
+    data instanceof FormData ||
+    typeof data === "string" ||
+    data instanceof URLSearchParams
+  ) {
+    body = data;
+  } else {
+    // For plain objects, JSON stringify them
+    body = JSON.stringify(data);
+  }
+
+  return apiJson<T>(
+    url,
+    {
+      method: "PATCH",
+      body,
+      // Don't set Content-Type here - let coreFetch decide based on body type
     },
     config
   );
@@ -216,21 +329,24 @@ export async function apiUpload<T = any>(
     formData.append("file", file);
   }
 
-  // Don't set Content-Type for FormData, let browser set it with boundary
-  const headers = { ...config.headers };
-  delete headers["Content-Type"];
-
-  return apiJson<T>(
+  // Use apiFetch directly to avoid any JSON content-type assumptions
+  const response = await apiFetch(
     url,
     {
       method: "POST",
       body: formData,
+      // No Content-Type header - browser will set multipart/form-data with boundary
     },
-    {
-      ...config,
-      headers,
-    }
+    config
   );
+
+  // Try to parse as JSON, fallback to text
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  } else {
+    return response.text() as any;
+  }
 }
 
 /**

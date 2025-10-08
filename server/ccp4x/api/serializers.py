@@ -104,6 +104,12 @@ class FileExportSerializer(ModelSerializer):
         fields = "__all__"
 
 
+class ProjectExportSerializer(ModelSerializer):
+    class Meta:
+        model = models.ProjectExport
+        fields = "__all__"
+
+
 class XDataSerializer(ModelSerializer):
     class Meta:
         model = models.XData
