@@ -13,31 +13,80 @@ import {
   LinearProgress,
 } from "@mui/material";
 import { Download, Close, CheckCircle } from "@mui/icons-material";
-import useSWR from "swr";
-import { swrFetcher } from "../api-fetch";
 import { ProjectExport } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
 import { useProject } from "../utils";
+import { useApi } from "../api";
 
 interface ProjectExportsDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
+// Helper function to slugify project name (equivalent to Python's slugify)
+const slugify = (text: string): string => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-") // Replace spaces with -
+    .replace(/[^\w\-]+/g, "") // Remove all non-word chars
+    .replace(/\-\-+/g, "-") // Replace multiple - with single -
+    .replace(/^-+/, "") // Trim - from start of text
+    .replace(/-+$/, ""); // Trim - from end of text
+};
+
+// Helper function to format timestamp like Python's strftime("%Y%m%d_%H%M%S")
+// Uses UTC to match Django server's UTC configuration
+const formatTimestamp = (dateString: string): string => {
+  const date = new Date(dateString);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+  return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+};
+
+// Recursive function to search through hierarchical directory structure
+const findFileInDirectory = (container: any[], fileName: string): boolean => {
+  if (!container || !Array.isArray(container)) {
+    return false;
+  }
+
+  for (const item of container) {
+    // Check if current item matches the filename
+    console.log("Checking item:", item.name, fileName);
+    if (item.name === fileName) {
+      return true;
+    }
+
+    // If this item has contents, search recursively
+    if (item.contents && Array.isArray(item.contents)) {
+      if (findFileInDirectory(item.contents, fileName)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
 export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
   open,
   onClose,
 }) => {
+  const api = useApi();
+  const { projectId } = useCCP4i2Window();
+  const { project, directory } = useProject(projectId || 0);
+  console.log(directory?.container);
   const {
     data: exports,
     error,
     isLoading,
-  } = useSWR<ProjectExport[]>(
-    open ? "/api/proxy/projectexports/" : null,
-    swrFetcher
-  );
-  const { projectId } = useCCP4i2Window();
-  const { directory } = useProject(projectId || 0);
+  } = api.get<ProjectExport[]>(`projects/${projectId}/exports/`);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -59,10 +108,39 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
     document.body.removeChild(link);
   };
 
+  const inferredNames = React.useMemo(() => {
+    if (!project || !exports) return {};
+    const names: { [key: number]: string } = {};
+    exports.forEach((exportItem) => {
+      const projectName = slugify(project.name);
+      const timestamp = formatTimestamp(exportItem.time);
+      const inferredName = `${projectName}_export_${timestamp}.ccp4_project.zip`;
+      names[exportItem.id] = inferredName;
+    });
+    return names;
+  }, [exports, project]);
+
+  // Memoized function to check if files exist in the hierarchical directory structure
+  const fileExistence = React.useMemo(() => {
+    if (!directory?.container || !exports || !project) return {};
+
+    const existence: { [key: number]: boolean } = {};
+    exports.forEach((exportItem) => {
+      const inferredName = inferredNames[exportItem.id];
+      if (inferredName) {
+        existence[exportItem.id] = findFileInDirectory(
+          directory.container,
+          inferredName
+        );
+      }
+    });
+    return existence;
+  }, [directory?.container, exports, project, inferredNames]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Project Exports
+        Project Exports - {project ? project.name : "Loading..."}
         <IconButton
           onClick={onClose}
           sx={{ position: "absolute", right: 8, top: 8 }}
@@ -74,11 +152,12 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
         {isLoading && <LinearProgress />}
         {error && <div>Error loading exports</div>}
         {exports && exports.length === 0 && <div>No exports found</div>}
-        {exports && exports.length > 0 && (
+        {exports && exports.length > 0 && project && inferredNames && (
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Project</TableCell>
+                <TableCell>Exists</TableCell>
+                <TableCell>File Name</TableCell>
                 <TableCell>Export Time</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
@@ -87,15 +166,17 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
               {exports.map((exportItem) => (
                 <TableRow key={exportItem.id}>
                   <TableCell>
-                    {exportItem.file_exists && (
-                      <CheckCircle
-                        sx={{ color: "green", mr: 1, fontSize: "1rem" }}
-                      />
+                    {fileExistence[exportItem.id] ? (
+                      <Tooltip title="File exists">
+                        <CheckCircle color="success" />
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title="File missing">
+                        <Close color="error" />
+                      </Tooltip>
                     )}
-                    {typeof exportItem.project === "object"
-                      ? exportItem.project.name
-                      : `Project ${exportItem.project}`}
                   </TableCell>
+                  <TableCell>{inferredNames[exportItem.id]}</TableCell>
                   <TableCell>{formatDateTime(exportItem.time)}</TableCell>
                   <TableCell>
                     <Tooltip title="Download export">

@@ -513,7 +513,9 @@ class ProjectViewSet(ModelViewSet):
 
         # Create log file path with same base name but .export.log extension
         log_file_name = export_file_name.replace(".ccp4_project.zip", ".export.log")
-        log_file_path = os.path.join(the_project.directory, log_file_name)
+        log_file_path = os.path.join(
+            the_project.directory, "CCP4_PROJECT_FILES", log_file_name
+        )
 
         # Start subprocess to run export_project management command in background
         try:
@@ -548,3 +550,58 @@ class ProjectViewSet(ModelViewSet):
                 exc_info=e,
             )
             return JsonResponse({"status": "Failed", "reason": str(e)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectExportSerializer,
+    )
+    def exports(self, request, pk=None):
+        """
+        Retrieve a list of project exports for a specific project.
+
+        This action returns all ProjectExport instances associated with the given project,
+        ordered by creation time (most recent first). This allows users to see the history
+        of exports and their status.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            pk (int, optional): The primary key of the project.
+
+        Returns:
+            Response: A Response object containing serialized ProjectExport data,
+                     including export file names, creation times, and status information.
+        """
+        try:
+            project = models.Project.objects.get(pk=pk)
+
+            # Get all exports for this project, ordered by most recent first
+            project_exports = models.ProjectExport.objects.filter(
+                project=project
+            ).order_by("-time")
+
+            # Update project last access time
+            project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+            project.save()
+
+            # Serialize the export data
+            serializer = serializers.ProjectExportSerializer(project_exports, many=True)
+
+            return Response(
+                serializer.data,
+            )
+
+        except models.Project.DoesNotExist:
+            return Response(
+                {"status": "Failed", "reason": "Project not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            logger.exception(
+                "Failed to retrieve exports for project %s", pk, exc_info=e
+            )
+            return Response(
+                {"status": "Failed", "reason": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
