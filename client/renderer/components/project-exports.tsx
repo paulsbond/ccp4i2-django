@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
   Table,
   TableBody,
   TableCell,
@@ -11,8 +12,9 @@ import {
   IconButton,
   Tooltip,
   LinearProgress,
+  Button,
 } from "@mui/material";
-import { Download, Close, CheckCircle } from "@mui/icons-material";
+import { Download, Close, CheckCircle, Delete } from "@mui/icons-material";
 import { ProjectExport } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
 import { useProject } from "../utils";
@@ -86,7 +88,13 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
     data: exports,
     error,
     isLoading,
+    mutate,
   } = api.get<ProjectExport[]>(`projects/${projectId}/exports/`);
+
+  // State for delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [exportToDelete, setExportToDelete] =
+    React.useState<ProjectExport | null>(null);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -106,6 +114,31 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleDeleteClick = (exportItem: ProjectExport) => {
+    setExportToDelete(exportItem);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!exportToDelete) return;
+
+    try {
+      await api.delete(`projectexports/${exportToDelete.id}/`);
+      // Refresh the exports list
+      mutate();
+      setDeleteDialogOpen(false);
+      setExportToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete export:", error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setExportToDelete(null);
   };
 
   const inferredNames = React.useMemo(() => {
@@ -184,6 +217,14 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
                         <Download />
                       </IconButton>
                     </Tooltip>
+                    <Tooltip title="Delete export">
+                      <IconButton
+                        onClick={() => handleDeleteClick(exportItem)}
+                        color="error"
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -191,6 +232,32 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
           </Table>
         )}
       </DialogContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this export? This action cannot be
+          undone and will also remove the associated files from disk.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 };
