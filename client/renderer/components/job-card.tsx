@@ -156,7 +156,7 @@ export const JobCard: React.FC<JobCardProps> = ({
         onDelete: () => {
           api.delete(`jobs/${job.id}`).then(() => {
             mutateJobs();
-            setJobId(null);
+            if (setJobId) setJobId(null);
           });
         },
         children: [
@@ -249,7 +249,7 @@ export const JobCard: React.FC<JobCardProps> = ({
         <CardActions sx={{ p: 0.5 }}>
           <Grid2 container>
             {subJobs && subJobs.length > 0 && (
-              <Grid2 sx={{ xs: 6 }}>
+              <Grid2 size={{ xs: 6 }}>
                 Child jobs
                 <MyExpandMore
                   expand={jobsExpanded}
@@ -262,7 +262,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               </Grid2>
             )}
             {jobFiles && jobFiles.length > 0 && (
-              <Grid2 sx={{ xs: 6 }}>
+              <Grid2 size={{ xs: 6 }}>
                 Files
                 <MyExpandMore
                   expand={filesExpanded}
