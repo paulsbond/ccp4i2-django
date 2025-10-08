@@ -19,6 +19,8 @@ import { ProjectExport } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
 import { useProject } from "../utils";
 import { useApi } from "../api";
+import { apiJson } from "../api-fetch";
+import useSWR from "swr";
 
 interface ProjectExportsDialogProps {
   open: boolean;
@@ -82,14 +84,32 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
 }) => {
   const api = useApi();
   const { projectId } = useCCP4i2Window();
-  const { project, directory } = useProject(projectId || 0);
-  console.log(directory?.container);
+
+  const { project } = useProject(projectId || 0);
+  const { data: directory, mutate: mutateDirectory } = useSWR<any>(
+    project && open ? `/api/proxy/projects/${project.id}/directory/` : null,
+    apiJson,
+    { refreshInterval: open ? 5000 : 0 }
+  );
+
   const {
     data: exports,
     error,
     isLoading,
-    mutate,
-  } = api.get<ProjectExport[]>(`projects/${projectId}/exports/`);
+    mutate: mutateExports,
+  } = api.get<ProjectExport[]>(`projects/${projectId}/exports/`, 5000);
+
+  console.log("Project exports:", exports);
+  // Force fresh data when dialog opens
+  React.useEffect(() => {
+    if (open && projectId) {
+      // Clear cache and force fresh fetch
+      mutateExports(undefined, { revalidate: true });
+      if (project) {
+        mutateDirectory(undefined, { revalidate: true });
+      }
+    }
+  }, [open, projectId, project?.id, mutateExports, mutateDirectory]);
 
   // State for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -126,8 +146,9 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
 
     try {
       await api.delete(`projectexports/${exportToDelete.id}/`);
-      // Refresh the exports list
-      mutate();
+      // Refresh both the exports list and project directory
+      mutateExports();
+      // Note: Project directory will auto-refresh due to the 5-second interval
       setDeleteDialogOpen(false);
       setExportToDelete(null);
     } catch (error) {
