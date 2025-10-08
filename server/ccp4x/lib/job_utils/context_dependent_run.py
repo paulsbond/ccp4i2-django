@@ -308,6 +308,16 @@ def run_job_context_aware(job):
     """
     execution_mode = get_execution_mode()
 
+    # Override execution mode for specific task types that must run locally
+    if hasattr(job, "task_name") and job.task_name == "coordinate_selector":
+        execution_mode = "local"
+        logger.info(
+            "Forcing local execution for job %s (uuid=%s, task=%s)",
+            job.id,
+            job.uuid,
+            job.task_name,
+        )
+
     logger.info(
         "Executing job %s (uuid=%s) in %s mode",
         job.id,
