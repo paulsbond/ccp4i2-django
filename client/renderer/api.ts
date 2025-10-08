@@ -3,7 +3,14 @@ import $ from "jquery";
 import { prettifyXml } from "./utils";
 import { useRadioGroup } from "@mui/material";
 import { useMsal } from "@azure/msal-react";
-import { apiFetch, apiJson, apiText } from "./api-fetch";
+import {
+  apiFetch,
+  apiJson,
+  apiText,
+  apiPost,
+  apiPatch,
+  apiDelete,
+} from "./api-fetch";
 
 export function makeApiUrl(endpoint: string): string {
   let api_path = `/api/proxy/${endpoint}`;
@@ -217,40 +224,15 @@ export function useApi() {
     },
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {
-      const headers: HeadersInit = { Accept: "application/json" };
-      if (!(body instanceof FormData)) {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify(body);
-      }
-      const response = await apiFetch(makeApiUrl(endpoint), {
-        method: "POST",
-        headers: headers,
-        body: body,
-      });
-      if (!response.ok) {
-        const errorText = await response.text(); // Or `res.json()` if the response is JSON
-        throw new Error(`Failed to fetch: ${response.status} - ${errorText}`);
-      }
-      return response.json() as Promise<T>;
+      return apiPost<T>(makeApiUrl(endpoint), body);
     },
 
     delete: async function (endpoint: string): Promise<void> {
-      const result = await apiFetch(makeApiUrl(endpoint), { method: "DELETE" });
-      //console.log(result);
+      await apiDelete(makeApiUrl(endpoint));
     },
 
     patch: async function <T>(endpoint: string, body: any = {}): Promise<T> {
-      const headers: HeadersInit = { Accept: "application/json" };
-      if (!(body instanceof FormData)) {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify(body);
-      }
-      const response = await apiFetch(makeApiUrl(endpoint), {
-        method: "PATCH",
-        headers: headers,
-        body: body,
-      });
-      return response.json() as Promise<T>;
+      return apiPatch<T>(makeApiUrl(endpoint), body);
     },
 
     fileTextContent: function (djangoFile: any) {
