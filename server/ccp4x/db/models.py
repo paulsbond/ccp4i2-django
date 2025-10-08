@@ -97,6 +97,20 @@ class ProjectExport(Model):
     project = ForeignKey(Project, CASCADE, related_name="exports")
     time = DateTimeField(default=timezone.now)
 
+    @property
+    def file_exists(self):
+        """Check if the export file exists on disk"""
+        from django.utils.text import slugify
+        import os
+
+        project_name = slugify(self.project.name or f"project_{self.project.id}")
+        timestamp = self.time.strftime("%Y%m%d_%H%M%S")
+        export_file_name = f"{project_name}_export_{timestamp}.ccp4_project.zip"
+        export_file_path = os.path.join(
+            self.project.directory, "CCP4_PROJECT_FILES", export_file_name
+        )
+        return os.path.exists(export_file_path)
+
     def __str__(self):
         return f"{self.project} at {self.time}"
 
