@@ -1,11 +1,16 @@
 "use client";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
+  Card,
+  CardContent,
   Checkbox,
+  Chip,
+  Grid,
   IconButton,
   LinearProgress,
+  Paper,
   Skeleton,
   Stack,
   Table,
@@ -17,8 +22,23 @@ import {
   Toolbar,
   Tooltip,
   Typography,
+  ToggleButton,
+  ToggleButtonGroup,
+  Pagination,
+  TableContainer,
 } from "@mui/material";
-import { Clear, Delete, Download } from "@mui/icons-material";
+import {
+  Clear,
+  Delete,
+  Download,
+  FolderOpen,
+  Schedule,
+  Science,
+  StarBorder,
+  Star,
+  ViewModule,
+  ViewList,
+} from "@mui/icons-material";
 import { alpha } from "@mui/material/styles";
 import { useApi } from "../api";
 import { Project } from "../types/models";
@@ -27,10 +47,288 @@ import { useDeleteDialog } from "../providers/delete-dialog";
 import { useSet } from "../hooks";
 import SearchField from "./search-field";
 
+// Memoized ProjectCard component for performance
+const ProjectCard = React.memo(
+  ({
+    project,
+    isSelected,
+    onToggleSelection,
+    onNavigate,
+    onExport,
+    onDelete,
+  }: {
+    project: Project;
+    isSelected: boolean;
+    onToggleSelection: () => void;
+    onNavigate: () => void;
+    onExport: () => void;
+    onDelete: () => void;
+  }) => {
+    const isRecent =
+      new Date(project.last_access).getTime() >
+      Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+    return (
+      <Card
+        sx={isSelected ? sxSelectedCard : sxProjectCard}
+        onClick={(event) => {
+          if (!(event.target as HTMLElement).closest(".action-button")) {
+            onNavigate();
+          }
+        }}
+      >
+        <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Checkbox
+                className="action-button"
+                size="small"
+                checked={isSelected}
+                onChange={onToggleSelection}
+                sx={{ p: 0.5 }}
+              />
+              {isRecent && (
+                <Chip
+                  label="Recent"
+                  size="small"
+                  color="success"
+                  sx={{ height: 20, fontSize: "0.7rem" }}
+                />
+              )}
+            </Box>
+            <IconButton
+              className="action-button"
+              size="small"
+              sx={{ color: "text.disabled" }}
+            >
+              <StarBorder fontSize="small" />
+            </IconButton>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+                bgcolor: "primary.50",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid",
+                borderColor: "primary.200",
+              }}
+            >
+              <Science sx={{ color: "primary.main", fontSize: 24 }} />
+            </Box>
+            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "1.1rem",
+                  lineHeight: 1.3,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {project.name}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Stack spacing={1} sx={{ mb: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Schedule sx={{ fontSize: 16, color: "text.disabled" }} />
+              <Typography variant="caption" color="text.secondary">
+                Created {shortDate(project.creation_time)}
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Schedule sx={{ fontSize: 16, color: "text.disabled" }} />
+              <Typography variant="caption" color="text.secondary">
+                Last accessed {shortDate(project.last_access)}
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Stack direction="row" spacing={1} justifyContent="flex-end">
+            <Tooltip title="Export project">
+              <IconButton
+                className="action-button"
+                size="small"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onExport();
+                }}
+                sx={{
+                  color: "primary.main",
+                  "&:hover": { bgcolor: "primary.50" },
+                }}
+              >
+                <Download fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete project">
+              <IconButton
+                className="action-button"
+                size="small"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete();
+                }}
+                sx={{ color: "error.main", "&:hover": { bgcolor: "error.50" } }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  }
+);
+
+// Memoized TableRow component for performance
+const ProjectTableRow = React.memo(
+  ({
+    project,
+    isSelected,
+    onToggleSelection,
+    onNavigate,
+    onExport,
+    onDelete,
+  }: {
+    project: Project;
+    isSelected: boolean;
+    onToggleSelection: () => void;
+    onNavigate: () => void;
+    onExport: () => void;
+    onDelete: () => void;
+  }) => (
+    <TableRow
+      hover
+      onClick={onNavigate}
+      sx={{ cursor: "pointer", ...(isSelected && sxSelected) }}
+    >
+      <TableCell padding="checkbox">
+        <Checkbox
+          checked={isSelected}
+          onChange={(event) => {
+            event.stopPropagation();
+            onToggleSelection();
+          }}
+        />
+      </TableCell>
+      <TableCell>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: 1,
+              bgcolor: "primary.50",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "1px solid",
+              borderColor: "primary.200",
+            }}
+          >
+            <Science sx={{ color: "primary.main", fontSize: 16 }} />
+          </Box>
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {project.name}
+            </Typography>
+            {new Date(project.last_access).getTime() >
+              Date.now() - 7 * 24 * 60 * 60 * 1000 && (
+              <Chip
+                label="Recent"
+                size="small"
+                color="success"
+                sx={{ height: 16, fontSize: "0.65rem", mt: 0.5 }}
+              />
+            )}
+          </Box>
+        </Box>
+      </TableCell>
+      <TableCell>
+        <Typography variant="body2" color="text.secondary">
+          {shortDate(project.creation_time)}
+        </Typography>
+      </TableCell>
+      <TableCell>
+        <Typography variant="body2" color="text.secondary">
+          {shortDate(project.last_access)}
+        </Typography>
+      </TableCell>
+      <TableCell align="right">
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+          <Tooltip title="Export project">
+            <IconButton
+              size="small"
+              onClick={(event) => {
+                event.stopPropagation();
+                onExport();
+              }}
+              sx={{ color: "primary.main" }}
+            >
+              <Download fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete project">
+            <IconButton
+              size="small"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete();
+              }}
+              sx={{ color: "error.main" }}
+            >
+              <Delete fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </TableCell>
+    </TableRow>
+  )
+);
+
 const sxSelected = {
   bgcolor: (theme: Theme) =>
     alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
 };
+
+const sxProjectCard = {
+  cursor: "pointer",
+  transition: "all 0.2s ease-in-out",
+  border: "1px solid",
+  borderColor: "divider",
+  "&:hover": {
+    transform: "translateY(-2px)",
+    boxShadow: (theme: Theme) => theme.shadows[8],
+    borderColor: "primary.main",
+  },
+};
+
+const sxSelectedCard = {
+  ...sxProjectCard,
+  borderColor: "primary.main",
+  bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.08),
+};
+
+type ViewMode = "cards" | "table";
+
+const ITEMS_PER_PAGE = 50; // For performance with large datasets
 
 export default function ProjectsTable() {
   const api = useApi();
@@ -38,6 +336,8 @@ export default function ProjectsTable() {
   const { data: projects, mutate } = api.get<Project[]>("projects");
   const selectedIds = useSet<number>([]);
   const [query, setQuery] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const [currentPage, setCurrentPage] = useState(1);
   const deleteDialog = useDeleteDialog();
 
   const filteredProjects = useMemo(() => {
@@ -51,6 +351,19 @@ export default function ProjectsTable() {
           new Date(b.last_access).getTime() - new Date(a.last_access).getTime()
       );
   }, [projects, query]);
+
+  const paginatedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredProjects.slice(startIndex, endIndex);
+  }, [filteredProjects, currentPage]);
+
+  const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+
+  // Reset to first page when search changes
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [query]);
 
   function deleteSelected() {
     const selectedProjects = projects?.filter((project) =>
@@ -77,12 +390,77 @@ export default function ProjectsTable() {
       });
   }
 
-  function exportProject(project: Project) {
-    // TODO
+  async function exportProject(project: Project) {
+    try {
+      // Start the export process by calling the API endpoint
+      const exportResult = await api.post(`projects/${project.id}/export/`, {});
+
+      // Show success notification (you might want to use a snackbar or toast instead)
+      console.log(
+        `Export started for project "${project.name}":`,
+        exportResult
+      );
+
+      // Optional: Show a user notification that export has started
+      // You could implement a toast/snackbar notification here if desired
+      alert(
+        `Export started for project "${project.name}". The export is running in the background and will be available in File/Projects → Exports when complete.`
+      );
+    } catch (error) {
+      console.error(`Failed to export project "${project.name}":`, error);
+      alert(
+        `Failed to start export for project "${project.name}". Please try again.`
+      );
+    }
   }
 
-  function exportSelected() {
-    // TODO
+  async function exportSelected() {
+    try {
+      const selectedProjects = projects?.filter((project) =>
+        selectedIds.has(project.id)
+      );
+
+      if (!selectedProjects || selectedProjects.length === 0) {
+        alert("No projects selected for export.");
+        return;
+      }
+
+      // Start exports for all selected projects
+      const exportPromises = selectedProjects.map(async (project) => {
+        try {
+          const result = await api.post(`projects/${project.id}/export/`, {});
+          return { project: project.name, success: true, result };
+        } catch (error) {
+          console.error(`Failed to export project "${project.name}":`, error);
+          return { project: project.name, success: false, error };
+        }
+      });
+
+      const results = await Promise.all(exportPromises);
+      const successful = results.filter((r) => r.success);
+      const failed = results.filter((r) => !r.success);
+
+      // Show results to user
+      let message = "";
+      if (successful.length > 0) {
+        message += `Successfully started exports for ${successful.length} project${successful.length > 1 ? "s" : ""}: ${successful.map((r) => r.project).join(", ")}.`;
+      }
+      if (failed.length > 0) {
+        if (message) message += "\n";
+        message += `Failed to export ${failed.length} project${failed.length > 1 ? "s" : ""}: ${failed.map((r) => r.project).join(", ")}.`;
+      }
+
+      if (message) {
+        message +=
+          "\n\nExports are running in the background and will be available in File/Projects → Exports when complete.";
+        alert(message);
+      }
+
+      console.log("Bulk export results:", results);
+    } catch (error) {
+      console.error("Failed to export selected projects:", error);
+      alert("Failed to start exports. Please try again.");
+    }
   }
 
   function toggleAll() {
@@ -96,116 +474,263 @@ export default function ProjectsTable() {
   }
 
   if (projects === undefined) return <LinearProgress />;
-  if (projects.length === 0) return <></>;
+  if (projects.length === 0)
+    return (
+      <Box sx={{ textAlign: "center", py: 8 }}>
+        <FolderOpen sx={{ fontSize: 80, color: "text.disabled", mb: 2 }} />
+        <Typography variant="h6" color="text.secondary" gutterBottom>
+          No Projects Yet
+        </Typography>
+        <Typography variant="body2" color="text.disabled">
+          Create your first crystallography project to get started
+        </Typography>
+      </Box>
+    );
+
   return Array.isArray(projects) ? (
     <Box>
-      {selectedIds.size === 0 ? (
-        <Toolbar disableGutters>
-          <SearchField what="projects" onDelay={setQuery} />
-        </Toolbar>
-      ) : (
-        <Toolbar sx={{ gap: 2, ...sxSelected }}>
-          <Tooltip title="Clear selection">
-            <IconButton onClick={selectedIds.clear}>
-              <Clear />
-            </IconButton>
-          </Tooltip>
-          <Typography color="inherit" variant="subtitle1" component="div">
-            {selectedIds.size} selected
-          </Typography>
-          <Tooltip title="Export selected projects">
-            <IconButton onClick={exportSelected}>
-              <Download />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete selected projects">
-            <IconButton onClick={deleteSelected}>
-              <Delete />
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
-      )}
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <Tooltip
-                title={
-                  selectedIds.size == projects.length
-                    ? "Deselect all projects"
-                    : "Select all projects"
-                }
-              >
-                <Checkbox
-                  checked={selectedIds.size == projects.length}
-                  indeterminate={
-                    selectedIds.size > 0 && selectedIds.size < projects.length
-                  }
-                  onClick={toggleAll}
-                />
-              </Tooltip>
-            </TableCell>
-            <TableCell>Name</TableCell>
-            <TableCell>Created</TableCell>
-            <TableCell></TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredProjects?.map((project: Project) => (
-            <TableRow
-              key={project.id}
-              hover
-              onClick={(event) => router.push(`/project/${project.id}`)}
+      {/* Header with search, view toggle, and selection actions */}
+      <Box sx={{ mb: 3 }}>
+        {selectedIds.size === 0 ? (
+          <Box>
+            {/* Title and Controls Row */}
+            <Box
               sx={{
-                cursor: "pointer",
-                ...(selectedIds.has(project.id) && sxSelected),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 2,
               }}
             >
-              <TableCell>
-                <Tooltip title="Select project">
-                  <Checkbox
-                    checked={selectedIds.has(project.id)}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      selectedIds.has(project.id)
-                        ? selectedIds.delete(project.id)
-                        : selectedIds.add(project.id);
-                    }}
+              <Typography
+                variant="h5"
+                component="h2"
+                sx={{ fontWeight: 600, color: "text.primary" }}
+              >
+                Your Projects
+              </Typography>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <SearchField what="projects" onDelay={setQuery} />
+                <ToggleButtonGroup
+                  value={viewMode}
+                  exclusive
+                  onChange={(_, newView) => newView && setViewMode(newView)}
+                  size="small"
+                  sx={{ height: 36 }}
+                >
+                  <ToggleButton value="cards" aria-label="card view">
+                    <Tooltip title="Card view">
+                      <ViewModule />
+                    </Tooltip>
+                  </ToggleButton>
+                  <ToggleButton value="table" aria-label="table view">
+                    <Tooltip title="Table view">
+                      <ViewList />
+                    </Tooltip>
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Stack>
+            </Box>
+
+            {/* Project count and select all */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                mb: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Tooltip
+                  title={
+                    selectedIds.size == filteredProjects.length
+                      ? "Deselect all projects"
+                      : "Select all projects"
+                  }
+                >
+                  <Chip
+                    icon={
+                      <Checkbox
+                        size="small"
+                        checked={
+                          selectedIds.size == filteredProjects.length &&
+                          filteredProjects.length > 0
+                        }
+                        indeterminate={
+                          selectedIds.size > 0 &&
+                          selectedIds.size < filteredProjects.length
+                        }
+                        onClick={toggleAll}
+                      />
+                    }
+                    label={`${filteredProjects.length} projects`}
+                    variant="outlined"
+                    clickable
+                    onClick={toggleAll}
+                    sx={{ "& .MuiChip-icon": { mr: 0.5 }, borderRadius: 2 }}
                   />
                 </Tooltip>
-              </TableCell>
-              <TableCell>{project.name}</TableCell>
-              <TableCell>{shortDate(project.creation_time)}</TableCell>
-              <TableCell>
-                <Stack direction="row" spacing={1}>
-                  <Tooltip title="Export project">
-                    <IconButton
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        exportProject(project);
-                      }}
-                    >
-                      <Download />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Delete project">
-                    <IconButton
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        deleteProjects([project]);
-                      }}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              </TableCell>
-            </TableRow>
+
+                {filteredProjects.length > ITEMS_PER_PAGE && (
+                  <Typography variant="body2" color="text.secondary">
+                    Showing {Math.min(ITEMS_PER_PAGE, filteredProjects.length)}{" "}
+                    of {filteredProjects.length}
+                  </Typography>
+                )}
+              </Box>
+
+              {/* Pagination for large datasets */}
+              {totalPages > 1 && (
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(_, page) => setCurrentPage(page)}
+                  size="small"
+                  color="primary"
+                />
+              )}
+            </Box>
+          </Box>
+        ) : (
+          <Paper
+            elevation={2}
+            sx={{
+              p: 2,
+              mb: 2,
+              bgcolor: "primary.50",
+              border: "1px solid",
+              borderColor: "primary.200",
+              borderRadius: 2,
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Tooltip title="Clear selection">
+                <IconButton onClick={selectedIds.clear} size="small">
+                  <Clear />
+                </IconButton>
+              </Tooltip>
+              <Typography
+                color="primary.main"
+                variant="subtitle1"
+                sx={{ fontWeight: 600, flexGrow: 1 }}
+              >
+                {selectedIds.size} project{selectedIds.size !== 1 ? "s" : ""}{" "}
+                selected
+              </Typography>
+              <Tooltip title="Export selected projects">
+                <IconButton
+                  onClick={exportSelected}
+                  size="small"
+                  color="primary"
+                >
+                  <Download />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Delete selected projects">
+                <IconButton onClick={deleteSelected} size="small" color="error">
+                  <Delete />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Paper>
+        )}
+      </Box>
+
+      {/* Render based on view mode */}
+      {viewMode === "cards" ? (
+        // Card View - Better for visual browsing, limited by pagination for performance
+        <Grid container spacing={3}>
+          {paginatedProjects.map((project: Project) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
+              <ProjectCard
+                project={project}
+                isSelected={selectedIds.has(project.id)}
+                onToggleSelection={() => {
+                  selectedIds.has(project.id)
+                    ? selectedIds.delete(project.id)
+                    : selectedIds.add(project.id);
+                }}
+                onNavigate={() => router.push(`/project/${project.id}`)}
+                onExport={() => exportProject(project)}
+                onDelete={() => deleteProjects([project])}
+              />
+            </Grid>
           ))}
-        </TableBody>
-      </Table>
+        </Grid>
+      ) : (
+        // Table View - Better for large datasets, more compact
+        <TableContainer component={Paper} elevation={1}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={
+                      selectedIds.size == paginatedProjects.length &&
+                      paginatedProjects.length > 0
+                    }
+                    indeterminate={
+                      selectedIds.size > 0 &&
+                      selectedIds.size < paginatedProjects.length
+                    }
+                    onChange={toggleAll}
+                  />
+                </TableCell>
+                <TableCell>Project Name</TableCell>
+                <TableCell>Created</TableCell>
+                <TableCell>Last Accessed</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedProjects.map((project: Project) => (
+                <ProjectTableRow
+                  key={project.id}
+                  project={project}
+                  isSelected={selectedIds.has(project.id)}
+                  onToggleSelection={() => {
+                    selectedIds.has(project.id)
+                      ? selectedIds.delete(project.id)
+                      : selectedIds.add(project.id);
+                  }}
+                  onNavigate={() => router.push(`/project/${project.id}`)}
+                  onExport={() => exportProject(project)}
+                  onDelete={() => deleteProjects([project])}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Bottom pagination for large datasets */}
+      {totalPages > 1 && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+
+      {/* Show message when no projects match search */}
+      {filteredProjects.length === 0 && query && (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No projects found
+          </Typography>
+          <Typography variant="body2" color="text.disabled">
+            Try adjusting your search term
+          </Typography>
+        </Box>
+      )}
     </Box>
   ) : (
-    <Skeleton />
+    <Skeleton variant="rectangular" height={400} />
   );
 }
