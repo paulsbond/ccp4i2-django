@@ -56,7 +56,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   const api = useApi();
   const router = useRouter();
   const deleteDialog = useDeleteDialog();
-  const { setJobId } = useCCP4i2Window();
+  const { jobId, setJobId } = useCCP4i2Window();
   const projectId = useMemo(() => {
     return job.project;
   }, [job]);
@@ -156,7 +156,7 @@ export const JobCard: React.FC<JobCardProps> = ({
         onDelete: () => {
           api.delete(`jobs/${job.id}`).then(() => {
             mutateJobs();
-            if (setJobId) setJobId(null);
+            if (setJobId && jobId === job.id) setJobId(null);
           });
         },
         children: [

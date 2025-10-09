@@ -134,9 +134,12 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       console.log("Coot is initialized, you can now load molecules and maps.");
       dispatch(setWidth(leftPanelWidth));
       dispatch(setHeight(windowHeight - 75));
+      dispatch(
+        setBackgroundColor(theme.mode === "light" ? [1, 1, 1, 1] : [0, 0, 0, 1])
+      );
       handleResize();
     }
-  }, [cootInitialized, leftPanelWidth, windowHeight]);
+  }, [cootInitialized, leftPanelWidth, windowHeight, theme.mode]);
 
   const fetchFile = async (fileId: number) => {
     const fileInfo = await apiGet(`/api/proxy/files/${fileId}/`);

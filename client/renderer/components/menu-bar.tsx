@@ -1,10 +1,4 @@
-import {
-  AppBar,
-  FormControlLabel,
-  Switch,
-  Typography,
-  IconButton,
-} from "@mui/material";
+import { AppBar, Typography, IconButton } from "@mui/material";
 import LanIcon from "@mui/icons-material/Lan";
 import EditMenu from "./edit-menu";
 import FileMenu from "./file-menu";
@@ -18,7 +12,7 @@ import { Job, Project } from "../types/models";
 import EditableTypography from "./editable-typography";
 import HistoryToolbar from "./history-toolbar";
 import { useRouter } from "next/navigation";
-import { ThemeToggle } from "./theme-toggle";
+import { DevModeToggle } from "./dev-mode-toggle";
 
 export default function MenuBar() {
   const { projectId, jobId, devMode, setDevMode } = useCCP4i2Window();
@@ -44,32 +38,9 @@ export default function MenuBar() {
     } else console.log("window.electron is not available");
   }, []);
 
-  const onToggleDevMode = async (
-    ev: React.ChangeEvent<HTMLInputElement>
-  ): Promise<void> => {
-    if (!window.electronAPI) {
-      console.error("Electron API is not available");
-      return;
-    }
-    window.electronAPI.sendMessage("toggle-dev-mode", {});
-    ev.preventDefault();
-    ev.stopPropagation();
-  };
   return (
     <AppBar position="static">
       <HistoryToolbar>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={devMode}
-              onChange={onToggleDevMode}
-              name="devModeToggle"
-              color="warning"
-            />
-          }
-          label="Dev Mode"
-        />
-        <ThemeToggle />
         <FileMenu />
         <EditMenu />
         <ViewMenu />

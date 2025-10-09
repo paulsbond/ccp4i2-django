@@ -669,6 +669,76 @@ class JobViewSet(ModelViewSet):
 
     @action(
         detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.JobSerializer,
+    )
+    def run_local(self, request, pk=None):
+        """
+        Execute a job locally regardless of environment configuration.
+
+        Forces local execution even in Azure environments, useful for:
+        - Tasks requiring direct filesystem access
+        - Interactive or GUI-based tasks
+        - Tasks with specific local dependencies
+        - Development and debugging scenarios
+
+        This endpoint bypasses the automatic environment detection and
+        always executes jobs via subprocess on the current machine.
+
+        Args:
+            request (Request): HTTP request object
+            pk (int): Primary key of the job to execute
+
+        Returns:
+            Response: Updated job data with appropriate status
+
+        Example:
+            POST /api/jobs/123/run_local/
+
+        Note:
+            - Requires CCP4 installation on local machine
+            - May not work in pure container environments
+            - Frontend can selectively use this for specific task types
+        """
+        try:
+            from ..lib.job_utils.context_dependent_run import run_job_context_aware
+
+            job = models.Job.objects.get(id=pk)
+
+            logger.info(
+                "Forcing local execution for job %s (uuid=%s, task=%s)",
+                job.id,
+                job.uuid,
+                job.task_name,
+            )
+
+            # Execute job with forced local mode
+            result = run_job_context_aware(job, force_local=True)
+
+            if result["success"]:
+                serializer = serializers.JobSerializer(result["data"])
+                return Response(serializer.data)
+            else:
+                return Response(
+                    {"status": "Failed", "reason": result["error"]},
+                    status=result["status"],
+                )
+
+        except models.Job.DoesNotExist as err:
+            logger.exception("Failed to retrieve job with id %s", pk, exc_info=err)
+            return Response({"status": "Failed", "reason": str(err)}, status=404)
+        except Exception as err:
+            logger.exception(
+                "Unexpected error running job locally %s", pk, exc_info=err
+            )
+            return Response(
+                {"status": "Failed", "reason": f"Unexpected error: {str(err)}"},
+                status=500,
+            )
+
+    @action(
+        detail=True,
         methods=["get"],
         permission_classes=[],
         serializer_class=serializers.JobSerializer,

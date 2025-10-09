@@ -273,7 +273,7 @@ def run_job_local(job):
         }
 
 
-def run_job_context_aware(job):
+def run_job_context_aware(job, force_local=False):
     """
     Execute job using environment-appropriate backend.
 
@@ -285,6 +285,7 @@ def run_job_context_aware(job):
 
     Args:
         job: Job model instance
+        force_local (bool): If True, forces local execution regardless of environment
 
     Returns:
         dict: Result dictionary with keys:
@@ -296,7 +297,12 @@ def run_job_context_aware(job):
     Example:
         from ccp4x.lib.context_dependent_run import run_job_context_aware
 
+        # Normal context-aware execution
         result = run_job_context_aware(job)
+
+        # Force local execution
+        result = run_job_context_aware(job, force_local=True)
+
         if result["success"]:
             serializer = JobSerializer(result["data"])
             return Response(serializer.data)
@@ -306,17 +312,16 @@ def run_job_context_aware(job):
                 status=result["status"]
             )
     """
-    execution_mode = get_execution_mode()
-
-    # Override execution mode for specific task types that must run locally
-    if hasattr(job, "task_name") and job.task_name == "coordinate_selector":
+    if force_local:
         execution_mode = "local"
         logger.info(
-            "Forcing local execution for job %s (uuid=%s, task=%s)",
+            "Forcing local execution for job %s (uuid=%s, task=%s) via force_local=True",
             job.id,
             job.uuid,
             job.task_name,
         )
+    else:
+        execution_mode = get_execution_mode()
 
     logger.info(
         "Executing job %s (uuid=%s) in %s mode",

@@ -69,28 +69,104 @@ def run(self, request, pk=None):
 
 That's it! No `if/else` for deployment context, no Azure imports in your ViewSet.
 
+### Force Local Execution
+
+For scenarios where you need to **force local execution** regardless of environment:
+
+```python
+from ccp4x.lib.context_dependent_run import run_job_context_aware
+
+def run_local(self, request, pk=None):
+    job = models.Job.objects.get(id=pk)
+
+    # Always runs locally, even in Azure environments
+    result = run_job_context_aware(job, force_local=True)
+
+    if result["success"]:
+        return Response(JobSerializer(result["data"]).data)
+    else:
+        return Response(
+            {"error": result["error"]},
+            status=result["status"]
+        )
+```
+
+**Use Cases for Force Local**:
+
+- Tasks requiring direct filesystem access
+- Interactive or GUI-based tasks (like coordinate_selector)
+- Tasks with specific local dependencies
+- Development and debugging scenarios
+
+### API Endpoints
+
+The JobViewSet provides two execution endpoints:
+
+| Endpoint                         | Mode          | Description                          |
+| -------------------------------- | ------------- | ------------------------------------ |
+| `POST /api/jobs/{id}/run/`       | Context-aware | Uses environment-appropriate backend |
+| `POST /api/jobs/{id}/run_local/` | Force local   | Always executes locally              |
+
+**Frontend Usage**:
+
+```javascript
+// Normal context-aware execution
+await api.post(`/api/jobs/${jobId}/run/`);
+
+// Force local execution for specific task types
+if (job.task_name === "coordinate_selector") {
+  await api.post(`/api/jobs/${jobId}/run_local/`);
+} else {
+  await api.post(`/api/jobs/${jobId}/run/`);
+}
+```
+
 ## 🏗️ Architecture
 
 ### Detection Logic
 
 ```
-1. Check EXECUTION_MODE env var (explicit)
+1. Check force_local parameter (highest priority)
+   ├─ True → Force local execution
+   └─ False/Not set → Continue to environment detection
+
+2. Check EXECUTION_MODE env var (explicit)
    ├─ "local" → Use subprocess
    └─ "azure" → Use Service Bus
 
-2. Check for SERVICE_BUS_CONNECTION_STRING (implicit)
+3. Check for SERVICE_BUS_CONNECTION_STRING (implicit)
    ├─ Present → Use Azure (Service Bus)
    └─ Absent → Use local (subprocess)
 
-3. Default to local mode
+4. Default to local mode
 ```
 
 ### Local Mode Flow
+
+**Context-Aware Execution**:
 
 ```
 API receives POST /api/jobs/{id}/run/
   ↓
 run_job_context_aware(job)
+  ↓
+get_execution_mode() → "local"
+  ↓
+run_job_local(job)
+  ↓
+subprocess.Popen([ccp4-python, manage.py, run_job, -ju, {uuid}])
+  ↓
+Job starts immediately
+```
+
+**Force Local Execution**:
+
+```
+API receives POST /api/jobs/{id}/run_local/
+  ↓
+run_job_context_aware(job, force_local=True)
+  ↓
+execution_mode = "local" (forced)
   ↓
 run_job_local(job)
   ↓
@@ -163,13 +239,23 @@ python manage.py runserver
 
 Look for log messages:
 
+**Context-aware local**:
+
 ```
 Using explicit execution mode: local
 Executing job 123 (uuid=...) in LOCAL mode
 Started job 123 (...) via subprocess
 ```
 
-or
+**Force local**:
+
+```
+Forcing local execution for job 123 (uuid=..., task=coordinate_selector) via force_local=True
+Executing job 123 (uuid=...) in LOCAL mode
+Started job 123 (...) via subprocess
+```
+
+**Azure mode**:
 
 ```
 Detected Azure Service Bus config, using azure mode

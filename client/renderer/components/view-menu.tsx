@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { YoutubeSearchedFor, ZoomIn, ZoomOut } from "@mui/icons-material";
 import { ThemeToggle } from "./theme-toggle";
+import { DevModeToggle } from "./dev-mode-toggle";
 
 export default function ViewMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -86,6 +87,9 @@ export default function ViewMenu() {
         <MenuItem onClick={handleThemeToggle}>
           <ThemeToggle ref={themeToggleRef} />
           <ListItemText>Toggle Theme</ListItemText>
+        </MenuItem>
+        <MenuItem>
+          <DevModeToggle />
         </MenuItem>
       </Menu>
     </>
