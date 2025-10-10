@@ -132,3 +132,20 @@ class ProjectTagSerializer(ModelSerializer):
     class Meta:
         model = models.ProjectTag
         exclude = []
+
+    def validate(self, attrs):
+        """Validate unique constraint on text and parent combination."""
+        text = attrs.get("text")
+        parent = attrs.get("parent")
+
+        # Check for existing tag with same text and parent
+        existing_tag = models.ProjectTag.objects.filter(
+            text=text, parent=parent
+        ).first()
+
+        if existing_tag and (not self.instance or existing_tag.id != self.instance.id):
+            raise ValidationError(
+                {"text": "A tag with this text and parent already exists."}
+            )
+
+        return attrs

@@ -328,28 +328,63 @@ class ProjectViewSet(ModelViewSet):
 
     @action(
         detail=True,
-        methods=["get"],
+        methods=["get", "post"],
         permission_classes=[],
         serializer_class=serializers.ProjectTagSerializer,
     )
     def tags(self, request, pk=None):
         """
-        Retrieve tags for a specific project.
-        Args:
-            request (Request): The HTTP request object.
-            pk (int, optional): The primary key of the project.
-        Returns:
-            Response: A Response object containing serialized project tags data.
-        """
+        Retrieve tags for a specific project (GET) or add a tag to a project (POST).
 
+        GET: Returns list of tags for the project
+        POST: Expects 'tag_id' in request data to add tag to project
+        """
         project = models.Project.objects.get(pk=pk)
-        # print(project.tags)
-        project_tag_serializer = serializers.ProjectTagSerializer(
-            project.tags, many=True
-        )
-        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
-        project.save()
-        return Response(project_tag_serializer.data)
+
+        if request.method == "GET":
+            # Return project tags
+            project_tag_serializer = serializers.ProjectTagSerializer(
+                project.tags, many=True
+            )
+            project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+            project.save()
+            return Response(project_tag_serializer.data)
+
+        elif request.method == "POST":
+            # Add tag to project
+            try:
+                tag_id = request.data.get("tag_id")
+
+                if not tag_id:
+                    return Response(
+                        {"error": "tag_id is required"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                tag = models.ProjectTag.objects.get(pk=tag_id)
+                project.tags.add(tag)
+                project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+                project.save()
+
+                return Response(
+                    {
+                        "status": "success",
+                        "message": f"Tag '{tag.text}' added to project",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            except models.ProjectTag.DoesNotExist:
+                return Response(
+                    {"error": "Tag not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            except Exception as e:
+                logger.exception("Failed to add tag to project", exc_info=e)
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
     @action(
         detail=True,
@@ -603,5 +638,47 @@ class ProjectViewSet(ModelViewSet):
             )
             return Response(
                 {"status": "Failed", "reason": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        permission_classes=[],
+        url_path=r"tags/(?P<tag_id>\d+)",
+    )
+    def remove_tag(self, request, pk=None, tag_id=None):
+        """
+        Remove a tag from a specific project.
+        """
+        try:
+            project = models.Project.objects.get(pk=pk)
+            tag = models.ProjectTag.objects.get(pk=tag_id)
+            project.tags.remove(tag)
+            project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+            project.save()
+
+            return Response(
+                {
+                    "status": "success",
+                    "message": f"Tag '{tag.text}' removed from project",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except models.Project.DoesNotExist:
+            return Response(
+                {"error": "Project not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except models.ProjectTag.DoesNotExist:
+            return Response(
+                {"error": "Tag not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            logger.exception("Failed to remove tag from project", exc_info=e)
+            return Response(
+                {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

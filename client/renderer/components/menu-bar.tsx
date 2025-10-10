@@ -13,6 +13,7 @@ import EditableTypography from "./editable-typography";
 import HistoryToolbar from "./history-toolbar";
 import { useRouter } from "next/navigation";
 import { DevModeToggle } from "./dev-mode-toggle";
+import { TagsOfProject } from "./tags-of-project";
 
 export default function MenuBar() {
   const { projectId, jobId, devMode, setDevMode } = useCCP4i2Window();
@@ -60,6 +61,7 @@ export default function MenuBar() {
         {job?.number && (
           <EditableTypography variant="h5" text={`Job ${job.number}: `} />
         )}
+        {project && <TagsOfProject projectId={project.id} />}
         {project && (
           <EditableTypography
             variant="h5"

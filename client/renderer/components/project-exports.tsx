@@ -99,7 +99,7 @@ export const ProjectExportsDialog: React.FC<ProjectExportsDialogProps> = ({
     mutate: mutateExports,
   } = api.get<ProjectExport[]>(`projects/${projectId}/exports/`, 5000);
 
-  console.log("Project exports:", exports);
+  //console.log("Project exports:", exports);
   // Force fresh data when dialog opens
   React.useEffect(() => {
     if (open && projectId) {

@@ -15,7 +15,7 @@ from . import views
 
 router = routers.DefaultRouter()
 router.register("projects", ProjectViewSet)
-router.register("project-tags", ProjectTagViewSet)
+router.register("projecttags", ProjectTagViewSet)
 router.register("files", FileViewSet)
 router.register("jobs", JobViewSet)
 router.register("filetypes", FileTypeViewSet)
