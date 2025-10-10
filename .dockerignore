@@ -1,0 +1,35 @@
+# Exclude version control and IDE files
+.git/
+.vscode/
+.DS_Store
+*.log
+*.tmp
+
+# Exclude sensitive files
+.env*
+secrets/
+keys/
+
+# Exclude documentation and non-essential files
+[README.md](http://_vscodecontentref_/14)
+docs/
+*.md
+
+# Exclude build artifacts and caches
+__pycache__/
+*.pyc
+node_modules/
+**/node_modules/
+**/node_modules/**
+.next/
+dist/
+build/
+
+# Exclude Docker-related files not needed in images
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Exclude large or irrelevant directories
+client/node_modules/  # Specifically for server builds
+server/__pycache__/   # Specifically for client builds

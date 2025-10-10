@@ -2,8 +2,17 @@ import useSWR from "swr";
 import $ from "jquery";
 import { prettifyXml } from "./utils";
 import { useRadioGroup } from "@mui/material";
+import { useMsal } from "@azure/msal-react";
+import {
+  apiFetch,
+  apiJson,
+  apiText,
+  apiPost,
+  apiPatch,
+  apiDelete,
+} from "./api-fetch";
 
-export function fullUrl(endpoint: string): string {
+export function makeApiUrl(endpoint: string): string {
   let api_path = `/api/proxy/${endpoint}`;
   if (api_path.charAt(api_path.length - 1) !== "/") api_path += "/";
   return api_path;
@@ -17,82 +26,74 @@ export interface EndpointFetch {
 
 const endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
-  return fetch(url)
-    .then((r) => r.json())
-    .then((r1) =>
-      Promise.resolve(r1?.status === "Success" ? $.parseXML(r1.xml) : null)
-    );
+  return apiJson(url).then((r1) =>
+    Promise.resolve(r1?.status === "Success" ? $.parseXML(r1.xml) : null)
+  );
 };
 
 const endpoint_validation_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
-  return fetch(url)
-    .then((r) => r.json())
-    .then((r1) => {
-      const validationXml = $.parseXML(r1.xml);
-      const objectPaths = $(validationXml).find("objectPath").toArray();
-      const results: any = {};
-      objectPaths.forEach((errorObjectNode: HTMLElement) => {
-        const objectPath = errorObjectNode.textContent?.trim();
-        if (objectPath && objectPath.length > 0) {
-          let objectErrors: { messages: string[]; maxSeverity: number };
-          if (!Object.keys(results).includes(objectPath)) {
-            results[objectPath] = { messages: [], maxSeverity: 0 };
-          }
-          objectErrors = results[objectPath];
-          const errorNode = $(errorObjectNode).parent();
-          if (errorNode) {
-            const severity = $(errorNode).find("severity").get(0)?.textContent;
-            if (severity?.includes("WARNING") && objectErrors.maxSeverity < 1)
-              objectErrors.maxSeverity = 1;
-            if (severity?.includes("ERROR") && objectErrors.maxSeverity < 2)
-              objectErrors.maxSeverity = 2;
-            const description = $(errorNode)
-              .find("description")
-              .get(0)?.textContent;
-            if (description) objectErrors.messages.push(description);
-          }
+  return apiJson(url).then((r1) => {
+    const validationXml = $.parseXML(r1.xml);
+    const objectPaths = $(validationXml).find("objectPath").toArray();
+    const results: any = {};
+    objectPaths.forEach((errorObjectNode: HTMLElement) => {
+      const objectPath = errorObjectNode.textContent?.trim();
+      if (objectPath && objectPath.length > 0) {
+        let objectErrors: { messages: string[]; maxSeverity: number };
+        if (!Object.keys(results).includes(objectPath)) {
+          results[objectPath] = { messages: [], maxSeverity: 0 };
         }
-      });
-      return Promise.resolve(results);
+        objectErrors = results[objectPath];
+        const errorNode = $(errorObjectNode).parent();
+        if (errorNode) {
+          const severity = $(errorNode).find("severity").get(0)?.textContent;
+          if (severity?.includes("WARNING") && objectErrors.maxSeverity < 1)
+            objectErrors.maxSeverity = 1;
+          if (severity?.includes("ERROR") && objectErrors.maxSeverity < 2)
+            objectErrors.maxSeverity = 2;
+          const description = $(errorNode)
+            .find("description")
+            .get(0)?.textContent;
+          if (description) objectErrors.messages.push(description);
+        }
+      }
     });
+    return Promise.resolve(results);
+  });
 };
 
 const pretty_endpoint_xml_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
-  return fetch(url)
-    .then((r) => r.json())
-    .then((r1) =>
-      Promise.resolve(
-        r1?.status === "Success" ? prettifyXml($.parseXML(r1.xml)) : null
-      )
-    );
+  return apiJson(url).then((r1) =>
+    Promise.resolve(
+      r1?.status === "Success" ? prettifyXml($.parseXML(r1.xml)) : null
+    )
+  );
 };
 
 const endpoint_wrapped_json_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id) return Promise.reject();
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
-  return fetch(url)
-    .then((r) => r.json())
-    .then((r) => {
-      const result = JSON.parse(r.result);
-      if (endpointFetch.endpoint === "container") {
-        const lookup = buildLookup(result);
-        return Promise.resolve({ container: result, lookup });
-      }
-      return result;
-    });
+  return apiJson(url).then((r) => {
+    const result = JSON.parse(r.result);
+    if (endpointFetch.endpoint === "container") {
+      const lookup = buildLookup(result);
+      return Promise.resolve({ container: result, lookup });
+    }
+    return result;
+  });
 };
 
 const buildLookup = (container: any, lookup_in?: any): any => {
@@ -120,24 +121,21 @@ const endpoint_fetcher = (endpointFetch: EndpointFetch) => {
   if (!endpointFetch.id || !endpointFetch.type) {
     throw new Error("Invalid endpointFetch: and id are required");
   }
-  const url = fullUrl(
+  const url = makeApiUrl(
     `${endpointFetch.type}/${endpointFetch.id}/${endpointFetch.endpoint}`
   );
-  return fetch(url).then((r) => r.json());
+  return apiJson(url);
 };
 
 const digest_fetcher = (url: string) => {
   if (url.includes("/undefined/")) {
     throw new Error("Invalid URL: " + url);
   }
-  return fetch(url).then((r) => {
-    //console.log(r);
-    return r.json();
-  });
+  return apiJson(url);
 };
 
 export function useApi() {
-  const fetcher = (url: string) => fetch(url).then((r) => r.json());
+  const fetcher = (url: string) => apiJson(url);
 
   function noSlashUrl(endpoint: string): string {
     let api_path = `/api/proxy/${endpoint}`;
@@ -148,12 +146,19 @@ export function useApi() {
     noSlashUrl,
 
     get: function <T>(endpoint: string, refreshInterval: number = 0) {
-      return useSWR<T>(fullUrl(endpoint), fetcher, { refreshInterval });
+      // Return null key if endpoint contains undefined/null values - prevents SWR from fetching
+      const swrKey =
+        endpoint &&
+        !endpoint.includes("undefined") &&
+        !endpoint.includes("null")
+          ? makeApiUrl(endpoint)
+          : null;
+      return useSWR<T>(swrKey, fetcher, { refreshInterval });
     },
 
     config: function <T>() {
       return useSWR<T>("config", () => {
-        return fetch("/api/config").then((r) => r.json());
+        return apiJson("/api/config");
       });
     },
 
@@ -161,7 +166,10 @@ export function useApi() {
       endpointFetch: EndpointFetch,
       refreshInterval: number = 0
     ) {
-      return useSWR<T>(endpointFetch, endpoint_fetcher as any, {
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR<T>(swrKey, endpoint_fetcher as any, {
         refreshInterval,
       });
     },
@@ -170,23 +178,42 @@ export function useApi() {
       endpointFetch: EndpointFetch,
       refreshInterval: number = 0
     ) {
-      return useSWR(endpointFetch, endpoint_xml_fetcher, { refreshInterval });
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR(swrKey, endpoint_xml_fetcher, { refreshInterval });
     },
 
     get_pretty_endpoint_xml: function (endpointFetch: EndpointFetch) {
-      return useSWR(endpointFetch, pretty_endpoint_xml_fetcher);
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR(swrKey, pretty_endpoint_xml_fetcher);
     },
 
     get_wrapped_endpoint_json: function <T>(endpointFetch: EndpointFetch) {
-      return useSWR<T>(endpointFetch, endpoint_wrapped_json_fetcher, {});
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR<T>(swrKey, endpoint_wrapped_json_fetcher, {});
     },
 
     get_validation: function (endpointFetch: EndpointFetch) {
-      return useSWR(endpointFetch, endpoint_validation_fetcher, {});
+      // Return null key if ID is invalid - prevents SWR from fetching
+      const swrKey =
+        endpointFetch?.id && endpointFetch?.type ? endpointFetch : null;
+      return useSWR(swrKey, endpoint_validation_fetcher, {});
     },
 
     digest: function <T>(endpoint: string) {
-      const result = useSWR<T>(fullUrl(endpoint), digest_fetcher, {
+      // Return null key if endpoint contains undefined/null values - prevents SWR from fetching
+      const swrKey =
+        endpoint &&
+        !endpoint.includes("undefined") &&
+        !endpoint.includes("null")
+          ? makeApiUrl(endpoint)
+          : null;
+      const result = useSWR<T>(swrKey, digest_fetcher, {
         onError: (error) => {
           console.warn(`Digest error for endpoint "${endpoint}":`, error);
         },
@@ -197,54 +224,25 @@ export function useApi() {
     },
 
     post: async function <T>(endpoint: string, body: any = {}): Promise<T> {
-      const headers: HeadersInit = { Accept: "application/json" };
-      if (!(body instanceof FormData)) {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify(body);
-      }
-      const response = await fetch(fullUrl(endpoint), {
-        method: "POST",
-        headers: headers,
-        body: body,
-      });
-      if (!response.ok) {
-        const errorText = await response.text(); // Or `res.json()` if the response is JSON
-        throw new Error(`Failed to fetch: ${response.status} - ${errorText}`);
-      }
-      return response.json() as Promise<T>;
+      return apiPost<T>(makeApiUrl(endpoint), body);
     },
 
     delete: async function (endpoint: string): Promise<void> {
-      const result = await fetch(fullUrl(endpoint), { method: "DELETE" });
-      //console.log(result);
+      await apiDelete(makeApiUrl(endpoint));
     },
 
     patch: async function <T>(endpoint: string, body: any = {}): Promise<T> {
-      const headers: HeadersInit = { Accept: "application/json" };
-      if (!(body instanceof FormData)) {
-        headers["Content-Type"] = "application/json";
-        body = JSON.stringify(body);
-      }
-      const response = await fetch(fullUrl(endpoint), {
-        method: "PATCH",
-        headers: headers,
-        body: body,
-      });
-      return response.json() as Promise<T>;
+      return apiPatch<T>(makeApiUrl(endpoint), body);
     },
 
     fileTextContent: function (djangoFile: any) {
-      return useSWR(
-        `/api/proxy/files/${djangoFile?.dbFileId}/download_by_uuid/`,
-        (url) => {
-          return fetch(url).then((response) => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.text();
-          });
-        }
-      );
+      // Return null key if djangoFile or dbFileId is invalid - prevents SWR from fetching
+      const swrKey = djangoFile?.dbFileId
+        ? `/api/proxy/files/${djangoFile.dbFileId}/download_by_uuid/`
+        : null;
+      return useSWR(swrKey, (url) => {
+        return apiText(url);
+      });
     },
   };
 }
@@ -258,7 +256,7 @@ export const doDownload = (
 ) => {
   const options = typeof optionsIn !== "undefined" ? optionsIn : {};
   if (onProgress && onProgress !== null) {
-    return fetch(theURL, options).then(async (response) => {
+    return apiFetch(theURL, options).then(async (response) => {
       const reader = response.body?.getReader();
       if (reader) {
         const chunks: Uint8Array[] = [];
@@ -309,7 +307,7 @@ export const doRetrieve = async (
   optionsIn?: any
 ) => {
   const options = typeof optionsIn !== "undefined" ? optionsIn : {};
-  const response = await fetch(theURL, options);
+  const response = await apiFetch(theURL, options);
   const contents = await response.arrayBuffer();
   return contents;
 };

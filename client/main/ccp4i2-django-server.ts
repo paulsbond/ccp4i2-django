@@ -98,6 +98,8 @@ export async function startDjangoServer(
     ...process.env,
     UVICORN_PORT: `${UVICORN_PORT}`,
     NEXT_ADDRESS: `http://localhost:${NEXT_PORT}`,
+    // Force local execution mode for Electron app
+    EXECUTION_MODE: "local",
     MPLBACKEND: "Agg", // Force matplotlib to use non-GUI backend
     //QT_QPA_PLATFORM: "offscreen", // Force Qt to use offscreen platform
     // Windows-specific DLL path fixes

@@ -117,7 +117,8 @@ export const PushToCCP4i2Panel: React.FC<PushToCCP4i2Props> = ({
       );
       setMessage(`Upload result status: ${uploadResult.status}`);
       const run_result = await api.post<CreateTaskResponse>(
-        `jobs/${result.new_job?.id}/run/`,
+        //Call run_local for more responsive task execution of this (which should be faster )
+        `jobs/${result.new_job?.id}/run_local/`,
         {
           task_name: "coordinate_selector",
         }

@@ -4,6 +4,7 @@ import {
   Project as ProjectInfo,
 } from "../../types/models";
 import { moorhen } from "moorhen/types/moorhen";
+import { apiGet } from "../../api-fetch";
 
 export interface ItemMetadata {
   fileId: number;
@@ -27,21 +28,15 @@ export async function fetchItemMetadata(
 
   try {
     // Step 1: Fetch file information
-    const fileResponse = await fetch(`/api/proxy/files/${fileId}/`);
-    if (!fileResponse.ok) throw new Error("Failed to fetch file info");
-    const fileInfo: FileInfo = await fileResponse.json();
+    const fileInfo: FileInfo = await apiGet(`/api/proxy/files/${fileId}/`);
 
     // Step 2: Fetch job information
-    const jobResponse = await fetch(`/api/proxy/jobs/${fileInfo.job}/`);
-    if (!jobResponse.ok) throw new Error("Failed to fetch job info");
-    const jobInfo: JobInfo = await jobResponse.json();
+    const jobInfo: JobInfo = await apiGet(`/api/proxy/jobs/${fileInfo.job}/`);
 
     // Step 3: Fetch project information
-    const projectResponse = await fetch(
+    const projectInfo: ProjectInfo = await apiGet(
       `/api/proxy/projects/${jobInfo.project}/`
     );
-    if (!projectResponse.ok) throw new Error("Failed to fetch project info");
-    const projectInfo: ProjectInfo = await projectResponse.json();
 
     return {
       fileId,

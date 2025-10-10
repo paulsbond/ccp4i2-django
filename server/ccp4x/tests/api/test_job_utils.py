@@ -20,6 +20,7 @@ from ...lib.job_utils.find_dependent_jobs import find_dependent_jobs
 from ...lib.job_utils.get_what_next import get_what_next
 from ...lib.job_utils.object_method import object_method
 from ...lib.job_utils.detect_file_type import detect_file_type
+from ...lib.job_utils.export_job_file import export_job_file
 from ...db.project_json import project_json
 from ...lib.job_utils.digest_file import digest_file_object
 
@@ -56,6 +57,13 @@ class CCP4i2TestCase(TestCase):
             / "test101"
             / "ProjectZips"
             / "bucc_test_0.ccp4_project.zip",
+            relocate_path=(settings.CCP4I2_PROJECTS_DIR),
+        )
+        import_ccp4_project_zip(
+            Path(__file__).parent.parent.parent.parent.parent.parent
+            / "test101"
+            / "ProjectZips"
+            / "parrot_test_0.ccp4_project.zip",
             relocate_path=(settings.CCP4I2_PROJECTS_DIR),
         )
         self.pm = CCP4i2DjangoProjectsManager()
@@ -306,3 +314,17 @@ class CCP4i2TestCase(TestCase):
         i2run_command = i2run_for_job(old_job)
         print(i2run_command)
         self.assertIsNotNone(i2run_command)
+
+    def test_export_job_refmac_file(self):
+        old_job = models.Job.objects.get(
+            project__name="refmac_gamma_test_0", number="1"
+        )
+        exported_files = export_job_file(str(old_job.id), "FoFc_as_map")
+        print(exported_files)
+        self.assertIsNotNone(exported_files)
+
+    def test_export_job_file(self):
+        old_job = models.Job.objects.get(project__name="parrot_test_0", number="1")
+        exported_files = export_job_file(str(old_job.id), "complete_mtz")
+        print(exported_files)
+        self.assertIsNotNone(exported_files)

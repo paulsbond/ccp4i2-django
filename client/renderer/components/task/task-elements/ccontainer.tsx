@@ -213,6 +213,7 @@ export const CCP4i2ContainerElement: React.FC<
     inferredVisibility ? (
       <Card sx={cardSx}>
         <CardHeader
+          sx={{ py: 1 }}
           title={qualifiers.guiLabel}
           onClick={(ev) => {
             ev.stopPropagation();
@@ -233,7 +234,7 @@ export const CCP4i2ContainerElement: React.FC<
             </Stack>
           }
         />
-        <CardContent sx={{ px: 0 }}>
+        <CardContent sx={{ px: 0, pt: 0 }}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             {calculatedContent}
             {griddedChildren}

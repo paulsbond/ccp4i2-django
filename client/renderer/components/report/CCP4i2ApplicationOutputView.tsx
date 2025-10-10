@@ -8,6 +8,8 @@ import {
   LinearScale,
   PointElement,
   BarElement,
+  BarController,
+  ScatterController,
   LineElement,
   Title,
   Tooltip,
@@ -30,6 +32,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Preview } from "@mui/icons-material";
+import { useTheme } from "../../theme/theme-provider";
 
 // Register components for both Scatter and Bar charts
 ChartJS.register(
@@ -37,6 +40,8 @@ ChartJS.register(
   LinearScale,
   PointElement,
   BarElement,
+  BarController,
+  ScatterController,
   LineElement,
   Title,
   Tooltip,
@@ -66,6 +71,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
   const [table, setTable] = useState<CCP4Table | null>(null);
   const [selectedPlot, setSelectedPlot] = useState<Plot | null>(null);
   const [showJson, setShowJson] = useState(false);
+  const { mode } = useTheme();
 
   const chartRef = useRef(null);
 
@@ -86,8 +92,8 @@ export const CCP4i2ApplicationOutputView: React.FC<
               Array.isArray(graph.plot)
                 ? graph.plot[0]
                 : graph.plot
-                ? graph.plot
-                : null
+                  ? graph.plot
+                  : null
             );
           }
         }
@@ -180,6 +186,7 @@ export const CCP4i2ApplicationOutputView: React.FC<
             height="200px"
             defaultLanguage="json"
             defaultValue={JSON.stringify(selectedPlot, null, 2)}
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         </DialogContent>
       </Dialog>

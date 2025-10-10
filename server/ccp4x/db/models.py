@@ -18,6 +18,7 @@ from django.db.models import (
     SET_NULL,
     TextField,
     UUIDField,
+    TextChoices,
 )
 from django.utils import timezone
 
@@ -42,10 +43,48 @@ class Project(Model):
         return self.name
 
 
+class ProjectGroup(Model):
+    class GroupType(TextChoices):
+        GENERAL_SET = "general_set", "General set"
+        FRAGMENT_SET = "fragment_set", "Fragment set"
+
+    name = CharField(max_length=100, unique=True)
+    type = CharField(
+        max_length=32, choices=GroupType.choices, default=GroupType.GENERAL_SET
+    )
+
+    # Convenience relation to access projects in a group
+    projects = ManyToManyField(
+        Project,
+        related_name="groups",
+        through="ProjectGroupMembership",
+        through_fields=("group", "project"),
+    )
+
+    def __str__(self):
+        return self.name
+
+
+class ProjectGroupMembership(Model):
+    class MembershipType(TextChoices):
+        PARENT = "parent", "Parent"
+        MEMBER = "member", "Member"
+
+    group = ForeignKey(ProjectGroup, CASCADE, related_name="memberships")
+    project = ForeignKey(Project, CASCADE, related_name="group_memberships")
+    type = CharField(max_length=16, choices=MembershipType.choices)
+
+    class Meta:
+        unique_together = ["group", "project"]
+
+    def __str__(self):
+        return f"{self.project} in {self.group} as {self.type}"
+
+
 class ProjectTag(Model):
     parent = ForeignKey("self", CASCADE, blank=True, null=True, related_name="children")
     text = CharField(max_length=50)
-    projects = ManyToManyField(Project, related_name="tags")
+    projects = ManyToManyField(Project, related_name="tags", blank=True)
 
     class Meta:
         unique_together = ["parent", "text"]
@@ -57,6 +96,20 @@ class ProjectTag(Model):
 class ProjectExport(Model):
     project = ForeignKey(Project, CASCADE, related_name="exports")
     time = DateTimeField(default=timezone.now)
+
+    @property
+    def file_exists(self):
+        """Check if the export file exists on disk"""
+        from django.utils.text import slugify
+        import os
+
+        project_name = slugify(self.project.name or f"project_{self.project.id}")
+        timestamp = self.time.strftime("%Y%m%d_%H%M%S")
+        export_file_name = f"{project_name}_export_{timestamp}.ccp4_project.zip"
+        export_file_path = os.path.join(
+            self.project.directory, "CCP4_PROJECT_FILES", export_file_name
+        )
+        return os.path.exists(export_file_path)
 
     def __str__(self):
         return f"{self.project} at {self.time}"

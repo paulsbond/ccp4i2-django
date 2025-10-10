@@ -3,6 +3,7 @@ import datetime
 import json
 import pathlib
 import os
+import subprocess
 from pytz import timezone
 from django.http import Http404
 from django.http import FileResponse
@@ -327,28 +328,63 @@ class ProjectViewSet(ModelViewSet):
 
     @action(
         detail=True,
-        methods=["get"],
+        methods=["get", "post"],
         permission_classes=[],
         serializer_class=serializers.ProjectTagSerializer,
     )
     def tags(self, request, pk=None):
         """
-        Retrieve tags for a specific project.
-        Args:
-            request (Request): The HTTP request object.
-            pk (int, optional): The primary key of the project.
-        Returns:
-            Response: A Response object containing serialized project tags data.
-        """
+        Retrieve tags for a specific project (GET) or add a tag to a project (POST).
 
+        GET: Returns list of tags for the project
+        POST: Expects 'tag_id' in request data to add tag to project
+        """
         project = models.Project.objects.get(pk=pk)
-        # print(project.tags)
-        project_tag_serializer = serializers.ProjectTagSerializer(
-            project.tags, many=True
-        )
-        project.last_access = datetime.datetime.now(tz=timezone("UTC"))
-        project.save()
-        return Response(project_tag_serializer.data)
+
+        if request.method == "GET":
+            # Return project tags
+            project_tag_serializer = serializers.ProjectTagSerializer(
+                project.tags, many=True
+            )
+            project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+            project.save()
+            return Response(project_tag_serializer.data)
+
+        elif request.method == "POST":
+            # Add tag to project
+            try:
+                tag_id = request.data.get("tag_id")
+
+                if not tag_id:
+                    return Response(
+                        {"error": "tag_id is required"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                tag = models.ProjectTag.objects.get(pk=tag_id)
+                project.tags.add(tag)
+                project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+                project.save()
+
+                return Response(
+                    {
+                        "status": "success",
+                        "message": f"Tag '{tag.text}' added to project",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            except models.ProjectTag.DoesNotExist:
+                return Response(
+                    {"error": "Tag not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            except Exception as e:
+                logger.exception("Failed to add tag to project", exc_info=e)
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
     @action(
         detail=True,
@@ -477,3 +513,172 @@ class ProjectViewSet(ModelViewSet):
         new_job = create_task(the_project, json.loads(request.body.decode("utf-8")))
         serializer = serializers.JobSerializer(new_job)
         return JsonResponse({"status": "Success", "new_job": serializer.data})
+
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectSerializer,
+    )
+    def export(self, request, pk=None):
+        the_project = models.Project.objects.get(pk=pk)
+
+        # Generate unique filepath based on project name, rooted in project.directory
+        project_name = slugify(the_project.name or f"project_{the_project.id}")
+        project_export = models.ProjectExport.objects.create(
+            project=the_project, time=datetime.datetime.now(tz=timezone("UTC"))
+        )
+        project_export.save()
+        timestamp = project_export.time.strftime("%Y%m%d_%H%M%S")
+        export_file_name = f"{project_name}_export_{timestamp}.ccp4_project.zip"
+        export_file_path = os.path.join(
+            the_project.directory, "CCP4_PROJECT_FILES", export_file_name
+        )
+
+        # Ensure the export file path doesn't already exist (add counter if needed)
+        counter = 1
+        base_name = export_file_name
+        while os.path.exists(export_file_path):
+            name_without_ext = base_name.rsplit(".", 1)[0]
+            export_file_name = f"{name_without_ext}_{counter}.ccp4_project.zip"
+            export_file_path = os.path.join(
+                the_project.directory, "CCP4_PROJECT_FILES", export_file_name
+            )
+            counter += 1
+
+        # Create log file path with same base name but .export.log extension
+        log_file_name = export_file_name.replace(".ccp4_project.zip", ".export.log")
+        log_file_path = os.path.join(
+            the_project.directory, "CCP4_PROJECT_FILES", log_file_name
+        )
+
+        # Start subprocess to run export_project management command in background
+        try:
+            with open(log_file_path, "w") as log_file:
+                process = subprocess.Popen(
+                    [
+                        "ccp4-python",
+                        "manage.py",
+                        "export_project",
+                        "-pi",
+                        str(the_project.id),
+                        "-o",
+                        export_file_path,
+                    ],
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                )
+
+            return JsonResponse(
+                {
+                    "status": "Success",
+                    "export_file_name": export_file_name,
+                    "log_file_name": log_file_name,
+                    "process_id": process.pid,
+                }
+            )
+        except Exception as e:
+            logger.exception(
+                "Failed to start export process for project %s",
+                the_project.id,
+                exc_info=e,
+            )
+            return JsonResponse({"status": "Failed", "reason": str(e)})
+
+    @action(
+        detail=True,
+        methods=["get"],
+        permission_classes=[],
+        serializer_class=serializers.ProjectExportSerializer,
+    )
+    def exports(self, request, pk=None):
+        """
+        Retrieve a list of project exports for a specific project.
+
+        This action returns all ProjectExport instances associated with the given project,
+        ordered by creation time (most recent first). This allows users to see the history
+        of exports and their status.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            pk (int, optional): The primary key of the project.
+
+        Returns:
+            Response: A Response object containing serialized ProjectExport data,
+                     including export file names, creation times, and status information.
+        """
+        try:
+            project = models.Project.objects.get(pk=pk)
+
+            # Get all exports for this project, ordered by most recent first
+            project_exports = models.ProjectExport.objects.filter(
+                project=project
+            ).order_by("-time")
+
+            # Update project last access time
+            project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+            project.save()
+
+            # Serialize the export data
+            serializer = serializers.ProjectExportSerializer(project_exports, many=True)
+
+            return Response(
+                serializer.data,
+            )
+
+        except models.Project.DoesNotExist:
+            return Response(
+                {"status": "Failed", "reason": "Project not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            logger.exception(
+                "Failed to retrieve exports for project %s", pk, exc_info=e
+            )
+            return Response(
+                {"status": "Failed", "reason": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(
+        detail=True,
+        methods=["delete"],
+        permission_classes=[],
+        url_path=r"tags/(?P<tag_id>\d+)",
+    )
+    def remove_tag(self, request, pk=None, tag_id=None):
+        """
+        Remove a tag from a specific project.
+        """
+        try:
+            project = models.Project.objects.get(pk=pk)
+            tag = models.ProjectTag.objects.get(pk=tag_id)
+            project.tags.remove(tag)
+            project.last_access = datetime.datetime.now(tz=timezone("UTC"))
+            project.save()
+
+            return Response(
+                {
+                    "status": "success",
+                    "message": f"Tag '{tag.text}' removed from project",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except models.Project.DoesNotExist:
+            return Response(
+                {"error": "Project not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except models.ProjectTag.DoesNotExist:
+            return Response(
+                {"error": "Tag not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            logger.exception("Failed to remove tag from project", exc_info=e)
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

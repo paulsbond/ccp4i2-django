@@ -11,6 +11,8 @@ import {
   File as DjangoFile,
 } from "./types/models";
 import { useRunCheck } from "./providers/run-check-provider";
+import { useParameterChangeIntent } from "./providers/parameter-change-intent-provider";
+import { apiJson, apiText } from "./api-fetch";
 
 // ============================================================================
 // Types and Interfaces
@@ -257,12 +259,13 @@ const determineValidationColor = (
 ): string => {
   if (
     !fieldErrors ||
+    !Array.isArray(fieldErrors) ||
     (Array.isArray(fieldErrors) && fieldErrors.length === 0)
   ) {
     return VALIDATION_COLORS.SUCCESS;
   }
 
-  let maxSeverity = SEVERITY_LEVELS.SUCCESS;
+  let maxSeverity: number = SEVERITY_LEVELS.SUCCESS;
 
   try {
     if (Array.isArray(fieldErrors)) {
@@ -272,7 +275,17 @@ const determineValidationColor = (
         return Math.max(highest, currentSeverity);
       }, SEVERITY_LEVELS.SUCCESS);
     } else {
-      maxSeverity = fieldErrors?.maxSeverity ?? SEVERITY_LEVELS.SUCCESS;
+      if (
+        fieldErrors &&
+        typeof fieldErrors === "object" &&
+        "maxSeverity" in fieldErrors
+      ) {
+        maxSeverity =
+          (fieldErrors as { maxSeverity: number }).maxSeverity ??
+          SEVERITY_LEVELS.SUCCESS;
+      } else {
+        maxSeverity = SEVERITY_LEVELS.SUCCESS;
+      }
     }
   } catch (error) {
     console.error("Error determining validation color:", error);
@@ -689,11 +702,23 @@ export const useJob = (jobId: number | null | undefined): JobData => {
       endpoint: "params_xml",
     });
 
+  const { processedErrors, setProcessedErrors } = useRunCheck();
+
+  // Get mutateValidation from useSWR
   const { data: validation, mutate: mutateValidation } = api.get_validation({
     type: "jobs",
     id: jobId,
     endpoint: "validation",
   });
+
+  // Decorate mutateValidation so it always resets processed errors
+  const mutateValidationWithProcessedErrors = useCallback(
+    async (...args: any[]) => {
+      setProcessedErrors(null);
+      return mutateValidation(...args);
+    },
+    [mutateValidation, setProcessedErrors]
+  );
 
   const { data: diagnostic_xml, mutate: mutateDiagnosticXml } =
     api.get_pretty_endpoint_xml({
@@ -709,7 +734,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
   });
 
   const { mutateJobs } = useProject(job?.project || 0);
-  const { processedErrors } = useRunCheck();
+  const { setIntent } = useParameterChangeIntent();
 
   // Memoized functions
   const setParameter = useCallback(
@@ -735,12 +760,12 @@ export const useJob = (jobId: number | null | undefined): JobData => {
             `jobs/${job.id}/set_parameter`,
             setParameterArg
           );
-
+          setProcessedErrors(null);
           // Update all related data
           await Promise.all([
+            mutateValidation(),
             mutateContainer(),
             mutateParams_xml(),
-            mutateValidation(),
           ]);
 
           console.log("Parameter set successfully:", result);
@@ -751,7 +776,14 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         }
       });
     },
-    [job, mutateContainer, mutateValidation, mutateParams_xml, api]
+    [
+      job,
+      mutateContainer,
+      mutateValidation,
+      mutateParams_xml,
+      api,
+      setProcessedErrors,
+    ]
   );
 
   const setParameterNoMutate = useCallback(
@@ -812,6 +844,13 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         if (JSON.stringify({ value }) === JSON.stringify({ value: newValue })) {
           return false;
         }
+
+        setIntent({
+          jobId: job.id,
+          parameterPath: item._objectPath,
+          reason: "UserEdit",
+          previousValue: value,
+        });
 
         // Use the queued setParameter instead of direct fetch
         try {
@@ -898,17 +937,10 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         console.warn(`Parameter ${paramName} not found in container`);
         return Promise.resolve(null);
       }
-      return fetch(url)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .catch((error) => {
-          console.error(`Error fetching file digest for ${paramName}:`, error);
-          return null;
-        });
+      return apiJson(url).catch((error) => {
+        console.error(`Error fetching file digest for ${paramName}:`, error);
+        return null;
+      });
     };
   }, [container]);
 
@@ -929,12 +961,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         );
       }
       const url = `/api/proxy/${swrKey}`;
-      return fetch(url).then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text();
-      });
+      return apiText(url);
     };
 
     return useSWR<string, Error>(swrKey, swrKey ? fetcher : null, {
@@ -968,12 +995,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
         throw new Error("Parameter not found");
       }
       const url = `/api/proxy/${swrKey}`;
-      return fetch(url).then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      });
+      return apiJson(url);
     };
 
     return useSWR<string, Error>(swrKey, swrKey ? fetcher : null, {
@@ -1076,7 +1098,7 @@ export const useJob = (jobId: number | null | undefined): JobData => {
     params_xml,
     mutateParams_xml,
     validation,
-    mutateValidation,
+    mutateValidation: mutateValidationWithProcessedErrors, // use the decorated version
     diagnostic_xml,
     mutateDiagnosticXml,
     def_xml,

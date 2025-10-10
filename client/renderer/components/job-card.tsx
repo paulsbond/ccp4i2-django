@@ -38,6 +38,7 @@ import { CCP4i2JobAvatar } from "./job-avatar";
 import { useProject } from "../utils";
 import { usePopcorn } from "../providers/popcorn-provider";
 import { useRunCheck } from "../providers/run-check-provider";
+import { useCCP4i2Window } from "../app-context";
 
 const MyCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(1),
@@ -55,6 +56,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   const api = useApi();
   const router = useRouter();
   const deleteDialog = useDeleteDialog();
+  const { jobId, setJobId } = useCCP4i2Window();
   const projectId = useMemo(() => {
     return job.project;
   }, [job]);
@@ -154,6 +156,7 @@ export const JobCard: React.FC<JobCardProps> = ({
         onDelete: () => {
           api.delete(`jobs/${job.id}`).then(() => {
             mutateJobs();
+            if (setJobId && jobId === job.id) setJobId(null);
           });
         },
         children: [
@@ -246,7 +249,7 @@ export const JobCard: React.FC<JobCardProps> = ({
         <CardActions sx={{ p: 0.5 }}>
           <Grid2 container>
             {subJobs && subJobs.length > 0 && (
-              <Grid2 sx={{ xs: 6 }}>
+              <Grid2 size={{ xs: 6 }}>
                 Child jobs
                 <MyExpandMore
                   expand={jobsExpanded}
@@ -259,7 +262,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               </Grid2>
             )}
             {jobFiles && jobFiles.length > 0 && (
-              <Grid2 sx={{ xs: 6 }}>
+              <Grid2 size={{ xs: 6 }}>
                 Files
                 <MyExpandMore
                   expand={filesExpanded}

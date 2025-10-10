@@ -8,19 +8,40 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Box,
 } from "@mui/material";
 import { Add, Download, Menu as MenuIcon, Upload } from "@mui/icons-material";
-import { useApi } from "../api";
+import { makeApiUrl, useApi } from "../api";
 import { Project } from "../types/models";
+import { useCCP4i2Window } from "../app-context";
+import { apiPost } from "../api-fetch";
+import { ProjectExportsDialog } from "./project-exports";
+
+interface ExportResult {
+  status: string;
+  export_file_name: string;
+  log_file_name: string;
+  process_id: number;
+}
 
 export default function FileMenu() {
   const router = useRouter();
   const api = useApi();
+  const { projectId } = useCCP4i2Window();
   const { data: projects, mutate: mutateProjects } =
     api.get<Project[]>("projects");
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const [exportsDialogOpen, setExportsDialogOpen] = useState(false);
+  const [exportSuccessDialogOpen, setExportSuccessDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
+
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -41,6 +62,21 @@ export default function FileMenu() {
     }
   };
 
+  const handleExportProject = () => {
+    const url = makeApiUrl(`projects/${projectId}/export/`);
+    apiPost(url, {})
+      .then((result: ExportResult) => {
+        console.log("Export started:", result);
+        setExportResult(result);
+        setExportSuccessDialogOpen(true);
+        handleClose();
+      })
+      .catch((error) => {
+        console.error("Export failed:", error);
+        // You might want to show an error dialog here too
+      });
+  };
+
   const handleImportProject = () => {
     const newWindow = window.open("/import-project");
     setAnchorEl(null);
@@ -52,6 +88,11 @@ export default function FileMenu() {
         "Failed to open new window. It might be blocked by a popup blocker."
       );
     }
+  };
+
+  const handleOpenExportsDialog = () => {
+    setExportsDialogOpen(true);
+    handleClose();
   };
 
   return (
@@ -84,7 +125,7 @@ export default function FileMenu() {
           </ListItemIcon>
           <ListItemText>New project</ListItemText>
         </MenuItem>
-        <MenuItem key="Export" onClick={handleClose}>
+        <MenuItem key="Export" onClick={handleExportProject}>
           <ListItemIcon>
             <Download fontSize="small" />
           </ListItemIcon>
@@ -95,6 +136,12 @@ export default function FileMenu() {
             <Upload fontSize="small" />
           </ListItemIcon>
           <ListItemText>Import project</ListItemText>
+        </MenuItem>
+        <MenuItem key="Exports" onClick={handleOpenExportsDialog}>
+          <ListItemIcon>
+            <Download fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Exports...</ListItemText>
         </MenuItem>
         <Divider />
         {Array.isArray(projects) &&
@@ -139,6 +186,62 @@ export default function FileMenu() {
           Quit CCP4i2
         </MenuItem>
       </Menu>
+
+      {/* Export Success Dialog */}
+      <Dialog
+        open={exportSuccessDialogOpen}
+        onClose={() => setExportSuccessDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Project Export Started</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              Your project export has been started successfully.
+            </Typography>
+          </Box>
+
+          {exportResult && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                <strong>Export File:</strong> {exportResult.export_file_name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                <strong>Log File:</strong> {exportResult.log_file_name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                <strong>Process ID:</strong> {exportResult.process_id}
+              </Typography>
+            </Box>
+          )}
+
+          <Typography variant="body2" color="text.secondary">
+            The export is running in the background. You can monitor its
+            progress and download the completed export by going to{" "}
+            <strong>File/Projects → Exports...</strong>
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExportSuccessDialogOpen(false)}>
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setExportSuccessDialogOpen(false);
+              setExportsDialogOpen(true);
+            }}
+          >
+            View Exports
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <ProjectExportsDialog
+        open={exportsDialogOpen}
+        onClose={() => setExportsDialogOpen(false)}
+      />
     </>
   );
 }

@@ -133,8 +133,18 @@ def _process_input(
             "role": theRole,
             "job_param_name": job_param_name,
         }
-        fileUse = models.FileUse(**createDict)
-        fileUse.save()
+        already_exists = models.FileUse.objects.filter(**createDict).exists()
+        if not already_exists:
+            fileUse = models.FileUse(**createDict)
+            fileUse.save()
+        else:
+            logger.warning(
+                "FileUse already exists for file %s job %s role %s job_param_name %s",
+                theFile,
+                theJob,
+                theRole,
+                job_param_name,
+            )
 
 
 def import_files(theJob, plugin):

@@ -1,5 +1,6 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 //@ts-ignore
 import CytoscapeComponent from "react-cytoscapejs";
 import Cytoscape from "cytoscape";
@@ -11,6 +12,8 @@ import {
   Job as JobInfo,
 } from "../types/models";
 import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
+import { useTheme } from "../theme/theme-provider";
+// (single useRouter import only)
 
 export interface ProjectNetworkProps {
   projectId: number;
@@ -20,6 +23,12 @@ Cytoscape.use(COSEBilkent);
 
 export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
   const api = useApi();
+  const router = useRouter();
+  const { mode } = useTheme();
+  const cyRef = useRef<any | null>(null);
+  const viewportRef = useRef<
+    Record<string, { zoom: number; pan: { x: number; y: number } }>
+  >({});
 
   const [selectedNetwork, setSelectedNetwork] =
     React.useState<string>("fileToFile");
@@ -99,6 +108,8 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
         id: `job-${job.id}`,
         label: `${job.number}: ${job.title || job.task_name}`,
         type: "job",
+        jobId: job.id,
+        projectId: (job as any)?.project ?? projectId,
       },
     }));
 
@@ -221,18 +232,356 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
       })
       .filter(Boolean);
 
+    // Compose elements for the selected network
+    let elements: any[];
     switch (selectedNetwork) {
       case "fileToFile":
-        return [...fileNodes, ...fileToFileEdges];
+        elements = [...fileNodes, ...(fileToFileEdges as any[])];
+        break;
       case "jobToJob":
-        return [...jobNodes, ...jobToJobEdges];
+        elements = [...jobNodes, ...(jobToJobEdges as any[])];
+        break;
       case "prunedJobToJob":
-        return [...jobNodes, ...prunedJobToJobEdges];
+        elements = [...jobNodes, ...(prunedJobToJobEdges as any[])];
+        break;
       case "full":
       default:
-        return [...fileNodes, ...jobNodes, ...fileUseEdges, ...fileFromEdges];
+        elements = [
+          ...fileNodes,
+          ...jobNodes,
+          ...fileUseEdges,
+          ...fileFromEdges,
+        ];
+        break;
     }
+
+    // Filter out unconnected nodes unless there are only nodes (no edges)
+    const edgeEndpoints = new Set<string>();
+    let edgeCount = 0;
+    elements.forEach((el) => {
+      const s = el?.data?.source;
+      const t = el?.data?.target;
+      if (s && t) {
+        edgeCount += 1;
+        edgeEndpoints.add(String(s));
+        edgeEndpoints.add(String(t));
+      }
+    });
+
+    if (edgeCount === 0) {
+      // No edges: show all nodes (original behavior)
+      return elements;
+    }
+
+    const filtered = elements.filter((el) => {
+      const hasEndpoints = el?.data?.source && el?.data?.target;
+      if (hasEndpoints) return true; // keep edges
+      const id = el?.data?.id;
+      return id && edgeEndpoints.has(String(id));
+    });
+
+    return filtered;
   }, [topLevelFileUses, topLevelFiles, topLevelJobs, selectedNetwork]);
+
+  // Compute the node id at the end of the longest chain to anchor layout at the top
+  const layoutRootId = useMemo(() => {
+    if (!networkElements || networkElements.length === 0) return undefined;
+
+    type NodeId = string;
+    const nodes = new Set<NodeId>();
+    const out = new Map<NodeId, Set<NodeId>>();
+    const inDeg = new Map<NodeId, number>();
+
+    // Collect nodes and edges
+    networkElements.forEach((el: any) => {
+      if (el.data?.id && !el.data?.source && !el.data?.target) {
+        nodes.add(el.data.id as NodeId);
+        if (!out.has(el.data.id)) out.set(el.data.id, new Set());
+        if (!inDeg.has(el.data.id)) inDeg.set(el.data.id, 0);
+      }
+    });
+    networkElements.forEach((el: any) => {
+      const s = el.data?.source as NodeId | undefined;
+      const t = el.data?.target as NodeId | undefined;
+      if (s && t) {
+        nodes.add(s);
+        nodes.add(t);
+        if (!out.has(s)) out.set(s, new Set());
+        out.get(s)!.add(t);
+        if (!inDeg.has(s)) inDeg.set(s, 0);
+        inDeg.set(t, (inDeg.get(t) || 0) + 1);
+        if (!inDeg.has(t)) inDeg.set(t, 0);
+        if (!out.has(t)) out.set(t, new Set());
+      }
+    });
+
+    if (nodes.size === 0) return undefined;
+
+    // Kahn's algorithm for toposort (detect cycles)
+    const inDegCopy = new Map(inDeg);
+    const queue: NodeId[] = [];
+    nodes.forEach((n) => {
+      if ((inDegCopy.get(n) || 0) === 0) queue.push(n);
+    });
+    const topo: NodeId[] = [];
+    while (queue.length) {
+      const u = queue.shift()!;
+      topo.push(u);
+      (out.get(u) || new Set()).forEach((v) => {
+        inDegCopy.set(v, (inDegCopy.get(v) || 0) - 1);
+        if ((inDegCopy.get(v) || 0) === 0) queue.push(v);
+      });
+    }
+
+    const hasCycle = topo.length !== nodes.size;
+
+    if (!hasCycle) {
+      // Longest path in DAG ending at sinks
+      const dp = new Map<NodeId, number>();
+      topo.forEach((n) => dp.set(n, 0));
+      topo.forEach((u) => {
+        (out.get(u) || new Set()).forEach((v) => {
+          dp.set(v, Math.max(dp.get(v) || 0, (dp.get(u) || 0) + 1));
+        });
+      });
+      // Find sinks
+      let bestNode: NodeId | undefined;
+      let bestDist = -1;
+      nodes.forEach((n) => {
+        const isSink = (out.get(n)?.size || 0) === 0;
+        const d = dp.get(n) || 0;
+        if (isSink && d >= bestDist) {
+          bestDist = d;
+          bestNode = n;
+        }
+      });
+      // Fallback to max dp if no explicit sink (e.g., isolated node)
+      if (!bestNode) {
+        topo.forEach((n) => {
+          const d = dp.get(n) || 0;
+          if (d >= bestDist) {
+            bestDist = d;
+            bestNode = n;
+          }
+        });
+      }
+      return bestNode;
+    }
+
+    // Cycle fallback: use tree-diameter heuristic on undirected view
+    const undirected = new Map<NodeId, Set<NodeId>>();
+    nodes.forEach((n) => undirected.set(n, new Set()));
+    networkElements.forEach((el: any) => {
+      const s = el.data?.source as NodeId | undefined;
+      const t = el.data?.target as NodeId | undefined;
+      if (s && t) {
+        undirected.get(s)!.add(t);
+        undirected.get(t)!.add(s);
+      }
+    });
+    const bfsFarthest = (start: NodeId) => {
+      const q: NodeId[] = [start];
+      const dist = new Map<NodeId, number>([[start, 0]]);
+      let far: NodeId = start;
+      while (q.length) {
+        const u = q.shift()!;
+        const du = dist.get(u) || 0;
+        (undirected.get(u) || new Set()).forEach((v) => {
+          if (!dist.has(v)) {
+            dist.set(v, du + 1);
+            q.push(v);
+            if (du + 1 >= (dist.get(far) || 0)) far = v;
+          }
+        });
+      }
+      return far;
+    };
+    const any = nodes.values().next().value as NodeId;
+    const a = bfsFarthest(any);
+    const b = bfsFarthest(a);
+    return b;
+  }, [networkElements]);
+
+  // Cytoscape stylesheet for directional arrows and labels
+  const cytoscapeStyles: any = useMemo(
+    () => [
+      {
+        selector: "node",
+        style: {
+          label: "data(label)",
+          "text-wrap": "wrap",
+          "text-max-width": 180,
+          "font-size": 10,
+          "background-color": mode === "dark" ? "#424242" : "#e0e0e0",
+          "border-width": 1,
+          "border-color": mode === "dark" ? "#757575" : "#999",
+          color: mode === "dark" ? "#ffffff" : "#000000",
+        },
+      },
+      {
+        selector: 'node[type = "job"]',
+        style: {
+          shape: "round-rectangle",
+          "background-color": mode === "dark" ? "#1e3a5f" : "#d1eaff",
+          "border-color": mode === "dark" ? "#4fc3f7" : "#5aa6e8",
+        },
+      },
+      {
+        selector: 'node[type = "file"]',
+        style: {
+          shape: "ellipse",
+          "background-color": mode === "dark" ? "#4a2c17" : "#ffe7cc",
+          "border-color": mode === "dark" ? "#ffb74d" : "#ffb366",
+        },
+      },
+      {
+        selector: "edge",
+        style: {
+          width: 2,
+          "curve-style": "bezier",
+          "line-color": mode === "dark" ? "#757575" : "#999",
+          // no arrows by default; scoped by type rules below
+          "source-arrow-shape": "none",
+          "target-arrow-shape": "none",
+          "arrow-scale": 1,
+          label: "data(label)",
+          "font-size": 9,
+          "text-rotation": "autorotate",
+          "text-margin-y": -6,
+          color: mode === "dark" ? "#ffffff" : "#000000",
+        },
+      },
+      {
+        selector: 'edge[type = "job-to-job"]',
+        style: {
+          "line-color": mode === "dark" ? "#9575cd" : "#6a5acd",
+          // arrow at the descendent end (target)
+          "source-arrow-shape": "none",
+          "target-arrow-shape": "triangle",
+          "target-arrow-color": mode === "dark" ? "#9575cd" : "#6a5acd",
+        },
+      },
+      {
+        selector: 'edge[type = "file-to-file"]',
+        style: {
+          "line-color": mode === "dark" ? "#4db6ac" : "#2e8b57",
+          // arrow at the antecedent end (source)
+          "target-arrow-shape": "none",
+          "source-arrow-shape": "triangle",
+          "source-arrow-color": mode === "dark" ? "#4db6ac" : "#2e8b57",
+        },
+      },
+    ],
+    [mode]
+  );
+
+  // Layout options: compact for all except "full" view
+  const layoutOptions = useMemo(() => {
+    const isFull = selectedNetwork === "full";
+    return {
+      name: "breadthfirst",
+      animate: false,
+      directed: false,
+      spacingFactor: isFull ? 1.1 : 0.5,
+      fit: false, // we'll manage viewport separately for stability
+      padding: 10,
+      roots: layoutRootId ? `#${layoutRootId}` : undefined,
+    } as any;
+  }, [selectedNetwork, layoutRootId]);
+
+  // Persist current viewport whenever user changes it
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    const handler = () => {
+      viewportRef.current[selectedNetwork] = {
+        zoom: cy.zoom(),
+        pan: cy.pan(),
+      };
+    };
+    cy.on("zoom pan", handler);
+    return () => {
+      if (cy) cy.off("zoom pan", handler);
+    };
+  }, [selectedNetwork]);
+
+  // Run layout and restore a stable viewport per view
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    // Run layout without changing viewport
+    const layout = cy.layout(layoutOptions as any);
+    layout.run();
+    layout.once("layoutstop", () => {
+      const saved = viewportRef.current[selectedNetwork];
+      if (saved) {
+        cy.zoom(saved.zoom);
+        cy.pan(saved.pan);
+      } else {
+        // Initial fit once per view, then persist that viewport
+        cy.fit(undefined, 20);
+        viewportRef.current[selectedNetwork] = {
+          zoom: cy.zoom(),
+          pan: cy.pan(),
+        };
+      }
+    });
+  }, [networkElements, layoutOptions, selectedNetwork]);
+
+  // Click vs long-press navigation for job nodes in job-to-job views
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    let tapStartTime = 0;
+    let dragged = false;
+    const CLICK_MS = 250; // threshold to consider as a click
+
+    const shouldHandle = () =>
+      selectedNetwork === "jobToJob" || selectedNetwork === "prunedJobToJob";
+
+    const onTapStart = (evt: any) => {
+      if (!shouldHandle()) return;
+      const ele = evt.target;
+      if (!ele || ele.group?.() !== "nodes") return;
+      if (ele.data?.("type") !== "job") return;
+      tapStartTime = performance.now();
+      dragged = false;
+    };
+
+    const onDrag = (evt: any) => {
+      if (!shouldHandle()) return;
+      const ele = evt.target;
+      if (!ele || ele.group?.() !== "nodes") return;
+      if (ele.data?.("type") !== "job") return;
+      dragged = true;
+    };
+
+    const onTapEnd = (evt: any) => {
+      if (!shouldHandle()) return;
+      const ele = evt.target;
+      if (!ele || ele.group?.() !== "nodes") return;
+      if (ele.data?.("type") !== "job") return;
+      const dt = performance.now() - tapStartTime;
+      if (!dragged && dt < CLICK_MS) {
+        const jobId = ele.data("jobId");
+        const projId = ele.data("projectId") ?? projectId;
+        if (jobId && projId) {
+          router.push(`/project/${projId}/job/${jobId}`);
+        }
+      }
+    };
+
+    cy.on("tapstart", 'node[type = "job"]', onTapStart);
+    cy.on("drag", 'node[type = "job"]', onDrag);
+    cy.on("tapend", 'node[type = "job"]', onTapEnd);
+
+    return () => {
+      cy.off("tapstart", 'node[type = "job"]', onTapStart);
+      cy.off("drag", 'node[type = "job"]', onDrag);
+      cy.off("tapend", 'node[type = "job"]', onTapEnd);
+    };
+  }, [selectedNetwork, router, projectId]);
 
   return (
     <>
@@ -267,10 +616,21 @@ export const ProjectNetwork = ({ projectId }: ProjectNetworkProps) => {
       {networkElements.length > 0 ? (
         <CytoscapeComponent
           elements={networkElements}
-          style={{ width: "1200px", height: "1200px" }}
-          layout={{ name: "cose-bilkent", animate: false }}
+          stylesheet={cytoscapeStyles}
+          style={{
+            width: "1200px",
+            height: "1200px",
+            backgroundColor: mode === "dark" ? "#121212" : "#ffffff",
+          }}
+          layout={layoutOptions}
           cy={(cy) => {
-            cy.layout({ name: "cose-bilkent", animate: false }).run();
+            // Save cy instance and restore viewport if available
+            cyRef.current = cy;
+            const saved = viewportRef.current[selectedNetwork];
+            if (saved) {
+              cy.zoom(saved.zoom);
+              cy.pan(saved.pan);
+            }
           }}
         />
       ) : (

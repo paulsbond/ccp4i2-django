@@ -8,6 +8,7 @@ import {
   Grid2,
   Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   CCP4i2ReportElement,
@@ -19,6 +20,7 @@ interface CCP4i2ReportFoldProps
   extends PropsWithChildren<CCP4i2ReportElementProps> {}
 
 export const CCP4i2ReportFold: React.FC<CCP4i2ReportFoldProps> = (props) => {
+  const theme = useTheme();
   const [expanded, setExpanded] = useState(
     $(props.item).attr("initiallyOpen") === "True"
   );
@@ -89,9 +91,9 @@ export const CCP4i2ReportFold: React.FC<CCP4i2ReportFoldProps> = (props) => {
         aria-controls="panel-content"
         id="panel-header"
         sx={{
-          backgroundColor: "grey.100",
+          backgroundColor: theme.palette.action.hover,
           "&:hover": {
-            backgroundColor: "grey.200",
+            backgroundColor: theme.palette.action.selected,
           },
           minHeight: 48,
           "& .MuiAccordionSummary-content": {

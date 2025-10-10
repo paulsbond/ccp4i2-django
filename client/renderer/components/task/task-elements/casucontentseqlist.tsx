@@ -13,8 +13,10 @@ import {
 } from "@mui/material";
 import { useApi } from "../../../api";
 import { useJob, usePrevious, valueOfItem } from "../../../utils";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Add, Delete } from "@mui/icons-material";
+import { useParameterChangeIntent } from "../../../providers/parameter-change-intent-provider";
+import { clear } from "console";
 
 export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
   props
@@ -25,6 +27,7 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
   const { useTaskItem, setParameter, container, mutateContainer } = useJob(
     job.id
   );
+  const { intent, setIntent, clearIntent } = useParameterChangeIntent();
 
   const { item, update: updateList, value: itemValue } = useTaskItem(itemName);
   const previousItemValue = usePrevious(itemValue);
@@ -46,19 +49,38 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
     const listValue = Array.isArray(valueOfItem(item)) ? valueOfItem(item) : [];
     let newItemValue = valueOfItem(taskElement);
     listValue.push(newItemValue);
-    const result = await updateList(listValue);
-    mutateContainer();
-  }, [item, job, updateList]);
+    await updateList(listValue);
+  }, [item, job, updateList, setIntent, mutateContainer]);
+
+  // After reload, select the new item if intent matches
+  useEffect(() => {
+    if (
+      item?._value &&
+      intent &&
+      typeof intent === "object" &&
+      "jobId" in intent &&
+      job.id === (intent as any).jobId &&
+      "reason" in intent &&
+      intent.reason === "UserEdit" &&
+      "parameterPath" in intent &&
+      intent.parameterPath === item._objectPath &&
+      "previousValue" in intent &&
+      intent.previousValue !== undefined &&
+      JSON.stringify(intent.previousValue) !== JSON.stringify(itemValue)
+    ) {
+      if (intent.previousValue.length < itemValue.length) {
+        setDetailItem(item?._value[item?._value.length - 1]);
+      }
+      clearIntent();
+    }
+  }, [item?._value, intent, job.id, clearIntent]);
 
   const deleteItem = useCallback(
     async (deletedItem: any) => {
       const array = item._value;
       const index = array.indexOf(deletedItem);
-      console.log(index, deletedItem);
       if (index > -1) {
-        // only splice array when item is found
-        array.splice(index, 1); // 2nd parameter means remove one item only
-        console.log(array, valueOfItem(item));
+        array.splice(index, 1);
         const setParameterArg = {
           object_path: item._objectPath,
           value: valueOfItem(item),
@@ -69,14 +91,21 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
         }
       }
     },
-    [item]
+    [item, setParameter, props.onChange]
   );
+
+  useEffect(() => {
+    console.debug("CAsuContentSeqListElement mounted");
+    return () => {
+      console.debug("CAsuContentSeqListElement unmounted");
+    };
+  }, []);
 
   return (
     item && (
       <>
-        <Toolbar sx={{ m: 0, p: 0 }}>
-          <Typography variant="body1" sx={{ flexGrow: 1 }}>
+        <Toolbar sx={{ m: 0, p: 0, mt: 0, pt: 0 }}>
+          <Typography variant="body1" sx={{ mt: 0, pt: 0, flexGrow: 1 }}>
             Click a table row to edit the constituents of the ASU
           </Typography>
           <Button
@@ -88,7 +117,7 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
           />
         </Toolbar>
 
-        <Table style={{ width: "100%" }}>
+        <Table>
           <TableHead>
             <TableRow>
               <TableCell style={{ maxWidth: "5rem" }}>Name</TableCell>
@@ -127,14 +156,16 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
                         property
                       )
                         ? "5rem"
-                        : property === "sequence"
-                        ? "30rem"
-                        : undefined,
+                        : property === "description"
+                          ? "10rem"
+                          : property === "sequence"
+                            ? "20rem"
+                            : undefined,
                     }}
                   >
                     <div
                       style={{
-                        maxHeight: "10rem",
+                        maxHeight: "12rem",
                         overflowY: "auto",
                         wordWrap: "break-word",
                         whiteSpace: "pre-wrap",
@@ -159,6 +190,35 @@ export const CAsuContentSeqListElement: React.FC<CCP4i2TaskElementProps> = (
             ))}
           </TableBody>
         </Table>
+        {(item?._value?.length ?? 0) === 0 && (
+          <div
+            style={{
+              margin: "1rem auto",
+              maxWidth: 340,
+              background: "rgba(255,255,200,0.95)",
+              borderRadius: 10,
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              padding: "0.75rem 1rem",
+              textAlign: "center",
+              color: "#666",
+              fontSize: 15,
+              lineHeight: 1.3,
+              position: "relative",
+            }}
+          >
+            <span
+              role="img"
+              aria-label="hint"
+              style={{ fontSize: 20, marginBottom: 4 }}
+            >
+              💡
+            </span>
+            <div>
+              No content yet. Use the <b>+</b> button above to add a constituent
+              to the ASU.
+            </div>
+          </div>
+        )}
         {detailItem && (
           <Dialog
             open={Boolean(detailItem)}

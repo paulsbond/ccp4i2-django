@@ -1,0 +1,63 @@
+# Use Ubuntu 22.04 as the base image
+FROM ubuntu:22.04
+
+# Prevent interactive prompts and set timezone
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8
+
+# Set timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install all system dependencies in one layer
+RUN apt-get update && apt-get install -y \
+    # Basic tools
+    bash vim curl wget build-essential \
+    # Python
+    python3-pip python3-dev \
+    # Timezone data
+    tzdata \
+    # Libraries for CCP4/scientific computing
+    libcairo2 libgomp1 libxss1 libgnomecanvas2-0 libxmu6 \
+    libxslt1.1 libxslt-dev libxml2 libxml2-dev \
+    libblas3 libblas-dev liblapack3 liblapack-dev libatlas-base-dev \
+    # Some ccp4 dependencies
+    #libclipper-dev libclipper2 libclipper-doc \
+    libgomp1 libgfortran5 \
+    # Qt5 libraries
+    qtbase5-dev qt5-qmake libqt5qml5 libqt5quick5 \
+    libqt5core5a libqt5gui5 libqt5widgets5 libqt5network5 libqt5sql5 \
+    # Version control and other tools
+    bzr tcsh nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Set work directory
+WORKDIR /usr/src/app
+
+# Copy requirements first for better caching
+COPY requirements.txt ./
+COPY requirements-azure.txt ./
+
+# Copy application code
+COPY . ./
+
+# Create necessary directories
+RUN mkdir -p /usr/src/app/staticfiles /usr/src/app/media /tmp \
+    && chmod 755 /usr/src/app
+
+# Make scripts executable
+RUN chmod +x /usr/src/app/startup.sh /usr/src/app/entrypoint.sh /usr/src/app/worker.py /usr/src/app/startup-worker.sh /usr/src/app/startup-management.sh
+
+# Expose port
+EXPOSE 8000
+
+# Simple health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Use entrypoint
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+CMD ["/usr/src/app/startup.sh"]

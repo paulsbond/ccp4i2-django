@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { doRetrieve, fullUrl } from "../api";
+import { doRetrieve, makeApiUrl } from "../api";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
+import { apiArrayBuffer } from "../api-fetch";
 import { Editor } from "@monaco-editor/react";
 import { prettifyXml } from "../utils";
 import { createContext } from "react";
@@ -21,6 +22,8 @@ import $ from "jquery";
 import { useCCP4i2Window } from "../app-context";
 import { CifTableStack } from "../components/cif-table-stack";
 import { CsvTable } from "../components/csv-table";
+import { AlignmentViewer } from "../components/alignment-viewer";
+import { useTheme } from "../theme/theme-provider";
 
 export interface EditorContentSpecification {
   url: string;
@@ -60,7 +63,7 @@ const FilePreviewDialog: React.FC = () => {
     useFilePreviewContext();
   const [previewContent, setPreviewContent] = useState<string | null>("");
   const { cootModule } = useCCP4i2Window();
-
+  const { mode } = useTheme();
   const handleMtzPreview = useCallback(
     async (fileContent: ArrayBuffer) => {
       if (cootModule) {
@@ -124,13 +127,14 @@ const FilePreviewDialog: React.FC = () => {
           return;
         }
         {
-          const fileContent = await fetch(contentSpecification.url).then(
-            (response) => response.arrayBuffer()
-          );
+          const fileContent = await apiArrayBuffer(contentSpecification.url);
           var enc = new TextDecoder("utf-8");
           if (contentSpecification.language === "json") {
             const fileText = enc.decode(fileContent);
             setPreviewContent(JSON.stringify(JSON.parse(fileText), null, 2));
+          } else if (contentSpecification.language === "clustalw") {
+            const fileText = enc.decode(fileContent);
+            setPreviewContent(fileText);
           } else if (contentSpecification.language === "mtz") {
             handleMtzPreview(fileContent);
           } else if (contentSpecification.language === "cif") {
@@ -162,6 +166,8 @@ const FilePreviewDialog: React.FC = () => {
 
   const monacoLanguage = useMemo(() => {
     switch (contentSpecification?.language) {
+      case "clustal":
+        return "clustal";
       case "json":
         return "json";
       case "xml":
@@ -192,12 +198,15 @@ const FilePreviewDialog: React.FC = () => {
           <CifTableStack cifText={previewContent || ""} />
         ) : contentSpecification?.language === "csv" ? (
           <CsvTable csvText={previewContent || ""} />
+        ) : contentSpecification?.language === "clustalw" ? (
+          <AlignmentViewer alignment={previewContent || ""} />
         ) : (
           <Editor
             width="100%"
             height="calc(100vh - 20rem)"
             value={previewContent || ""}
             language={monacoLanguage}
+            theme={mode === "dark" ? "vs-dark" : "light"}
           />
         )}
       </DialogContent>

@@ -24,6 +24,7 @@ import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useApi } from "../api";
 import { Job } from "../types/models";
 import { useCCP4i2Window } from "../app-context";
+import { apiGet } from "../api-fetch";
 import { useRouter } from "next/navigation";
 import { HelpIframe } from "./help_iframe";
 import { usePopcorn } from "../providers/popcorn-provider";
@@ -102,9 +103,9 @@ export default function ToolBar() {
 
   const handleI2Run = async () => {
     if (job) {
-      const result: { status: string; command: string } = await fetch(
+      const result: { status: string; command: string } = await apiGet(
         `/api/proxy/jobs/${job.id}/i2run_command/`
-      ).then((res) => res.json());
+      );
       if (result?.command) {
         navigator.clipboard.writeText(result.command);
         setMessage("i2run command copied to clipboard");

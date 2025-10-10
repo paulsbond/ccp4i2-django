@@ -71,3 +71,7 @@ then restart the server:
 user:~/ccp4i2-django$ ccp4-python manage.py makemigrations
 user:~/ccp4i2-django$ ccp4-python manage.py migrate
 ```
+
+## Guide to electron and alternative build/deployment
+
+See [here](./docs/developer/deployment.md) for guidance on how to build and deploy through electron or as web app

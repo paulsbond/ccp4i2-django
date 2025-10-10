@@ -46,25 +46,34 @@ export const startNextServer = async (
   const csp = {
     defaultSrc: "'self'",
     imgSrc: "'self' data: blob:",
-    connectSrc: `http://localhost:${nextServerPort} ws://localhost:${nextServerPort} https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/`,
+    connectSrc:
+      "'self' https://www.ebi.ac.uk https://www.uniprot.org https://pubmed.ncbi.nlm.nih.gov https://raw.githubusercontent.com/MonomerLibrary/monomers/master/ " +
+      "https://login.microsoftonline.com https://graph.microsoft.com https://*.microsoftonline.com https://*.microsoft.com " +
+      "https://graph.windows.net https://management.azure.com " +
+      process.env.NEXT_PUBLIC_API_BASE_URL,
     styleSrc:
       "'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.googleapis.com/css2",
     fontSrc:
       "'self' https://cdn.jsdelivr.net 'unsafe-inline' https://fonts.gstatic.com",
     scriptSrc: "'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'",
     workerSrc: "'self' blob:",
+    frameSrc:
+      "'self' https://login.microsoftonline.com https://*.microsoftonline.com",
+    frameAncestors: "'self'",
   };
 
-  const cspString = `
-    default-src ${csp.defaultSrc};
-    img-src ${csp.imgSrc};
-    connect-src ${csp.connectSrc};
-    style-src ${csp.styleSrc};
-    font-src ${csp.fontSrc};
-    script-src ${csp.scriptSrc};
-    worker-src ${csp.workerSrc};
-  `
-    .replace(/\n\s+/g, " ")
+  const cspString = [
+    `default-src ${csp.defaultSrc}`,
+    `img-src ${csp.imgSrc}`,
+    `connect-src ${csp.connectSrc}`,
+    `style-src ${csp.styleSrc}`,
+    `font-src ${csp.fontSrc}`,
+    `script-src ${csp.scriptSrc}`,
+    `worker-src ${csp.workerSrc}`,
+    `frame-src ${csp.frameSrc}`,
+    `frame-ancestors ${csp.frameAncestors}`,
+  ]
+    .join("; ")
     .trim(); // Clean up whitespace
 
   //const server = createServer((req, res) => handle(req, res));

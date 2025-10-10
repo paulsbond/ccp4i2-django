@@ -6,8 +6,13 @@ import {
   setActiveMap,
   setWidth,
   setHeight,
+  setTheme,
+  setBackgroundColor,
+  MoorhenContainer,
+  MoorhenMolecule,
+  MoorhenMap,
 } from "moorhen";
-import { MoorhenContainer, MoorhenMolecule, MoorhenMap } from "moorhen";
+
 import {
   RefObject,
   useCallback,
@@ -21,6 +26,8 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import { webGL } from "moorhen/types/mgWebGL";
 import { useCCP4i2Window } from "../../app-context";
 import { MoorhenControlPanel } from "./moorhen-control-panel";
+import { apiGet, apiText } from "../../api-fetch";
+import { useTheme } from "../../theme/theme-provider";
 
 export interface MoorhenWrapperProps {
   fileIds?: number[];
@@ -28,7 +35,7 @@ export interface MoorhenWrapperProps {
 
 const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
   const dispatch = useDispatch();
-
+  const theme = useTheme();
   const glRef: RefObject<webGL.MGWebGL | null> = useRef(null);
   const commandCentre = useRef<null | moorhen.CommandCentre>(null);
   const moleculesRef = useRef<null | moorhen.Molecule[]>(null);
@@ -48,6 +55,13 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       (window as any).CCP4Module = cootModule;
     }
   }, [cootModule]);
+
+  useEffect(() => {
+    dispatch(
+      setBackgroundColor(theme.mode === "light" ? [1, 1, 1, 1] : [0, 0, 0, 1])
+    );
+    dispatch(setTheme(theme.mode === "light" ? "flatly" : "darkly"));
+  }, [theme.mode]);
 
   const monomerLibraryPath =
     "https://raw.githubusercontent.com/MonomerLibrary/monomers/master/";
@@ -89,15 +103,15 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
 
   const { origin } = useSelector((state: moorhen.State) => state.glRef);
 
+  const handleResize = () => {
+    setWindowWidth(window.innerWidth);
+    setWindowHeight(window.innerHeight - 30);
+    console.log("Window resized");
+  };
+
   useEffect(() => {
     //What to do when the component mounts
     console.log("MoorhenWrapper mounted");
-
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-      setWindowHeight(window.innerHeight - 150);
-      console.log("Window resized");
-    };
 
     window.addEventListener("resize", handleResize);
 
@@ -120,13 +134,15 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
       console.log("Coot is initialized, you can now load molecules and maps.");
       dispatch(setWidth(leftPanelWidth));
       dispatch(setHeight(windowHeight - 75));
+      dispatch(
+        setBackgroundColor(theme.mode === "light" ? [1, 1, 1, 1] : [0, 0, 0, 1])
+      );
+      handleResize();
     }
-  }, [cootInitialized, leftPanelWidth, windowHeight]);
+  }, [cootInitialized, leftPanelWidth, windowHeight, theme.mode]);
 
   const fetchFile = async (fileId: number) => {
-    const fileInfo = await fetch(`/api/proxy/files/${fileId}/`).then((res) =>
-      res.json()
-    );
+    const fileInfo = await apiGet(`/api/proxy/files/${fileId}/`);
     console.log(fileInfo);
     if (!fileInfo) {
       console.warn(`File with ID ${fileId} not found.`);
@@ -209,8 +225,7 @@ const MoorhenWrapper: React.FC<MoorhenWrapperProps> = ({ fileIds }) => {
     newMolecules: moorhen.Molecule[] = []
   ) => {
     if (!commandCentre.current) return;
-    const fileResponse = await fetch(url);
-    const fileContent = await fileResponse.text();
+    const fileContent = await apiText(url);
     await commandCentre.current.cootCommand(
       {
         returnType: "status",

@@ -1,6 +1,6 @@
 export class Project {
   constructor(
-    public tags: number[],
+    public tags: number[] | ProjectTag[],
     public exports: number[],
     public imports: number[],
     public jobs: number[],
@@ -29,10 +29,19 @@ export class ProjectTag {
   ) {}
 }
 export class ProjectExport {
-  constructor(public id: number, public project: number, public time: string) {}
+  constructor(
+    public id: number,
+    public project: Project | number,
+    public time: string,
+    public file_exists?: boolean
+  ) {}
 }
 export class ProjectImport {
-  constructor(public id: number, public project: number, public time: string) {}
+  constructor(
+    public id: number,
+    public project: number,
+    public time: string
+  ) {}
 }
 export class Job {
   constructor(
@@ -73,7 +82,10 @@ export class ServerJob {
   ) {}
 }
 export class JobValueKey {
-  constructor(public name: string, public description: string) {}
+  constructor(
+    public name: string,
+    public description: string
+  ) {}
 }
 export class JobFloatValue {
   constructor(

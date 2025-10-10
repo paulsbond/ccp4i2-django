@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Button,
   ListItemIcon,
@@ -9,9 +9,12 @@ import {
   Typography,
 } from "@mui/material";
 import { YoutubeSearchedFor, ZoomIn, ZoomOut } from "@mui/icons-material";
+import { ThemeToggle } from "./theme-toggle";
+import { DevModeToggle } from "./dev-mode-toggle";
 
 export default function ViewMenu() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const themeToggleRef = useRef<HTMLButtonElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -37,6 +40,13 @@ export default function ViewMenu() {
   const handleZoomReset = () => {
     if (typeof window !== "undefined" && window?.electronAPI) {
       window.electronAPI.sendMessage("zoom-reset", {});
+    }
+    handleClose();
+  };
+
+  const handleThemeToggle = () => {
+    if (themeToggleRef.current) {
+      themeToggleRef.current.click();
     }
     handleClose();
   };
@@ -73,6 +83,13 @@ export default function ViewMenu() {
           <Typography variant="body2" color="textSecondary">
             (Ctrl+0)
           </Typography>
+        </MenuItem>
+        <MenuItem onClick={handleThemeToggle}>
+          <ThemeToggle ref={themeToggleRef} />
+          <ListItemText>Toggle Theme</ListItemText>
+        </MenuItem>
+        <MenuItem>
+          <DevModeToggle />
         </MenuItem>
       </Menu>
     </>

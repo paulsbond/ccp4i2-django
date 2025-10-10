@@ -1,0 +1,6 @@
+# Exclude non-nginx files
+../server/
+../client/
+../node_modules/
+../__pycache__/
+../.next/
