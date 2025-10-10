@@ -19,7 +19,6 @@ import {
   TableHead,
   TableRow,
   Theme,
-  Toolbar,
   Tooltip,
   Typography,
   ToggleButton,
@@ -41,11 +40,105 @@ import {
 } from "@mui/icons-material";
 import { alpha } from "@mui/material/styles";
 import { useApi } from "../api";
-import { Project } from "../types/models";
+import { Project, ProjectTag } from "../types/models";
 import { shortDate } from "../pipes";
 import { useDeleteDialog } from "../providers/delete-dialog";
 import { useSet } from "../hooks";
 import SearchField from "./search-field";
+
+// Component to display project tag chips
+const ProjectTagChips = React.memo(
+  ({
+    project,
+    maxVisible = 3,
+    size = "small" as "small" | "medium",
+  }: {
+    project: Project;
+    maxVisible?: number;
+    size?: "small" | "medium";
+  }) => {
+    // Handle both old format (number[]) and new format (ProjectTag[])
+    const projectTagsData = Array.isArray(project.tags)
+      ? project.tags.filter(
+          (tag): tag is ProjectTag => typeof tag === "object" && tag !== null
+        )
+      : [];
+
+    if (projectTagsData.length === 0) {
+      // Return empty container to maintain consistent layout
+      return (
+        <Box
+          sx={{
+            minHeight: size === "small" ? 20 : 24,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.disabled"
+            sx={{ fontSize: size === "small" ? "0.65rem" : "0.7rem" }}
+          >
+            No tags
+          </Typography>
+        </Box>
+      );
+    }
+
+    const visibleTags = projectTagsData.slice(0, maxVisible);
+    const hiddenCount = projectTagsData.length - maxVisible;
+
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 0.5,
+          mt: size === "small" ? 0.5 : 1,
+          minHeight: size === "small" ? 20 : 24, // Maintain consistent height even when no tags
+        }}
+      >
+        {visibleTags.map((tag) => (
+          <Chip
+            key={tag.id}
+            label={tag.text}
+            size={size}
+            variant="outlined"
+            sx={{
+              height: size === "small" ? 20 : 24,
+              fontSize: size === "small" ? "0.7rem" : "0.75rem",
+              bgcolor: "primary.50",
+              borderColor: "primary.200",
+              color: "primary.700",
+              fontWeight: 500,
+              "&:hover": {
+                bgcolor: "primary.100",
+                borderColor: "primary.300",
+              },
+            }}
+          />
+        ))}
+        {hiddenCount > 0 && (
+          <Chip
+            label={`+${hiddenCount}`}
+            size={size}
+            variant="outlined"
+            sx={{
+              height: size === "small" ? 20 : 24,
+              fontSize: size === "small" ? "0.7rem" : "0.75rem",
+              bgcolor: "grey.100",
+              borderColor: "grey.300",
+              color: "grey.600",
+              fontWeight: 500,
+            }}
+          />
+        )}
+      </Box>
+    );
+  }
+);
+
+ProjectTagChips.displayName = "ProjectTagChips";
 
 // Memoized ProjectCard component for performance
 const ProjectCard = React.memo(
@@ -160,7 +253,15 @@ const ProjectCard = React.memo(
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1} justifyContent="flex-end">
+          {/* Project Tags */}
+          <ProjectTagChips project={project} maxVisible={2} size="small" />
+
+          <Stack
+            direction="row"
+            spacing={1}
+            justifyContent="flex-end"
+            sx={{ mt: 2 }}
+          >
             <Tooltip title="Export project">
               <IconButton
                 className="action-button"
@@ -260,6 +361,9 @@ const ProjectTableRow = React.memo(
             )}
           </Box>
         </Box>
+      </TableCell>
+      <TableCell>
+        <ProjectTagChips project={project} maxVisible={3} size="small" />
       </TableCell>
       <TableCell>
         <Typography variant="body2" color="text.secondary">
@@ -678,6 +782,7 @@ export default function ProjectsTable() {
                   />
                 </TableCell>
                 <TableCell>Project Name</TableCell>
+                <TableCell>Tags</TableCell>
                 <TableCell>Created</TableCell>
                 <TableCell>Last Accessed</TableCell>
                 <TableCell align="right">Actions</TableCell>
