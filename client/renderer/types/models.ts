@@ -1,6 +1,6 @@
 export class Project {
   constructor(
-    public tags: number[],
+    public tags: number[] | ProjectTag[],
     public exports: number[],
     public imports: number[],
     public jobs: number[],
