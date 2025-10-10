@@ -12,7 +12,6 @@ import { Job, Project } from "../types/models";
 import EditableTypography from "./editable-typography";
 import HistoryToolbar from "./history-toolbar";
 import { useRouter } from "next/navigation";
-import { DevModeToggle } from "./dev-mode-toggle";
 import { TagsOfProject } from "./tags-of-project";
 
 export default function MenuBar() {
@@ -47,6 +46,7 @@ export default function MenuBar() {
         <ViewMenu />
         <UtilMenu />
         <HelpMenu />
+        {project && <TagsOfProject projectId={project.id} />}
         {project && (
           <IconButton
             color="info"
@@ -61,7 +61,6 @@ export default function MenuBar() {
         {job?.number && (
           <EditableTypography variant="h5" text={`Job ${job.number}: `} />
         )}
-        {project && <TagsOfProject projectId={project.id} />}
         {project && (
           <EditableTypography
             variant="h5"
