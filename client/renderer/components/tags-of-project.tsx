@@ -8,7 +8,7 @@ import {
   CircularProgress,
   Paper,
 } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import { Add as AddIcon, LocalOffer as TagIcon } from "@mui/icons-material";
 import { useApi } from "../api";
 import { usePopcorn } from "../providers/popcorn-provider";
 import { ProjectTag } from "../types/models";
@@ -239,66 +239,76 @@ export const TagsOfProject: React.FC<{
   if (isLoadingProjectTags || isLoadingAllTags) {
     return (
       <Box display="flex" alignItems="center" gap={1}>
+        <TagIcon sx={{ fontSize: 20, color: "text.secondary" }} />
         <CircularProgress size={16} />
-        <Typography variant="body2">Loading tags...</Typography>
+        <Typography variant="body2">Loading...</Typography>
       </Box>
     );
   }
 
   return (
-    <Box>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-        Project Tags
-      </Typography>
-      <Autocomplete
-        multiple
-        value={selectedTags}
-        onChange={handleTagChange}
-        inputValue={inputValue}
-        onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
-        options={availableOptions}
-        filterOptions={filterOptions}
-        getOptionLabel={(option) => option.text}
-        isOptionEqualToValue={(option, value) => option.text === value.text}
-        renderOption={renderOption}
-        renderTags={renderTags}
-        loading={isSubmitting}
-        disabled={isSubmitting}
-        freeSolo={false}
-        selectOnFocus
-        clearOnBlur
-        handleHomeEndKeys
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            placeholder={
-              selectedTags.length === 0 ? "Add tags..." : "Add more tags..."
-            }
-            variant="outlined"
-            size="small"
-            InputProps={{
-              ...params.InputProps,
-              endAdornment: (
-                <>
-                  {isSubmitting && <CircularProgress size={16} />}
-                  {params.InputProps.endAdornment}
-                </>
-              ),
-            }}
-          />
-        )}
-        PaperComponent={(props) => <Paper {...props} sx={{ mt: 1 }} />}
+    <Box display="flex" alignItems="center" gap={1} sx={{ minHeight: 40 }}>
+      {/* Tag icon */}
+      <TagIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+
+      {/* Count chip */}
+      <Chip
+        label={selectedTags.length}
+        size="small"
+        variant="outlined"
+        sx={{
+          minWidth: 32,
+          height: 24,
+          fontSize: "0.75rem",
+          color: "text.secondary",
+          borderColor: "divider",
+        }}
       />
-      {selectedTags.length > 0 && (
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ mt: 1, display: "block" }}
-        >
-          {selectedTags.length} tag{selectedTags.length !== 1 ? "s" : ""}{" "}
-          selected
-        </Typography>
-      )}
+
+      {/* Autocomplete field */}
+      <Box sx={{ flex: 1, minWidth: 200 }}>
+        <Autocomplete
+          multiple
+          value={selectedTags}
+          onChange={handleTagChange}
+          inputValue={inputValue}
+          onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
+          options={availableOptions}
+          filterOptions={filterOptions}
+          getOptionLabel={(option) => option.text}
+          isOptionEqualToValue={(option, value) => option.text === value.text}
+          renderOption={renderOption}
+          renderTags={renderTags}
+          loading={isSubmitting}
+          disabled={isSubmitting}
+          freeSolo={false}
+          selectOnFocus
+          clearOnBlur
+          handleHomeEndKeys
+          size="small"
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder={
+                selectedTags.length === 0 ? "Add tags..." : "Add more tags..."
+              }
+              variant="outlined"
+              size="small"
+              InputProps={{
+                ...params.InputProps,
+                sx: { height: 32 }, // Consistent height
+                endAdornment: (
+                  <>
+                    {isSubmitting && <CircularProgress size={16} />}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+          PaperComponent={(props) => <Paper {...props} sx={{ mt: 1 }} />}
+        />
+      </Box>
     </Box>
   );
 };
