@@ -447,9 +447,35 @@ export default function ProjectsTable() {
   const filteredProjects = useMemo(() => {
     if (!Array.isArray(projects)) return [];
     return projects
-      ?.filter((project) =>
-        project.name.toLowerCase().includes(query.toLowerCase())
-      )
+      ?.filter((project) => {
+        const searchTerm = query.toLowerCase();
+
+        // Search in project name
+        if (project.name.toLowerCase().includes(searchTerm)) {
+          return true;
+        }
+
+        // Search in project description
+        if (project.description?.toLowerCase().includes(searchTerm)) {
+          return true;
+        }
+
+        // Search in project tags
+        if (Array.isArray(project.tags)) {
+          const tagMatches = project.tags.some((tag) => {
+            // Handle both legacy (number[]) and enhanced (ProjectTag[]) formats
+            if (typeof tag === "object" && tag.text) {
+              return tag.text.toLowerCase().includes(searchTerm);
+            }
+            return false;
+          });
+          if (tagMatches) {
+            return true;
+          }
+        }
+
+        return false;
+      })
       .sort(
         (a, b) =>
           new Date(b.last_access).getTime() - new Date(a.last_access).getTime()
